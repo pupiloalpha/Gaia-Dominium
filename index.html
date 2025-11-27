@@ -3,946 +3,503 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Gaia Dominium - MVP</title>
+    <title>Gaia Dominium - MVP (Estilizado)</title>
+    <!-- Tailwind CSS CDN para Estilização -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        'fundo-dark': '#121212',
+                        'superficie': '#1e1e1e',
+                        'accent-verde': '#4CAF50',
+                        'accent-bronze': '#c18a22',
+                        'texto-claro': '#e0e0e0',
+                        'map-floresta': '#2e7d32',
+                        'map-savana': '#c0ca33',
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                    },
+                }
+            }
+        }
+    </script>
     <style>
-        :root {
-            --color-primary: #32b8c6;
-            --color-primary-dark: #1d7480;
-            --color-bg: #1a1a1a;
-            --color-surface: #252525;
-            --color-text: #e0e0e0;
-            --color-text-secondary: #a0a0a0;
-            --color-accent: #4caf50;
-            --color-accent-dark: #2e7d31;
+        /* Estilos customizados para a estética do jogo */
+        .recurso-item {
+            transition: all 0.2s ease-in-out;
         }
-
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
-        html, body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background-color: var(--color-bg);
-            color: var(--color-text);
-            height: 100%;
-            overflow: hidden;
-        }
-
-        .container {
-            display: flex;
-            height: 100vh;
-            position: relative;
-        }
-
-        /* Header com Logo e Ícone Manual */
-        .header {
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            height: 50px;
-            background-color: var(--color-surface);
-            border-bottom: 2px solid var(--color-primary);
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 0 20px;
-            z-index: 100;
-        }
-
-        .header h1 {
-            font-size: 24px;
-            color: var(--color-accent);
-            text-shadow: 0 0 10px rgba(76, 175, 80, 0.5);
-        }
-
-        .manual-icon {
-            width: 40px;
-            height: 40px;
-            background-color: var(--color-primary);
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            cursor: pointer;
-            font-size: 20px;
-            transition: all 0.3s ease;
-            border: 2px solid transparent;
-        }
-
-        .manual-icon:hover {
-            background-color: var(--color-primary-dark);
+        .recurso-pulse {
             transform: scale(1.1);
-            border-color: var(--color-accent);
-            box-shadow: 0 0 15px rgba(76, 175, 80, 0.6);
+            background-color: #4CAF50; /* Verde de destaque */
         }
-
-        .manual-icon-tooltip {
-            position: absolute;
-            bottom: -30px;
-            background-color: var(--color-primary);
-            color: #000;
-            padding: 5px 10px;
-            border-radius: 4px;
-            font-size: 12px;
-            white-space: nowrap;
-            opacity: 0;
-            pointer-events: none;
-            transition: opacity 0.3s ease;
-        }
-
-        .manual-icon:hover .manual-icon-tooltip {
-            opacity: 1;
-        }
-
-        .main-content {
-            display: flex;
-            width: 100%;
-            margin-top: 50px;
-            height: calc(100vh - 50px);
-        }
-
-        /* Painel de Status (Esquerda) */
-        .status-panel {
-            width: 20%;
-            background-color: var(--color-surface);
-            border-right: 2px solid var(--color-primary);
-            padding: 20px;
-            overflow-y: auto;
-        }
-
-        .status-title {
-            font-size: 18px;
-            color: var(--color-accent);
-            margin-bottom: 15px;
-            border-bottom: 2px solid var(--color-primary);
-            padding-bottom: 10px;
-        }
-
-        .status-section {
-            margin-bottom: 20px;
-        }
-
-        .status-label {
-            font-size: 12px;
-            color: var(--color-text-secondary);
-            text-transform: uppercase;
-            margin-bottom: 5px;
-        }
-
-        .status-value {
-            font-size: 24px;
-            color: var(--color-accent);
-            font-weight: bold;
-            margin-bottom: 10px;
-        }
-
-        .resource-item {
-            display: flex;
-            justify-content: space-between;
-            margin: 8px 0;
-            padding: 8px;
-            background-color: rgba(50, 184, 198, 0.1);
-            border-radius: 4px;
-            border-left: 3px solid var(--color-primary);
-        }
-
-        .resource-name {
-            color: var(--color-text);
-        }
-
-        .resource-amount {
-            color: var(--color-accent);
-            font-weight: bold;
-        }
-
-        /* Mapa Principal (Centro) */
-        .map-panel {
-            flex: 1;
-            background-color: var(--color-bg);
-            border-right: 2px solid var(--color-primary);
-            padding: 20px;
-            overflow-y: auto;
-        }
-
-        .map-title {
-            font-size: 18px;
-            color: var(--color-accent);
-            margin-bottom: 15px;
-            border-bottom: 2px solid var(--color-primary);
-            padding-bottom: 10px;
-        }
-
-        .map-grid {
-            display: grid;
-            grid-template-columns: repeat(5, 1fr);
-            gap: 10px;
-        }
-
-        .region-tile {
-            aspect-ratio: 1;
-            background: linear-gradient(135deg, rgba(50, 184, 198, 0.2), rgba(76, 175, 80, 0.2));
-            border: 2px solid var(--color-primary);
-            border-radius: 8px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
+        .map-region {
+            transition: all 0.2s;
             cursor: pointer;
-            transition: all 0.3s ease;
-            flex-direction: column;
-            text-align: center;
-            padding: 5px;
-            font-size: 12px;
+            @apply rounded-lg shadow-md border-2 border-transparent;
         }
-
-        .region-tile:hover {
-            background: linear-gradient(135deg, rgba(50, 184, 198, 0.4), rgba(76, 175, 80, 0.4));
-            transform: scale(1.05);
-            box-shadow: 0 0 15px rgba(76, 175, 80, 0.6);
+        .map-region.selected {
+            @apply border-accent-bronze border-4;
         }
-
-        .region-tile.controlled {
-            background: linear-gradient(135deg, rgba(76, 175, 80, 0.4), rgba(76, 175, 80, 0.2));
-            border-color: var(--color-accent);
-            box-shadow: 0 0 10px rgba(76, 175, 80, 0.5);
-        }
-
-        .region-name {
-            color: var(--color-accent);
-            font-weight: bold;
-            font-size: 11px;
-        }
-
-        .region-biome {
-            color: var(--color-text-secondary);
-            font-size: 9px;
-        }
-
-        /* Painel de Ações (Direita) */
-        .actions-panel {
-            width: 20%;
-            background-color: var(--color-surface);
-            border-left: 2px solid var(--color-primary);
-            padding: 20px;
-            display: flex;
-            flex-direction: column;
-            overflow-y: auto;
-        }
-
-        .actions-title {
-            font-size: 18px;
-            color: var(--color-accent);
-            margin-bottom: 15px;
-            border-bottom: 2px solid var(--color-primary);
-            padding-bottom: 10px;
-        }
-
-        .actions-container {
-            display: flex;
-            flex-direction: column;
-            gap: 10px;
-            flex: 1;
-        }
-
-        .action-btn {
-            padding: 15px;
-            background: linear-gradient(135deg, var(--color-primary), var(--color-primary-dark));
-            color: #fff;
-            border: none;
-            border-radius: 6px;
-            cursor: pointer;
-            font-size: 14px;
-            font-weight: bold;
-            transition: all 0.3s ease;
-            text-transform: uppercase;
-        }
-
-        .action-btn:hover:not(:disabled) {
-            background: linear-gradient(135deg, var(--color-primary-dark), var(--color-primary));
-            transform: translateY(-2px);
-            box-shadow: 0 5px 15px rgba(76, 175, 80, 0.4);
-        }
-
-        .action-btn:disabled {
-            opacity: 0.5;
-            cursor: not-allowed;
-        }
-
-        .action-description {
-            font-size: 11px;
-            color: var(--color-text-secondary);
-            margin-top: 4px;
-        }
-
-        .end-turn-container {
-            margin-top: auto;
-            display: flex;
-            flex-direction: column;
-            gap: 10px;
-        }
-
-        .end-turn-btn {
-            padding: 15px;
-            background: linear-gradient(135deg, var(--color-accent), var(--color-accent-dark));
-            color: #000;
-            border: none;
-            border-radius: 6px;
-            cursor: pointer;
-            font-size: 14px;
-            font-weight: bold;
-            transition: all 0.3s ease;
-            text-transform: uppercase;
-        }
-
-        .end-turn-btn:hover:not(:disabled) {
-            background: linear-gradient(135deg, var(--color-accent-dark), var(--color-accent));
-            transform: translateY(-2px);
-            box-shadow: 0 5px 15px rgba(76, 175, 80, 0.4);
-        }
-
-        .end-turn-btn:disabled {
-            opacity: 0.4;
-            cursor: not-allowed;
-        }
-
-        .turn-indicator {
-            text-align: center;
-            padding: 10px;
-            background-color: rgba(50, 184, 198, 0.1);
-            border-radius: 4px;
-            border: 1px solid var(--color-primary);
-        }
-
-        .turn-number {
-            color: var(--color-accent);
-            font-size: 18px;
-            font-weight: bold;
-        }
-
-        /* Modal Manual */
+        /* Estilização para o Modal/Manual */
         .modal-overlay {
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background-color: rgba(0, 0, 0, 0.7);
-            display: none;
-            align-items: center;
-            justify-content: center;
-            z-index: 1000;
+            background-color: rgba(0, 0, 0, 0.85);
+            backdrop-filter: blur(5px);
         }
-
-        .modal-overlay.active {
-            display: flex;
-        }
-
-        .modal-content {
-            background-color: var(--color-surface);
-            width: 80%;
-            max-width: 700px;
-            height: 80vh;
-            border-radius: 8px;
-            border: 2px solid var(--color-primary);
-            display: flex;
-            flex-direction: column;
-            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.8);
-        }
-
-        .modal-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 20px;
-            border-bottom: 2px solid var(--color-primary);
-            background-color: rgba(50, 184, 198, 0.1);
-        }
-
-        .modal-header h2 {
-            color: var(--color-accent);
-            font-size: 22px;
-        }
-
-        .modal-close {
-            font-size: 28px;
-            cursor: pointer;
-            color: var(--color-text);
-            background: none;
-            border: none;
-            transition: all 0.3s ease;
-        }
-
-        .modal-close:hover {
-            color: var(--color-accent);
-            transform: scale(1.2);
-        }
-
-        .modal-tabs {
-            display: flex;
-            gap: 5px;
-            padding: 15px 20px;
-            background-color: rgba(0, 0, 0, 0.3);
-            border-bottom: 1px solid var(--color-primary);
-            overflow-x: auto;
-        }
-
-        .modal-tab {
-            padding: 8px 15px;
-            background-color: rgba(50, 184, 198, 0.2);
-            border: 1px solid var(--color-primary);
-            color: var(--color-text-secondary);
-            cursor: pointer;
-            border-radius: 4px;
-            transition: all 0.3s ease;
-            white-space: nowrap;
-            font-size: 12px;
-        }
-
-        .modal-tab:hover {
-            background-color: rgba(50, 184, 198, 0.4);
-            color: var(--color-text);
-        }
-
         .modal-tab.active {
-            background-color: var(--color-primary);
-            color: #000;
-            border-color: var(--color-accent);
-        }
-
-        .modal-body {
-            flex: 1;
-            overflow-y: auto;
-            padding: 20px;
-        }
-
-        .modal-section {
-            display: none;
-        }
-
-        .modal-section.active {
-            display: block;
-            animation: fadeIn 0.3s ease;
-        }
-
-        @keyframes fadeIn {
-            from { opacity: 0; }
-            to { opacity: 1; }
-        }
-
-        .modal-section h3 {
-            color: var(--color-accent);
-            margin-bottom: 15px;
-            font-size: 18px;
-            border-bottom: 2px solid var(--color-primary);
-            padding-bottom: 10px;
-        }
-
-        .modal-section p {
-            color: var(--color-text);
-            line-height: 1.6;
-            margin-bottom: 12px;
-        }
-
-        .modal-section ul {
-            margin-left: 20px;
-            color: var(--color-text);
-            line-height: 1.8;
-        }
-
-        .modal-section li {
-            margin-bottom: 8px;
-        }
-
-        .modal-section code {
-            background-color: rgba(0, 0, 0, 0.5);
-            padding: 2px 6px;
-            border-radius: 3px;
-            color: var(--color-accent);
-            font-family: 'Courier New', monospace;
-        }
-
-        .faq-item {
-            background-color: rgba(50, 184, 198, 0.1);
-            padding: 12px;
-            margin-bottom: 12px;
-            border-left: 3px solid var(--color-primary);
-            border-radius: 4px;
-        }
-
-        .faq-question {
-            color: var(--color-accent);
-            font-weight: bold;
-            margin-bottom: 8px;
-        }
-
-        .faq-answer {
-            color: var(--color-text-secondary);
-            font-size: 13px;
-        }
-
-        /* Scrollbar Styling */
-        ::-webkit-scrollbar {
-            width: 8px;
-        }
-
-        ::-webkit-scrollbar-track {
-            background: rgba(50, 184, 198, 0.1);
-        }
-
-        ::-webkit-scrollbar-thumb {
-            background: var(--color-primary);
-            border-radius: 4px;
-        }
-
-        ::-webkit-scrollbar-thumb:hover {
-            background: var(--color-accent);
-        }
-
-        @media (max-width: 1200px) {
-            .status-panel, .actions-panel {
-                width: 25%;
-            }
-            .map-grid {
-                grid-template-columns: repeat(4, 1fr);
-            }
-        }
-
-        @media (max-width: 768px) {
-            .main-content {
-                flex-direction: column;
-            }
-            .status-panel, .actions-panel, .map-panel {
-                width: 100%;
-                border: none;
-                border-bottom: 2px solid var(--color-primary);
-            }
-            .modal-content {
-                width: 95%;
-                height: 90vh;
-            }
+            @apply border-b-2 border-accent-bronze font-bold text-accent-bronze;
         }
     </style>
 </head>
-<body>
-    <div class="container">
-        <!-- Header -->
-        <div class="header">
-            <h1>⚔️ GAIA DOMINIUM</h1>
-            <div style="position: relative;">
-                <div class="manual-icon" id="manualIcon">
-                    📖
-                    <div class="manual-icon-tooltip">Manual do Jogo</div>
-                </div>
-            </div>
-        </div>
+<body class="bg-fundo-dark text-texto-claro font-sans min-h-screen overflow-hidden">
 
-        <!-- Main Content -->
-        <div class="main-content">
-            <!-- Status Panel (Left) -->
-            <div class="status-panel">
-                <div class="status-title">📊 Status da Facção</div>
-                
-                <div class="status-section">
-                    <div class="status-label">Facção</div>
-                    <div class="status-value">VERDE</div>
-                </div>
+    <!-- Header com Logo e Ícone Manual -->
+    <header class="fixed top-0 left-0 right-0 bg-superficie shadow-xl z-10 flex justify-between items-center h-14 px-4">
+        <h1 class="text-xl font-bold text-accent-verde tracking-widest">GAIA DOMINIUM <span class="text-sm font-normal text-texto-claro/50">MVP</span></h1>
+        <button id="manualIcon" class="p-2 rounded-full hover:bg-superficie/50 transition-colors">
+            <!-- Ícone de Manual (livro) -->
+            <svg class="w-6 h-6 text-accent-bronze" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.208 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.792 18 7.5 18s3.332.477 4.5 1.253M12 6.253C13.168 5.477 14.792 5 16.5 5s3.332.477 4.5 1.253v13C19.832 18.477 18.208 18 16.5 18s-3.332.477-4.5 1.253"></path></svg>
+        </button>
+    </header>
 
-                <div class="status-section">
-                    <div class="status-label">Pontos de Vitória</div>
-                    <div class="status-value" id="pvDisplay">0</div>
-                </div>
-
-                <div class="status-section">
-                    <div class="status-label">Renda da Rodada</div>
-                    <div class="status-value" id="incomeDisplay">+5</div>
-                </div>
-
-                <div class="status-section">
-                    <div class="status-label">Recursos</div>
-                    <div class="resource-item">
-                        <span class="resource-name">🪵 Madeira</span>
-                        <span class="resource-amount" id="madeira">10</span>
-                    </div>
-                    <div class="resource-item">
-                        <span class="resource-name">🪨 Pedra</span>
-                        <span class="resource-amount" id="pedra">5</span>
-                    </div>
-                    <div class="resource-item">
-                        <span class="resource-name">✨ Ouro</span>
-                        <span class="resource-amount" id="ouro">3</span>
-                    </div>
-                    <div class="resource-item">
-                        <span class="resource-name">💧 Água</span>
-                        <span class="resource-amount" id="agua">5</span>
+    <div class="flex pt-14 h-screen">
+        
+        <!-- COLUNA 1: PAINEL DE STATUS -->
+        <aside class="w-1/4 p-4 bg-superficie overflow-y-auto flex flex-col space-y-6">
+            <h2 class="text-lg font-semibold border-b border-gray-700 pb-2 text-accent-verde">📊 Status da Facção</h2>
+            
+            <!-- Contadores de Pontos de Vitória (A) -->
+            <div id="pontosDisplay" class="space-y-4">
+                <div class="space-y-1">
+                    <p class="text-sm font-medium">Conservação (V. Verde): <span id="pontosConservacao" class="font-bold text-accent-verde">0</span></p>
+                    <div class="w-full bg-gray-700 rounded-full h-2.5">
+                        <div id="barConservacao" class="bg-accent-verde h-2.5 rounded-full transition-all duration-500" style="width: 0%"></div>
                     </div>
                 </div>
-
-                <div class="status-section">
-                    <div class="status-label">Regiões Controladas</div>
-                    <div class="status-value" id="regioesDisplay">3</div>
+                <div class="space-y-1">
+                    <p class="text-sm font-medium">Domínio Militar (V. Vermelha): <span id="pontosMilitar" class="font-bold text-red-500">0</span></p>
+                    <div class="w-full bg-gray-700 rounded-full h-2.5">
+                        <div id="barMilitar" class="bg-red-500 h-2.5 rounded-full transition-all duration-500" style="width: 0%"></div>
+                    </div>
+                </div>
+                <div class="space-y-1">
+                    <p class="text-sm font-medium">Produção Econômica (V. Amarela): <span id="pontosProducao" class="font-bold text-yellow-500">0</span></p>
+                    <div class="w-full bg-gray-700 rounded-full h-2.5">
+                        <div id="barProducao" class="bg-yellow-500 h-2.5 rounded-full transition-all duration-500" style="width: 0%"></div>
+                    </div>
                 </div>
             </div>
 
-            <!-- Map Panel (Center) -->
-            <div class="map-panel">
-                <div class="map-title">🗺️ Mapa Florestal</div>
-                <div class="map-grid" id="mapGrid"></div>
-            </div>
-
-            <!-- Actions Panel (Right) -->
-            <div class="actions-panel">
-                <div class="actions-title">⚡ Ações</div>
-                <div class="actions-container">
-                    <button class="action-btn" id="explorarBtn" onclick="executarAcao('explorar')">
-                        🌳 Explorar
-                        <div class="action-description">Custo: 2 Madeira + 1 Água | +1 PV</div>
-                    </button>
-                    <button class="action-btn" id="construirBtn" onclick="executarAcao('construir')">
-                        🏗️ Construir
-                        <div class="action-description">Custo: 3 Madeira + 2 Pedra + 1 Ouro | +2 PV</div>
-                    </button>
-                    <button class="action-btn" id="recolherBtn" onclick="executarAcao('recolher')">
-                        📦 Recolher
-                        <div class="action-description">Custo: 1 Madeira | +1 PV + Recursos</div>
-                    </button>
-                    <button class="action-btn" id="negociarBtn" onclick="executarAcao('negociar')">
-                        🤝 Negociar
-                        <div class="action-description">Custo: 2 Ouro | +1 PV + Converter</div>
-                    </button>
-                </div>
-
-                <div class="end-turn-container">
-                    <div class="turn-indicator">
-                        <div class="status-label">Turno Atual</div>
-                        <div class="turn-number" id="turnDisplay">1</div>
+            <div class="border-t border-gray-700 pt-4">
+                <h2 class="text-lg font-semibold pb-2 text-accent-verde">💰 Recursos Atuais</h2>
+                <!-- Recursos Atuais (B) -->
+                <div id="recursosDisplay" class="grid grid-cols-2 gap-4">
+                    <div class="recurso-item bg-superficie/80 p-3 rounded-lg shadow-inner flex items-center space-x-2 border border-gray-600">
+                        <span class="text-xl">🌳</span>
+                        <div class="text-sm">
+                            <p class="font-light">Madeira Sustentável</p>
+                            <p id="recursoMadeira" class="font-bold text-texto-claro" data-recurso="madeira">0</p>
+                        </div>
                     </div>
-                    <button class="end-turn-btn" id="endTurnBtn" onclick="passarTurno()" disabled>
-                        ✓ Passar Turno
-                    </button>
+                    <div class="recurso-item bg-superficie/80 p-3 rounded-lg shadow-inner flex items-center space-x-2 border border-gray-600">
+                        <span class="text-xl">💧</span>
+                        <div class="text-sm">
+                            <p class="font-light">Água Pura</p>
+                            <p id="recursoAgua" class="font-bold text-texto-claro" data-recurso="agua">0</p>
+                        </div>
+                    </div>
+                    <div class="recurso-item bg-superficie/80 p-3 rounded-lg shadow-inner flex items-center space-x-2 border border-gray-600">
+                        <span class="text-xl">💰</span>
+                        <div class="text-sm">
+                            <p class="font-light">Créditos de Carbono</p>
+                            <p id="recursoCredito" class="font-bold text-texto-claro" data-recurso="credito">0</p>
+                        </div>
+                    </div>
+                    <div class="recurso-item bg-superficie/80 p-3 rounded-lg shadow-inner flex items-center space-x-2 border border-gray-600">
+                        <span class="text-xl">🔬</span>
+                        <div class="text-sm">
+                            <p class="font-light">Tecnologia Verde</p>
+                            <p id="recursoTecnologia" class="font-bold text-texto-claro" data-recurso="tecnologia">0</p>
+                        </div>
+                    </div>
                 </div>
             </div>
-        </div>
+
+            <!-- Log de Ações (C) -->
+            <div class="border-t border-gray-700 pt-4 flex-grow">
+                <h2 class="text-lg font-semibold pb-2 text-accent-verde">📜 Log de Ações</h2>
+                <div id="logDisplay" class="bg-fundo-dark p-3 text-sm h-40 overflow-y-auto rounded-lg border border-gray-700 space-y-1">
+                    <!-- Logs serão inseridos aqui -->
+                </div>
+            </div>
+
+        </aside>
+
+        <!-- COLUNA 2: MAPA E INTERAÇÃO -->
+        <main class="w-1/2 p-4 flex flex-col items-center justify-center bg-fundo-dark">
+            <h2 class="text-xl font-bold mb-4 text-accent-bronze">🗺️ Mapa das Florestas de Gaia</h2>
+            
+            <!-- Indicador de Turno (G) -->
+            <div id="turnoStatus" class="mb-6 p-3 bg-superficie/70 rounded-lg shadow-lg">
+                <p class="text-lg font-semibold">Turno Atual: <span id="numTurno" class="text-accent-verde">1</span> | Jogador: <span id="jogadorAtual" class="text-accent-bronze">Você (Facção Verde)</span></p>
+            </div>
+
+            <!-- Mapa (E) -->
+            <div id="mapaContainer" class="grid grid-cols-5 gap-3 aspect-square w-full max-w-xl shadow-2xl p-4 bg-superficie rounded-2xl border-4 border-gray-700">
+                <!-- Regiões são inseridas pelo JS -->
+            </div>
+            <p class="text-sm text-texto-claro/70 mt-4">Clique em uma região para selecioná-la e ver detalhes.</p>
+        </main>
+
+        <!-- COLUNA 3: PAINEL DE AÇÕES -->
+        <aside class="w-1/4 p-4 bg-superficie overflow-y-auto flex flex-col space-y-6">
+            <h2 class="text-lg font-semibold border-b border-gray-700 pb-2 text-accent-verde">🛠️ Ações Modulares</h2>
+            
+            <!-- Botões de Ação (H) -->
+            <div id="acoesContainer" class="grid grid-cols-2 gap-3">
+                <button id="moverBtn" class="acao-btn bg-accent-bronze hover:bg-accent-bronze/90 text-fundo-dark font-bold py-3 rounded-lg shadow-lg hover:shadow-xl transition-all disabled:opacity-50 disabled:cursor-not-allowed" onclick="iniciarAcao('Mover')">Mover/Sabotar</button>
+                <button id="construirBtn" class="acao-btn bg-accent-bronze hover:bg-accent-bronze/90 text-fundo-dark font-bold py-3 rounded-lg shadow-lg hover:shadow-xl transition-all disabled:opacity-50 disabled:cursor-not-allowed" onclick="iniciarAcao('Construir')">Desenvolver/Comércio</button>
+                <button id="recolherBtn" class="acao-btn bg-accent-bronze hover:bg-accent-bronze/90 text-fundo-dark font-bold py-3 rounded-lg shadow-lg hover:shadow-xl transition-all disabled:opacity-50 disabled:cursor-not-allowed" onclick="iniciarAcao('Recolher')">Recolher/P&D</button>
+                <button id="negociarBtn" class="acao-btn bg-accent-bronze hover:bg-accent-bronze/90 text-fundo-dark font-bold py-3 rounded-lg shadow-lg hover:shadow-xl transition-all disabled:opacity-50 disabled:cursor-not-allowed" onclick="iniciarAcao('Negociar')">Regra da Facção</button>
+            </div>
+
+            <!-- Botão de Finalizar Ação -->
+            <button id="finalizarAcaoBtn" class="w-full bg-accent-verde hover:bg-accent-verde/90 text-fundo-dark font-bold py-3 rounded-lg shadow-xl transition-all disabled:opacity-50 disabled:cursor-not-allowed" onclick="finalizarAcao()" disabled>CONFIRMAR AÇÃO</button>
+            
+            <div class="border-t border-gray-700 pt-4">
+                <h2 class="text-lg font-semibold pb-2 text-accent-verde">🃏 Mão de Cartas</h2>
+                <!-- Simulação de Mão de Cartas (I) -->
+                <div id="cartasDisplay" class="grid grid-cols-3 gap-2 h-40 overflow-y-auto">
+                    <div class="bg-gray-800 p-2 h-20 rounded-md text-xs border border-gray-600 flex items-center justify-center">Projeto Básico 1</div>
+                    <div class="bg-gray-800 p-2 h-20 rounded-md text-xs border border-gray-600 flex items-center justify-center">Projeto Básico 2</div>
+                    <div class="bg-gray-800 p-2 h-20 rounded-md text-xs border border-gray-600 flex items-center justify-center">Projeto Básico 3</div>
+                    <div class="bg-gray-800 p-2 h-20 rounded-md text-xs border border-gray-600 flex items-center justify-center">Projeto Básico 4</div>
+                </div>
+            </div>
+
+            <!-- Botão Passar Turno (G) -->
+            <div class="mt-auto pt-4 border-t border-gray-700">
+                <button id="endTurnBtn" class="w-full bg-red-700 hover:bg-red-600 text-texto-claro font-bold py-3 rounded-lg shadow-xl transition-all disabled:opacity-50 disabled:cursor-not-allowed" onclick="passarTurno()" disabled>PASSE TURNO</button>
+            </div>
+
+        </aside>
     </div>
 
-    <!-- Modal Manual -->
-    <div class="modal-overlay" id="modalOverlay">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h2>📚 Manual do Jogo - Gaia Dominium</h2>
-                <button class="modal-close" onclick="fecharManual()">&times;</button>
+    <!-- Modal para o Manual do Jogo -->
+    <div id="modalOverlay" class="modal-overlay fixed inset-0 z-50 flex items-center justify-center hidden">
+        <div class="bg-superficie w-11/12 max-w-3xl rounded-xl shadow-2xl p-6 relative">
+            <h3 class="text-2xl font-bold mb-4 text-accent-bronze">Manual do Jogo: Gaia Dominium</h3>
+            <button class="absolute top-4 right-4 text-texto-claro/70 hover:text-texto-claro" onclick="fecharManual()">&times;</button>
+            
+            <div class="flex border-b border-gray-700 mb-4">
+                <button class="modal-tab p-2 transition-colors active" onclick="mudarAba('visaoGeral')">Visão Geral</button>
+                <button class="modal-tab p-2 transition-colors" onclick="mudarAba('regrasAcoes')">Regras & Ações</button>
+                <button class="modal-tab p-2 transition-colors" onclick="mudarAba('dicasEstrategicas')">Estratégia</button>
+            </div>
+
+            <div id="visaoGeral" class="modal-section active h-96 overflow-y-auto text-sm space-y-3">
+                <!-- Conteúdo do manual (adaptado do PDF) -->
+                <p>Gaia Dominium é um jogo de estratégia digital que combina gerenciamento de recursos (*Eurogames*) e controle de área (*Ameritrash*). Seu objetivo é expandir o domínio florestal e acumular Pontos de Vitória em um dos três eixos: Conservação, Domínio Militar ou Produção Econômica.</p>
+                <h4 class="font-semibold mt-3 text-accent-verde">Componentes Chave:</h4>
+                <ul class="list-disc list-inside space-y-1 ml-4">
+                    <li>**Facções Assímetricas:** Cada jogador possui regras de vitória e habilidades únicas.</li>
+                    <li>**4 Recursos Vitalícios:** Madeira Sustentável, Água Pura, Créditos de Carbono e Tecnologia Verde.</li>
+                    <li>**Mapa Florestal:** Um grid de 25 regiões onde a influência e a exploração são disputadas.</li>
+                </ul>
             </div>
             
-            <div class="modal-tabs">
-                <div class="modal-tab active" onclick="mudarAba('visao')">Visão Geral</div>
-                <div class="modal-tab" onclick="mudarAba('componentes')">Componentes</div>
-                <div class="modal-tab" onclick="mudarAba('acoes')">Ações</div>
-                <div class="modal-tab" onclick="mudarAba('renda')">Renda</div>
-                <div class="modal-tab" onclick="mudarAba('pv')">Pontos</div>
-                <div class="modal-tab" onclick="mudarAba('dicas')">Dicas</div>
-                <div class="modal-tab" onclick="mudarAba('faq')">FAQ</div>
+            <div id="regrasAcoes" class="modal-section hidden h-96 overflow-y-auto text-sm space-y-3">
+                <h4 class="font-semibold mt-3 text-accent-verde">Fases do Turno:</h4>
+                <ul class="list-decimal list-inside space-y-1 ml-4">
+                    <li>**1. Renda e Produção:** Renda de capital, projetos ativos e regiões controladas são somadas automaticamente.</li>
+                    <li>**2. Seleção de Ação:** O jogador escolhe uma das quatro ações modulares (Top/Bottom).</li>
+                    <li>**3. Resolução:** Confirmação da ação e passagem de turno.</li>
+                </ul>
+                <h4 class="font-semibold mt-3 text-accent-verde">Ações Modulares:</h4>
+                <p>O jogador só pode escolher uma ação por turno. A escolha desabilita o botão para o próximo turno (simulado no MVP).</p>
+                <ul class="list-disc list-inside space-y-1 ml-4">
+                    <li>**Mover/Sabotar:** Move unidades / Realiza ação de sabotagem em regiões vizinhas.</li>
+                    <li>**Desenvolver/Comércio:** Joga uma Carta de Projeto / Troca recursos no mercado.</li>
+                    <li>**Recolher/P&D:** Aumenta a produção local / Adquire novas cartas de Projeto.</li>
+                    <li>**Regra da Facção:** Ação especial exclusiva da facção atual.</li>
+                </ul>
             </div>
 
-            <div class="modal-body">
-                <!-- Visão Geral -->
-                <div class="modal-section active" id="visao">
-                    <h3>🌍 Visão Geral</h3>
-                    <p><strong>Gaia Dominium</strong> é um jogo de tabuleiro digital estratégico que combina elementos de <strong>Eurogames</strong> (gerenciamento de recursos) com <strong>Ameritrash</strong> (ação dinâmica).</p>
-                    <p>Cada jogador controla uma <strong>Facção</strong> buscando expandir seu domínio florestal, gerenciar recursos escassos e acumular <strong>Pontos de Vitória</strong> para conquistar o controle sobre o planeta.</p>
-                    <p><strong>Objetivo:</strong> Ser o primeiro a atingir <strong>25 Pontos de Vitória</strong>!</p>
-                </div>
-
-                <!-- Componentes -->
-                <div class="modal-section" id="componentes">
-                    <h3>🎲 Componentes do Jogo</h3>
-                    <p><strong>Facções:</strong> Cada jogador controla uma facção única com cores distintas (Verde, Azul, Vermelho, Amarelo).</p>
-                    <p><strong>Mapa Florestal:</strong> Um grid com 25 regiões, cada uma com um tipo de Bioma diferente (Floresta Tropical, Savana, Pântano, Floresta Temperada).</p>
-                    <p><strong>Recursos (4 tipos):</strong></p>
-                    <ul>
-                        <li><strong>🪵 Madeira:</strong> Recurso primário, obtido de regiões florestadas</li>
-                        <li><strong>🪨 Pedra:</strong> Utilizado em construções defensivas</li>
-                        <li><strong>✨ Ouro:</strong> Recurso premium, necessário para negociações</li>
-                        <li><strong>💧 Água:</strong> Recurso vital para produção</li>
-                    </ul>
-                    <p><strong>Sistema de Ações:</strong> Quatro ações modulares disponíveis a cada turno.</p>
-                </div>
-
-                <!-- Ações -->
-                <div class="modal-section" id="acoes">
-                    <h3>⚡ Ações Modulares</h3>
-                    
-                    <p><strong>🌳 Explorar</strong></p>
-                    <ul>
-                        <li>Custo: 2 Madeira + 1 Água</li>
-                        <li>Efeito: +1 PV, desbloqueia produção adicional naquela região</li>
-                        <li>Próximas colheitas produzem +50%</li>
-                    </ul>
-
-                    <p><strong>🏗️ Construir</strong></p>
-                    <ul>
-                        <li>Custo: 3 Madeira + 2 Pedra + 1 Ouro</li>
-                        <li>Efeito: +2 PV, a região gera +1 recurso por turno</li>
-                        <li>Desbloqueia bônus especiais</li>
-                    </ul>
-
-                    <p><strong>📦 Recolher</strong></p>
-                    <ul>
-                        <li>Custo: 1 Madeira</li>
-                        <li>Efeito: Ganha +2 de cada recurso primário, +1 PV</li>
-                        <li>Ideal para repor recursos rapidamente</li>
-                    </ul>
-
-                    <p><strong>🤝 Negociar</strong></p>
-                    <ul>
-                        <li>Custo: 2 Ouro</li>
-                        <li>Efeito: +1 PV, converte 3 de um recurso em 2 de outro</li>
-                        <li>Balanceia sua composição de recursos</li>
-                    </ul>
-                </div>
-
-                <!-- Renda -->
-                <div class="modal-section" id="renda">
-                    <h3>💰 Mecânica de Renda & Produção</h3>
-                    <p>A renda é calculada <strong>automaticamente</strong> no início de cada turno do jogador:</p>
-                    <p><code>Renda Total = (Regiões Controladas × Tipo de Bioma) + (Projetos Ativos × Multiplicador)</code></p>
-                    
-                    <p><strong>Exemplo:</strong></p>
-                    <p>Um jogador controla 5 regiões:</p>
-                    <ul>
-                        <li>2 Floresta Tropical = 2 Madeira + 1 Ouro</li>
-                        <li>2 Savana = 3 Madeira</li>
-                        <li>1 Pântano = 0.5 Madeira + 1 Água</li>
-                    </ul>
-                    <p>Total recebido: <strong>~6 Madeira + 1 Ouro + 1 Água</strong></p>
-                    <p><strong>Com Projeto Ativo (1.5x):</strong> ~9 Madeira + 1 Ouro + 1 Água</p>
-                </div>
-
-                <!-- Pontos de Vitória -->
-                <div class="modal-section" id="pv">
-                    <h3>🏆 Pontos de Vitória</h3>
-                    <p>Ganhe PV através de várias ações:</p>
-                    <ul>
-                        <li><strong>Explorar:</strong> +1 PV</li>
-                        <li><strong>Construir:</strong> +2 PV</li>
-                        <li><strong>Recolher:</strong> +1 PV</li>
-                        <li><strong>Negociar:</strong> +1 PV</li>
-                        <li><strong>Controlar 50% do mapa:</strong> +5 PV</li>
-                        <li><strong>Primeira a atingir 3 estruturas:</strong> +3 PV</li>
-                        <li><strong>Turno com 15+ recursos:</strong> +2 PV</li>
-                    </ul>
-                    <p><strong>🎯 Objetivo de Vitória:</strong> Primeira facção a atingir <strong>25 Pontos de Vitória</strong> vence o jogo!</p>
-                </div>
-
-                <!-- Dicas -->
-                <div class="modal-section" id="dicas">
-                    <h3>💡 Dicas Estratégicas</h3>
-                    
-                    <p><strong>Para Iniciantes:</strong></p>
-                    <ul>
-                        <li>Explore regiões antes de construir para desbloquear produção máxima</li>
-                        <li>Mantenha uma distribuição balanceada entre Madeira, Pedra e Água</li>
-                        <li>Guarde Ouro para negociações estratégicas</li>
-                        <li>Não faça delay desnecessariamente - a velocidade importa!</li>
-                    </ul>
-
-                    <p><strong>Para Jogadores Avançados:</strong></p>
-                    <ul>
-                        <li><strong>Engine Building:</strong> Construa múltiplas estruturas para multiplicadores cumulativos</li>
-                        <li><strong>Timing:</strong> Ative projetos nos momentos certos para maximizar renda</li>
-                        <li><strong>Bloqueio:</strong> Explore regiões que outros precisam, forçando negociações</li>
-                        <li><strong>Conversão:</strong> Use Negociar para converter recursos excedentes em scarce resources</li>
-                    </ul>
-                </div>
-
-                <!-- FAQ -->
-                <div class="modal-section" id="faq">
-                    <h3>❓ Perguntas Frequentes</h3>
-                    
-                    <div class="faq-item">
-                        <div class="faq-question">P: Posso mudar de ação após iniciar?</div>
-                        <div class="faq-answer">Não. Uma vez clicado no botão de ação, ela é executada. Planeje bem antes de clicar!</div>
-                    </div>
-
-                    <div class="faq-item">
-                        <div class="faq-question">P: O que acontece se não tiver recursos suficientes?</div>
-                        <div class="faq-answer">A ação não pode ser executada. O botão ficará desabilitado até você ter recursos suficientes.</div>
-                    </div>
-
-                    <div class="faq-item">
-                        <div class="faq-question">P: Quanto tempo dura uma partida?</div>
-                        <div class="faq-answer">Uma partida para 25 PV com 2-4 jogadores leva aproximadamente 30-45 minutos.</div>
-                    </div>
-
-                    <div class="faq-item">
-                        <div class="faq-question">P: Regiões podem ser conquistadas?</div>
-                        <div class="faq-answer">Não nesta versão MVP. Regiões são designadas no início. Futuras versões incluirão conflito por territórios.</div>
-                    </div>
-
-                    <div class="faq-item">
-                        <div class="faq-question">P: Posso jogar contra IA?</div>
-                        <div class="faq-answer">Na versão atual é multiplayer local. IA virá em futuras versões, assim como multiplayer online!</div>
-                    </div>
-                </div>
+            <div id="dicasEstrategicas" class="modal-section hidden h-96 overflow-y-auto text-sm space-y-3">
+                <h4 class="font-semibold mt-3 text-accent-verde">Dicas para Iniciantes:</h4>
+                <ul class="list-disc list-inside space-y-1 ml-4">
+                    <li>Priorize a obtenção de Água Pura no início, pois é um recurso raro e valioso.</li>
+                    <li>Use a ação *Desenvolver* cedo para iniciar seu motor de produção.</li>
+                </ul>
+                <h4 class="font-semibold mt-3 text-accent-verde">Dicas para Avançados:</h4>
+                <ul class="list-disc list-inside space-y-1 ml-4">
+                    <li>Bloqueio de Regiões: Mantenha unidades em regiões estratégicas que outros jogadores precisam.</li>
+                    <li>Timing de Projetos: Ative projetos nos momentos certos para maximizar renda em turnos específicos.</li>
+                </ul>
             </div>
         </div>
     </div>
 
+    <!-- JavaScript para a Lógica do Jogo -->
     <script>
-        // Estado do Jogo
+        // Variáveis Globais de Estado
         let gameState = {
-            turnos: 1,
-            pontos: 0,
-            recursos: {
-                madeira: 10,
-                pedra: 5,
-                ouro: 3,
-                agua: 5
-            },
-            regioes: 3,
-            renda: 5,
-            acaoExecutada: false
+            turno: 1,
+            jogador: 1,
+            acaoExecutada: false,
+            regiaoSelecionada: null
         };
 
-        // Dados das Regiões
-        const regioes = [
-            { id: 1, nome: 'Reg. 1', bioma: 'Tropical', controlada: true },
-            { id: 2, nome: 'Reg. 2', bioma: 'Savana', controlada: true },
-            { id: 3, nome: 'Reg. 3', bioma: 'Pântano', controlada: true },
-            { id: 4, nome: 'Reg. 4', bioma: 'Temperada', controlada: false },
-            { id: 5, nome: 'Reg. 5', bioma: 'Tropical', controlada: false },
-            { id: 6, nome: 'Reg. 6', bioma: 'Savana', controlada: false },
-            { id: 7, nome: 'Reg. 7', bioma: 'Pântano', controlada: false },
-            { id: 8, nome: 'Reg. 8', bioma: 'Tropical', controlada: false },
-            { id: 9, nome: 'Reg. 9', bioma: 'Temperada', controlada: false },
-            { id: 10, nome: 'Reg. 10', bioma: 'Savana', controlada: false },
-            { id: 11, nome: 'Reg. 11', bioma: 'Tropical', controlada: false },
-            { id: 12, nome: 'Reg. 12', bioma: 'Pântano', controlada: false },
-            { id: 13, nome: 'Reg. 13', bioma: 'Temperada', controlada: false },
-            { id: 14, nome: 'Reg. 14', bioma: 'Savana', controlada: false },
-            { id: 15, nome: 'Reg. 15', bioma: 'Tropical', controlada: false },
-            { id: 16, nome: 'Reg. 16', bioma: 'Pântano', controlada: false },
-            { id: 17, nome: 'Reg. 17', bioma: 'Temperada', controlada: false },
-            { id: 18, nome: 'Reg. 18', bioma: 'Savana', controlada: false },
-            { id: 19, nome: 'Reg. 19', bioma: 'Tropical', controlada: false },
-            { id: 20, nome: 'Reg. 20', bioma: 'Pântano', controlada: false },
-            { id: 21, nome: 'Reg. 21', bioma: 'Temperada', controlada: false },
-            { id: 22, nome: 'Reg. 22', bioma: 'Savana', controlada: false },
-            { id: 23, nome: 'Reg. 23', bioma: 'Tropical', controlada: false },
-            { id: 24, nome: 'Reg. 24', bioma: 'Pântano', controlada: false },
-            { id: 25, nome: 'Reg. 25', bioma: 'Temperada', controlada: false }
+        let recursos = {
+            madeira: 5,
+            agua: 2,
+            credito: 5,
+            tecnologia: 1
+        };
+
+        let pontos = {
+            conservacao: 10,
+            militar: 5,
+            producao: 15
+        };
+
+        // Dados Simples do Mapa (5x5 grid)
+        const mapa = [
+            { id: 1, nome: "Fl. Norte", cor: "map-floresta", producao: { madeira: 1 } },
+            { id: 2, nome: "Planícies", cor: "map-savana", producao: { credito: 1 } },
+            { id: 3, nome: "Capital A", cor: "bg-green-700", producao: { agua: 1 } },
+            { id: 4, nome: "Fl. Leste", cor: "map-floresta", producao: { madeira: 1 } },
+            { id: 5, nome: "Deserto", cor: "bg-yellow-800", producao: {} },
+            
+            { id: 6, nome: "Costa", cor: "bg-blue-600", producao: { agua: 1 } },
+            { id: 7, nome: "Montanha", cor: "bg-gray-500", producao: { tecnologia: 1 } },
+            { id: 8, nome: "Central", cor: "map-floresta", producao: { madeira: 1, agua: 1 } },
+            { id: 9, nome: "Pântano", cor: "bg-superficie/50", producao: { agua: 1 } },
+            { id: 10, nome: "Planícies", cor: "map-savana", producao: { credito: 1 } },
+
+            { id: 11, nome: "Fl. Oeste", cor: "map-floresta", producao: { madeira: 1 } },
+            { id: 12, nome: "Vales", cor: "map-savana", producao: { credito: 1 } },
+            { id: 13, nome: "Capital B", cor: "bg-red-700", producao: { credito: 2 } },
+            { id: 14, nome: "Fl. Sul", cor: "map-floresta", producao: { madeira: 1 } },
+            { id: 15, nome: "Tundra", cor: "bg-blue-200", producao: {} },
+
+            { id: 16, nome: "Oceano", cor: "bg-blue-800", producao: { agua: 1 } },
+            { id: 17, nome: "Planícies", cor: "map-savana", producao: { credito: 1 } },
+            { id: 18, nome: "Capital C", cor: "bg-yellow-700", producao: { tecnologia: 1 } },
+            { id: 19, nome: "Costa", cor: "bg-blue-600", producao: { agua: 1 } },
+            { id: 20, nome: "Vulcão", cor: "bg-red-900", producao: { tecnologia: 1 } },
+
+            { id: 21, nome: "Fl. Sul", cor: "map-floresta", producao: { madeira: 1 } },
+            { id: 22, nome: "Savana", cor: "map-savana", producao: { credito: 1 } },
+            { id: 23, nome: "Fl. Leste", cor: "map-floresta", producao: { madeira: 1 } },
+            { id: 24, nome: "Capital D", cor: "bg-purple-700", producao: { madeira: 1, credito: 1 } },
+            { id: 25, nome: "Deserto", cor: "bg-yellow-800", producao: {} },
         ];
 
-        // Inicializar Mapa
+
+        // Função para Inicializar o Mapa
         function inicializarMapa() {
-            const mapGrid = document.getElementById('mapGrid');
-            mapGrid.innerHTML = '';
-            regioes.forEach(regiao => {
-                const tile = document.createElement('div');
-                tile.className = 'region-tile' + (regiao.controlada ? ' controlled' : '');
-                tile.innerHTML = `
-                    <div class="region-name">${regiao.nome}</div>
-                    <div class="region-biome">${regiao.bioma}</div>
-                `;
-                tile.onclick = () => console.log(`Clicou em ${regiao.nome}`);
-                mapGrid.appendChild(tile);
+            const container = document.getElementById('mapaContainer');
+            mapa.forEach(regiao => {
+                const div = document.createElement('div');
+                div.id = `regiao-${regiao.id}`;
+                div.className = `map-region ${regiao.cor} hover:shadow-xl hover:scale-[1.03] flex items-center justify-center text-center text-xs p-1 h-16 transition-all`;
+                div.textContent = regiao.nome;
+                div.title = `Região: ${regiao.nome} (ID: ${regiao.id})`;
+                div.onclick = () => selecionarRegiao(regiao.id);
+                container.appendChild(div);
             });
         }
+        
+        // Função para Selecionar Região
+        function selecionarRegiao(id) {
+            // Remove a seleção de todas as regiões
+            document.querySelectorAll('.map-region').forEach(div => {
+                div.classList.remove('selected');
+            });
 
-        // Atualizar Display
-        function atualizarDisplay() {
-            document.getElementById('madeira').textContent = gameState.recursos.madeira;
-            document.getElementById('pedra').textContent = gameState.recursos.pedra;
-            document.getElementById('ouro').textContent = gameState.recursos.ouro;
-            document.getElementById('agua').textContent = gameState.recursos.agua;
-            document.getElementById('pvDisplay').textContent = gameState.pontos;
-            document.getElementById('incomeDisplay').textContent = '+' + gameState.renda;
-            document.getElementById('regioesDisplay').textContent = gameState.regioes;
-            document.getElementById('turnDisplay').textContent = gameState.turnos;
+            // Adiciona a seleção à região clicada
+            const regiaoDiv = document.getElementById(`regiao-${id}`);
+            regiaoDiv.classList.add('selected');
+            gameState.regiaoSelecionada = id;
+            
+            // Simulação de Pop-up de Detalhe da Região no Log
+            logAcao(`Região Selecionada: ${regiaoDiv.textContent}. Status: Nível de Degradação Baixo.`);
         }
 
-        // Executar Ação
-        function executarAcao(acao) {
+        // Função para Adicionar Log
+        function logAcao(mensagem) {
+            const logDisplay = document.getElementById('logDisplay');
+            const p = document.createElement('p');
+            p.className = 'text-texto-claro/80';
+            p.innerHTML = `<span class="text-accent-bronze font-bold">[T${gameState.turno}]</span> ${mensagem}`;
+            logDisplay.prepend(p); // Adiciona a mensagem mais recente no topo
+            if (logDisplay.children.length > 20) {
+                logDisplay.removeChild(logDisplay.lastChild); // Mantém o log limpo
+            }
+        }
+
+        // FUNÇÃO DE MELHORIA: Atualiza a exibição de todos os estados (com animação)
+        function atualizarDisplay(recursoAlterado = null) {
+            // 1. Atualizar Recursos
+            document.getElementById('recursoMadeira').textContent = recursos.madeira;
+            document.getElementById('recursoAgua').textContent = recursos.agua;
+            document.getElementById('recursoCredito').textContent = recursos.credito;
+            document.getElementById('recursoTecnologia').textContent = recursos.tecnologia;
+            
+            // Adiciona a animação de "pulse" ao recurso que foi alterado
+            if (recursoAlterado) {
+                const recursoElement = document.getElementById(`recurso${recursoAlterado.charAt(0).toUpperCase() + recursoAlterado.slice(1)}`).parentElement;
+                recursoElement.classList.add('recurso-pulse');
+                setTimeout(() => {
+                    recursoElement.classList.remove('recurso-pulse');
+                }, 400);
+            }
+
+            // 2. Atualizar Pontos e Barras
+            document.getElementById('pontosConservacao').textContent = pontos.conservacao;
+            document.getElementById('pontosMilitar').textContent = pontos.militar;
+            document.getElementById('pontosProducao').textContent = pontos.producao;
+
+            const maxPontos = 100; // Limite de 100 para a barra
+            document.getElementById('barConservacao').style.width = `${Math.min(pontos.conservacao, maxPontos)}%`;
+            document.getElementById('barMilitar').style.width = `${Math.min(pontos.militar, maxPontos)}%`;
+            document.getElementById('barProducao').style.width = `${Math.min(pontos.producao, maxPontos)}%`;
+
+            // 3. Atualizar Status do Turno
+            document.getElementById('numTurno').textContent = gameState.turno;
+            document.getElementById('jogadorAtual').textContent = gameState.jogador === 1 ? 'Você (Facção Verde)' : 'IA/Jogador 2 (Facção Azul)';
+        }
+
+        // Fase 1: Renda e Produção (Automática)
+        function calcularRenda() {
+            logAcao("Fase 1: Calculando Renda e Produção...");
+            
+            // Renda Base (Simulação)
+            recursos.madeira += 2;
+            recursos.agua += 1;
+            
+            // Renda de Regiões Controladas (Simulação)
+            mapa.forEach(regiao => {
+                // Simula que regiões 3, 8, 11 e 14 são controladas
+                if ([3, 8, 11, 14].includes(regiao.id)) {
+                    for (const [recursoNome, qtd] of Object.entries(regiao.producao)) {
+                        recursos[recursoNome] += qtd;
+                        // Animação no primeiro recurso encontrado para feedback
+                        if (recursos[recursoNome] === recursos[recursoNome]) {
+                            atualizarDisplay(recursoNome);
+                        }
+                    }
+                }
+            });
+
+            // Renda de Projetos (Simulação)
+            recursos.tecnologia += 1;
+            pontos.producao += 3; // Engine Building Simulado
+            logAcao("Renda coletada com sucesso. Verifique seus recursos.");
+        }
+
+        // Fase 2: Seleção da Ação Modular (H)
+        function iniciarAcao(acao) {
             if (gameState.acaoExecutada) return;
 
-            const custos = {
-                explorar: { madeira: 2, agua: 1 },
-                construir: { madeira: 3, pedra: 2, ouro: 1 },
-                recolher: { madeira: 1 },
-                negociar: { ouro: 2 }
-            };
-
-            const custo = custos[acao];
-            let podeExecutar = true;
-
-            for (let recurso in custo) {
-                if (gameState.recursos[recurso] < custo[recurso]) {
-                    podeExecutar = false;
-                    alert(`Recursos insuficientes! Precisa de ${custo[recurso]} ${recurso}`);
-                    break;
-                }
-            }
-
-            if (!podeExecutar) return;
-
-            // Gastar recursos
-            for (let recurso in custo) {
-                gameState.recursos[recurso] -= custo[recurso];
-            }
-
-            // Executar efeito
-            if (acao === 'explorar') {
-                gameState.pontos += 1;
-                gameState.renda += 1;
-            } else if (acao === 'construir') {
-                gameState.pontos += 2;
-                gameState.renda += 2;
-            } else if (acao === 'recolher') {
-                gameState.pontos += 1;
-                gameState.recursos.madeira += 2;
-                gameState.recursos.pedra += 2;
-                gameState.recursos.agua += 2;
-            } else if (acao === 'negociar') {
-                gameState.pontos += 1;
-                gameState.recursos.madeira += 2;
-            }
-
+            // Simula a execução da Ação Modular
             gameState.acaoExecutada = true;
-            document.getElementById('endTurnBtn').disabled = false;
-            atualizarDisplay();
             
-            // Desabilitar botões de ação
-            document.getElementById('explorarBtn').disabled = true;
-            document.getElementById('construirBtn').disabled = true;
-            document.getElementById('recolherBtn').disabled = true;
-            document.getElementById('negociarBtn').disabled = true;
+            // Simulação de alteração de estado após a ação
+            switch (acao) {
+                case 'Mover':
+                    logAcao(`Ação Modular: MOVER/SABOTAR - Foco em Domínio Militar. (+5 PV)`);
+                    pontos.militar += 5;
+                    break;
+                case 'Construir':
+                    logAcao(`Ação Modular: DESENVOLVER/COMÉRCIO - Foco em Conservação. (-3 Créditos, +5 PV)`);
+                    if (recursos.credito >= 3) {
+                        recursos.credito -= 3;
+                        pontos.conservacao += 5;
+                    } else {
+                        logAcao("Aviso: Recursos insuficientes. Ação cancelada.");
+                        gameState.acaoExecutada = false; // Permite tentar outra ação
+                        return;
+                    }
+                    break;
+                case 'Recolher':
+                    logAcao(`Ação Modular: RECOLHER/P&D - Foco em Produção. (+5 Madeira, +5 PV)`);
+                    recursos.madeira += 5;
+                    pontos.producao += 5;
+                    break;
+                case 'Negociar':
+                    logAcao(`Ação Modular: REGRA DA FACÇÃO - Troca estratégica. (-1 Tecnologia, +3 Água Pura)`);
+                    if (recursos.tecnologia >= 1) {
+                        recursos.tecnologia -= 1;
+                        recursos.agua += 3;
+                    } else {
+                        logAcao("Aviso: Recursos insuficientes. Ação cancelada.");
+                        gameState.acaoExecutada = false;
+                        return;
+                    }
+                    break;
+            }
+
+            // Desabilita as ações e habilita o botão de confirmação
+            document.querySelectorAll('.acao-btn').forEach(btn => btn.disabled = true);
+            document.getElementById('finalizarAcaoBtn').disabled = false;
+            
+            atualizarDisplay('todos'); // Atualiza a tela imediatamente após a ação
         }
 
-        // Passar Turno
+        function finalizarAcao() {
+            if (!gameState.acaoExecutada) return;
+
+            // Habilita o botão de Passar Turno (G)
+            document.getElementById('finalizarAcaoBtn').disabled = true;
+            document.getElementById('endTurnBtn').disabled = false;
+            
+            logAcao("Ação do Turno Finalizada. Pronto para a transição.");
+        }
+
+        // Fase 3: Passagem de Turno (G)
         function passarTurno() {
-            gameState.turnos += 1;
+            logAcao("--- INÍCIO DO PRÓXIMO TURNO ---");
+            
+            // 1. Lógica do Jogo
+            gameState.turno++;
+            gameState.jogador = gameState.jogador === 1 ? 2 : 1; // Alterna entre Jogador 1 (Você) e 2 (IA/Simulação)
             gameState.acaoExecutada = false;
+            gameState.regiaoSelecionada = null;
+
+            // 2. Aciona Renda e Produção para o novo turno
+            calcularRenda();
             
-            // Adicionar renda
-            gameState.recursos.madeira += gameState.renda;
-            
-            // Habilitar botões
-            document.getElementById('explorarBtn').disabled = false;
-            document.getElementById('construirBtn').disabled = false;
-            document.getElementById('recolherBtn').disabled = false;
-            document.getElementById('negociarBtn').disabled = false;
+            // 3. Habilita novamente as ações e desabilita o botão de passar turno
+            document.querySelectorAll('.acao-btn').forEach(btn => btn.disabled = false);
             document.getElementById('endTurnBtn').disabled = true;
 
+            // 4. Se o próximo jogador for a IA, simula um turno da IA
+            if (gameState.jogador === 2) {
+                logAcao("Turno da IA (Facção Azul). Aguarde...");
+                setTimeout(() => {
+                    // Simula uma ação da IA
+                    recursos.credito += 4;
+                    pontos.conservacao += 2;
+                    logAcao("IA executou ação de Construir/Comércio.");
+                    passarTurno(); // Passa o turno de volta para o jogador
+                }, 2000); // 2 segundos de espera para simular o turno da IA
+            }
+            
+            // 5. Atualiza a tela
             atualizarDisplay();
         }
 
-        // Manual Functions
+        // Manual Functions (sem alterações significativas de lógica)
         function abrirManual() {
-            document.getElementById('modalOverlay').classList.add('active');
+            document.getElementById('modalOverlay').classList.remove('hidden');
         }
 
         function fecharManual() {
-            document.getElementById('modalOverlay').classList.remove('active');
+            document.getElementById('modalOverlay').classList.add('hidden');
         }
 
         function mudarAba(abaId) {
@@ -952,10 +509,12 @@
             });
             document.querySelectorAll('.modal-section').forEach(section => {
                 section.classList.remove('active');
+                section.classList.add('hidden');
             });
 
             // Adiciona active para a aba selecionada
-            event.target.classList.add('active');
+            document.querySelector(`[onclick="mudarAba('${abaId}')"]`).classList.add('active');
+            document.getElementById(abaId).classList.remove('hidden');
             document.getElementById(abaId).classList.add('active');
         }
 
@@ -964,6 +523,11 @@
         document.getElementById('modalOverlay').addEventListener('click', function(e) {
             if (e.target === this) fecharManual();
         });
+        document.addEventListener('DOMContentLoaded', () => {
+             // Inicia com a primeira aba ativa
+            mudarAba('visaoGeral');
+        });
+
 
         // Inicializar Jogo
         inicializarMapa();
