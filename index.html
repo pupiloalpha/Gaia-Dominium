@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Gaia Dominium - MVP</title>
+    <title>Gaia Dominium - Multiplayer Local</title>
     <style>
         :root {
             --color-primary: #32b8c6;
@@ -15,9 +15,9 @@
             --color-accent: #4caf50;
             --color-accent-dark: #2e7d31;
             --color-error: #f44336;
-            --sidebar-width: 200px; /* Largura reduzida */
+            --sidebar-width: 200px;
             --header-height: 50px;
-            --action-panel-height: 90px; /* Altura ajustada */
+            --action-panel-height: 90px;
         }
 
         * {
@@ -34,14 +34,13 @@
             overflow: hidden;
         }
 
-        /* O Container principal agora lida com o layout de duas colunas */
         .container {
             display: flex;
             height: 100vh;
             position: relative;
         }
 
-        /* Header (Permanece fixo no topo) */
+        /* Header */
         .header {
             position: fixed;
             top: 0;
@@ -69,19 +68,31 @@
             font-size: 1.5rem;
             transition: color 0.2s;
         }
-
-        .manual-icon:hover {
-            color: var(--color-primary);
+        .manual-icon:hover { color: var(--color-primary); }
+        
+        /* Informações do Jogador Atual no Header */
+        #currentPlayerInfo {
+            display: flex;
+            align-items: center;
+            font-size: 1.1rem;
+            font-weight: 600;
+            gap: 10px;
+            padding: 5px 10px;
+            border-radius: 8px;
+            background-color: var(--color-bg);
+        }
+        #currentPlayerIcon {
+            font-size: 1.5rem;
         }
 
-        /* Painel Lateral (Status) - Largura fixa reduzida */
+        /* Painel Lateral (Status) */
         .sidebar {
             width: var(--sidebar-width);
-            min-width: var(--sidebar-width); /* Garante que não encolhe */
+            min-width: var(--sidebar-width);
             height: calc(100vh - var(--header-height));
             margin-top: var(--header-height);
             background-color: var(--color-surface);
-            padding: 20px 10px; /* Padding reduzido horizontalmente */
+            padding: 20px 10px;
             box-shadow: 2px 0 5px rgba(0, 0, 0, 0.5);
             display: flex;
             flex-direction: column;
@@ -91,11 +102,11 @@
         }
 
         .sidebar h2 {
-            font-size: 1.1rem; /* Fonte ligeiramente menor */
+            font-size: 1.1rem;
             color: var(--color-primary);
             border-bottom: 2px solid var(--color-primary-dark);
             padding-bottom: 5px;
-            margin-bottom: 5px; /* Espaço reduzido */
+            margin-bottom: 5px;
         }
 
         .resource-item {
@@ -104,7 +115,7 @@
             padding: 8px;
             background-color: var(--color-bg);
             border-radius: 6px;
-            font-size: 0.9rem; /* Fonte ligeiramente menor */
+            font-size: 0.9rem;
             align-items: center;
         }
 
@@ -119,12 +130,31 @@
             font-weight: bold;
             color: var(--color-text);
         }
+        
+        /* Lista de Jogadores */
+        #playerListDisplay {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+        .player-score-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 6px;
+            border-radius: 4px;
+            transition: background-color 0.2s;
+            font-size: 0.9rem;
+        }
+        .player-score-item.active-player {
+            background-color: rgba(50, 184, 198, 0.2);
+            border: 1px solid var(--color-primary);
+        }
 
-        /* Área Principal do Jogo (Mapa e Ações) */
+        /* Área Principal do Jogo (Mapa + Ações) */
         .main-content {
             flex-grow: 1;
             display: flex;
-            flex-direction: column; /* Mapa e Ações em Coluna */
+            flex-direction: column;
             margin-top: var(--header-height);
         }
 
@@ -132,7 +162,7 @@
         #feedbackMessage {
             position: absolute;
             top: 50%;
-            left: calc(var(--sidebar-width) + 50%); /* Ajusta a posição central com base na sidebar */
+            left: calc(var(--sidebar-width) + 50%);
             transform: translate(-50%, -50%);
             padding: 15px 30px;
             border-radius: 12px;
@@ -156,17 +186,17 @@
             transform: translate(-50%, -50%) scale(1);
         }
         
-        /* Mapa - Ocupa todo o espaço vertical disponível menos a barra de ações */
+        /* Mapa */
         .game-map {
             flex-grow: 1;
             display: grid;
             grid-template-columns: repeat(5, 1fr);
             grid-template-rows: repeat(5, 1fr);
-            gap: 3px; /* Gap um pouco maior */
+            gap: 3px;
             padding: 10px;
             background-color: var(--color-bg);
             position: relative;
-            overflow: auto; /* Para garantir que o grid não estoure em telas pequenas */
+            overflow: auto;
         }
 
         .region {
@@ -189,10 +219,15 @@
             box-shadow: 0 0 10px var(--color-primary);
             transform: scale(1.02);
         }
+        
+        .region[data-player-color] {
+            border-left: 5px solid var(--region-border-color, #fff);
+        }
+
         .region-name { font-weight: bold; margin-bottom: 3px; color: var(--color-primary); }
         .region-info { font-size: 0.7rem; color: var(--color-text-secondary); }
 
-        /* Painel de Ações (Barra inferior) - Altura Fixa */
+        /* Painel de Ações (Barra inferior) */
         .action-panel {
             height: var(--action-panel-height);
             background-color: var(--color-surface);
@@ -202,14 +237,14 @@
             align-items: center;
             box-shadow: 0 -2px 5px rgba(0, 0, 0, 0.5);
             z-index: 5;
-            flex-shrink: 0; /* Garante que não encolhe */
+            flex-shrink: 0;
         }
 
         .action-btn {
             background-color: var(--color-primary);
             color: var(--color-bg);
             border: none;
-            padding: 12px 25px; /* Botões maiores */
+            padding: 12px 25px;
             font-size: 1rem;
             font-weight: bold;
             border-radius: 8px;
@@ -218,7 +253,7 @@
             box-shadow: 0 4px var(--color-primary-dark);
             position: relative;
             top: 0;
-            min-width: 170px; /* Largura mínima ajustada */
+            min-width: 170px;
         }
 
         .action-btn:hover:not(:disabled) { background-color: var(--color-primary-dark); transform: translateY(-2px); box-shadow: 0 6px var(--color-primary-dark); }
@@ -229,103 +264,121 @@
         #endTurnBtn:hover:not(:disabled) { background-color: var(--color-accent-dark); box-shadow: 0 6px var(--color-accent-dark); }
         #endTurnBtn:active:not(:disabled) { box-shadow: 0 2px var(--color-accent-dark); }
 
-        #startGameBtn { background-color: var(--color-accent); box-shadow: 0 4px var(--color-accent-dark); }
-
-        /* Tela Inicial de Bloqueio - Cobre apenas a área do jogo, excluindo a sidebar */
+        /* Tela Inicial de Configuração de Jogadores (ConfigScreen) */
         .initial-screen {
             position: absolute;
             top: var(--header-height);
-            left: var(--sidebar-width);
+            left: 0;
             right: 0;
             bottom: 0;
-            background-color: rgba(0, 0, 0, 0.95); /* Cor mais escura para contraste */
+            background-color: rgba(0, 0, 0, 0.95);
             display: flex;
             flex-direction: column;
             justify-content: center;
             align-items: center;
-            z-index: 20;
+            z-index: 30; /* Acima da sidebar */
             gap: 20px;
             text-align: center;
+            padding: 20px;
         }
 
         .initial-screen.hidden { display: none; }
-        .initial-screen h1 { color: var(--color-primary); font-size: 3rem; }
-        .initial-screen p { color: var(--color-text); font-size: 1.2rem; max-width: 600px; }
-
-
-        /* Modal Manual (Sem alteração) */
-        .modal-overlay {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0, 0, 0, 0.8);
-            display: none;
-            justify-content: center;
-            align-items: center;
-            z-index: 100;
-        }
-
-        .modal-overlay.active { display: flex; }
-        .modal-content {
-            background: var(--color-surface);
-            border-radius: 10px;
-            width: 90%;
-            max-width: 800px;
-            max-height: 80vh;
-            overflow: hidden;
-            box-shadow: 0 0 15px rgba(0, 0, 0, 0.7);
-            display: flex;
-            flex-direction: column;
-        }
-
-        .modal-header { padding: 15px 20px; border-bottom: 1px solid #333; display: flex; justify-content: space-between; align-items: center; background-color: #333; }
-        .modal-header h3 { margin: 0; color: var(--color-primary); }
-        .modal-close { background: none; border: none; color: var(--color-text); font-size: 1.5rem; cursor: pointer; }
-        .modal-body { display: flex; flex-grow: 1; overflow: hidden; }
-        .modal-sidebar { width: 150px; background-color: #333; padding: 10px 0; flex-shrink: 0; }
-        .modal-tab { display: block; padding: 10px 15px; color: var(--color-text-secondary); cursor: pointer; transition: background-color 0.2s, color 0.2s; }
-        .modal-tab:hover { background-color: #444; color: var(--color-text); }
-        .modal-tab.active { background-color: var(--color-surface); color: var(--color-primary); font-weight: bold; }
-        .modal-main { flex-grow: 1; padding: 20px; overflow-y: auto; }
-        .modal-section { display: none; }
-        .modal-section.active { display: block; }
+        .initial-screen h1 { color: var(--color-primary); font-size: 2.5rem; }
+        .initial-screen p { color: var(--color-text); font-size: 1.1rem; max-width: 600px; margin-bottom: 20px;}
         
+        #playerSetupForm {
+            background-color: var(--color-surface);
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+            width: 100%;
+            max-width: 500px;
+        }
+        .player-input-group {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 15px;
+            align-items: center;
+        }
+        .player-input-group label {
+            width: 100px;
+            text-align: left;
+            font-weight: bold;
+        }
+        .player-input-group input[type="text"] {
+            flex-grow: 1;
+            padding: 10px;
+            border-radius: 6px;
+            border: 1px solid #444;
+            background-color: #333;
+            color: var(--color-text);
+        }
+        
+        #playerCountDisplay {
+            margin-bottom: 15px;
+            font-size: 1.2rem;
+            color: var(--color-accent);
+        }
+
+        /* Seleção de Ícone */
+        #iconSelection {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            margin-top: 10px;
+        }
+        .icon-option {
+            font-size: 1.5rem;
+            cursor: pointer;
+            padding: 8px;
+            border-radius: 50%;
+            border: 2px solid transparent;
+            transition: border-color 0.2s;
+        }
+        .icon-option.selected {
+            border-color: var(--color-primary);
+            background-color: rgba(50, 184, 198, 0.1);
+        }
+
         .svg-icon { width: 24px; height: 24px; fill: currentColor; }
 
-        /* Responsive adjustments for mobile/tablet */
+        /* Responsive adjustments */
         @media (max-width: 768px) {
             :root {
                 --sidebar-width: 100%;
                 --header-height: 50px;
-                --action-panel-height: 120px; /* Maior para botões empilhados */
+                --action-panel-height: 120px;
             }
 
-            .container {
-                flex-direction: column;
-            }
+            .container { flex-direction: column; }
+            .header { justify-content: space-between; padding: 0 10px; }
+            #currentPlayerInfo { font-size: 0.9rem; gap: 5px; }
 
             .sidebar {
                 width: 100%;
-                height: 80px; /* Altura fixa para mobile */
+                height: 120px; /* Maior para lista de PVs */
                 margin-top: var(--header-height);
                 flex-direction: row;
-                flex-wrap: nowrap;
+                flex-wrap: wrap;
                 justify-content: space-around;
-                align-items: center;
-                box-shadow: 0 2px 5px rgba(0, 0, 0, 0.5);
-                padding: 5px 10px;
-                overflow-x: auto; /* Permite rolar recursos se muitos */
+                align-items: flex-start;
+                padding: 10px;
             }
             
-            .sidebar h2 { display: none; } /* Oculta títulos na sidebar mobile */
-            .resource-item { padding: 4px 8px; font-size: 0.8rem; }
-            .resource-item .label { display: none; } /* Oculta texto, mostra apenas o emoji e valor */
+            .sidebar h2 { width: 100%; text-align: center; } 
+            
+            #recursosDisplay, #pvSection {
+                flex-grow: 1;
+                width: 48%;
+                max-width: 250px;
+            }
+            
+            #playerListDisplay { gap: 2px; }
+            .player-score-item { font-size: 0.8rem; padding: 4px; }
             
             .main-content {
-                margin-top: calc(var(--header-height) + 80px); /* Ajusta para header + sidebar mobile */
-                height: calc(100vh - var(--header-height) - 80px);
+                margin-top: calc(var(--header-height) + 120px);
+                height: calc(100vh - var(--header-height) - 120px);
             }
 
             .action-panel {
@@ -335,19 +388,18 @@
                 padding: 5px;
             }
             .action-btn {
-                width: 48%; /* 2 botões por linha */
+                width: 48%;
                 min-width: 0;
                 padding: 8px;
                 font-size: 0.9rem;
             }
             
-            #feedbackMessage {
-                left: 50%; /* Centraliza novamente na tela */
-            }
+            #feedbackMessage { left: 50%; min-width: 90%; font-size: 1rem; padding: 10px 15px; }
 
             .initial-screen {
                 left: 0;
-                top: calc(var(--header-height) + 80px); /* Ajusta a posição inicial */
+                top: var(--header-height);
+                bottom: 0;
             }
         }
     </style>
@@ -356,6 +408,11 @@
     <!-- Header -->
     <div class="header">
         <div class="logo">Gaia Dominium</div>
+        <!-- Informações do Jogador Atual -->
+        <div id="currentPlayerInfo">
+            <span id="currentPlayerIcon">❓</span>
+            <span id="currentPlayerName">Aguardando Início</span>
+        </div>
         <div class="manual-icon" id="manualIcon">
             <!-- Livro Icone SVG -->
             <svg class="svg-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
@@ -367,24 +424,25 @@
     <div class="container">
         <!-- Sidebar: Recursos e Pontos de Vitória -->
         <div class="sidebar">
-            <h2>Recursos (Facção Verde)</h2>
+            <h2 id="recursosTitle">Recursos (Jogador Atual)</h2>
             <div id="recursosDisplay">
                 <!-- Conteúdo atualizado por JS -->
             </div>
-            <h2>Pontos de Vitória</h2>
-            <div class="resource-item">
-                <span class="label">🏆 PVs Totais:</span>
-                <span class="value" id="pvDisplay">0</span>
-            </div>
-            <div class="resource-item">
-                <span class="label">Turno Atual:</span>
-                <span class="value" id="turnoDisplay">0</span>
+            <h2 id="pvTitle">Placar Global</h2>
+            <div id="pvSection">
+                <div class="resource-item">
+                    <span class="label">Turno Atual:</span>
+                    <span class="value" id="turnoDisplay">0</span>
+                </div>
+                <div id="playerListDisplay">
+                    <!-- Lista de jogadores e PVs (atualizado por JS) -->
+                </div>
             </div>
         </div>
 
         <!-- Main Content (Área do Mapa + Barra de Ações) -->
         <div class="main-content">
-            <!-- Game Map (Ocupa o máximo possível) -->
+            <!-- Game Map -->
             <div class="game-map" id="gameMap">
                 <!-- Regiões geradas por JS -->
             </div>
@@ -399,20 +457,37 @@
         </div>
     </div>
     
-    <!-- Tela Inicial de Bloqueio -->
+    <!-- Tela Inicial de Configuração de Jogadores -->
     <div class="initial-screen" id="initialScreen">
-        <h1>Bem-vindo a Gaia Dominium</h1>
+        <h1>Configuração de Partida</h1>
         <p>
-            Gerencie recursos, expanda seu domínio e acumule Pontos de Vitória. <br>
-            Lembre-se: Você só pode realizar **UMA AÇÃO** (Construir, Recolher ou Negociar) por turno.
+            Esta é uma partida multiplayer local (hotseat) para 2 a 4 jogadores. Cadastre os jogadores para começar.
         </p>
-        <button class="action-btn" id="startGameBtn" onclick="iniciarJogo()">Iniciar Jogo</button>
+        
+        <div id="playerSetupForm">
+            <div id="playerCountDisplay">0/4 Jogadores Registrados</div>
+            
+            <div class="player-input-group">
+                <label for="playerName">Nome:</label>
+                <input type="text" id="playerName" placeholder="Nome do Jogador">
+            </div>
+
+            <div class="player-input-group">
+                <label>Ícone:</label>
+                <div id="iconSelection">
+                    <!-- Ícones gerados por JS -->
+                </div>
+            </div>
+
+            <button class="action-btn" id="addPlayerBtn" onclick="adicionarJogador()">Adicionar Jogador</button>
+            <button class="action-btn" id="startGameBtn" onclick="iniciarJogo()" disabled>Iniciar Jogo</button>
+        </div>
     </div>
 
     <!-- Visor de Feedback Central -->
     <div id="feedbackMessage" class="feedback-message"></div>
 
-    <!-- Modal Manual (Não alterado) -->
+    <!-- Modal Manual (mantido igual) -->
     <div class="modal-overlay" id="modalOverlay">
         <div class="modal-content">
             <div class="modal-header">
@@ -457,22 +532,18 @@
 
 
     <script type="module">
-        // Variáveis globais para simulação (substituir por Firestore em um app real)
+        // --- Variáveis Globais de Estado (Armazenamento em RAM) ---
         let jogo = {
             turno: 0,
-            pv: 0,
-            recursos: {
-                madeira: 10,
-                pedra: 5,
-                ouro: 3,
-                agua: 5
-            },
+            players: [],
+            currentPlayerIndex: 0, // Índice do jogador atual no array 'players'
             regioes: [],
-            faccao: 'Verde',
-            acoesPermitidas: true
+            acoesPermitidas: false,
+            gameStarted: false
         };
 
         const mapSize = 5;
+        const maxPlayers = 4;
         const regionNames = [
             "Bacia", "Pico", "Vale", "Delta", "Costa",
             "Clareira", "Bosque", "Brejo", "Montanha", "Litoral",
@@ -480,6 +551,9 @@
             "Tundra", "Taiga", "Geleira", "Vulcão", "Fosso",
             "Reserva", "Floresta", "Lago", "Prado", "Caverna"
         ];
+        
+        const playerIcons = ['🔴', '🔵', '🟡', '🟣', '🟢', '🟤'];
+        const playerColors = ['#F44336', '#2196F3', '#FFEB3B', '#9C27B0', '#4CAF50', '#795548'];
 
         // --- Funções de Utilitários ---
         function mostrarFeedback(message, type = 'info', duration = 3000) {
@@ -502,19 +576,130 @@
                 default: return '❓';
             }
         }
+        
+        function getCurrentPlayer() {
+            if (jogo.players.length === 0) return null;
+            return jogo.players[jogo.currentPlayerIndex];
+        }
+
+        // --- Funções de Configuração de Jogadores ---
+
+        function renderizarIcones() {
+            const selectionEl = document.getElementById('iconSelection');
+            selectionEl.innerHTML = '';
+            playerIcons.forEach(icon => {
+                const span = document.createElement('span');
+                span.classList.add('icon-option');
+                span.textContent = icon;
+                span.setAttribute('data-icon', icon);
+                span.onclick = () => selecionarIcone(icon);
+                selectionEl.appendChild(span);
+            });
+            // Seleciona o primeiro por padrão
+            selecionarIcone(playerIcons[0]);
+        }
+
+        function selecionarIcone(icon) {
+            document.querySelectorAll('.icon-option').forEach(span => {
+                span.classList.remove('selected');
+            });
+            const selectedIconEl = document.querySelector(`.icon-option[data-icon="${icon}"]`);
+            if (selectedIconEl) {
+                selectedIconEl.classList.add('selected');
+            }
+        }
+
+        function adicionarJogador() {
+            const nameInput = document.getElementById('playerName');
+            const name = nameInput.value.trim();
+            const selectedIcon = document.querySelector('.icon-option.selected')?.getAttribute('data-icon');
+
+            if (!name) {
+                mostrarFeedback("O nome do jogador não pode estar vazio.", 'error', 2000);
+                return;
+            }
+
+            if (jogo.players.length >= maxPlayers) {
+                mostrarFeedback(`Máximo de ${maxPlayers} jogadores atingido.`, 'error', 2000);
+                return;
+            }
+
+            // Verifica se o ícone já está em uso
+            if (jogo.players.some(p => p.icon === selectedIcon)) {
+                mostrarFeedback("Este ícone já está em uso. Escolha outro.", 'error', 2000);
+                return;
+            }
+
+            // Verifica se o nome já está em uso
+            if (jogo.players.some(p => p.name.toLowerCase() === name.toLowerCase())) {
+                mostrarFeedback("Este nome já está em uso. Escolha outro.", 'error', 2000);
+                return;
+            }
+            
+            // Determina a cor com base no número de jogadores (para visualização de região)
+            const colorIndex = jogo.players.length % playerColors.length;
+
+            const newPlayer = {
+                id: jogo.players.length + 1,
+                name: name,
+                icon: selectedIcon,
+                color: playerColors[colorIndex],
+                pv: 0,
+                recursos: {
+                    madeira: 10,
+                    pedra: 5,
+                    ouro: 3,
+                    agua: 5
+                },
+                acoesPermitidas: true
+            };
+
+            jogo.players.push(newPlayer);
+            nameInput.value = ''; // Limpa o campo de nome
+
+            document.getElementById('playerCountDisplay').textContent = `${jogo.players.length}/${maxPlayers} Jogadores Registrados`;
+            mostrarFeedback(`Jogador ${name} (${selectedIcon}) adicionado.`, 'success', 1500);
+
+            // Habilita o botão Iniciar Jogo se houver 2 ou mais jogadores
+            if (jogo.players.length >= 2) {
+                document.getElementById('startGameBtn').disabled = false;
+            }
+            
+            // Desabilita o botão Adicionar se atingir o máximo
+            if (jogo.players.length >= maxPlayers) {
+                 document.getElementById('addPlayerBtn').disabled = true;
+            }
+            
+            // Seleciona o próximo ícone disponível (se houver)
+            const availableIcons = playerIcons.filter(icon => !jogo.players.some(p => p.icon === icon));
+            if (availableIcons.length > 0) {
+                 selecionarIcone(availableIcons[0]);
+            }
+        }
 
         // --- Funções de Jogo ---
 
         function inicializarMapa() {
             jogo.regioes = [];
+            const regionsPerPlayer = Math.floor(mapSize * mapSize / jogo.players.length);
+            let playerIndex = 0;
+            
             for (let i = 0; i < mapSize * mapSize; i++) {
+                const player = jogo.players[playerIndex % jogo.players.length];
+                
                 jogo.regioes.push({
                     id: i,
                     nome: regionNames[i],
                     bioma: ['Floresta', 'Savana', 'Pântano', 'Tundra'][Math.floor(Math.random() * 4)],
-                    controlador: jogo.faccao,
+                    controladorId: player.id, // O ID do jogador que controla a região
+                    controladorCor: player.color,
                     nivelExploracao: 0
                 });
+                
+                // Distribui as regiões uniformemente no início
+                if ((i + 1) % regionsPerPlayer === 0) {
+                    playerIndex++;
+                }
             }
             renderizarMapa();
         }
@@ -525,6 +710,11 @@
             jogo.regioes.forEach(regiao => {
                 const regionEl = document.createElement('div');
                 regionEl.classList.add('region');
+                
+                // Adiciona a cor do jogador como variável CSS para a borda lateral
+                regionEl.style.setProperty('--region-border-color', regiao.controladorCor);
+                regionEl.setAttribute('data-player-color', regiao.controladorCor);
+
                 regionEl.innerHTML = `
                     <span class="region-name">${regiao.nome}</span>
                     <span class="region-info">${regiao.bioma}</span>
@@ -536,13 +726,19 @@
         }
 
         function atualizarDisplay() {
-            document.getElementById('pvDisplay').textContent = jogo.pv;
-            document.getElementById('turnoDisplay').textContent = jogo.turno;
+            const currentPlayer = getCurrentPlayer();
+            if (!currentPlayer) return;
 
+            // 1. Header (Jogador Atual)
+            document.getElementById('currentPlayerIcon').textContent = currentPlayer.icon;
+            document.getElementById('currentPlayerName').textContent = currentPlayer.name;
+            document.getElementById('recursosTitle').textContent = `Recursos (${currentPlayer.name})`;
+
+            // 2. Recursos do Jogador Atual
             const recursosEl = document.getElementById('recursosDisplay');
             recursosEl.innerHTML = '';
             
-            for (const [key, value] of Object.entries(jogo.recursos)) {
+            for (const [key, value] of Object.entries(currentPlayer.recursos)) {
                 recursosEl.innerHTML += `
                     <div class="resource-item">
                         <span class="label">${getEmoji(key)} ${key.charAt(0).toUpperCase() + key.slice(1)}:</span>
@@ -550,43 +746,96 @@
                     </div>
                 `;
             }
+
+            // 3. Placar Global (PVs)
+            document.getElementById('turnoDisplay').textContent = jogo.turno;
+            const playerListEl = document.getElementById('playerListDisplay');
+            playerListEl.innerHTML = '';
+            
+            // Ordena os jogadores por PVs (do maior para o menor)
+            const sortedPlayers = [...jogo.players].sort((a, b) => b.pv - a.pv);
+
+            sortedPlayers.forEach(player => {
+                const itemEl = document.createElement('div');
+                itemEl.classList.add('player-score-item');
+                if (player.id === currentPlayer.id) {
+                    itemEl.classList.add('active-player');
+                }
+                itemEl.innerHTML = `
+                    <span>${player.icon} ${player.name}</span>
+                    <span style="color: ${player.color}; font-weight: bold;">${player.pv} PV</span>
+                `;
+                playerListEl.appendChild(itemEl);
+            });
+            
+            // Verifica a condição de vitória
+            const winner = jogo.players.find(p => p.pv >= 25);
+            if (winner) {
+                mostrarFeedback(`🎉 Fim de Jogo! O Vencedor é: ${winner.name} (${winner.icon}) com ${winner.pv} PVs!`, 'success', 10000);
+                jogo.gameStarted = false;
+                desabilitarBotoesAcao(true);
+                document.getElementById('endTurnBtn').textContent = "Jogo Finalizado";
+                document.getElementById('endTurnBtn').disabled = true;
+            }
+        }
+        
+        function desabilitarBotoesAcao(disabled) {
+            document.getElementById('construirBtn').disabled = disabled;
+            document.getElementById('recolherBtn').disabled = disabled;
+            document.getElementById('negociarBtn').disabled = disabled;
         }
 
         function iniciarJogo() {
-            document.getElementById('initialScreen').classList.add('hidden');
-            mostrarFeedback("Jogo iniciado! Clique em 'Iniciar Turno' para começar a Fase de Renda.", 'info', 5000);
+            if (jogo.players.length < 2) {
+                mostrarFeedback("Mínimo de 2 jogadores para iniciar.", 'error', 3000);
+                return;
+            }
             
-            // Força a habilitação para o primeiro turno
-            document.getElementById('endTurnBtn').textContent = "Iniciar Turno (Turno 1)";
+            // Oculta tela de configuração
+            document.getElementById('initialScreen').classList.add('hidden');
+            jogo.gameStarted = true;
+            
+            // Inicializa mapa e define o primeiro jogador
+            inicializarMapa();
+            jogo.currentPlayerIndex = 0;
+            
+            // O primeiro "Finalizar Turno" se torna "Iniciar Turno"
+            document.getElementById('endTurnBtn').textContent = `Iniciar Turno (Turno 1)`;
             document.getElementById('endTurnBtn').disabled = false;
+            desabilitarBotoesAcao(true);
+
+            atualizarDisplay();
+            mostrarFeedback(`Partida iniciada com ${jogo.players.length} jogadores. Clique em 'Iniciar Turno' para começar.`, 'info', 5000);
         }
 
         function iniciarTurno() {
+            if (!jogo.gameStarted) return;
+            
             jogo.turno++;
             
-            // 1. Fase de Renda (Produção)
-            // Simulação de renda base
-            jogo.recursos.madeira += 2;
-            jogo.recursos.pedra += 1;
+            const currentPlayer = getCurrentPlayer();
             
-            // Renda por Exploração (exemplo)
-            const rendaExploracao = jogo.regioes.filter(r => r.controlador === jogo.faccao && r.nivelExploracao > 0).length;
-            jogo.recursos.madeira += rendaExploracao;
-            jogo.recursos.agua += rendaExploracao;
+            // 1. Fase de Renda (Produção)
+            // Renda base
+            currentPlayer.recursos.madeira += 2;
+            currentPlayer.recursos.pedra += 1;
+            
+            // Renda por Exploração em regiões controladas
+            const rendaExploracao = jogo.regioes.filter(r => r.controladorId === currentPlayer.id && r.nivelExploracao > 0).length;
+            currentPlayer.recursos.madeira += rendaExploracao;
+            currentPlayer.recursos.agua += rendaExploracao;
 
             // 2. Fase de Ação: Habilita botões
             jogo.acoesPermitidas = true;
-            document.getElementById('construirBtn').disabled = false;
-            document.getElementById('recolherBtn').disabled = false;
-            document.getElementById('negociarBtn').disabled = false;
+            desabilitarBotoesAcao(false);
             document.getElementById('endTurnBtn').disabled = true;
             document.getElementById('endTurnBtn').textContent = "Finalizar Turno";
 
             atualizarDisplay();
-            mostrarFeedback(`Turno ${jogo.turno} iniciado. Renda base recebida. Escolha UMA ação.`, 'info');
+            mostrarFeedback(`Turno ${jogo.turno} - ${currentPlayer.name}. Renda recebida. Escolha UMA ação.`, 'info', 4000);
         }
 
-        function verificarCusto(acao) {
+        function verificarCusto(acao, player) {
             let custo = {};
             switch (acao) {
                 case 'Construir':
@@ -606,7 +855,7 @@
             let recursosFaltando = [];
 
             for (const [recurso, quantidade] of Object.entries(custo)) {
-                if (jogo.recursos[recurso] < quantidade) {
+                if (player.recursos[recurso] < quantidade) {
                     podeExecutar = false;
                     recursosFaltando.push(`${quantidade} de ${recurso}`);
                 }
@@ -624,12 +873,14 @@
         }
 
         function executarAcao(acao) {
-            if (!jogo.acoesPermitidas) {
-                mostrarFeedback("Você já executou uma ação neste turno. Por favor, finalize o turno.", 'error');
+            const currentPlayer = getCurrentPlayer();
+
+            if (!jogo.acoesPermitidas || !currentPlayer) {
+                mostrarFeedback("Por favor, clique em 'Iniciar Turno' ou 'Finalizar Turno'.", 'error');
                 return;
             }
 
-            const resultadoCusto = verificarCusto(acao);
+            const resultadoCusto = verificarCusto(acao, currentPlayer);
 
             if (!resultadoCusto.podeExecutar) {
                 mostrarFeedback(resultadoCusto.mensagem, 'error', 4000);
@@ -638,61 +889,90 @@
 
             // 1. Gasta recursos
             for (const [recurso, quantidade] of Object.entries(resultadoCusto.custo)) {
-                jogo.recursos[recurso] -= quantidade;
+                currentPlayer.recursos[recurso] -= quantidade;
             }
 
             // 2. Aplica Efeito
             let mensagemEfeito = '';
             switch (acao) {
                 case 'Construir':
-                    jogo.pv += 5;
-                    jogo.regioes[0].nivelExploracao += 1; // Exemplo: afeta a primeira região
-                    mensagemEfeito = "Estrutura construída. +5 PV e +1 Nível de Exploração na Bacia.";
+                    currentPlayer.pv += 5;
+                    // Exemplo: afeta a primeira região controlada
+                    const controlledRegion = jogo.regioes.find(r => r.controladorId === currentPlayer.id);
+                    if (controlledRegion) {
+                        controlledRegion.nivelExploracao += 1;
+                        mensagemEfeito = `Estrutura construída. +5 PV e +1 Nível de Exploração em ${controlledRegion.nome}.`;
+                    } else {
+                        mensagemEfeito = "Estrutura construída. +5 PV. (Nenhuma região controlada para explorar)";
+                    }
+                    renderizarMapa(); // Atualiza o mapa para refletir a exploração
                     break;
                 case 'Recolher':
-                    jogo.recursos.madeira += 4;
-                    jogo.recursos.pedra += 1;
-                    jogo.pv += 2;
+                    currentPlayer.recursos.madeira += 4;
+                    currentPlayer.recursos.pedra += 1;
+                    currentPlayer.pv += 2;
                     mensagemEfeito = "Recursos recolhidos. +4 Madeira, +1 Pedra e +2 PV.";
                     break;
                 case 'Negociar':
-                    jogo.recursos.pedra += 3;
-                    jogo.recursos.agua -= 1; // Negociação: troca Ouro por Pedra, mas gasta Água
-                    jogo.pv += 3;
+                    currentPlayer.recursos.pedra += 3;
+                    currentPlayer.recursos.agua -= 1; 
+                    currentPlayer.pv += 3;
                     mensagemEfeito = "Negociação concluída. Você ganhou +3 Pedra e +3 PV, mas gastou 1 Água.";
                     break;
             }
 
             // 3. Bloqueia ações e habilita Finalizar Turno
             jogo.acoesPermitidas = false;
-            document.getElementById('construirBtn').disabled = true;
-            document.getElementById('recolherBtn').disabled = true;
-            document.getElementById('negociarBtn').disabled = true;
+            desabilitarBotoesAcao(true);
             document.getElementById('endTurnBtn').disabled = false;
 
             atualizarDisplay();
             mostrarFeedback(`✅ ${acao} executada! ${mensagemEfeito} Agora, clique em 'Finalizar Turno'.`, 'success', 6000);
-            renderizarMapa(); // Atualiza o mapa após a ação
         }
 
         function finalizarTurno() {
-            // Habilita a próxima ação: Iniciar Turno
-            document.getElementById('construirBtn').disabled = true;
-            document.getElementById('recolherBtn').disabled = true;
-            document.getElementById('negociarBtn').disabled = true;
-            document.getElementById('endTurnBtn').disabled = false;
+            if (!jogo.gameStarted) return;
             
-            document.getElementById('endTurnBtn').textContent = `Iniciar Turno (Turno ${jogo.turno + 1})`;
+            const currentPlayer = getCurrentPlayer();
+            
+            // 1. Transição de Jogador (Hotseat)
+            jogo.currentPlayerIndex = (jogo.currentPlayerIndex + 1) % jogo.players.length;
+            const nextPlayer = getCurrentPlayer();
+            
+            // 2. Bloqueia ações e prepara o botão
+            desabilitarBotoesAcao(true);
+            document.getElementById('endTurnBtn').disabled = false;
+            document.getElementById('endTurnBtn').textContent = `Passar para ${nextPlayer.name}`;
 
+            // 3. Atualiza Display e Notifica Próximo Jogador
             atualizarDisplay();
-            mostrarFeedback(`Turno ${jogo.turno} finalizado. Prepare-se para o próximo turno.`, 'info');
+            // Ação de iniciar turno só será chamada no clique do botão após esta finalização
+            mostrarFeedback(`Turno de ${currentPlayer.name} finalizado. O próximo é ${nextPlayer.name} (${nextPlayer.icon}).`, 'info', 5000);
+            
+            // Altera o texto do botão Finalizar Turno para iniciar o turno do próximo jogador
+            document.getElementById('endTurnBtn').onclick = iniciarTurno;
+            
+            // Se o índice voltou para 0, um novo ciclo de rodada começou
+            if (jogo.currentPlayerIndex === 0) {
+                 document.getElementById('endTurnBtn').textContent = `Iniciar Turno (Rodada ${Math.floor(jogo.turno / jogo.players.length) + 1})`;
+            }
         }
 
         function selecionarRegiao(regiaoId) {
+            if (!jogo.gameStarted) {
+                mostrarFeedback("Inicie o jogo primeiro!", 'error', 2000);
+                return;
+            }
+            
             // Lógica de seleção (mantida simples)
             document.querySelectorAll('.region').forEach(el => el.classList.remove('selected'));
-            document.querySelectorAll('.region')[regiaoId].classList.add('selected');
-            mostrarFeedback(`Região ${jogo.regioes[regiaoId].nome} selecionada.`, 'info', 1500);
+            const regionEl = document.querySelectorAll('.region')[regiaoId];
+            regionEl.classList.add('selected');
+            
+            const regiao = jogo.regioes[regiaoId];
+            const controller = jogo.players.find(p => p.id === regiao.controladorId);
+            
+            mostrarFeedback(`Região ${regiao.nome} controlada por ${controller ? controller.name + ' (' + controller.icon + ')' : 'Ninguém'}.`, 'info', 2500);
         }
 
         // --- Funções Manuais (sem alteração) ---
@@ -705,7 +985,6 @@
         }
 
         function mudarAba(abaId) {
-            // Remove active de todas as abas
             document.querySelectorAll('.modal-tab').forEach(tab => {
                 tab.classList.remove('active');
             });
@@ -713,21 +992,19 @@
                 section.classList.remove('active');
             });
 
-            // Adiciona active para a aba selecionada
-            // Nota: Evento 'click' é passado implicitamente
             event.target.classList.add('active');
             document.getElementById(abaId).classList.add('active');
         }
 
-        // Event Listeners
+        // Event Listeners e Inicialização
         document.getElementById('manualIcon').addEventListener('click', abrirManual);
         document.getElementById('modalOverlay').addEventListener('click', function(e) {
             if (e.target === this) fecharManual();
         });
-
-        // Inicializar Jogo
-        inicializarMapa();
-        atualizarDisplay();
+        
+        // Inicialização de Componentes
+        renderizarIcones();
+        atualizarDisplay(); // Inicializa os painéis com dados padrões
     </script>
 </body>
 </html>
