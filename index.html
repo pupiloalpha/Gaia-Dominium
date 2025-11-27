@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Gaia Dominium - MVP (Estilizado)</title>
+    <title>Gaia Dominium - MVP (Integrado Firestore)</title>
     <!-- Tailwind CSS CDN para Estilização -->
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
@@ -51,9 +51,22 @@
         .modal-tab.active {
             @apply border-b-2 border-accent-bronze font-bold text-accent-bronze;
         }
+        .loading-overlay {
+            background-color: rgba(0, 0, 0, 0.9);
+            z-index: 1000;
+        }
     </style>
 </head>
 <body class="bg-fundo-dark text-texto-claro font-sans min-h-screen overflow-hidden">
+    
+    <!-- Loader para indicar que o Firebase está inicializando ou sincronizando -->
+    <div id="loadingOverlay" class="loading-overlay fixed inset-0 flex items-center justify-center">
+        <div class="flex flex-col items-center space-y-3">
+            <div class="animate-spin rounded-full h-16 w-16 border-b-4 border-accent-verde"></div>
+            <p class="text-lg font-semibold text-accent-verde">Conectando ao Dominium... Aguarde</p>
+            <p class="text-sm text-texto-claro/50">Certifique-se de que as variáveis globais do Firebase estão carregadas.</p>
+        </div>
+    </div>
 
     <!-- Header com Logo e Ícone Manual -->
     <header class="fixed top-0 left-0 right-0 bg-superficie shadow-xl z-10 flex justify-between items-center h-14 px-4">
@@ -134,6 +147,11 @@
                     <!-- Logs serão inseridos aqui -->
                 </div>
             </div>
+            
+            <!-- Exibição do User ID para fins de debug/multiplayer -->
+            <div class="border-t border-gray-700 pt-4">
+                <p class="text-xs text-texto-claro/50">ID da Sessão (App/User): <span id="appUserId" class="font-mono text-xs text-accent-bronze">Aguardando Auth...</span></p>
+            </div>
 
         </aside>
 
@@ -143,7 +161,7 @@
             
             <!-- Indicador de Turno (G) -->
             <div id="turnoStatus" class="mb-6 p-3 bg-superficie/70 rounded-lg shadow-lg">
-                <p class="text-lg font-semibold">Turno Atual: <span id="numTurno" class="text-accent-verde">1</span> | Jogador: <span id="jogadorAtual" class="text-accent-bronze">Você (Facção Verde)</span></p>
+                <p class="text-lg font-semibold">Turno Atual: <span id="numTurno" class="text-accent-verde">0</span> | Jogador: <span id="jogadorAtual" class="text-accent-bronze">Aguardando Sincronização...</span></p>
             </div>
 
             <!-- Mapa (E) -->
@@ -159,10 +177,10 @@
             
             <!-- Botões de Ação (H) -->
             <div id="acoesContainer" class="grid grid-cols-2 gap-3">
-                <button id="moverBtn" class="acao-btn bg-accent-bronze hover:bg-accent-bronze/90 text-fundo-dark font-bold py-3 rounded-lg shadow-lg hover:shadow-xl transition-all disabled:opacity-50 disabled:cursor-not-allowed" onclick="iniciarAcao('Mover')">Mover/Sabotar</button>
-                <button id="construirBtn" class="acao-btn bg-accent-bronze hover:bg-accent-bronze/90 text-fundo-dark font-bold py-3 rounded-lg shadow-lg hover:shadow-xl transition-all disabled:opacity-50 disabled:cursor-not-allowed" onclick="iniciarAcao('Construir')">Desenvolver/Comércio</button>
-                <button id="recolherBtn" class="acao-btn bg-accent-bronze hover:bg-accent-bronze/90 text-fundo-dark font-bold py-3 rounded-lg shadow-lg hover:shadow-xl transition-all disabled:opacity-50 disabled:cursor-not-allowed" onclick="iniciarAcao('Recolher')">Recolher/P&D</button>
-                <button id="negociarBtn" class="acao-btn bg-accent-bronze hover:bg-accent-bronze/90 text-fundo-dark font-bold py-3 rounded-lg shadow-lg hover:shadow-xl transition-all disabled:opacity-50 disabled:cursor-not-allowed" onclick="iniciarAcao('Negociar')">Regra da Facção</button>
+                <button id="moverBtn" class="acao-btn bg-accent-bronze hover:bg-accent-bronze/90 text-fundo-dark font-bold py-3 rounded-lg shadow-lg hover:shadow-xl transition-all disabled:opacity-50 disabled:cursor-not-allowed" onclick="iniciarAcao('Mover')" disabled>Mover/Sabotar</button>
+                <button id="construirBtn" class="acao-btn bg-accent-bronze hover:bg-accent-bronze/90 text-fundo-dark font-bold py-3 rounded-lg shadow-lg hover:shadow-xl transition-all disabled:opacity-50 disabled:cursor-not-allowed" onclick="iniciarAcao('Construir')" disabled>Desenvolver/Comércio</button>
+                <button id="recolherBtn" class="acao-btn bg-accent-bronze hover:bg-accent-bronze/90 text-fundo-dark font-bold py-3 rounded-lg shadow-lg hover:shadow-xl transition-all disabled:opacity-50 disabled:cursor-not-allowed" onclick="iniciarAcao('Recolher')" disabled>Recolher/P&D</button>
+                <button id="negociarBtn" class="acao-btn bg-accent-bronze hover:bg-accent-bronze/90 text-fundo-dark font-bold py-3 rounded-lg shadow-lg hover:shadow-xl transition-all disabled:opacity-50 disabled:cursor-not-allowed" onclick="iniciarAcao('Negociar')" disabled>Regra da Facção</button>
             </div>
 
             <!-- Botão de Finalizar Ação -->
@@ -187,8 +205,9 @@
         </aside>
     </div>
 
-    <!-- Modal para o Manual do Jogo -->
+    <!-- Modal para o Manual do Jogo (Oculto para brevidade, mas mantido) -->
     <div id="modalOverlay" class="modal-overlay fixed inset-0 z-50 flex items-center justify-center hidden">
+        <!-- Conteúdo do Manual aqui (não alterado da versão anterior) -->
         <div class="bg-superficie w-11/12 max-w-3xl rounded-xl shadow-2xl p-6 relative">
             <h3 class="text-2xl font-bold mb-4 text-accent-bronze">Manual do Jogo: Gaia Dominium</h3>
             <button class="absolute top-4 right-4 text-texto-claro/70 hover:text-texto-claro" onclick="fecharManual()">&times;</button>
@@ -200,7 +219,6 @@
             </div>
 
             <div id="visaoGeral" class="modal-section active h-96 overflow-y-auto text-sm space-y-3">
-                <!-- Conteúdo do manual (adaptado do PDF) -->
                 <p>Gaia Dominium é um jogo de estratégia digital que combina gerenciamento de recursos (*Eurogames*) e controle de área (*Ameritrash*). Seu objetivo é expandir o domínio florestal e acumular Pontos de Vitória em um dos três eixos: Conservação, Domínio Militar ou Produção Econômica.</p>
                 <h4 class="font-semibold mt-3 text-accent-verde">Componentes Chave:</h4>
                 <ul class="list-disc list-inside space-y-1 ml-4">
@@ -241,32 +259,182 @@
             </div>
         </div>
     </div>
+    
+    <!-- MÓDULOS FIREBASE (TYPE="MODULE" É ESSENCIAL) -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, doc, setDoc, onSnapshot, setLogLevel } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
-    <!-- JavaScript para a Lógica do Jogo -->
+        // Variáveis de escopo global para Firebase (necessário para acesso pelas funções globais)
+        window.db = null;
+        window.auth = null;
+        window.userId = null;
+        window.GAME_STATE_DOC = null;
+
+        // Estado local (será sincronizado pelo Firestore)
+        window.gameState = {};
+        window.recursos = {};
+        window.pontos = {};
+        
+        // Caminho público OBRIGATÓRIO para multiplayer: /artifacts/{appId}/public/data/{collection}/{docId}
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+        const GAME_PATH = `/artifacts/${appId}/public/data/gaiaDominiumGames/master`;
+
+        // Configuração do Firebase
+        const firebaseConfig = JSON.parse(typeof __firebase_config !== 'undefined' ? __firebase_config : '{}');
+        const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
+
+        // ----------------------------------------------------
+        // 1. INICIALIZAÇÃO E AUTENTICAÇÃO
+        // ----------------------------------------------------
+        async function firebaseInit() {
+            try {
+                // Configura o nível de log para debug no console
+                setLogLevel('debug');
+                
+                const app = initializeApp(firebaseConfig);
+                window.db = getFirestore(app);
+                window.auth = getAuth(app);
+
+                // Tenta autenticação com o token customizado ou anonimamente
+                if (initialAuthToken) {
+                    await signInWithCustomToken(window.auth, initialAuthToken);
+                } else {
+                    await signInAnonymously(window.auth);
+                }
+
+                // Espera a mudança de estado de autenticação
+                onAuthStateChanged(window.auth, (user) => {
+                    if (user) {
+                        window.userId = user.uid;
+                        
+                        // Atualiza o display com o ID
+                        document.getElementById('appUserId').textContent = `${appId} / ${window.userId.substring(0, 10)}...`;
+
+                        // Define o documento de estado do jogo (público)
+                        window.GAME_STATE_DOC = doc(window.db, GAME_PATH);
+
+                        // Inicia o listener de dados em tempo real
+                        iniciarListener();
+
+                    } else {
+                        console.error("Autenticação falhou ou usuário deslogado.");
+                    }
+                });
+            } catch (error) {
+                console.error("Erro ao inicializar ou autenticar o Firebase:", error);
+                document.getElementById('loadingOverlay').innerHTML = `<p class="text-red-500 text-lg">ERRO DE CONEXÃO: ${error.message}</p>`;
+            }
+        }
+        
+        // ----------------------------------------------------
+        // 2. LISTENER DE DADOS (REAL-TIME)
+        // ----------------------------------------------------
+        function iniciarListener() {
+            // onSnapshot: Escuta em tempo real o estado do jogo
+            onSnapshot(window.GAME_STATE_DOC, (docSnapshot) => {
+                if (docSnapshot.exists()) {
+                    const data = docSnapshot.data();
+                    
+                    // Sincroniza estados locais com o estado do banco
+                    window.gameState = data.gameState || { turno: 1, jogador: 1, acaoExecutada: false };
+                    window.recursos = data.recursos || { madeira: 0, agua: 0, credito: 0, tecnologia: 0 };
+                    window.pontos = data.pontos || { conservacao: 0, militar: 0, producao: 0 };
+
+                    console.log("Estado do jogo sincronizado (Turno:", window.gameState.turno, ")");
+                    
+                    // Atualiza a interface gráfica com os novos dados
+                    window.atualizarDisplay();
+                    
+                    // Esconde o loader após a primeira sincronização
+                    document.getElementById('loadingOverlay').classList.add('hidden');
+                    
+                    // Habilita a jogabilidade
+                    window.habilitarBotoes();
+
+                } else {
+                    // Se o documento não existe, inicializa o jogo e salva no banco
+                    console.log("Documento do jogo não encontrado. Inicializando um novo jogo...");
+                    window.inicializarNovoJogo();
+                }
+            }, (error) => {
+                console.error("Erro no listener do Firestore:", error);
+                // Exibe uma mensagem de erro na interface
+                document.getElementById('loadingOverlay').innerHTML = `<p class="text-red-500 text-lg">ERRO DE SINCRONIZAÇÃO: ${error.code}</p>`;
+            });
+        }
+
+        // ----------------------------------------------------
+        // 3. SALVAR ESTADO DO JOGO (Persistência)
+        // ----------------------------------------------------
+        window.salvarEstado = async function() {
+            if (!window.GAME_STATE_DOC) {
+                console.error("Documento do jogo não está pronto para salvar.");
+                return;
+            }
+            try {
+                // Usa setDoc para substituir o estado completo. Merge: true não é usado para garantir
+                // que o estado do jogo seja sempre consistente.
+                await setDoc(window.GAME_STATE_DOC, {
+                    gameState: window.gameState,
+                    recursos: window.recursos,
+                    pontos: window.pontos
+                });
+                console.log("Estado do jogo salvo com sucesso!");
+            } catch (e) {
+                console.error("Erro ao salvar o estado do jogo:", e);
+                window.logAcao("ERRO: Falha ao salvar no banco de dados.");
+            }
+        }
+        
+        // ----------------------------------------------------
+        // 4. LÓGICA DE INICIALIZAÇÃO E CONTROLE
+        // ----------------------------------------------------
+        window.inicializarNovoJogo = async function() {
+            window.gameState = {
+                turno: 1,
+                jogador: 1,
+                acaoExecutada: false,
+                regiaoSelecionada: null
+            };
+            window.recursos = {
+                madeira: 5,
+                agua: 2,
+                credito: 5,
+                tecnologia: 1
+            };
+            window.pontos = {
+                conservacao: 10,
+                militar: 5,
+                producao: 15
+            };
+            
+            window.logAcao("Novo jogo Gaia Dominium inicializado. Turno 1.");
+            await window.salvarEstado();
+        }
+
+        window.habilitarBotoes = function() {
+            // Habilita as ações se não houver ação executada neste turno
+            if (!window.gameState.acaoExecutada) {
+                document.querySelectorAll('.acao-btn').forEach(btn => btn.disabled = false);
+            } else {
+                document.getElementById('finalizarAcaoBtn').disabled = false;
+            }
+            // O botão de Passar Turno só é habilitado após finalizarAcao()
+        }
+
+        // Inicia a conexão do Firebase assim que o script for carregado
+        firebaseInit();
+    </script>
+    
+    <!-- JavaScript para a Lógica do Jogo (AGORA USANDO VARIÁVEIS GLOBAIS SINCRONIZADAS) -->
     <script>
-        // Variáveis Globais de Estado
-        let gameState = {
-            turno: 1,
-            jogador: 1,
-            acaoExecutada: false,
-            regiaoSelecionada: null
-        };
-
-        let recursos = {
-            madeira: 5,
-            agua: 2,
-            credito: 5,
-            tecnologia: 1
-        };
-
-        let pontos = {
-            conservacao: 10,
-            militar: 5,
-            producao: 15
-        };
-
-        // Dados Simples do Mapa (5x5 grid)
+        // Variáveis de Estado agora são globais (window.gameState, window.recursos, etc.)
+        
+        // Dados Simples do Mapa (5x5 grid) - ESTÁTICO, NÃO VAI PARA O FIREBASE
         const mapa = [
+            // ... (Dados do mapa mantidos do arquivo anterior) ...
             { id: 1, nome: "Fl. Norte", cor: "map-floresta", producao: { madeira: 1 } },
             { id: 2, nome: "Planícies", cor: "map-savana", producao: { credito: 1 } },
             { id: 3, nome: "Capital A", cor: "bg-green-700", producao: { agua: 1 } },
@@ -299,21 +467,22 @@
         ];
 
 
-        // Função para Inicializar o Mapa
+        // Função para Inicializar o Mapa (APENAS HTML)
         function inicializarMapa() {
             const container = document.getElementById('mapaContainer');
-            mapa.forEach(regiao => {
-                const div = document.createElement('div');
-                div.id = `regiao-${regiao.id}`;
-                div.className = `map-region ${regiao.cor} hover:shadow-xl hover:scale-[1.03] flex items-center justify-center text-center text-xs p-1 h-16 transition-all`;
-                div.textContent = regiao.nome;
-                div.title = `Região: ${regiao.nome} (ID: ${regiao.id})`;
-                div.onclick = () => selecionarRegiao(regiao.id);
-                container.appendChild(div);
-            });
+            if (container.children.length === 0) { // Garante que o mapa só é desenhado uma vez
+                 mapa.forEach(regiao => {
+                    const div = document.createElement('div');
+                    div.id = `regiao-${regiao.id}`;
+                    div.className = `map-region ${regiao.cor} hover:shadow-xl hover:scale-[1.03] flex items-center justify-center text-center text-xs p-1 h-16 transition-all`;
+                    div.textContent = regiao.nome;
+                    div.title = `Região: ${regiao.nome} (ID: ${regiao.id})`;
+                    div.onclick = () => selecionarRegiao(regiao.id);
+                    container.appendChild(div);
+                });
+            }
         }
         
-        // Função para Selecionar Região
         function selecionarRegiao(id) {
             // Remove a seleção de todas as regiões
             document.querySelectorAll('.map-region').forEach(div => {
@@ -323,33 +492,31 @@
             // Adiciona a seleção à região clicada
             const regiaoDiv = document.getElementById(`regiao-${id}`);
             regiaoDiv.classList.add('selected');
-            gameState.regiaoSelecionada = id;
+            window.gameState.regiaoSelecionada = id;
             
-            // Simulação de Pop-up de Detalhe da Região no Log
-            logAcao(`Região Selecionada: ${regiaoDiv.textContent}. Status: Nível de Degradação Baixo.`);
+            window.logAcao(`Região Selecionada: ${regiaoDiv.textContent}. Detalhes da Região...`);
         }
 
-        // Função para Adicionar Log
-        function logAcao(mensagem) {
+        window.logAcao = function(mensagem) {
             const logDisplay = document.getElementById('logDisplay');
             const p = document.createElement('p');
             p.className = 'text-texto-claro/80';
-            p.innerHTML = `<span class="text-accent-bronze font-bold">[T${gameState.turno}]</span> ${mensagem}`;
-            logDisplay.prepend(p); // Adiciona a mensagem mais recente no topo
+            p.innerHTML = `<span class="text-accent-bronze font-bold">[T${window.gameState.turno || 0}]</span> ${mensagem}`;
+            logDisplay.prepend(p);
             if (logDisplay.children.length > 20) {
-                logDisplay.removeChild(logDisplay.lastChild); // Mantém o log limpo
+                logDisplay.removeChild(logDisplay.lastChild);
             }
         }
 
-        // FUNÇÃO DE MELHORIA: Atualiza a exibição de todos os estados (com animação)
-        function atualizarDisplay(recursoAlterado = null) {
+        // Atualiza a exibição de todos os estados (com animação)
+        window.atualizarDisplay = function(recursoAlterado = null) {
             // 1. Atualizar Recursos
-            document.getElementById('recursoMadeira').textContent = recursos.madeira;
-            document.getElementById('recursoAgua').textContent = recursos.agua;
-            document.getElementById('recursoCredito').textContent = recursos.credito;
-            document.getElementById('recursoTecnologia').textContent = recursos.tecnologia;
+            document.getElementById('recursoMadeira').textContent = window.recursos.madeira || 0;
+            document.getElementById('recursoAgua').textContent = window.recursos.agua || 0;
+            document.getElementById('recursoCredito').textContent = window.recursos.credito || 0;
+            document.getElementById('recursoTecnologia').textContent = window.recursos.tecnologia || 0;
             
-            // Adiciona a animação de "pulse" ao recurso que foi alterado
+            // Adiciona a animação de "pulse"
             if (recursoAlterado) {
                 const recursoElement = document.getElementById(`recurso${recursoAlterado.charAt(0).toUpperCase() + recursoAlterado.slice(1)}`).parentElement;
                 recursoElement.classList.add('recurso-pulse');
@@ -359,179 +526,170 @@
             }
 
             // 2. Atualizar Pontos e Barras
-            document.getElementById('pontosConservacao').textContent = pontos.conservacao;
-            document.getElementById('pontosMilitar').textContent = pontos.militar;
-            document.getElementById('pontosProducao').textContent = pontos.producao;
+            document.getElementById('pontosConservacao').textContent = window.pontos.conservacao || 0;
+            document.getElementById('pontosMilitar').textContent = window.pontos.militar || 0;
+            document.getElementById('pontosProducao').textContent = window.pontos.producao || 0;
 
-            const maxPontos = 100; // Limite de 100 para a barra
-            document.getElementById('barConservacao').style.width = `${Math.min(pontos.conservacao, maxPontos)}%`;
-            document.getElementById('barMilitar').style.width = `${Math.min(pontos.militar, maxPontos)}%`;
-            document.getElementById('barProducao').style.width = `${Math.min(pontos.producao, maxPontos)}%`;
+            const maxPontos = 100;
+            document.getElementById('barConservacao').style.width = `${Math.min(window.pontos.conservacao, maxPontos)}%`;
+            document.getElementById('barMilitar').style.width = `${Math.min(window.pontos.militar, maxPontos)}%`;
+            document.getElementById('barProducao').style.width = `${Math.min(window.pontos.producao, maxPontos)}%`;
 
             // 3. Atualizar Status do Turno
-            document.getElementById('numTurno').textContent = gameState.turno;
-            document.getElementById('jogadorAtual').textContent = gameState.jogador === 1 ? 'Você (Facção Verde)' : 'IA/Jogador 2 (Facção Azul)';
+            document.getElementById('numTurno').textContent = window.gameState.turno || 0;
+            document.getElementById('jogadorAtual').textContent = window.gameState.jogador === 1 ? 'Você (Facção Verde)' : 'IA/Jogador 2 (Facção Azul)';
+
+            // 4. Status dos botões de ação
+            const acaoBotoes = document.querySelectorAll('.acao-btn');
+            acaoBotoes.forEach(btn => btn.disabled = window.gameState.acaoExecutada);
+            document.getElementById('finalizarAcaoBtn').disabled = !window.gameState.acaoExecutada;
+            document.getElementById('endTurnBtn').disabled = !window.gameState.acaoExecutada;
         }
 
         // Fase 1: Renda e Produção (Automática)
-        function calcularRenda() {
-            logAcao("Fase 1: Calculando Renda e Produção...");
+        async function calcularRenda() {
+            window.logAcao("Fase 1: Calculando Renda e Produção...");
             
             // Renda Base (Simulação)
-            recursos.madeira += 2;
-            recursos.agua += 1;
+            window.recursos.madeira += 2;
+            window.recursos.agua += 1;
             
             // Renda de Regiões Controladas (Simulação)
             mapa.forEach(regiao => {
                 // Simula que regiões 3, 8, 11 e 14 são controladas
                 if ([3, 8, 11, 14].includes(regiao.id)) {
                     for (const [recursoNome, qtd] of Object.entries(regiao.producao)) {
-                        recursos[recursoNome] += qtd;
-                        // Animação no primeiro recurso encontrado para feedback
-                        if (recursos[recursoNome] === recursos[recursoNome]) {
-                            atualizarDisplay(recursoNome);
-                        }
+                        window.recursos[recursoNome] += qtd;
                     }
                 }
             });
 
             // Renda de Projetos (Simulação)
-            recursos.tecnologia += 1;
-            pontos.producao += 3; // Engine Building Simulado
-            logAcao("Renda coletada com sucesso. Verifique seus recursos.");
+            window.recursos.tecnologia += 1;
+            window.pontos.producao += 3;
+            
+            window.logAcao("Renda coletada. Salvando no Firestore...");
+            await window.salvarEstado(); // Salva as mudanças de Renda no banco
         }
 
         // Fase 2: Seleção da Ação Modular (H)
-        function iniciarAcao(acao) {
-            if (gameState.acaoExecutada) return;
-
-            // Simula a execução da Ação Modular
-            gameState.acaoExecutada = true;
+        async function iniciarAcao(acao) {
+            if (window.gameState.acaoExecutada || !window.db) return; // Proteção contra duplo clique e falta de DB
+            
+            let custoAtendido = true;
             
             // Simulação de alteração de estado após a ação
             switch (acao) {
                 case 'Mover':
-                    logAcao(`Ação Modular: MOVER/SABOTAR - Foco em Domínio Militar. (+5 PV)`);
-                    pontos.militar += 5;
+                    window.pontos.militar += 5;
+                    window.logAcao(`Ação Modular: MOVER/SABOTAR - Foco em Domínio Militar. (+5 PV)`);
                     break;
                 case 'Construir':
-                    logAcao(`Ação Modular: DESENVOLVER/COMÉRCIO - Foco em Conservação. (-3 Créditos, +5 PV)`);
-                    if (recursos.credito >= 3) {
-                        recursos.credito -= 3;
-                        pontos.conservacao += 5;
+                    if (window.recursos.credito >= 3) {
+                        window.recursos.credito -= 3;
+                        window.pontos.conservacao += 5;
+                        window.logAcao(`Ação Modular: DESENVOLVER/COMÉRCIO - Foco em Conservação. (-3 Créditos, +5 PV)`);
                     } else {
-                        logAcao("Aviso: Recursos insuficientes. Ação cancelada.");
-                        gameState.acaoExecutada = false; // Permite tentar outra ação
-                        return;
+                        window.logAcao("Aviso: Créditos de Carbono insuficientes (req: 3). Ação cancelada.");
+                        custoAtendido = false;
                     }
                     break;
                 case 'Recolher':
-                    logAcao(`Ação Modular: RECOLHER/P&D - Foco em Produção. (+5 Madeira, +5 PV)`);
-                    recursos.madeira += 5;
-                    pontos.producao += 5;
+                    window.recursos.madeira += 5;
+                    window.pontos.producao += 5;
+                    window.logAcao(`Ação Modular: RECOLHER/P&D - Foco em Produção. (+5 Madeira, +5 PV)`);
                     break;
                 case 'Negociar':
-                    logAcao(`Ação Modular: REGRA DA FACÇÃO - Troca estratégica. (-1 Tecnologia, +3 Água Pura)`);
-                    if (recursos.tecnologia >= 1) {
-                        recursos.tecnologia -= 1;
-                        recursos.agua += 3;
+                    if (window.recursos.tecnologia >= 1) {
+                        window.recursos.tecnologia -= 1;
+                        window.recursos.agua += 3;
+                        window.logAcao(`Ação Modular: REGRA DA FACÇÃO - Troca estratégica. (-1 Tecnologia, +3 Água Pura)`);
                     } else {
-                        logAcao("Aviso: Recursos insuficientes. Ação cancelada.");
-                        gameState.acaoExecutada = false;
-                        return;
+                        window.logAcao("Aviso: Tecnologia Verde insuficiente (req: 1). Ação cancelada.");
+                        custoAtendido = false;
                     }
                     break;
             }
 
-            // Desabilita as ações e habilita o botão de confirmação
-            document.querySelectorAll('.acao-btn').forEach(btn => btn.disabled = true);
-            document.getElementById('finalizarAcaoBtn').disabled = false;
-            
-            atualizarDisplay('todos'); // Atualiza a tela imediatamente após a ação
+            if (custoAtendido) {
+                window.gameState.acaoExecutada = true;
+                await window.salvarEstado(); // Salva o estado da Ação no banco
+            }
         }
 
         function finalizarAcao() {
-            if (!gameState.acaoExecutada) return;
-
-            // Habilita o botão de Passar Turno (G)
-            document.getElementById('finalizarAcaoBtn').disabled = true;
-            document.getElementById('endTurnBtn').disabled = false;
-            
-            logAcao("Ação do Turno Finalizada. Pronto para a transição.");
+            // Apenas habilita o botão de passar turno, a lógica de estado já está no Firestore
+            if (window.gameState.acaoExecutada) {
+                document.getElementById('endTurnBtn').disabled = false;
+            }
+            window.logAcao("Ação do Turno Finalizada. Pronto para a transição.");
         }
 
         // Fase 3: Passagem de Turno (G)
-        function passarTurno() {
-            logAcao("--- INÍCIO DO PRÓXIMO TURNO ---");
+        async function passarTurno() {
+            if (!window.gameState.acaoExecutada || !window.db) return;
+
+            window.logAcao("--- INÍCIO DO PRÓXIMO TURNO ---");
             
             // 1. Lógica do Jogo
-            gameState.turno++;
-            gameState.jogador = gameState.jogador === 1 ? 2 : 1; // Alterna entre Jogador 1 (Você) e 2 (IA/Simulação)
-            gameState.acaoExecutada = false;
-            gameState.regiaoSelecionada = null;
-
+            window.gameState.turno++;
+            window.gameState.jogador = window.gameState.jogador === 1 ? 2 : 1; // Alterna entre Jogador 1 e 2
+            window.gameState.acaoExecutada = false;
+            window.gameState.regiaoSelecionada = null;
+            
             // 2. Aciona Renda e Produção para o novo turno
-            calcularRenda();
+            await calcularRenda();
             
-            // 3. Habilita novamente as ações e desabilita o botão de passar turno
-            document.querySelectorAll('.acao-btn').forEach(btn => btn.disabled = false);
-            document.getElementById('endTurnBtn').disabled = true;
-
-            // 4. Se o próximo jogador for a IA, simula um turno da IA
-            if (gameState.jogador === 2) {
-                logAcao("Turno da IA (Facção Azul). Aguarde...");
-                setTimeout(() => {
+            // 3. Atualiza o estado do jogo no banco (o listener cuida do UI update)
+            await window.salvarEstado(); 
+            
+            // 4. Se o próximo jogador for a IA, simula um turno da IA (após salvar)
+            if (window.gameState.jogador === 2) {
+                window.logAcao("Turno da IA (Facção Azul). Aguarde...");
+                setTimeout(async () => {
                     // Simula uma ação da IA
-                    recursos.credito += 4;
-                    pontos.conservacao += 2;
-                    logAcao("IA executou ação de Construir/Comércio.");
-                    passarTurno(); // Passa o turno de volta para o jogador
-                }, 2000); // 2 segundos de espera para simular o turno da IA
+                    window.recursos.credito += 4;
+                    window.pontos.conservacao += 2;
+                    window.logAcao("IA executou ação de Construir/Comércio. Salvando...");
+                    await window.salvarEstado(); // Salva o resultado da ação da IA
+                    
+                    // A IA também passa o turno
+                    window.gameState.turno++;
+                    window.gameState.jogador = 1; // Volta para o Jogador 1 (Você)
+                    window.gameState.acaoExecutada = false;
+                    await calcularRenda(); // Calcula a renda para o próximo turno do jogador
+                    await window.salvarEstado();
+                    
+                    window.logAcao("Turno da IA finalizado. Sua vez!");
+                }, 2000); // 2 segundos de espera
             }
+
+            // O listener do Firestore vai atualizar a tela para todos os jogadores.
             
-            // 5. Atualiza a tela
-            atualizarDisplay();
+            // Desabilita o botão de passar turno
+            document.getElementById('endTurnBtn').disabled = true;
         }
 
-        // Manual Functions (sem alterações significativas de lógica)
-        function abrirManual() {
-            document.getElementById('modalOverlay').classList.remove('hidden');
-        }
-
-        function fecharManual() {
-            document.getElementById('modalOverlay').classList.add('hidden');
-        }
-
+        // Funções do Manual (não dependem de estado)
+        function abrirManual() { document.getElementById('modalOverlay').classList.remove('hidden'); }
+        function fecharManual() { document.getElementById('modalOverlay').classList.add('hidden'); }
         function mudarAba(abaId) {
-            // Remove active de todas as abas
-            document.querySelectorAll('.modal-tab').forEach(tab => {
-                tab.classList.remove('active');
-            });
-            document.querySelectorAll('.modal-section').forEach(section => {
-                section.classList.remove('active');
-                section.classList.add('hidden');
-            });
-
-            // Adiciona active para a aba selecionada
+            document.querySelectorAll('.modal-tab').forEach(tab => tab.classList.remove('active'));
+            document.querySelectorAll('.modal-section').forEach(section => section.classList.add('hidden'));
             document.querySelector(`[onclick="mudarAba('${abaId}')"]`).classList.add('active');
             document.getElementById(abaId).classList.remove('hidden');
-            document.getElementById(abaId).classList.add('active');
         }
 
-        // Event Listeners
+        // Event Listeners e Inicialização
         document.getElementById('manualIcon').addEventListener('click', abrirManual);
         document.getElementById('modalOverlay').addEventListener('click', function(e) {
             if (e.target === this) fecharManual();
         });
         document.addEventListener('DOMContentLoaded', () => {
-             // Inicia com a primeira aba ativa
-            mudarAba('visaoGeral');
+             mudarAba('visaoGeral');
+             inicializarMapa(); // Desenha o mapa estático
+             // O estado inicial do jogo e o display serão carregados pelo listener do Firebase
         });
-
-
-        // Inicializar Jogo
-        inicializarMapa();
-        atualizarDisplay();
     </script>
 </body>
 </html>
