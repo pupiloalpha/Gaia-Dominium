@@ -662,4 +662,20 @@
     border-radius: 3px;
     font-size: 0.85em;
 }
+
+            /* style.css - Adicionar ao seu arquivo */
+
+/* Estilo para a lista de estruturas no modal de detalhes da região (Ação 2.1) */
+.structure-list {
+    list-style-type: none;
+    padding-left: 0;
+}
+
+.structure-list li {
+    background-color: var(--color-primary-dark);
+    padding: 5px 10px;
+    margin-bottom: 5px;
+    border-radius: 4px;
+    font-size: 0.9em;
+}
         }
