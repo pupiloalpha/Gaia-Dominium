@@ -1,8 +1,7 @@
 /*
-    Conteúdo refatorado do arquivo main.js, aplicando a Fase 1, Correções e Fase 2:
-    - Ação 2.1: Implementação do modal de detalhes da região.
-    - Ação 2.2: Implementação da função para gerar tooltips de custo/ganho.
-    - Ação 2.3: Melhoria do feedback de renda.
+    Conteúdo refatorado do arquivo main.js:
+    - Implementação do ícone de informações e separação da lógica de clique.
+    - Garantia de que a classe 'text-light' é usada no modal de construção para o tema dark.
 */
 
 // ==================== CONFIGURAÇÕES E ESTADO DO JOGO ====================
@@ -146,7 +145,7 @@ function updatePlayerCountDisplay() {
     startBtn.disabled = gameState.players.length < 2;
 }
 
-// ==================== INTERFACE DO JOGO ====================
+// ==================== INTERFACE DO JOGO (Alterada) ====================
 function renderGameMap() {
     const gameMap = document.getElementById('gameMap');
     gameMap.innerHTML = '';
@@ -159,7 +158,7 @@ function renderGameMap() {
         if (region.controller !== null) {
             const player = gameState.players[region.controller];
             
-            // Borda e cor semi-transparente para identificação de propriedade (Não Iluminação)
+            // Borda e cor semi-transparente para identificação de propriedade (Sem Iluminação)
             regionEl.style.border = `3px solid ${player.color}`;
             regionEl.style.backgroundColor = player.color + '33'; 
             
@@ -175,7 +174,7 @@ function renderGameMap() {
         
         const structureIcon = region.structures.length > 0 ? `<div class="structure-icon">🏗️ x${region.structures.length}</div>` : '';
         
-        // NOVO: Ícone de Informação (Correção 2)
+        // NOVO: Ícone de Informação 
         const infoIconHtml = `<div class="info-icon" data-region-id="${region.id}">ℹ️</div>`;
         
         regionEl.innerHTML = `
@@ -196,7 +195,7 @@ function renderGameMap() {
         
         gameMap.appendChild(regionEl);
         
-        // NOVO LISTENER: Clique no ícone de informação ABRE O MODAL (Correção 2)
+        // NOVO LISTENER: Clique no ícone de informação ABRE O MODAL
         const infoIconEl = regionEl.querySelector('.info-icon');
         if (infoIconEl) {
             infoIconEl.addEventListener('click', (event) => {
@@ -227,8 +226,6 @@ function selectRegion(regionId) {
     
     renderGameMap();
     updateActionButtons();
-    
-    // REMOVIDO: openRegionDetailsModal(regionId);
 }
 
 // Ação 2.1: Função para abrir o modal de detalhes da região
@@ -284,56 +281,15 @@ function openRegionDetailsModal(regionId) {
     modal.show();
 }
 
-// openBuildModal MODIFICADA: Adiciona classes de texto para garantir o tema dark (Correção 3)
-function openBuildModal(player, region) {
-    const structureTypes = GAME_CONFIG.STRUCTURE_TYPES;
-    const buildOptionsContent = document.getElementById('buildOptionsContent');
-    buildOptionsContent.innerHTML = '';
-    
-    let optionsHtml = '<div class="row">';
-    
-    for (const key in structureTypes) {
-        const structure = structureTypes[key];
-        const canAfford = checkCosts(player, structure.cost);
-        const disabledClass = canAfford ? '' : 'disabled opacity-50';
-        
-        const costsHtml = Object.keys(structure.cost)
-            .filter(res => structure.cost[res] > 0)
-            .map(res => `<span class="resource-cost">${structure.cost[res]} ${res.substring(0, 1).toUpperCase()}${res.substring(1)}</span>`)
-            .join(' | ');
-
-        optionsHtml += `
-            <div class="col-md-4 mb-3">
-                <div class="card build-option ${disabledClass}" 
-                     data-structure-key="${key}" ${!canAfford ? 'style="pointer-events: none;"' : ''}
-                     onclick="${canAfford ? `handleBuildSelection('${key}')` : 'void(0)'}">
-                    <div class="card-body">
-                        <h5 class="card-title text-light">${structure.name}</h5> <p class="card-text small text-light-secondary">${structure.description}</p> <p class="card-text text-success"><strong>+${structure.pv_gain} PV</strong> (Instantâneo)</p>
-                        <p class="card-text text-info"><strong>Bônus/Turno:</strong> ${structure.bonus_per_turn.pv || 0} PV</p>
-                        <hr>
-                        <p class="card-text text-danger"><strong>Custo:</strong> ${costsHtml || 'Nenhum'}</p>
-                    </div>
-                </div>
-            </div>
-        `;
-    }
-    
-    optionsHtml += '</div>';
-    buildOptionsContent.innerHTML = optionsHtml;
-    
-    const modal = new bootstrap.Modal(document.getElementById('buildModal'));
-    modal.show();
-}
-
 function updateDisplay() {
     renderGameMap();
     updateResourcesDisplay(); 
     updatePlayersList();
-    updateActionButtons(); // Ação 2.2: Atualiza tooltips e estado dos botões
+    updateActionButtons(); 
     updateHeaderPlayerList();
 }
 
-function updateResourcesDisplay() {
+function updateResourcesDisplay() { /* ... (Mantido o mesmo) ... */
     const player = gameState.players[gameState.currentPlayerIndex];
     const recursosDisplay = document.getElementById('recursosDisplay');
     const recursosTitle = document.getElementById('recursosTitle');
@@ -362,7 +318,7 @@ function updateResourcesDisplay() {
     document.getElementById('turnoDisplay').textContent = gameState.turn;
 }
 
-function updatePlayersList() {
+function updatePlayersList() { /* ... (Mantido o mesmo) ... */
     const playerListDisplay = document.getElementById('playerListDisplay');
     playerListDisplay.innerHTML = '';
     
@@ -390,7 +346,7 @@ function updatePlayersList() {
     });
 }
 
-function selectPlayerForResources(playerIndex) {
+function selectPlayerForResources(playerIndex) { /* ... (Mantido o mesmo) ... */
     const player = gameState.players[playerIndex];
     
     if (gameState.selectedPlayerForResources === playerIndex) {
@@ -430,7 +386,7 @@ function selectPlayerForResources(playerIndex) {
 }
 
 
-function updateHeaderPlayerList() {
+function updateHeaderPlayerList() { /* ... (Mantido o mesmo) ... */
     const playerHeaderList = document.getElementById('playerHeaderList');
     playerHeaderList.innerHTML = '';
     
@@ -447,7 +403,7 @@ function updateHeaderPlayerList() {
 }
 
 // Ação 2.2: Função para obter detalhes de custo e ganho da ação
-function getActionDetails(actionType) {
+function getActionDetails(actionType) { /* ... (Mantido o mesmo) ... */
     let details = { cost: {}, gain: {}, description: '' };
 
     switch (actionType) {
@@ -480,7 +436,7 @@ function getActionDetails(actionType) {
 }
 
 // Ação 2.2: Atualiza o estado dos botões de ação E os tooltips
-function updateActionButtons() {
+function updateActionButtons() { /* ... (Mantido o mesmo) ... */
     const player = gameState.players[gameState.currentPlayerIndex];
     const selectedRegion = gameState.selectedRegion !== null ? gameState.regions[gameState.selectedRegion] : null;
     
@@ -560,8 +516,7 @@ function updateActionButtons() {
 }
 
 // ==================== FUNÇÕES AUXILIARES ====================
-
-function checkCosts(player, costs) {
+function checkCosts(player, costs) { /* ... (Mantido o mesmo) ... */
     for (const resource in costs) {
         if (player.resources[resource.toLowerCase()] < costs[resource]) {
             return false;
@@ -570,14 +525,14 @@ function checkCosts(player, costs) {
     return true;
 }
 
-function consumeResources(player, costs) {
+function consumeResources(player, costs) { /* ... (Mantido o mesmo) ... */
     for (const resource in costs) {
         player.resources[resource.toLowerCase()] -= costs[resource];
     }
 }
 
 // Ação 2.3: Aplica a renda do turno com feedback detalhado
-function applyIncome(player) {
+function applyIncome(player) { /* ... (Mantido o mesmo) ... */
     let totalIncome = {}; 
     let baseIncomeSuspended = player.consecutiveNoActionTurns > 2;
     
@@ -648,7 +603,7 @@ function applyIncome(player) {
     showFeedback(`Renda aplicada: ${feedbackMsg}` || "Nenhum ganho neste turno.", 'info');
 }
 
-function checkDiversityBonus(player) {
+function checkDiversityBonus(player) { /* ... (Mantido o mesmo) ... */
     if (player.hasDiversityBonus) return 0; 
     
     const controlledBiomes = new Set();
@@ -668,7 +623,7 @@ function checkDiversityBonus(player) {
 }
 
 // ==================== AÇÕES DO JOGO ====================
-function performAction(actionType) {
+function performAction(actionType) { /* ... (Mantido o mesmo) ... */
     const player = gameState.players[gameState.currentPlayerIndex];
     const selectedRegion = gameState.selectedRegion !== null ? gameState.regions[gameState.selectedRegion] : null;
 
@@ -760,8 +715,8 @@ function openBuildModal(player, region) {
                      data-structure-key="${key}" ${!canAfford ? 'style="pointer-events: none;"' : ''}
                      onclick="${canAfford ? `handleBuildSelection('${key}')` : 'void(0)'}">
                     <div class="card-body">
-                        <h5 class="card-title">${structure.name}</h5>
-                        <p class="card-text small">${structure.description}</p>
+                        <h5 class="card-title text-light">${structure.name}</h5> 
+                        <p class="card-text small text-light-secondary">${structure.description}</p>
                         <p class="card-text text-success"><strong>+${structure.pv_gain} PV</strong> (Instantâneo)</p>
                         <p class="card-text text-info"><strong>Bônus/Turno:</strong> ${structure.bonus_per_turn.pv || 0} PV</p>
                         <hr>
@@ -779,7 +734,7 @@ function openBuildModal(player, region) {
     modal.show();
 }
 
-window.handleBuildSelection = function(structureKey) {
+window.handleBuildSelection = function(structureKey) { /* ... (Mantido o mesmo) ... */
     const modal = bootstrap.Modal.getInstance(document.getElementById('buildModal'));
     modal.hide();
 
@@ -808,7 +763,7 @@ window.handleBuildSelection = function(structureKey) {
     checkVictoryCondition();
 };
 
-function openNegotiationModal() {
+function openNegotiationModal() { /* ... (Mantido o mesmo) ... */
     const player = gameState.players[gameState.currentPlayerIndex];
     const otherPlayers = gameState.players.filter((p, i) => i !== gameState.currentPlayerIndex);
     
@@ -826,7 +781,7 @@ function openNegotiationModal() {
     modal.show();
 }
 
-function initiateNegotiation(targetPlayerId) {
+function initiateNegotiation(targetPlayerId) { /* ... (Mantido o mesmo) ... */
     const player = gameState.players[gameState.currentPlayerIndex];
     const targetPlayer = gameState.players[targetPlayerId];
     
@@ -860,7 +815,7 @@ function initiateNegotiation(targetPlayerId) {
     updateDisplay();
 }
 
-function endTurn() {
+function endTurn() { /* ... (Mantido o mesmo) ... */
     const previousPlayer = gameState.players[gameState.currentPlayerIndex];
 
     if (gameState.actionsTaken.length === 0) {
@@ -896,7 +851,7 @@ function endTurn() {
     checkVictoryCondition(); 
 }
 
-function checkVictoryCondition() {
+function checkVictoryCondition() { /* ... (Mantido o mesmo) ... */
     const winner = gameState.players.find(p => p.victoryPoints >= GAME_CONFIG.VICTORY_POINTS);
     if (winner) {
         showFeedback(`${winner.icon} ${winner.name} venceu com ${winner.victoryPoints} PV!`, 'success');
@@ -905,9 +860,9 @@ function checkVictoryCondition() {
 }
 
 // ==================== INTERFACE ====================
-function showFeedback(message, type = 'info') {
+function showFeedback(message, type = 'info') { /* ... (Mantido o mesmo) ... */
     const feedbackEl = document.getElementById('feedbackMessage');
-    feedbackEl.innerHTML = message; // Usar innerHTML para emojis e formatação
+    feedbackEl.innerHTML = message; 
     feedbackEl.className = `${type} show`;
     
     setTimeout(() => {
@@ -916,7 +871,7 @@ function showFeedback(message, type = 'info') {
 }
 
 // ==================== EVENT LISTENERS E INICIALIZAÇÃO ====================
-document.getElementById('addPlayerBtn').addEventListener('click', () => {
+document.getElementById('addPlayerBtn').addEventListener('click', () => { /* ... (Mantido o mesmo) ... */
     const name = document.getElementById('playerName').value.trim();
     const selectedIcon = document.querySelector('.icon-option.selected');
     
@@ -932,7 +887,7 @@ document.getElementById('addPlayerBtn').addEventListener('click', () => {
     }
 });
 
-document.getElementById('startGameBtn').addEventListener('click', () => {
+document.getElementById('startGameBtn').addEventListener('click', () => { /* ... (Mantido o mesmo) ... */
     gameState.gameStarted = true;
     document.getElementById('initialScreen').classList.add('hidden');
     initializeGame();
@@ -944,8 +899,8 @@ document.getElementById('recolherBtn').addEventListener('click', () => performAc
 document.getElementById('negociarBtn').addEventListener('click', () => performAction('negociar'));
 document.getElementById('endTurnBtn').addEventListener('click', endTurn);
 
-document.addEventListener('DOMContentLoaded', () => {
-    // Gerar ícones (Bloco de código que estava no final)
+document.addEventListener('DOMContentLoaded', () => { /* ... (Mantido o mesmo) ... */
+    // Gerar ícones 
     const iconSelection = document.getElementById('iconSelection');
     GAME_CONFIG.PLAYER_ICONS.forEach(icon => {
         const iconOption = document.createElement('div');
