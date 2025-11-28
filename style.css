@@ -1,6 +1,9 @@
 /*
-    style.css - Refatorado com correção de tema do modal e destaque de região,
-    garantindo que o efeito de iluminação latente ocorra APENAS na região selecionada.
+    style.css - Refatorado com TODAS as correções de UX/UI:
+    - Correção 1: Iluminação restrita ao '.selected'.
+    - Correção 2: Novo estilo para o '.info-icon'.
+    - Correção 3: Força o tema dark nos cards do modal de construção.
+    - Correção 4: Ajuste de tema dark para os campos de input da Tela Inicial.
 */
 
 :root {
@@ -135,7 +138,7 @@ body {
     background: rgba(0, 0, 0, 0.5);
     padding: 1px 4px;
     border-radius: 3px;
-    z-index: 15; /* Certificar que o ícone de estrutura fique acima */
+    z-index: 15;
 }
 
 .info-icon {
@@ -163,14 +166,9 @@ body {
     box-shadow: 0 0 20px 8px var(--color-warning) !important; 
     border: 5px solid var(--color-warning) !important;
     transform: scale(1.05); 
-    background-color: rgba(255, 152, 0, 0.3) !important; /* Mais visível */
+    background-color: rgba(255, 152, 0, 0.3) !important;
     z-index: 10;
 }
-
-/* A classe 'controlled-by-current' (adicionada no main.js) não deve ter iluminação,
-   pois o highlight já é dado pela cor da borda/fundo semi-transparente.
-   Nesta versão, ela não tem regras CSS, o que atende ao seu pedido.
-*/
 
 
 /* ==================== SIDEBAR / RECURSOS / JOGADORES ==================== */
@@ -228,7 +226,7 @@ body {
     font-weight: bold;
 }
 
-/* Regra 1: Destaque de jogador que NÃO é o do turno, mas está sendo visualizado */
+/* Destaque de jogador em visualização */
 .player-score-item.viewing-resources:not(.active-player) {
     background-color: rgba(255, 152, 0, 0.2); 
     border-left: 5px solid var(--color-warning) !important;
@@ -333,6 +331,27 @@ body {
     max-width: 400px;
 }
 
+/* CORREÇÃO 4: Fix para input e botão na tela inicial para tema dark */
+.player-setup input[type="text"],
+.player-setup .form-control {
+    background-color: #444; 
+    border: 1px solid var(--color-primary-dark);
+    color: var(--color-text);
+    /* Garante que o placeholder seja visível */
+    opacity: 1; 
+}
+
+.player-setup .btn {
+    background-color: var(--color-primary-dark);
+    border-color: var(--color-primary);
+    color: var(--color-text);
+}
+.player-setup .btn:hover {
+    background-color: var(--color-primary);
+    border-color: var(--color-primary);
+}
+
+
 #iconSelection {
     display: flex;
     gap: 10px;
@@ -392,6 +411,7 @@ body {
 .build-option .text-light-secondary {
     color: var(--color-text-secondary) !important;
 }
+
 .build-option {
     cursor: pointer;
     transition: transform 0.2s, box-shadow 0.2s, background-color 0.2s;
@@ -417,7 +437,7 @@ body {
     font-size: 0.85em;
 }
 
-/* Estilo para a lista de estruturas no modal de detalhes da região (Ação 2.1) */
+/* Estilo para a lista de estruturas no modal de detalhes da região */
 .structure-list {
     list-style-type: none;
     padding-left: 0;
