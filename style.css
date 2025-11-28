@@ -1,0 +1,25 @@
+/*
+    Copie e cole aqui todo o conteúdo CSS 
+    que estava dentro da tag <style> do seu arquivo GaiaDominium.2.html.
+*/
+
+:root {
+    --color-primary: #32b8c6;
+    --color-primary-dark: #1d7480;
+    --color-bg: #1a1a1a;
+    --color-surface: #252525;
+    --color-text: #e0e0e0;
+    --color-text-secondary: #a0a0a0;
+    --color-accent: #4caf50;
+    --color-accent-dark: #2e7d31;
+    --color-error: #f44336;
+    --color-warning: #ff9800;
+}
+/* ... O restante do CSS original ... */
+
+/* Estilos para o mapa */
+#gameMap {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    /* ... e assim por diante ... */
+}
