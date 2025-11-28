@@ -1,0 +1,1233 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gaia Dominium - Multiplayer Local</title>
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --color-primary: #32b8c6;
+            --color-primary-dark: #1d7480;
+            --color-bg: #1a1a1a;
+            --color-surface: #252525;
+            --color-text: #e0e0e0;
+            --color-text-secondary: #a0a0a0;
+            --color-accent: #4caf50;
+            --color-accent-dark: #2e7d31;
+            --color-error: #f44336;
+            --color-warning: #ff9800;
+            --color-success: #4caf50;
+        }
+
+        * {
+            font-family: 'Inter', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        html, body {
+            background-color: var(--color-bg);
+            color: var(--color-text);
+            height: 100vh;
+            overflow: hidden;
+            margin: 0;
+            padding: 0;
+        }
+
+        /* Header */
+        .navbar {
+            background-color: var(--color-surface) !important;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.5);
+            height: 45px;
+            padding: 5px 20px !important;
+            min-height: auto;
+        }
+
+        .navbar-brand {
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: var(--color-primary) !important;
+            margin-right: auto;
+        }
+
+        .navbar-text {
+            color: var(--color-text) !important;
+            font-size: 0.9rem;
+        }
+
+        .header-player-list {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        .header-player-item {
+            display: flex;
+            align-items: center;
+            padding: 4px 8px;
+            border-radius: 6px;
+            background-color: var(--color-bg);
+            border: 2px solid transparent;
+            transition: border-color 0.3s, background-color 0.3s;
+            font-size: 0.8rem;
+            font-weight: 500;
+            cursor: pointer;
+        }
+
+        .header-player-item:hover:not(.active-player-header) {
+            background-color: #353535;
+        }
+
+        .header-player-item.active-player-header {
+            border-color: var(--color-primary);
+            background-color: rgba(50, 184, 198, 0.1);
+            box-shadow: 0 0 8px rgba(50, 184, 198, 0.5);
+            font-weight: bold;
+        }
+
+        .header-player-item.selected-player {
+            border-color: #ffffff;
+            background-color: rgba(255, 255, 255, 0.1);
+        }
+
+        .manual-icon {
+            cursor: pointer;
+            color: var(--color-text);
+            font-size: 1.5rem;
+            transition: color 0.2s;
+            margin-left: 15px;
+        }
+
+        .manual-icon:hover {
+            color: var(--color-primary);
+        }
+
+        /* Main Container */
+        .main-container {
+            display: flex;
+            height: calc(100vh - 45px);
+            margin-top: 0;
+        }
+
+        /* Sidebar */
+        .sidebar {
+            width: 180px;
+            background-color: var(--color-surface);
+            padding: 12px 8px;
+            box-shadow: 2px 0 5px rgba(0, 0, 0, 0.5);
+            overflow-y: auto;
+            border-right: 1px solid #444;
+            font-size: 0.85rem;
+        }
+
+        .sidebar h5 {
+            font-size: 0.9rem;
+            color: var(--color-primary);
+            border-bottom: 2px solid var(--color-primary-dark);
+            padding-bottom: 3px;
+            margin-bottom: 8px;
+            margin-top: 0;
+            cursor: pointer;
+        }
+
+        .sidebar h5:hover {
+            color: var(--color-text);
+        }
+
+        .resource-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 5px 6px;
+            background-color: var(--color-bg);
+            border-radius: 4px;
+            font-size: 0.8rem;
+            align-items: center;
+            margin-bottom: 3px;
+        }
+
+        .resource-item .label {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            color: var(--color-text-secondary);
+        }
+
+        .resource-item .value {
+            font-weight: bold;
+            color: var(--color-text);
+        }
+
+        .player-score-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 5px 4px;
+            border-radius: 4px;
+            transition: background-color 0.2s;
+            font-size: 0.8rem;
+            margin-bottom: 2px;
+            cursor: pointer;
+            user-select: none;
+        }
+        
+        .player-score-item:hover {
+            background-color: rgba(50, 184, 198, 0.1);
+        }
+        
+        .player-score-item.viewing-resources {
+            background-color: rgba(50, 184, 198, 0.2);
+            border: 1px solid var(--color-primary);
+        }
+
+        .player-score-item.active-player {
+            background-color: rgba(50, 184, 198, 0.2);
+            border: 1px solid var(--color-primary);
+            border-radius: 4px;
+            padding: 6px;
+        }
+
+        /* Game Map */
+        .game-map-container {
+            flex-grow: 1;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .game-map {
+            flex-grow: 1;
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            grid-template-rows: repeat(5, 1fr);
+            gap: 2px;
+            padding: 8px;
+            background-color: var(--color-bg);
+            overflow: auto;
+        }
+
+        .region {
+            background-color: var(--color-surface);
+            border: 2px solid var(--color-bg);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            font-size: 0.75rem;
+            cursor: pointer;
+            transition: background-color 0.2s, transform 0.1s, border-color 0.2s;
+            border-radius: 4px;
+            padding: 3px;
+        }
+
+        .region:hover {
+            background-color: #353535;
+        }
+
+        .region.selected {
+            border-color: var(--color-error);
+            box-shadow: 0 0 10px var(--color-error);
+            transform: scale(1.02);
+        }
+
+        .region.controlled-by-current {
+            border: 2px dashed #ffffff;
+            box-shadow: 0 0 15px var(--region-border-color, #fff);
+            animation: pulse-border 1.5s infinite alternate;
+        }
+
+        @keyframes pulse-border {
+            from { opacity: 0.6; }
+            to { opacity: 1; }
+        }
+
+        .region-name {
+            font-weight: bold;
+            margin-bottom: 2px;
+            color: var(--color-primary);
+            font-size: 0.7rem;
+        }
+
+        .region-info {
+            font-size: 0.65rem;
+            color: var(--color-text-secondary);
+        }
+
+        /* Action Panel */
+        .action-panel {
+            background-color: var(--color-surface);
+            padding: 8px 12px;
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 6px;
+            box-shadow: 0 -2px 5px rgba(0, 0, 0, 0.5);
+            border-top: 1px solid #444;
+            min-height: 70px;
+        }
+
+        .action-btn {
+            background-color: var(--color-primary);
+            color: var(--color-bg);
+            border: none;
+            padding: 8px 14px;
+            font-size: 0.85rem;
+            font-weight: bold;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: background-color 0.2s, transform 0.1s, opacity 0.2s;
+            box-shadow: 0 3px var(--color-primary-dark);
+            position: relative;
+            top: 0;
+            min-width: 100px;
+            white-space: nowrap;
+        }
+
+        .action-btn:hover:not(:disabled) {
+            background-color: var(--color-primary-dark);
+            transform: translateY(-2px);
+            box-shadow: 0 6px var(--color-primary-dark);
+        }
+
+        .action-btn:active:not(:disabled) {
+            transform: translateY(2px);
+            box-shadow: 0 2px var(--color-primary-dark);
+        }
+
+        .action-btn:disabled {
+            background-color: #555;
+            color: #aaa;
+            cursor: not-allowed;
+            box-shadow: 0 4px #444;
+        }
+
+        #endTurnBtn {
+            background-color: var(--color-accent);
+            box-shadow: 0 4px var(--color-accent-dark);
+        }
+
+        #endTurnBtn:hover:not(:disabled) {
+            background-color: var(--color-accent-dark);
+            box-shadow: 0 6px var(--color-accent-dark);
+        }
+
+        /* Feedback Message */
+        #feedbackMessage {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            padding: 15px 30px;
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.4);
+            font-size: 1.2rem;
+            font-weight: 600;
+            color: var(--color-text);
+            text-align: center;
+            z-index: 1050;
+            pointer-events: none;
+            transition: opacity 0.3s, transform 0.3s;
+            opacity: 0;
+            min-width: 400px;
+        }
+
+        #feedbackMessage.info {
+            background-color: rgba(50, 184, 198, 0.9);
+        }
+
+        #feedbackMessage.success {
+            background-color: rgba(76, 175, 80, 0.9);
+        }
+
+        #feedbackMessage.error {
+            background-color: rgba(244, 67, 54, 0.9);
+        }
+
+        #feedbackMessage.show {
+            opacity: 1;
+            transform: translate(-50%, -50%) scale(1);
+        }
+
+        /* Initial Screen */
+        .initial-screen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: rgba(26, 26, 26, 0.95);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+
+        .initial-screen.hidden {
+            display: none;
+        }
+
+        .player-setup-form {
+            background-color: var(--color-surface);
+            padding: 40px;
+            border-radius: 12px;
+            max-width: 500px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+            border: 1px solid #444;
+        }
+
+        .player-setup-form h1 {
+            color: var(--color-primary);
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        .player-setup-form p {
+            color: var(--color-text-secondary);
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        .player-input-group {
+            margin-bottom: 20px;
+        }
+
+        .player-input-group label {
+            display: block;
+            color: var(--color-text);
+            margin-bottom: 8px;
+            font-weight: 500;
+        }
+
+        .player-input-group input {
+            width: 100%;
+            padding: 10px;
+            background-color: var(--color-bg);
+            border: 1px solid #444;
+            border-radius: 6px;
+            color: var(--color-text);
+            font-size: 1rem;
+        }
+
+        .player-input-group input:focus {
+            outline: none;
+            border-color: var(--color-primary);
+            box-shadow: 0 0 8px rgba(50, 184, 198, 0.3);
+        }
+
+        #iconSelection {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .icon-option {
+            width: 50px;
+            height: 50px;
+            border: 2px solid #444;
+            border-radius: 8px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            cursor: pointer;
+            font-size: 1.5rem;
+            transition: border-color 0.2s, background-color 0.2s;
+            background-color: var(--color-bg);
+        }
+
+        .icon-option:hover {
+            border-color: var(--color-primary);
+            background-color: rgba(50, 184, 198, 0.1);
+        }
+
+        .icon-option.selected {
+            border-color: var(--color-primary);
+            background-color: rgba(50, 184, 198, 0.2);
+            box-shadow: 0 0 8px rgba(50, 184, 198, 0.5);
+        }
+
+        .player-count-display {
+            text-align: center;
+            color: var(--color-text-secondary);
+            margin-bottom: 20px;
+            font-size: 0.9rem;
+        }
+
+        /* Modal */
+        .modal-content {
+            background-color: var(--color-surface) !important;
+            border: 1px solid #444 !important;
+            color: var(--color-text) !important;
+        }
+
+        .modal-header {
+            border-bottom: 1px solid #444 !important;
+        }
+
+        .modal-header h5 {
+            color: var(--color-primary) !important;
+        }
+
+        .btn-close {
+            filter: invert(1);
+        }
+
+        .nav-tabs {
+            border-bottom: 1px solid #444 !important;
+        }
+
+        .nav-tabs .nav-link {
+            color: var(--color-text-secondary) !important;
+            border: none !important;
+            border-bottom: 2px solid transparent !important;
+            cursor: pointer;
+        }
+
+        .nav-tabs .nav-link:hover {
+            color: var(--color-text) !important;
+        }
+
+        .nav-tabs .nav-link.active {
+            color: var(--color-primary) !important;
+            border-bottom: 2px solid var(--color-primary) !important;
+            background-color: transparent !important;
+        }
+
+        .tab-content {
+            color: var(--color-text);
+        }
+
+        .tab-content h4 {
+            color: var(--color-primary);
+            margin-top: 20px;
+            margin-bottom: 10px;
+        }
+
+        .tab-content ul {
+            margin-left: 20px;
+        }
+
+        .tab-content li {
+            margin-bottom: 8px;
+        }
+
+        /* Negociação Modal */
+        .negotiation-modal {
+            background-color: var(--color-surface);
+            border: 1px solid #444;
+            border-radius: 12px;
+            padding: 20px;
+            max-width: 600px;
+            margin: auto;
+        }
+
+        .negotiation-offer {
+            background-color: var(--color-bg);
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 15px;
+            border-left: 4px solid var(--color-primary);
+        }
+
+        .negotiation-resources {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            margin-top: 10px;
+        }
+
+        .resource-badge {
+            background-color: rgba(50, 184, 198, 0.2);
+            color: var(--color-primary);
+            padding: 5px 10px;
+            border-radius: 6px;
+            font-size: 0.9rem;
+            border: 1px solid var(--color-primary);
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .main-container {
+                flex-direction: column;
+            }
+
+            .sidebar {
+                width: 100%;
+                height: auto;
+                max-height: 120px;
+                display: flex;
+                flex-direction: row;
+                flex-wrap: wrap;
+                justify-content: space-around;
+                align-items: flex-start;
+                padding: 10px;
+                border-right: none;
+                border-bottom: 1px solid #444;
+            }
+
+            .game-map {
+                grid-template-columns: repeat(5, 1fr);
+            }
+
+            .action-panel {
+                flex-direction: row;
+                flex-wrap: wrap;
+            }
+
+            .action-btn {
+                min-width: 120px;
+                padding: 10px 15px;
+                font-size: 0.9rem;
+            }
+
+            .header-player-list {
+                display: none;
+            }
+
+            #feedbackMessage {
+                min-width: 90%;
+                font-size: 1rem;
+                padding: 10px 15px;
+            }
+
+            .player-setup-form {
+                max-width: 90%;
+                padding: 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Header -->
+    <nav class="navbar navbar-dark">
+        <span class="navbar-brand">Gaia Dominium</span>
+        <div class="header-player-list" id="playerHeaderList">
+            <span class="header-player-item">Aguardando Início...</span>
+        </div>
+        <span class="manual-icon" id="manualIcon" data-bs-toggle="modal" data-bs-target="#manualModal">
+            <svg class="svg-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24" fill="currentColor">
+                <path d="M18 2H6C4.9 2 4 2.9 4 4v16c0 1.1 0.9 2 2 2h12c1.1 0 2-0.9 2-2V4C20 2.9 19.1 2 18 2zM6 4h12v16H6V4zm7 14h-2v-2h2v2zm0-4h-2V7h2v7z"/>
+            </svg>
+        </span>
+    </nav>
+
+    <!-- Main Container -->
+    <div class="main-container">
+        <!-- Sidebar -->
+        <div class="sidebar">
+            <h5 id="recursosTitle">Recursos</h5>
+            <div id="recursosDisplay">
+                <!-- Conteúdo atualizado por JS -->
+            </div>
+            
+            <h5 id="pvTitle" style="margin-top: 20px;">Placar Global</h5>
+            <div class="resource-item">
+                <span class="label">Turno:</span>
+                <span class="value" id="turnoDisplay">0</span>
+            </div>
+            <div id="playerListDisplay">
+                <!-- Lista de jogadores (atualizado por JS) -->
+            </div>
+        </div>
+
+        <!-- Game Map Container -->
+        <div class="game-map-container">
+            <!-- Game Map -->
+            <div class="game-map" id="gameMap">
+                <!-- Regiões geradas por JS -->
+            </div>
+
+            <!-- Action Panel -->
+            <div class="action-panel">
+                <button class="action-btn" id="explorarBtn" disabled>Explorar</button>
+                <button class="action-btn" id="construirBtn" disabled>Construir</button>
+                <button class="action-btn" id="recolherBtn" disabled>Recolher</button>
+                <button class="action-btn" id="negociarBtn" disabled>Negociar</button>
+                <button class="action-btn" id="endTurnBtn" disabled>Finalizar Turno</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Initial Screen -->
+    <div class="initial-screen" id="initialScreen">
+        <div class="player-setup-form">
+            <h1>Configuração de Partida</h1>
+            <p>Multiplayer local para 2 a 4 jogadores. Cadastre os jogadores para começar.</p>
+            
+            <div class="player-count-display" id="playerCountDisplay">0/4 Jogadores Registrados</div>
+            
+            <div class="player-input-group">
+                <label for="playerName">Nome:</label>
+                <input type="text" id="playerName" placeholder="Nome do Jogador">
+            </div>
+
+            <div class="player-input-group">
+                <label>Ícone:</label>
+                <div id="iconSelection">
+                    <!-- Ícones gerados por JS -->
+                </div>
+            </div>
+
+            <div class="d-grid gap-2">
+                <button class="action-btn" id="addPlayerBtn">Adicionar Jogador</button>
+                <button class="action-btn" id="startGameBtn" disabled style="margin-top: 10px;">Iniciar Jogo</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Feedback Message -->
+    <div id="feedbackMessage"></div>
+
+    <!-- Manual Modal -->
+    <div class="modal fade" id="manualModal" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Manual do Jogo</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <ul class="nav nav-tabs" role="tablist">
+                        <li class="nav-item">
+                            <a class="nav-link active" data-bs-toggle="tab" href="#visaoGeral">Visão Geral</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" data-bs-toggle="tab" href="#mecanicas">Mecânicas</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" data-bs-toggle="tab" href="#acoes">Ações</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" data-bs-toggle="tab" href="#dicas">Dicas</a>
+                        </li>
+                    </ul>
+                    <div class="tab-content" style="margin-top: 20px;">
+                        <div id="visaoGeral" class="tab-pane fade show active">
+                            <h4>Visão Geral</h4>
+                            <p>Gaia Dominium é um jogo de estratégia digital que combina gerenciamento de recursos e interação entre jogadores. O objetivo é acumular 25 Pontos de Vitória (PVs) para conquistar o planeta.</p>
+                            <p>Cada jogador controla uma Facção com recursos iniciais e uma renda baseada em regiões e projetos ativos.</p>
+                            <h4 style="margin-top: 20px;">Recursos Essenciais</h4>
+                            <ul>
+                                <li><strong>🌲 Madeira (M):</strong> Recurso primário, usado para construção e recolha.</li>
+                                <li><strong>🗿 Pedra (P):</strong> Usada em construções mais robustas.</li>
+                                <li><strong>💰 Ouro (G):</strong> Recurso estratégico, essencial para negociação.</li>
+                                <li><strong>💧 Água (A):</strong> Recurso vital para produção e desenvolvimento.</li>
+                            </ul>
+                        </div>
+                        <div id="mecanicas" class="tab-pane fade">
+                            <h4>Mecânicas do Jogo</h4>
+                            <p><strong>Fluxo de Um Turno:</strong></p>
+                            <ul>
+                                <li><strong>Fase 1 - Renda Automática:</strong> Sistema calcula e adiciona recursos baseado em regiões controladas.</li>
+                                <li><strong>Fase 2 - Ação Principal:</strong> Jogador executa uma ação modular (Explorar, Construir, Recolher, Negociar).</li>
+                                <li><strong>Fase 3 - Negociação:</strong> Jogador pode negociar recursos e áreas com outros jogadores.</li>
+                                <li><strong>Fase 4 - Passar Turno:</strong> Turno passa para o próximo jogador.</li>
+                            </ul>
+                            <h4 style="margin-top: 20px;">Pontos de Vitória</h4>
+                            <ul>
+                                <li>Explorar uma região: +1 PV</li>
+                                <li>Construir: +1-2 PV</li>
+                                <li>Recolher: +1 PV</li>
+                                <li>Negociação bem-sucedida: +1 PV (ambos)</li>
+                                <li>Controlar 50% do mapa: +5 PV</li>
+                                <li>Objetivo: Atingir 25 PV para vencer!</li>
+                            </ul>
+                        </div>
+                        <div id="acoes" class="tab-pane fade">
+                            <h4>Ações Disponíveis</h4>
+                            <p><strong>1. Explorar</strong></p>
+                            <p>Custo: 2 Madeira + 1 Água | Ganho: +1 PV, +50% produção na região</p>
+                            <p><strong>2. Construir</strong></p>
+                            <p>Custo: 3 Madeira + 2 Pedra + 1 Ouro | Ganho: +2 PV, +1 recurso/turno</p>
+                            <p><strong>3. Recolher</strong></p>
+                            <p>Custo: 1 Madeira | Ganho: +1 PV, +2 de cada recurso primário</p>
+                            <p><strong>4. Negociar</strong></p>
+                            <p>Custo: 1 Ouro | Ganho: +1 PV, troca de recursos e áreas com outro jogador</p>
+                        </div>
+                        <div id="dicas" class="tab-pane fade">
+                            <h4>Dicas Estratégicas</h4>
+                            <p><strong>Para Iniciantes:</strong></p>
+                            <ul>
+                                <li>Explore primeiro para desbloquear produção máxima</li>
+                                <li>Mantenha recursos balanceados</li>
+                                <li>Guarde Ouro para negociações estratégicas</li>
+                                <li>Negocie com outros jogadores para ganhar vantagem</li>
+                            </ul>
+                            <p><strong>Para Avançados:</strong></p>
+                            <ul>
+                                <li>Use engine building com múltiplas estruturas</li>
+                                <li>Bloqueie regiões que outros precisam</li>
+                                <li>Converta recursos estrategicamente</li>
+                                <li>Forme alianças temporárias através de negociações</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Negociação Modal -->
+    <div class="modal fade" id="negotiationModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Negociação</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div id="negotiationContent">
+                        <!-- Conteúdo da negociação será inserido aqui -->
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="button" class="btn btn-primary" id="acceptNegotiationBtn">Aceitar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bootstrap 5 JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+    <script>
+        // ==================== CONFIGURAÇÃO DO JOGO ====================
+        const GAME_CONFIG = {
+            GRID_SIZE: 5,
+            INITIAL_RESOURCES: { madeira: 10, pedra: 5, ouro: 3, agua: 5 },
+            VICTORY_POINTS: 25,
+            BIOMES: ['Floresta Tropical', 'Floresta Temperada', 'Savana', 'Pântano'],
+            REGION_NAMES: [
+                'Região A', 'Região B', 'Região C', 'Região D', 'Região E',
+                'Região F', 'Região G', 'Região H', 'Região I', 'Região J',
+                'Região K', 'Região L', 'Região M', 'Região N', 'Região O',
+                'Região P', 'Região Q', 'Região R', 'Região S', 'Região T',
+                'Região U', 'Região V', 'Região W', 'Região X', 'Região Y'
+            ],
+            PLAYER_COLORS: ['#FF6B6B', '#4ECDC4', '#45B7D1', '#FFA07A'],
+            PLAYER_ICONS: ['🦁', '🐯', '🐻', '🦊', '🐺', '🦅', '🐉', '🦈']
+        };
+
+        // ==================== ESTADO DO JOGO ====================
+        let gameState = {
+            players: [],
+            regions: [],
+            currentPlayerIndex: 0,
+            selectedPlayerForResources: 0,
+            turn: 0,
+            gameStarted: false,
+            selectedRegion: null,
+            selectedAction: null,
+            negotiationInProgress: false
+        };
+
+        // ==================== INICIALIZAÇÃO ====================
+        function initializeGame() {
+            createRegions();
+            distributeRegions();
+            updateDisplay();
+        }
+
+        function createRegions() {
+            gameState.regions = [];
+            for (let i = 0; i < GAME_CONFIG.GRID_SIZE * GAME_CONFIG.GRID_SIZE; i++) {
+                gameState.regions.push({
+                    id: i,
+                    name: GAME_CONFIG.REGION_NAMES[i],
+                    biome: GAME_CONFIG.BIOMES[Math.floor(Math.random() * GAME_CONFIG.BIOMES.length)],
+                    controller: null,
+                    explorationLevel: 0,
+                    structures: []
+                });
+            }
+        }
+
+        function distributeRegions() {
+            const regionsPerPlayer = Math.floor((GAME_CONFIG.GRID_SIZE * GAME_CONFIG.GRID_SIZE) / gameState.players.length);
+            let regionIndex = 0;
+            
+            for (let i = 0; i < gameState.players.length; i++) {
+                for (let j = 0; j < regionsPerPlayer; j++) {
+                    if (regionIndex < gameState.regions.length) {
+                        gameState.regions[regionIndex].controller = i;
+                        regionIndex++;
+                    }
+                }
+            }
+        }
+
+        // ==================== GERENCIAMENTO DE JOGADORES ====================
+        function addPlayer(name, icon) {
+            if (gameState.players.length >= 4) {
+                showFeedback('Máximo de 4 jogadores!', 'error');
+                return false;
+            }
+            
+            gameState.players.push({
+                id: gameState.players.length,
+                name: name,
+                icon: icon,
+                color: GAME_CONFIG.PLAYER_COLORS[gameState.players.length],
+                resources: { ...GAME_CONFIG.INITIAL_RESOURCES },
+                victoryPoints: 0,
+                structures: 0
+            });
+            
+            updatePlayerCountDisplay();
+            return true;
+        }
+
+        function updatePlayerCountDisplay() {
+            document.getElementById('playerCountDisplay').textContent = 
+                `${gameState.players.length}/4 Jogadores Registrados`;
+            
+            const startBtn = document.getElementById('startGameBtn');
+            startBtn.disabled = gameState.players.length < 2;
+        }
+
+        // ==================== INTERFACE DO JOGO ====================
+        function renderGameMap() {
+            const gameMap = document.getElementById('gameMap');
+            gameMap.innerHTML = '';
+            
+            gameState.regions.forEach(region => {
+                const regionEl = document.createElement('div');
+                regionEl.className = 'region';
+                regionEl.dataset.regionId = region.id;
+                
+                if (region.controller !== null) {
+                    const player = gameState.players[region.controller];
+                    regionEl.style.setProperty('--region-border-color', player.color);
+                    regionEl.style.backgroundColor = player.color + '33';
+                    
+                    if (region.controller === gameState.currentPlayerIndex) {
+                        regionEl.classList.add('controlled-by-current');
+                    }
+                }
+                
+                if (gameState.selectedRegion === region.id) {
+                    regionEl.classList.add('selected');
+                }
+                
+                regionEl.innerHTML = `
+                    <div class="region-name">${region.name}</div>
+                    <div class="region-info">${region.biome}</div>
+                    <div class="region-info">Nível: ${region.explorationLevel}</div>
+                `;
+                
+                regionEl.addEventListener('click', () => selectRegion(region.id));
+                gameMap.appendChild(regionEl);
+            });
+        }
+
+        function selectRegion(regionId) {
+            gameState.selectedRegion = gameState.selectedRegion === regionId ? null : regionId;
+            renderGameMap();
+            updateActionButtons();
+        }
+
+        function updateDisplay() {
+            renderGameMap();
+            updateResourcesDisplay();
+            updatePlayersList();
+            updateActionButtons();
+            updateHeaderPlayerList();
+        }
+
+        function updateResourcesDisplay() {
+            const player = gameState.players[gameState.selectedPlayerForResources];
+            const recursosDisplay = document.getElementById('recursosDisplay');
+            const recursosTitle = document.getElementById('recursosTitle');
+            
+            // Atualizar título
+            if (gameState.selectedPlayerForResources === gameState.currentPlayerIndex) {
+                recursosTitle.textContent = `Recursos (${player.icon} ${player.name})`;
+            } else {
+                recursosTitle.textContent = `Recursos (${player.icon} ${player.name}) - Visualizando`;
+            }
+            
+            recursosDisplay.innerHTML = `
+                <div class="resource-item">
+                    <span class="label">🌲 Madeira:</span>
+                    <span class="value">${player.resources.madeira}</span>
+                </div>
+                <div class="resource-item">
+                    <span class="label">🗿 Pedra:</span>
+                    <span class="value">${player.resources.pedra}</span>
+                </div>
+                <div class="resource-item">
+                    <span class="label">💰 Ouro:</span>
+                    <span class="value">${player.resources.ouro}</span>
+                </div>
+                <div class="resource-item">
+                    <span class="label">💧 Água:</span>
+                    <span class="value">${player.resources.agua}</span>
+                </div>
+            `;
+            
+            document.getElementById('turnoDisplay').textContent = gameState.turn;
+        }
+
+        function updatePlayersList() {
+            const playerListDisplay = document.getElementById('playerListDisplay');
+            playerListDisplay.innerHTML = '';
+            
+            gameState.players.forEach((player, index) => {
+                const playerItem = document.createElement('div');
+                playerItem.className = 'player-score-item';
+                playerItem.dataset.playerIndex = index;
+                
+                if (index === gameState.currentPlayerIndex) {
+                    playerItem.classList.add('active-player');
+                }
+                
+                // Se for o jogador selecionado para visualizar recursos
+                if (gameState.selectedPlayerForResources === index) {
+                    playerItem.classList.add('viewing-resources');
+                }
+                
+                playerItem.innerHTML = `
+                    <span>${player.icon} ${player.name}</span>
+                    <span>${player.victoryPoints} PV</span>
+                `;
+                
+                playerItem.addEventListener('click', () => selectPlayerForResources(index));
+                playerListDisplay.appendChild(playerItem);
+            });
+        }
+        
+        function selectPlayerForResources(playerIndex) {
+            // Toggle: se clicar no mesmo, desseleciona
+            if (gameState.selectedPlayerForResources === playerIndex) {
+                gameState.selectedPlayerForResources = gameState.currentPlayerIndex;
+            } else {
+                gameState.selectedPlayerForResources = playerIndex;
+            }
+            updateDisplay();
+        }
+
+        function updateHeaderPlayerList() {
+            const playerHeaderList = document.getElementById('playerHeaderList');
+            playerHeaderList.innerHTML = '';
+            
+            gameState.players.forEach((player, index) => {
+                const playerItem = document.createElement('span');
+                playerItem.className = 'header-player-item';
+                if (index === gameState.currentPlayerIndex) {
+                    playerItem.classList.add('active-player-header');
+                }
+                
+                playerItem.textContent = `${player.icon} ${player.name}`;
+                playerHeaderList.appendChild(playerItem);
+            });
+        }
+
+        function updateActionButtons() {
+            const player = gameState.players[gameState.currentPlayerIndex];
+            const selectedRegion = gameState.selectedRegion !== null ? gameState.regions[gameState.selectedRegion] : null;
+            
+            // Explorar: 2 Madeira + 1 Água
+            document.getElementById('explorarBtn').disabled = 
+                !selectedRegion || selectedRegion.controller !== gameState.currentPlayerIndex || 
+                player.resources.madeira < 2 || player.resources.agua < 1;
+            
+            // Construir: 3 Madeira + 2 Pedra + 1 Ouro
+            document.getElementById('construirBtn').disabled = 
+                !selectedRegion || selectedRegion.controller !== gameState.currentPlayerIndex || 
+                player.resources.madeira < 3 || player.resources.pedra < 2 || player.resources.ouro < 1;
+            
+            // Recolher: 1 Madeira
+            document.getElementById('recolherBtn').disabled = 
+                player.resources.madeira < 1;
+            
+            // Negociar: 1 Ouro
+            document.getElementById('negociarBtn').disabled = 
+                player.resources.ouro < 1;
+            
+            // Finalizar Turno: sempre disponível
+            document.getElementById('endTurnBtn').disabled = false;
+        }
+
+        // ==================== AÇÕES DO JOGO ====================
+        function performAction(actionType) {
+            const player = gameState.players[gameState.currentPlayerIndex];
+            const selectedRegion = gameState.selectedRegion !== null ? gameState.regions[gameState.selectedRegion] : null;
+            
+            switch(actionType) {
+                case 'explorar':
+                    if (selectedRegion && selectedRegion.controller === gameState.currentPlayerIndex) {
+                        player.resources.madeira -= 2;
+                        player.resources.agua -= 1;
+                        selectedRegion.explorationLevel++;
+                        player.victoryPoints += 1;
+                        showFeedback('Região explorada! +1 PV', 'success');
+                    }
+                    break;
+                    
+                case 'construir':
+                    if (selectedRegion && selectedRegion.controller === gameState.currentPlayerIndex) {
+                        player.resources.madeira -= 3;
+                        player.resources.pedra -= 2;
+                        player.resources.ouro -= 1;
+                        selectedRegion.structures.push('estrutura');
+                        player.structures++;
+                        player.victoryPoints += 2;
+                        showFeedback('Estrutura construída! +2 PV', 'success');
+                    }
+                    break;
+                    
+                case 'recolher':
+                    player.resources.madeira -= 1;
+                    player.resources.madeira += 2;
+                    player.resources.pedra += 2;
+                    player.resources.agua += 2;
+                    player.victoryPoints += 1;
+                    showFeedback('Recursos recolhidos! +1 PV', 'success');
+                    break;
+                    
+                case 'negociar':
+                    player.resources.ouro -= 1;
+                    openNegotiationModal();
+                    break;
+            }
+            
+            gameState.selectedRegion = null;
+            updateDisplay();
+            checkVictoryCondition();
+        }
+
+        function openNegotiationModal() {
+            const player = gameState.players[gameState.currentPlayerIndex];
+            const otherPlayers = gameState.players.filter((p, i) => i !== gameState.currentPlayerIndex);
+            
+            let content = '<p>Selecione um jogador para negociar:</p>';
+            content += '<div class="negotiation-resources">';
+            
+            otherPlayers.forEach(otherPlayer => {
+                content += `<button class="resource-badge" onclick="initiateNegotiation(${otherPlayer.id})">${otherPlayer.icon} ${otherPlayer.name}</button>`;
+            });
+            
+            content += '</div>';
+            
+            document.getElementById('negotiationContent').innerHTML = content;
+            const modal = new bootstrap.Modal(document.getElementById('negotiationModal'));
+            modal.show();
+        }
+
+        function initiateNegotiation(targetPlayerId) {
+            const player = gameState.players[gameState.currentPlayerIndex];
+            const targetPlayer = gameState.players[targetPlayerId];
+            
+            // Simples: oferecer 1 recurso por 1 recurso
+            const resourceTypes = ['madeira', 'pedra', 'ouro', 'agua'];
+            const offerType = resourceTypes[Math.floor(Math.random() * resourceTypes.length)];
+            const receiveType = resourceTypes[Math.floor(Math.random() * resourceTypes.length)];
+            
+            if (player.resources[offerType] > 0 && targetPlayer.resources[receiveType] > 0) {
+                player.resources[offerType]--;
+                targetPlayer.resources[receiveType]--;
+                player.resources[receiveType]++;
+                targetPlayer.resources[offerType]++;
+                
+                player.victoryPoints += 1;
+                targetPlayer.victoryPoints += 1;
+                
+                showFeedback(`Negociação bem-sucedida! +1 PV para ambos`, 'success');
+            }
+            
+            const modal = bootstrap.Modal.getInstance(document.getElementById('negotiationModal'));
+            modal.hide();
+            
+            updateDisplay();
+        }
+
+        function endTurn() {
+            gameState.turn++;
+            gameState.currentPlayerIndex = (gameState.currentPlayerIndex + 1) % gameState.players.length;
+            gameState.selectedPlayerForResources = gameState.currentPlayerIndex; // Resetar visualização de recursos
+            
+            // Adicionar renda
+            const player = gameState.players[gameState.currentPlayerIndex];
+            const controlledRegions = gameState.regions.filter(r => r.controller === gameState.currentPlayerIndex);
+            
+            player.resources.madeira += controlledRegions.length;
+            
+            gameState.selectedRegion = null;
+            updateDisplay();
+        }
+
+        function checkVictoryCondition() {
+            const winner = gameState.players.find(p => p.victoryPoints >= GAME_CONFIG.VICTORY_POINTS);
+            if (winner) {
+                showFeedback(`${winner.icon} ${winner.name} venceu com ${winner.victoryPoints} PV!`, 'success');
+                setTimeout(() => location.reload(), 3000);
+            }
+        }
+
+        // ==================== INTERFACE ====================
+        function showFeedback(message, type = 'info') {
+            const feedbackEl = document.getElementById('feedbackMessage');
+            feedbackEl.textContent = message;
+            feedbackEl.className = `${type} show`;
+            
+            setTimeout(() => {
+                feedbackEl.classList.remove('show');
+            }, 3000);
+        }
+
+        // ==================== EVENT LISTENERS ====================
+        document.getElementById('addPlayerBtn').addEventListener('click', () => {
+            const name = document.getElementById('playerName').value.trim();
+            const selectedIcon = document.querySelector('.icon-option.selected');
+            
+            if (!name) {
+                showFeedback('Digite um nome!', 'error');
+                return;
+            }
+            
+            if (!selectedIcon) {
+                showFeedback('Selecione um ícone!', 'error');
+                return;
+            }
+            
+            if (addPlayer(name, selectedIcon.textContent)) {
+                document.getElementById('playerName').value = '';
+                selectedIcon.classList.remove('selected');
+                showFeedback(`${name} adicionado!`, 'success');
+            }
+        });
+
+        document.getElementById('startGameBtn').addEventListener('click', () => {
+            gameState.gameStarted = true;
+            document.getElementById('initialScreen').classList.add('hidden');
+            initializeGame();
+        });
+
+        document.getElementById('explorarBtn').addEventListener('click', () => performAction('explorar'));
+        document.getElementById('construirBtn').addEventListener('click', () => performAction('construir'));
+        document.getElementById('recolherBtn').addEventListener('click', () => performAction('recolher'));
+        document.getElementById('negociarBtn').addEventListener('click', () => performAction('negociar'));
+        document.getElementById('endTurnBtn').addEventListener('click', endTurn);
+
+        // ==================== INICIALIZAÇÃO DA PÁGINA ====================
+        document.addEventListener('DOMContentLoaded', () => {
+            // Gerar ícones
+            const iconSelection = document.getElementById('iconSelection');
+            GAME_CONFIG.PLAYER_ICONS.forEach(icon => {
+                const iconOption = document.createElement('div');
+                iconOption.className = 'icon-option';
+                iconOption.textContent = icon;
+                iconOption.addEventListener('click', () => {
+                    document.querySelectorAll('.icon-option').forEach(el => el.classList.remove('selected'));
+                    iconOption.classList.add('selected');
+                });
+                iconSelection.appendChild(iconOption);
+            });
+        });
+    </script>
+</body>
+</html>
