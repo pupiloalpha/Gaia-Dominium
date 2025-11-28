@@ -597,10 +597,69 @@
             }
 
             /* Adicionar um estilo para realçar o contorno das regiões controladas.
-    Isso deve ser aplicado via JS. 
-*/
-.region.controlled {
-    border: 3px solid transparent;
-    border-radius: 5px;
+            Isso deve ser aplicado via JS. 
+            */
+            .region.controlled {
+                border: 3px solid transparent;
+                border-radius: 5px;
+            }
+
+            /* ==================== CORREÇÕES UX ==================== */
+
+/* Regra 1: Destaque de jogador que NÃO é o do turno, mas está sendo visualizado */
+.player-score-item.viewing-resources:not(.active-player) {
+    /* Usar uma cor diferente, como o warning, para o destaque */
+    background-color: rgba(255, 152, 0, 0.2); /* Cor de warning com transparência */
+    border-left: 5px solid var(--color-warning) !important;
+}
+
+/* Regra 4: Destaque da região selecionada no mapa */
+.region.selected {
+    box-shadow: 0 0 10px 3px var(--color-warning); 
+    border: 3px solid var(--color-warning) !important;
+    transform: scale(1.03); /* Pequeno zoom no clique */
+}
+
+/* ==================== ESTILO MODAL DE CONSTRUÇÃO (Regra 5) ==================== */
+
+.build-option {
+    cursor: pointer;
+    transition: transform 0.2s, box-shadow 0.2s;
+    background-color: var(--color-surface);
+    color: var(--color-text);
+    border: 1px solid var(--color-primary-dark);
+}
+
+.build-option:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.4);
+}
+
+.build-option.disabled {
+    cursor: not-allowed;
+}
+
+/* Ajustes para o modal do Bootstrap no tema escuro */
+.modal-content.bg-surface {
+    background-color: var(--color-surface) !important;
+    border: 1px solid var(--color-text-secondary);
+}
+
+.modal-header, .modal-footer {
+    border-color: var(--color-primary-dark);
+}
+
+.btn-close-white {
+    filter: invert(1); /* Torna o X branco para fundo escuro */
+}
+
+/* Estilo para os custos no modal de construção */
+.resource-cost {
+    display: inline-block;
+    padding: 2px 6px;
+    margin-right: 4px;
+    background-color: var(--color-primary-dark);
+    border-radius: 3px;
+    font-size: 0.85em;
 }
         }
