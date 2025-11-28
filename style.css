@@ -135,14 +135,35 @@ body {
     background: rgba(0, 0, 0, 0.5);
     padding: 1px 4px;
     border-radius: 3px;
+    z-index: 15; /* Certificar que o ícone de estrutura fique acima */
 }
 
-/* DESTAQUE DE SELEÇÃO: A ÚNICA QUE TEM EFEITO DE ILUMINAÇÃO (BOX-SHADOW) */
+.info-icon {
+    position: absolute;
+    bottom: 5px;
+    left: 5px;
+    font-size: 1.1rem;
+    cursor: pointer;
+    background: var(--color-primary-dark);
+    color: var(--color-text);
+    padding: 2px 5px;
+    border-radius: 4px;
+    line-height: 1;
+    z-index: 15; 
+    transition: background-color 0.2s;
+}
+
+.info-icon:hover {
+    background-color: var(--color-primary);
+    transform: scale(1.1);
+}
+
+/* DESTAQUE DE SELEÇÃO: A ÚNICA QUE TEM EFEITO DE ILUMINAÇÃO (Correção 1) */
 .region.selected {
-    box-shadow: 0 0 15px 5px var(--color-warning); 
-    border: 5px solid var(--color-warning) !important; /* Borda mais grossa e visível */
-    transform: scale(1.05); /* Zoom Aumentado */
-    background-color: rgba(255, 152, 0, 0.2) !important; /* Overlay suave de alerta */
+    box-shadow: 0 0 20px 8px var(--color-warning) !important; 
+    border: 5px solid var(--color-warning) !important;
+    transform: scale(1.05); 
+    background-color: rgba(255, 152, 0, 0.3) !important; /* Mais visível */
     z-index: 10;
 }
 
@@ -350,20 +371,27 @@ body {
     filter: invert(1); 
 }
 
-/* ==================== MODAL DE CONSTRUÇÃO (Regra 5) ==================== */
+/* ==================== MODAL DE CONSTRUÇÃO (Correção 3) ==================== */
 
-/* Forçar tema Dark para o conteúdo do Card/Opções de Construção */
 .modal-content.bg-surface .card {
-    background-color: var(--color-surface); 
+    background-color: var(--color-surface) !important; /* FORÇA TEMA DARK */
     color: var(--color-text);
     border: 1px solid var(--color-primary-dark);
 }
 
 .modal-content.bg-surface .card-body {
-    background-color: var(--color-surface); 
+    background-color: var(--color-surface) !important; /* FORÇA TEMA DARK */
     color: var(--color-text);
 }
 
+/* Sobrescreve classes de texto do Bootstrap para garantir cores claras sobre fundo escuro */
+.build-option .card-title, .build-option .card-text.small {
+    color: var(--color-text) !important;
+}
+
+.build-option .text-light-secondary {
+    color: var(--color-text-secondary) !important;
+}
 .build-option {
     cursor: pointer;
     transition: transform 0.2s, box-shadow 0.2s, background-color 0.2s;
