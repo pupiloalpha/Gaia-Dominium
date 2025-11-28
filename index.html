@@ -234,7 +234,30 @@
         </div>
     </div>
 </div>
-    
+
+    <div class="action-buttons-container">
+    <button class="btn btn-primary action-btn" id="explorarBtn" data-bs-toggle="tooltip" data-bs-html="true" title="">Explorar</button>
+    <button class="btn btn-primary action-btn" id="construirBtn" data-bs-toggle="tooltip" data-bs-html="true" title="">Construir</button>
+    <button class="btn btn-primary action-btn" id="recolherBtn" data-bs-toggle="tooltip" data-bs-html="true" title="">Recolher</button>
+    <button class="btn btn-primary action-btn" id="negociarBtn" data-bs-toggle="tooltip" data-bs-html="true" title="">Negociar</button>
+    <button class="btn btn-success action-btn" id="endTurnBtn">Finalizar Turno</button>
+</div>
+
+<div class="modal fade" id="regionDetailsModal" tabindex="-1" aria-labelledby="regionDetailsModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content bg-surface text-text">
+            <div class="modal-header">
+                <h5 class="modal-title" id="regionDetailsModalLabel">Detalhes da Região</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body" id="regionDetailsContent">
+                </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fechar</button>
+            </div>
+        </div>
+    </div>
+</div>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     
     <script src="main.js"></script>
