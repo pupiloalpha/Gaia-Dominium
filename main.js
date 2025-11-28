@@ -159,34 +159,55 @@ function renderGameMap() {
         if (region.controller !== null) {
             const player = gameState.players[region.controller];
             
+            // Borda e cor semi-transparente para identificação de propriedade (Não Iluminação)
             regionEl.style.border = `3px solid ${player.color}`;
-            regionEl.style.backgroundColor = player.color + '33';
+            regionEl.style.backgroundColor = player.color + '33'; 
             
             if (region.controller === gameState.currentPlayerIndex) {
                 regionEl.classList.add('controlled-by-current');
             }
         }
         
-        // Regra 4: Destaque de região selecionada
+        // Destaque de região selecionada - O CSS aplica a iluminação SÓ AQUI
         if (gameState.selectedRegion === region.id) {
             regionEl.classList.add('selected');
         }
         
         const structureIcon = region.structures.length > 0 ? `<div class="structure-icon">🏗️ x${region.structures.length}</div>` : '';
         
+        // NOVO: Ícone de Informação (Correção 2)
+        const infoIconHtml = `<div class="info-icon" data-region-id="${region.id}">ℹ️</div>`;
+        
         regionEl.innerHTML = `
             <div class="region-name">${region.name}</div>
             <div class="region-info">${region.biome}</div>
             <div class="region-info">Nível: ${region.explorationLevel}</div>
             ${structureIcon}
+            ${infoIconHtml}
         `;
         
-        regionEl.addEventListener('click', () => selectRegion(region.id));
+        // NOVO LISTENER: Clique principal SÓ SELECIONA a região para ação
+        regionEl.addEventListener('click', (event) => {
+            // Se o clique não foi no ícone de info (evitando dupla ação)
+            if (!event.target.classList.contains('info-icon')) {
+                selectRegion(region.id);
+            }
+        });
+        
         gameMap.appendChild(regionEl);
+        
+        // NOVO LISTENER: Clique no ícone de informação ABRE O MODAL (Correção 2)
+        const infoIconEl = regionEl.querySelector('.info-icon');
+        if (infoIconEl) {
+            infoIconEl.addEventListener('click', (event) => {
+                event.stopPropagation(); // Impede que o clique selecione a região
+                openRegionDetailsModal(region.id);
+            });
+        }
     });
 }
 
-// Ação 2.1 e Regra 4: Destaque e Modal de Detalhes
+// selectRegion MODIFICADA: Apenas lida com a seleção/desseleção para ações
 function selectRegion(regionId) {
     const region = gameState.regions[regionId];
 
@@ -198,16 +219,16 @@ function selectRegion(regionId) {
         if (region.controller === gameState.currentPlayerIndex) {
             gameState.selectedRegion = regionId;
         } else {
-            // Se for região de outro jogador, apenas exibe os detalhes.
+            // Se for região de outro jogador ou selvagem, não marca para ação.
             gameState.selectedRegion = null;
+            showFeedback("Você só pode selecionar suas próprias regiões para ações.", 'warning');
         }
     }
     
     renderGameMap();
     updateActionButtons();
     
-    // Ação 2.1: Sempre abre o modal de detalhes quando uma região é clicada
-    openRegionDetailsModal(regionId);
+    // REMOVIDO: openRegionDetailsModal(regionId);
 }
 
 // Ação 2.1: Função para abrir o modal de detalhes da região
@@ -263,6 +284,46 @@ function openRegionDetailsModal(regionId) {
     modal.show();
 }
 
+// openBuildModal MODIFICADA: Adiciona classes de texto para garantir o tema dark (Correção 3)
+function openBuildModal(player, region) {
+    const structureTypes = GAME_CONFIG.STRUCTURE_TYPES;
+    const buildOptionsContent = document.getElementById('buildOptionsContent');
+    buildOptionsContent.innerHTML = '';
+    
+    let optionsHtml = '<div class="row">';
+    
+    for (const key in structureTypes) {
+        const structure = structureTypes[key];
+        const canAfford = checkCosts(player, structure.cost);
+        const disabledClass = canAfford ? '' : 'disabled opacity-50';
+        
+        const costsHtml = Object.keys(structure.cost)
+            .filter(res => structure.cost[res] > 0)
+            .map(res => `<span class="resource-cost">${structure.cost[res]} ${res.substring(0, 1).toUpperCase()}${res.substring(1)}</span>`)
+            .join(' | ');
+
+        optionsHtml += `
+            <div class="col-md-4 mb-3">
+                <div class="card build-option ${disabledClass}" 
+                     data-structure-key="${key}" ${!canAfford ? 'style="pointer-events: none;"' : ''}
+                     onclick="${canAfford ? `handleBuildSelection('${key}')` : 'void(0)'}">
+                    <div class="card-body">
+                        <h5 class="card-title text-light">${structure.name}</h5> <p class="card-text small text-light-secondary">${structure.description}</p> <p class="card-text text-success"><strong>+${structure.pv_gain} PV</strong> (Instantâneo)</p>
+                        <p class="card-text text-info"><strong>Bônus/Turno:</strong> ${structure.bonus_per_turn.pv || 0} PV</p>
+                        <hr>
+                        <p class="card-text text-danger"><strong>Custo:</strong> ${costsHtml || 'Nenhum'}</p>
+                    </div>
+                </div>
+            </div>
+        `;
+    }
+    
+    optionsHtml += '</div>';
+    buildOptionsContent.innerHTML = optionsHtml;
+    
+    const modal = new bootstrap.Modal(document.getElementById('buildModal'));
+    modal.show();
+}
 
 function updateDisplay() {
     renderGameMap();
