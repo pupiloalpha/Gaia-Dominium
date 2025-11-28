@@ -15,6 +15,12 @@
             --color-error: #f44336;
             --color-warning: #ff9800;
             --color-success: #4caf50;
+            /* === NOVAS VARIÁVEIS DE CORES DE JOGADORES === */
+    --player-color-verde: #4CAF50;    /* Verde */
+    --player-color-azul: #2196F3;     /* Azul */
+    --player-color-vermelho: #F44336; /* Vermelho */
+    --player-color-amarelo: #FFEB3B;  /* Amarelo */
+    /* === FIM CORES DE JOGADORES === */
         }
 
         * {
@@ -589,4 +595,12 @@
                 max-width: 90%;
                 padding: 20px;
             }
+
+            /* Adicionar um estilo para realçar o contorno das regiões controladas.
+    Isso deve ser aplicado via JS. 
+*/
+.region.controlled {
+    border: 3px solid transparent;
+    border-radius: 5px;
+}
         }
