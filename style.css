@@ -1,5 +1,6 @@
 /*
-    style.css - Refatorado com correção de tema do modal e destaque de região.
+    style.css - Refatorado com correção de tema do modal e destaque de região,
+    garantindo que o efeito de iluminação latente ocorra APENAS na região selecionada.
 */
 
 :root {
@@ -136,7 +137,7 @@ body {
     border-radius: 3px;
 }
 
-/* Regra 4/Ação Adicional: Destaque da região selecionada no mapa */
+/* DESTAQUE DE SELEÇÃO: A ÚNICA QUE TEM EFEITO DE ILUMINAÇÃO (BOX-SHADOW) */
 .region.selected {
     box-shadow: 0 0 15px 5px var(--color-warning); 
     border: 5px solid var(--color-warning) !important; /* Borda mais grossa e visível */
@@ -144,6 +145,12 @@ body {
     background-color: rgba(255, 152, 0, 0.2) !important; /* Overlay suave de alerta */
     z-index: 10;
 }
+
+/* A classe 'controlled-by-current' (adicionada no main.js) não deve ter iluminação,
+   pois o highlight já é dado pela cor da borda/fundo semi-transparente.
+   Nesta versão, ela não tem regras CSS, o que atende ao seu pedido.
+*/
+
 
 /* ==================== SIDEBAR / RECURSOS / JOGADORES ==================== */
 
@@ -202,7 +209,7 @@ body {
 
 /* Regra 1: Destaque de jogador que NÃO é o do turno, mas está sendo visualizado */
 .player-score-item.viewing-resources:not(.active-player) {
-    background-color: rgba(255, 152, 0, 0.2); /* Cor de warning com transparência */
+    background-color: rgba(255, 152, 0, 0.2); 
     border-left: 5px solid var(--color-warning) !important;
 }
 
@@ -340,7 +347,7 @@ body {
 }
 
 .btn-close-white {
-    filter: invert(1); /* Torna o X branco para fundo escuro */
+    filter: invert(1); 
 }
 
 /* ==================== MODAL DE CONSTRUÇÃO (Regra 5) ==================== */
@@ -363,7 +370,7 @@ body {
 }
 
 .build-option:hover {
-    background-color: var(--color-primary-dark); /* Escurece no hover */
+    background-color: var(--color-primary-dark); 
     transform: translateY(-3px);
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.6);
 }
