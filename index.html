@@ -11,10 +11,9 @@
     
     <link rel="stylesheet" href="style.css">
 </head>
-<body>
+<body onmousemove="handleMouseMove(event)">
 
-        <!-- Header -->
-    <nav class="navbar navbar-dark">
+        <nav class="navbar navbar-dark">
         <span class="navbar-brand">Gaia Dominium</span>
         <div class="header-player-list" id="playerHeaderList">
             <span class="header-player-item">Aguardando Início...</span>
@@ -26,14 +25,11 @@
         </span>
     </nav>
 
-    <!-- Main Container -->
     <div class="main-container">
-        <!-- Sidebar -->
         <div class="sidebar">
             <h5 id="recursosTitle">Recursos</h5>
             <div id="recursosDisplay">
-                <!-- Conteúdo atualizado por JS -->
-            </div>
+                </div>
             
             <h5 id="pvTitle" style="margin-top: 20px;">Placar Global</h5>
             <div class="resource-item">
@@ -41,29 +37,26 @@
                 <span class="value" id="turnoDisplay">0</span>
             </div>
             <div id="playerListDisplay">
-                <!-- Lista de jogadores (atualizado por JS) -->
-            </div>
+                </div>
         </div>
 
-        <!-- Game Map Container -->
         <div class="game-map-container">
-            <!-- Game Map -->
             <div class="game-map" id="gameMap">
-                <!-- Regiões geradas por JS -->
-            </div>
+                </div>
+            
+            <div id="regionDetailsPopup" class="region-details-popup">
+                </div>
 
-            <!-- Action Panel -->
             <div class="action-panel">
-                <button class="action-btn" id="explorarBtn" disabled>Explorar</button>
-                <button class="action-btn" id="construirBtn" disabled>Construir</button>
-                <button class="action-btn" id="recolherBtn" disabled>Recolher</button>
-                <button class="action-btn" id="negociarBtn" disabled>Negociar</button>
+                <button class="action-btn" id="explorarBtn" disabled title="">Explorar</button>
+                <button class="action-btn" id="construirBtn" disabled title="">Construir</button>
+                <button class="action-btn" id="recolherBtn" disabled title="">Recolher</button>
+                <button class="action-btn" id="negociarBtn" disabled title="">Negociar</button>
                 <button class="action-btn" id="endTurnBtn" disabled>Finalizar Turno</button>
             </div>
         </div>
     </div>
 
-    <!-- Initial Screen -->
     <div class="initial-screen" id="initialScreen">
         <div class="player-setup-form">
             <h1>Configuração de Partida</h1>
@@ -79,8 +72,7 @@
             <div class="player-input-group">
                 <label>Ícone:</label>
                 <div id="iconSelection">
-                    <!-- Ícones gerados por JS -->
-                </div>
+                    </div>
             </div>
 
             <div class="d-grid gap-2">
@@ -90,10 +82,8 @@
         </div>
     </div>
 
-    <!-- Feedback Message -->
     <div id="feedbackMessage"></div>
 
-    <!-- Manual Modal -->
     <div class="modal fade" id="manualModal" tabindex="-1">
         <div class="modal-dialog modal-lg">
             <div class="modal-content">
@@ -102,24 +92,20 @@
                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
                 <div class="modal-body">
-                    <ul class="nav nav-tabs" role="tablist">
+                    <ul class="nav nav-tabs" id="myTab" role="tablist">
                         <li class="nav-item">
-                            <a class="nav-link active" data-bs-toggle="tab" href="#visaoGeral">Visão Geral</a>
+                            <button class="nav-link active" id="regras-tab" data-bs-toggle="tab" data-bs-target="#regras" type="button">Regras</button>
                         </li>
                         <li class="nav-item">
-                            <a class="nav-link" data-bs-toggle="tab" href="#mecanicas">Mecânicas</a>
+                            <button class="nav-link" id="mecanicas-tab" data-bs-toggle="tab" data-bs-target="#mecanicas" type="button">Mecânicas</button>
                         </li>
                         <li class="nav-item">
-                            <a class="nav-link" data-bs-toggle="tab" href="#acoes">Ações</a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link" data-bs-toggle="tab" href="#dicas">Dicas</a>
+                            <button class="nav-link" id="estruturas-tab" data-bs-toggle="tab" data-bs-target="#estruturas" type="button">Estruturas</button>
                         </li>
                     </ul>
-                    <div class="tab-content" style="margin-top: 20px;">
-                        <div id="visaoGeral" class="tab-pane fade show active">
-                            <h4>Visão Geral</h4>
-                            <p>Gaia Dominium é um jogo de estratégia digital que combina gerenciamento de recursos e interação entre jogadores. O objetivo é acumular 25 Pontos de Vitória (PVs) para conquistar o planeta.</p>
+                    <div class="tab-content" id="myTabContent">
+                        <div class="tab-pane fade show active" id="regras">
+                            <p style="margin-top: 15px;">O objetivo de Gaia Dominium é ser o primeiro a alcançar 25 Pontos de Vitória (PVs) para conquistar o planeta.</p>
                             <p>Cada jogador controla uma Facção com recursos iniciais e uma renda baseada em regiões e projetos ativos.</p>
                             <h4 style="margin-top: 20px;">Recursos Essenciais</h4>
                             <ul>
@@ -129,137 +115,103 @@
                                 <li><strong>💧 Água (A):</strong> Recurso vital para produção e desenvolvimento.</li>
                             </ul>
                         </div>
-                        <div id="mecanicas" class="tab-pane fade">
+                        <div class="tab-pane fade" id="mecanicas">
                             <h4>Mecânicas do Jogo</h4>
                             <p><strong>Fluxo de Um Turno:</strong></p>
                             <ul>
-                                <li><strong>Fase 1 - Renda Automática:</strong> Sistema calcula e adiciona recursos baseado em regiões controladas.</li>
-                                <li><strong>Fase 2 - Ação Principal:</strong> Jogador executa uma ação modular (Explorar, Construir, Recolher, Negociar).</li>
-                                <li><strong>Fase 3 - Negociação:</strong> Jogador pode negociar recursos e áreas com outros jogadores.</li>
-                                <li><strong>Fase 4 - Passar Turno:</strong> Turno passa para o próximo jogador.</li>
+                                <li><strong>Fase 1 - Renda Automática:</strong> Sistema calcula e adiciona recursos baseado em regiões controladas e estruturas.</li>
+                                <li><strong>Fase 2 - Ação Principal:</strong> Jogador executa até **duas** ações modulares (Explorar, Construir, Recolher, Negociar). Cada ação só pode ser feita uma vez por turno.</li>
+                                <li><strong>Fase 3 - Passar Turno:</strong> Turno passa para o próximo jogador, verificando a condição de vitória.</li>
                             </ul>
-                            <h4 style="margin-top: 20px;">Pontos de Vitória</h4>
+                            <h4 style="margin-top: 20px;">Regras Especiais</h4>
                             <ul>
-                                <li>Explorar uma região: +1 PV</li>
-                                <li>Construir: +1-2 PV</li>
-                                <li>Recolher: +1 PV</li>
-                                <li>Negociação bem-sucedida: +1 PV (ambos)</li>
-                                <li>Controlar 50% do mapa: +5 PV</li>
-                                <li>Objetivo: Atingir 25 PV para vencer!</li>
+                                <li><strong>Limite de Ações:</strong> Máximo de 2 ações por turno.</li>
+                                <li><strong>Exploração:</strong> Regiões não exploradas (`Nível 0`) não geram renda bônus e não podem ser construídas.</li>
+                                <li><strong>Bônus de Diversidade:</strong> +3 PV ao controlar uma região de cada tipo de Bioma.</li>
+                                <li><strong>Sanção por Inatividade:</strong> Se um jogador passar o turno 3 vezes seguidas sem realizar nenhuma ação, sua renda base é suspensa no próximo turno.</li>
                             </ul>
                         </div>
-                        <div id="acoes" class="tab-pane fade">
-                            <h4>Ações Disponíveis</h4>
-                            <p><strong>1. Explorar</strong></p>
-                            <p>Custo: 2 Madeira + 1 Água | Ganho: +1 PV, +50% produção na região</p>
-                            <p><strong>2. Construir</strong></p>
-                            <p>Custo: 3 Madeira + 2 Pedra + 1 Ouro | Ganho: +2 PV, +1 recurso/turno</p>
-                            <p><strong>3. Recolher</strong></p>
-                            <p>Custo: 1 Madeira | Ganho: +1 PV, +2 de cada recurso primário</p>
-                            <p><strong>4. Negociar</strong></p>
-                            <p>Custo: 1 Ouro | Ganho: +1 PV, troca de recursos e áreas com outro jogador</p>
+                        <div class="tab-pane fade" id="estruturas">
+                            <h4>Estruturas Disponíveis</h4>
+                            <div id="structuresManualContent">
+                                <p>Carregando informações...</p>
+                            </div>
                         </div>
-                        <div id="dicas" class="tab-pane fade">
-                            <h4>Dicas Estratégicas</h4>
-                            <p><strong>Para Iniciantes:</strong></p>
-                            <ul>
-                                <li>Explore primeiro para desbloquear produção máxima</li>
-                                <li>Mantenha recursos balanceados</li>
-                                <li>Guarde Ouro para negociações estratégicas</li>
-                                <li>Negocie com outros jogadores para ganhar vantagem</li>
-                            </ul>
-                            <p><strong>Para Avançados:</strong></p>
-                            <ul>
-                                <li>Use engine building com múltiplas estruturas</li>
-                                <li>Bloqueie regiões que outros precisam</li>
-                                <li>Converta recursos estrategicamente</li>
-                                <li>Forme alianças temporárias através de negociações</li>
-                            </ul>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Negociação Modal -->
-    <div class="modal fade" id="negotiationModal" tabindex="-1">
-        <div class="modal-dialog">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title">Negociação</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                </div>
-                <div class="modal-body">
-                    <div id="negotiationContent">
-                        <!-- Conteúdo da negociação será inserido aqui -->
                     </div>
                 </div>
                 <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-                    <button type="button" class="btn btn-primary" id="acceptNegotiationBtn">Aceitar</button>
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fechar</button>
                 </div>
             </div>
         </div>
     </div>
-
-<div class="modal fade" id="playerResourcesModal" tabindex="-1" aria-labelledby="playerResourcesModalLabel" aria-hidden="true">
-    <div class="modal-dialog">
-        <div class="modal-content bg-surface text-text">
-            <div class="modal-header">
-                <h5 class="modal-title" id="playerResourcesModalLabel">Recursos de Jogador</h5>
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <div class="modal-body" id="playerResourcesContent">
-                </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fechar</button>
-            </div>
-        </div>
-    </div>
-</div>
-
-<div class="modal fade" id="buildModal" tabindex="-1" aria-labelledby="buildModalLabel" aria-hidden="true">
-    <div class="modal-dialog modal-lg">
-        <div class="modal-content bg-surface text-text">
-            <div class="modal-header">
-                <h5 class="modal-title" id="buildModalLabel">🛠️ Selecione a Estrutura para Construir</h5>
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <div class="modal-body" id="buildOptionsContent">
-                </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-            </div>
-        </div>
-    </div>
-</div>
-
-    <div class="action-buttons-container">
-    <button class="btn btn-primary action-btn" id="explorarBtn" data-bs-toggle="tooltip" data-bs-html="true" title="">Explorar</button>
-    <button class="btn btn-primary action-btn" id="construirBtn" data-bs-toggle="tooltip" data-bs-html="true" title="">Construir</button>
-    <button class="btn btn-primary action-btn" id="recolherBtn" data-bs-toggle="tooltip" data-bs-html="true" title="">Recolher</button>
-    <button class="btn btn-primary action-btn" id="negociarBtn" data-bs-toggle="tooltip" data-bs-html="true" title="">Negociar</button>
-    <button class="btn btn-success action-btn" id="endTurnBtn">Finalizar Turno</button>
-</div>
-
-<div class="modal fade" id="regionDetailsModal" tabindex="-1" aria-labelledby="regionDetailsModalLabel" aria-hidden="true">
-    <div class="modal-dialog">
-        <div class="modal-content bg-surface text-text">
-            <div class="modal-header">
-                <h5 class="modal-title" id="regionDetailsModalLabel">Detalhes da Região</h5>
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <div class="modal-body" id="regionDetailsContent">
-                </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fechar</button>
-            </div>
-        </div>
-    </div>
-</div>
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     
+    <div class="modal fade" id="playerResourcesModal" tabindex="-1" aria-labelledby="playerResourcesModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content bg-surface text-text">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="playerResourcesModalLabel">Recursos de Jogador</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body" id="playerResourcesContent">
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fechar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal fade" id="buildModal" tabindex="-1" aria-labelledby="buildModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content bg-surface text-text">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="buildModalLabel">🛠️ Selecione a Estrutura para Construir</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body" id="buildOptionsContent">
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="modal fade" id="negotiationModal" tabindex="-1" aria-labelledby="negotiationModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content bg-surface text-text">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="negotiationModalLabel">💰 Negociação</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body" id="negotiationContent">
+                    </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal fade" id="victoryModal" tabindex="-1" aria-labelledby="victoryModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content bg-surface text-text">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="victoryModalLabel">🏆 Fim de Jogo!</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body" id="victoryContent">
+                    </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-primary" data-bs-dismiss="modal" onclick="window.location.reload();">Novo Jogo</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script src="main.js"></script>
 </body>
 </html>
