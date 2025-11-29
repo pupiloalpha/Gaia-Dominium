@@ -1,9 +1,9 @@
 /*
     style.css - Refatorado com TODAS as correções de UX/UI:
     - Correção 1: Iluminação restrita ao '.selected'.
-    - Correção 2: Novo estilo para o '.info-icon'.
-    - Correção 3: Força o tema dark nos cards do modal de construção.
-    - Correção 4: Ajuste de tema dark para os campos de input da Tela Inicial.
+    - Correção 2: Adição do estilo para o '.info-icon' (ícone de informações).
+    - Correção 3: Força o tema dark nos campos de input da Tela Inicial (CORRIGINDO O CONFLITO).
+    - Correção 4: Força o tema dark no texto dos cards do modal de construção.
 */
 
 :root {
@@ -138,9 +138,10 @@ body {
     background: rgba(0, 0, 0, 0.5);
     padding: 1px 4px;
     border-radius: 3px;
-    z-index: 15;
+    z-index: 15; /* Adicionado para garantir que fique acima de outros elementos */
 }
 
+/* CORREÇÃO 2: Estilo para o ícone de informações */
 .info-icon {
     position: absolute;
     bottom: 5px;
@@ -161,12 +162,12 @@ body {
     transform: scale(1.1);
 }
 
-/* DESTAQUE DE SELEÇÃO: A ÚNICA QUE TEM EFEITO DE ILUMINAÇÃO (Correção 1) */
+/* DESTAQUE DE SELEÇÃO: A ÚNICA QUE TEM EFEITO DE ILUMINAÇÃO (BOX-SHADOW) */
 .region.selected {
-    box-shadow: 0 0 20px 8px var(--color-warning) !important; 
-    border: 5px solid var(--color-warning) !important;
-    transform: scale(1.05); 
-    background-color: rgba(255, 152, 0, 0.3) !important;
+    box-shadow: 0 0 15px 5px var(--color-warning); 
+    border: 5px solid var(--color-warning) !important; /* Borda mais grossa e visível */
+    transform: scale(1.05); /* Zoom Aumentado */
+    background-color: rgba(255, 152, 0, 0.2) !important; /* Overlay suave de alerta */
     z-index: 10;
 }
 
@@ -226,7 +227,7 @@ body {
     font-weight: bold;
 }
 
-/* Destaque de jogador em visualização */
+/* Regra 1: Destaque de jogador que NÃO é o do turno, mas está sendo visualizado */
 .player-score-item.viewing-resources:not(.active-player) {
     background-color: rgba(255, 152, 0, 0.2); 
     border-left: 5px solid var(--color-warning) !important;
@@ -331,7 +332,7 @@ body {
     max-width: 400px;
 }
 
-/* CORREÇÃO 4: Fix para input e botão na tela inicial para tema dark */
+/* CORREÇÃO 3: Fix para input e botão na tela inicial para tema dark (CORRIGE CONFLITO) */
 .player-setup input[type="text"],
 .player-setup .form-control {
     background-color: #444; 
@@ -350,7 +351,6 @@ body {
     background-color: var(--color-primary);
     border-color: var(--color-primary);
 }
-
 
 #iconSelection {
     display: flex;
@@ -390,25 +390,27 @@ body {
     filter: invert(1); 
 }
 
-/* ==================== MODAL DE CONSTRUÇÃO (Correção 3) ==================== */
+/* ==================== MODAL DE CONSTRUÇÃO (Regra 5) ==================== */
 
+/* Forçar tema Dark para o conteúdo do Card/Opções de Construção */
 .modal-content.bg-surface .card {
-    background-color: var(--color-surface) !important; /* FORÇA TEMA DARK */
+    background-color: var(--color-surface); 
     color: var(--color-text);
     border: 1px solid var(--color-primary-dark);
 }
 
 .modal-content.bg-surface .card-body {
-    background-color: var(--color-surface) !important; /* FORÇA TEMA DARK */
+    background-color: var(--color-surface); 
     color: var(--color-text);
 }
 
-/* Sobrescreve classes de texto do Bootstrap para garantir cores claras sobre fundo escuro */
-.build-option .card-title, .build-option .card-text.small {
+/* CORREÇÃO 4: Sobrescreve classes de texto do Bootstrap para garantir cores claras */
+.build-option .card-title {
     color: var(--color-text) !important;
 }
 
-.build-option .text-light-secondary {
+.build-option .card-text, 
+.build-option .card-text.small {
     color: var(--color-text-secondary) !important;
 }
 
@@ -437,7 +439,7 @@ body {
     font-size: 0.85em;
 }
 
-/* Estilo para a lista de estruturas no modal de detalhes da região */
+/* Estilo para a lista de estruturas no modal de detalhes da região (Ação 2.1) */
 .structure-list {
     list-style-type: none;
     padding-left: 0;
