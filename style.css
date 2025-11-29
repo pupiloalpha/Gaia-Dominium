@@ -1,477 +1,550 @@
 /*
-    style.css - Refatorado com TODAS as correções de UX/UI:
-    - Correção 1: Iluminação restrita ao '.selected'.
-    - Correção 2: Adição do estilo para o '.info-icon' (ícone de informações).
-    - Correção 3: Força o tema dark nos campos de input da Tela Inicial (CORRIGINDO O CONFLITO).
-    - Correção 4: Força o tema dark no texto dos cards do modal de construção.
+    Copie e cole aqui todo o conteúdo CSS 
+    que estava dentro da tag <style> do seu arquivo GaiaDominium.2.html.
 */
 
-:root {
-    --color-primary: #32b8c6;
-    --color-primary-dark: #1d7480;
-    --color-bg: #1a1a1a;
-    --color-surface: #252525;
-    --color-text: #e0e0e0;
-    --color-text-secondary: #a0a0a0;
-    --color-accent: #4caf50;
-    --color-accent-dark: #2e7d31;
-    --color-error: #f44336;
-    --color-warning: #ff9800; /* Laranja/Amarelo Forte para Destaque */
-}
-
-body {
-    background-color: var(--color-bg);
-    color: var(--color-text);
-    font-family: 'Inter', sans-serif;
-    margin: 0;
-    padding: 0;
-}
-
-.container-fluid {
-    padding: 20px;
-}
-
-/* ==================== LAYOUT GERAL ==================== */
-
-.header {
-    background-color: var(--color-surface);
-    padding: 10px 20px;
-    border-bottom: 2px solid var(--color-primary-dark);
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-}
-
-.header h1 {
-    font-size: 1.5rem;
-    color: var(--color-primary);
-    margin: 0;
-}
-
-.header-player-list {
-    display: flex;
-    gap: 15px;
-}
-
-.header-player-item {
-    font-weight: 500;
-    color: var(--color-text-secondary);
-    padding: 5px 10px;
-    border-radius: 4px;
-    transition: all 0.2s;
-}
-
-.header-player-item.active-player-header {
-    color: var(--color-primary);
-    font-weight: 700;
-    border: 1px solid var(--color-primary);
-}
-
-.main-content {
-    display: flex;
-    gap: 20px;
-    margin-top: 20px;
-}
-
-.map-container {
-    flex: 3;
-}
-
-.sidebar {
-    flex: 1;
-    background-color: var(--color-surface);
-    padding: 20px;
-    border-radius: 8px;
-    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
-}
-
-/* ==================== MAPA DO JOGO ==================== */
-
-.game-map {
-    display: grid;
-    grid-template-columns: repeat(5, 1fr);
-    grid-template-rows: repeat(5, 1fr);
-    gap: 5px;
-    aspect-ratio: 1 / 1;
-    background-color: var(--color-bg);
-    padding: 5px;
-    border-radius: 8px;
-}
-
-.region {
-    background-color: #333;
-    border: 3px solid #555;
-    color: var(--color-text);
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    align-items: center;
-    text-align: center;
-    padding: 5px;
-    cursor: pointer;
-    transition: all 0.2s ease;
-    border-radius: 4px;
-    position: relative;
-    overflow: hidden;
-}
-
-.region:hover {
-    opacity: 0.9;
-    background-color: #353535;
-}
-
-.region-name {
-    font-weight: 600;
-    font-size: 0.85rem;
-}
-
-.region-info {
-    font-size: 0.75rem;
-    color: var(--color-text-secondary);
-}
-
-.structure-icon {
-    position: absolute;
-    top: 5px;
-    right: 5px;
-    font-size: 0.8rem;
-    background: rgba(0, 0, 0, 0.5);
-    padding: 1px 4px;
-    border-radius: 3px;
-    z-index: 15; /* Adicionado para garantir que fique acima de outros elementos */
-}
-
-/* CORREÇÃO 2: Estilo para o ícone de informações */
-.info-icon {
-    position: absolute;
-    bottom: 5px;
-    left: 5px;
-    font-size: 1.1rem;
-    cursor: pointer;
-    background: var(--color-primary-dark);
-    color: var(--color-text);
-    padding: 2px 5px;
-    border-radius: 4px;
-    line-height: 1;
-    z-index: 15; 
-    transition: background-color 0.2s;
-}
-
-.info-icon:hover {
-    background-color: var(--color-primary);
-    transform: scale(1.1);
-}
-
-/* DESTAQUE DE SELEÇÃO: A ÚNICA QUE TEM EFEITO DE ILUMINAÇÃO (BOX-SHADOW) */
-.region.selected {
-    box-shadow: 0 0 15px 5px var(--color-warning); 
-    border: 5px solid var(--color-warning) !important; /* Borda mais grossa e visível */
-    transform: scale(1.05); /* Zoom Aumentado */
-    background-color: rgba(255, 152, 0, 0.2) !important; /* Overlay suave de alerta */
-    z-index: 10;
-}
-
-
-/* ==================== SIDEBAR / RECURSOS / JOGADORES ==================== */
-
-.resource-display {
-    margin-bottom: 20px;
-    padding: 15px;
-    border: 1px solid var(--color-primary-dark);
-    border-radius: 4px;
-}
-
-.resource-display h3 {
-    font-size: 1.2rem;
-    color: var(--color-primary);
-    border-bottom: 1px dashed var(--color-text-secondary);
-    padding-bottom: 5px;
-    margin-bottom: 10px;
-}
-
-.resource-item {
-    display: flex;
-    justify-content: space-between;
-    font-size: 1rem;
-    margin-bottom: 5px;
-}
-
-.player-list h3 {
-    font-size: 1.2rem;
-    color: var(--color-primary);
-    border-bottom: 1px dashed var(--color-text-secondary);
-    padding-bottom: 5px;
-    margin-bottom: 10px;
-}
-
-.player-score-item {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 10px;
-    margin-bottom: 8px;
-    background-color: #333;
-    border-left: 5px solid transparent;
-    border-radius: 4px;
-    cursor: pointer;
-    transition: all 0.2s;
-}
-
-.player-score-item:hover {
-    background-color: #3a3a3a;
-}
-
-.player-score-item.active-player {
-    border-left: 5px solid var(--color-accent);
-    background-color: #3a3a3a;
-    font-weight: bold;
-}
-
-/* Regra 1: Destaque de jogador que NÃO é o do turno, mas está sendo visualizado */
-.player-score-item.viewing-resources:not(.active-player) {
-    background-color: rgba(255, 152, 0, 0.2); 
-    border-left: 5px solid var(--color-warning) !important;
-}
-
-.bonus-indicator {
-    font-size: 1.2rem;
-}
-
-/* ==================== AÇÕES E BOTÕES ==================== */
-
-.action-buttons-container {
-    margin-top: 20px;
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
-}
-
-.action-btn {
-    width: 100%;
-    color: var(--color-text);
-    background-color: var(--color-primary-dark);
-    border-color: var(--color-primary);
-    transition: background-color 0.2s, transform 0.1s;
-}
-
-.action-btn:hover:not(:disabled) {
-    background-color: var(--color-primary);
-    transform: scale(1.01);
-}
-
-.action-btn:disabled {
-    background-color: #555 !important;
-    border-color: #555 !important;
-    color: #a0a0a0 !important;
-    cursor: not-allowed;
-}
-
-#endTurnBtn {
-    background-color: var(--color-accent) !important;
-    border-color: var(--color-accent-dark) !important;
-}
-
-#endTurnBtn:hover:not(:disabled) {
-    background-color: var(--color-accent-dark) !important;
-}
-
-/* ==================== FEEDBACK / ALERTS ==================== */
-
-#feedbackMessage {
-    position: fixed;
-    bottom: 20px;
-    left: 50%;
-    transform: translateX(-50%);
-    padding: 10px 20px;
-    border-radius: 6px;
-    color: #fff;
-    opacity: 0;
-    transition: opacity 0.5s ease;
-    z-index: 1000;
-    font-weight: 600;
-    pointer-events: none;
-}
-
-#feedbackMessage.show {
-    opacity: 1;
-}
-
-.info { background-color: #2196f3; }
-.success { background-color: var(--color-accent); }
-.error { background-color: var(--color-error); }
-.warning { background-color: var(--color-warning); }
-
-/* ==================== TELA INICIAL ==================== */
-
-.initial-screen {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background-color: var(--color-bg);
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    align-items: center;
-    z-index: 100;
-    transition: opacity 0.5s;
-}
-
-.initial-screen.hidden {
-    opacity: 0;
-    pointer-events: none;
-}
-
-.player-setup {
-    background-color: var(--color-surface);
-    padding: 30px;
-    border-radius: 8px;
-    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.5);
-    width: 90%;
-    max-width: 400px;
-}
-
-/* CORREÇÃO 3: Fix para input e botão na tela inicial para tema dark (CORRIGE CONFLITO) */
-.player-setup input[type="text"],
-.player-setup .form-control {
-    background-color: #444; 
-    border: 1px solid var(--color-primary-dark);
-    color: var(--color-text);
-    /* Garante que o placeholder seja visível */
-    opacity: 1; 
-}
-
-.player-setup .btn {
-    background-color: var(--color-primary-dark);
-    border-color: var(--color-primary);
-    color: var(--color-text);
-}
-.player-setup .btn:hover {
-    background-color: var(--color-primary);
-    border-color: var(--color-primary);
-}
-
-#iconSelection {
-    display: flex;
-    gap: 10px;
-    justify-content: center;
-    margin-top: 15px;
-    margin-bottom: 20px;
-}
-
-.icon-option {
-    font-size: 1.5rem;
-    cursor: pointer;
-    padding: 5px;
-    border: 2px solid transparent;
-    border-radius: 4px;
-    transition: border-color 0.2s;
-}
-
-.icon-option:hover, .icon-option.selected {
-    border-color: var(--color-primary);
-    background-color: #333;
-}
-
-/* ==================== ESTILO DE MODAIS ==================== */
-
-/* Ajustes para o modal do Bootstrap no tema escuro */
-.modal-content.bg-surface {
-    background-color: var(--color-surface) !important;
-    border: 1px solid var(--color-text-secondary);
-}
-
-.modal-header, .modal-footer {
-    border-color: var(--color-primary-dark);
-}
-
-.btn-close-white {
-    filter: invert(1); 
-}
-
-/* ==================== MODAL DE CONSTRUÇÃO (Regra 5) ==================== */
-
-/* Forçar tema Dark para o conteúdo do Card/Opções de Construção */
-.modal-content.bg-surface .card {
-    background-color: var(--color-surface); 
-    color: var(--color-text);
-    border: 1px solid var(--color-primary-dark);
-}
-
-.modal-content.bg-surface .card-body {
-    background-color: var(--color-surface); 
-    color: var(--color-text);
-}
-
-/* CORREÇÃO 4: Sobrescreve classes de texto do Bootstrap para garantir cores claras */
-.build-option .card-title {
-    color: var(--color-text) !important;
-}
-
-.build-option .card-text, 
-.build-option .card-text.small {
-    color: var(--color-text-secondary) !important;
-}
-
-.build-option {
-    cursor: pointer;
-    transition: transform 0.2s, box-shadow 0.2s, background-color 0.2s;
-}
-
-.build-option:hover {
-    background-color: var(--color-primary-dark); 
-    transform: translateY(-3px);
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.6);
-}
-
-.build-option.disabled {
-    cursor: not-allowed;
-}
-
-/* Estilo para os custos no modal de construção */
-.resource-cost {
-    display: inline-block;
-    padding: 2px 6px;
-    margin-right: 4px;
-    background-color: var(--color-primary-dark);
-    border-radius: 3px;
-    font-size: 0.85em;
-}
-
-/* Estilo para a lista de estruturas no modal de detalhes da região (Ação 2.1) */
-.structure-list {
-    list-style-type: none;
-    padding-left: 0;
-}
-
-.structure-list li {
-    background-color: var(--color-primary-dark);
-    padding: 5px 10px;
-    margin-bottom: 5px;
-    border-radius: 4px;
-    font-size: 0.9em;
-}
-
-/* ==================== MODAL DE NEGOCIAÇÃO ==================== */
-
-.negotiation-resources {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 10px;
-    margin-top: 15px;
-}
-
-.resource-badge {
-    padding: 8px 15px;
-    border: 1px solid var(--color-text-secondary);
-    border-radius: 4px;
-    background-color: var(--color-primary-dark);
-    color: var(--color-text);
-    cursor: pointer;
-    transition: background-color 0.2s;
-}
-
-.resource-badge:hover {
-    background-color: var(--color-primary);
-}
+        :root {
+            --color-primary: #32b8c6;
+            --color-primary-dark: #1d7480;
+            --color-bg: #1a1a1a;
+            --color-surface: #252525;
+            --color-text: #e0e0e0;
+            --color-text-secondary: #a0a0a0;
+            --color-accent: #4caf50;
+            --color-accent-dark: #2e7d31;
+            --color-error: #f44336;
+            --color-warning: #ff9800;
+            --color-success: #4caf50;
+            /* === NOVAS VARIÁVEIS DE CORES DE JOGADORES === */
+    --player-color-verde: #4CAF50;    /* Verde */
+    --player-color-azul: #2196F3;     /* Azul */
+    --player-color-vermelho: #F44336; /* Vermelho */
+    --player-color-amarelo: #FFEB3B;  /* Amarelo */
+    /* === FIM CORES DE JOGADORES === */
+        }
+
+        * {
+            font-family: 'Inter', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        html, body {
+            background-color: var(--color-bg);
+            color: var(--color-text);
+            height: 100vh;
+            overflow: hidden;
+            margin: 0;
+            padding: 0;
+        }
+
+        /* Header */
+        .navbar {
+            background-color: var(--color-surface) !important;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.5);
+            height: 45px;
+            padding: 5px 20px !important;
+            min-height: auto;
+        }
+
+        .navbar-brand {
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: var(--color-primary) !important;
+            margin-right: auto;
+        }
+
+        .navbar-text {
+            color: var(--color-text) !important;
+            font-size: 0.9rem;
+        }
+
+        .header-player-list {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        .header-player-item {
+            display: flex;
+            align-items: center;
+            padding: 4px 8px;
+            border-radius: 6px;
+            background-color: var(--color-bg);
+            border: 2px solid transparent;
+            transition: border-color 0.3s, background-color 0.3s;
+            font-size: 0.8rem;
+            font-weight: 500;
+            cursor: pointer;
+        }
+
+        .header-player-item:hover:not(.active-player-header) {
+            background-color: #353535;
+        }
+
+        .header-player-item.active-player-header {
+            border-color: var(--color-primary);
+            background-color: rgba(50, 184, 198, 0.1);
+            box-shadow: 0 0 8px rgba(50, 184, 198, 0.5);
+            font-weight: bold;
+        }
+
+        .header-player-item.selected-player {
+            border-color: #ffffff;
+            background-color: rgba(255, 255, 255, 0.1);
+        }
+
+        .manual-icon {
+            cursor: pointer;
+            color: var(--color-text);
+            font-size: 1.5rem;
+            transition: color 0.2s;
+            margin-left: 15px;
+        }
+
+        .manual-icon:hover {
+            color: var(--color-primary);
+        }
+
+        /* Main Container */
+        .main-container {
+            display: flex;
+            height: calc(100vh - 45px);
+            margin-top: 0;
+        }
+
+        /* Sidebar */
+        .sidebar {
+            width: 180px;
+            background-color: var(--color-surface);
+            padding: 12px 8px;
+            box-shadow: 2px 0 5px rgba(0, 0, 0, 0.5);
+            overflow-y: auto;
+            border-right: 1px solid #444;
+            font-size: 0.85rem;
+        }
+
+        .sidebar h5 {
+            font-size: 0.9rem;
+            color: var(--color-primary);
+            border-bottom: 2px solid var(--color-primary-dark);
+            padding-bottom: 3px;
+            margin-bottom: 8px;
+            margin-top: 0;
+            cursor: pointer;
+        }
+
+        .sidebar h5:hover {
+            color: var(--color-text);
+        }
+
+        .resource-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 5px 6px;
+            background-color: var(--color-bg);
+            border-radius: 4px;
+            font-size: 0.8rem;
+            align-items: center;
+            margin-bottom: 3px;
+        }
+
+        .resource-item .label {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            color: var(--color-text-secondary);
+        }
+
+        .resource-item .value {
+            font-weight: bold;
+            color: var(--color-text);
+        }
+
+        .player-score-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 5px 4px;
+            border-radius: 4px;
+            transition: background-color 0.2s;
+            font-size: 0.8rem;
+            margin-bottom: 2px;
+            cursor: pointer;
+            user-select: none;
+        }
+        
+        .player-score-item:hover {
+            background-color: rgba(50, 184, 198, 0.1);
+        }
+        
+        .player-score-item.viewing-resources {
+            background-color: rgba(50, 184, 198, 0.2);
+            border: 1px solid var(--color-primary);
+        }
+
+        .player-score-item.active-player {
+            background-color: rgba(50, 184, 198, 0.2);
+            border: 1px solid var(--color-primary);
+            border-radius: 4px;
+            padding: 6px;
+        }
+
+        /* Game Map */
+        .game-map-container {
+            flex-grow: 1;
+            display: flex;
+            flex-direction: column;
+            position: relative; /* Para o popup flutuante */
+        }
+
+        .game-map {
+            flex-grow: 1;
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            grid-template-rows: repeat(5, 1fr);
+            gap: 2px;
+            padding: 8px;
+            background-color: var(--color-bg);
+            overflow: auto;
+        }
+
+        .region {
+            background-color: var(--color-surface);
+            border: 2px solid var(--color-bg);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            font-size: 0.75rem;
+            cursor: pointer;
+            transition: background-color 0.2s, transform 0.1s, border-color 0.2s;
+            border-radius: 4px;
+            padding: 3px;
+            position: relative;
+        }
+
+        .region:hover {
+            background-color: #353535;
+        }
+
+        .region.selected {
+            border-color: var(--color-error);
+            box-shadow: 0 0 10px var(--color-error);
+            transform: scale(1.02);
+        }
+
+        .region.controlled-by-current {
+            border: 2px dashed #ffffff;
+            /* Usar variável CSS para a cor da borda pulsante, definida em JS */
+            box-shadow: 0 0 15px var(--region-border-color, #fff);
+            animation: pulse-border 1.5s infinite alternate;
+        }
+
+        @keyframes pulse-border {
+            from { opacity: 0.6; }
+            to { opacity: 1; }
+        }
+
+        .region-name {
+            font-weight: bold;
+            margin-bottom: 2px;
+            color: var(--color-primary);
+            font-size: 0.7rem;
+        }
+
+        .region-info {
+            font-size: 0.65rem;
+            color: var(--color-text-secondary);
+        }
+        
+        .structure-icon {
+            font-size: 0.8rem;
+            margin-top: 2px;
+            padding: 2px 4px;
+            background-color: rgba(255, 255, 255, 0.1);
+            border-radius: 4px;
+            color: var(--color-text);
+        }
+
+        /* Action Panel */
+        .action-panel {
+            background-color: var(--color-surface);
+            padding: 8px 12px;
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 6px;
+            box-shadow: 0 -2px 5px rgba(0, 0, 0, 0.5);
+            border-top: 1px solid #444;
+            min-height: 70px;
+        }
+
+        .action-btn {
+            background-color: var(--color-primary);
+            color: var(--color-bg);
+            border: none;
+            padding: 8px 15px;
+            border-radius: 6px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background-color 0.2s, transform 0.1s;
+            flex-grow: 1;
+            min-width: 120px;
+        }
+
+        .action-btn:hover:not(:disabled) {
+            background-color: var(--color-primary-dark);
+            transform: translateY(-2px);
+        }
+
+        .action-btn:disabled {
+            background-color: var(--color-surface);
+            color: var(--color-text-secondary);
+            cursor: not-allowed;
+        }
+
+        /* Feedback Message */
+        #feedbackMessage {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%) scale(0.8);
+            padding: 12px 25px;
+            border-radius: 8px;
+            color: #ffffff;
+            font-weight: 500;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.5);
+            transition: opacity 0.3s, transform 0.3s;
+            opacity: 0;
+            min-width: 400px;
+        }
+
+        #feedbackMessage.info {
+            background-color: rgba(50, 184, 198, 0.9);
+        }
+
+        #feedbackMessage.success {
+            background-color: rgba(76, 175, 80, 0.9);
+        }
+
+        #feedbackMessage.error {
+            background-color: rgba(244, 67, 54, 0.9);
+        }
+
+        #feedbackMessage.show {
+            opacity: 1;
+            transform: translate(-50%, -50%) scale(1);
+        }
+
+        /* Initial Screen */
+        .initial-screen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: rgba(26, 26, 26, 0.95);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+
+        .initial-screen.hidden {
+            display: none;
+        }
+
+        .player-setup-form {
+            background-color: var(--color-surface);
+            padding: 40px;
+            border-radius: 12px;
+            max-width: 500px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+            border: 1px solid #444;
+        }
+
+        .player-setup-form h1 {
+            color: var(--color-primary);
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        .player-setup-form p {
+            color: var(--color-text-secondary);
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        .player-input-group {
+            margin-bottom: 20px;
+        }
+
+        .player-input-group label {
+            display: block;
+            color: var(--color-text);
+            margin-bottom: 8px;
+            font-weight: 500;
+        }
+
+        .player-input-group input {
+            width: 100%;
+            padding: 10px;
+            background-color: var(--color-bg);
+            border: 1px solid #444;
+            border-radius: 6px;
+            color: var(--color-text);
+            font-size: 1rem;
+        }
+
+        .player-input-group input:focus {
+            outline: none;
+            border-color: var(--color-primary);
+            box-shadow: 0 0 8px rgba(50, 184, 198, 0.5);
+        }
+
+        #iconSelection {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        .icon-option {
+            font-size: 1.5rem;
+            padding: 8px;
+            border-radius: 6px;
+            cursor: pointer;
+            border: 2px solid transparent;
+            background-color: var(--color-bg);
+            transition: background-color 0.2s, border-color 0.2s;
+        }
+
+        .icon-option:hover {
+            background-color: #353535;
+        }
+
+        .icon-option.selected {
+            border-color: var(--color-primary);
+            background-color: rgba(50, 184, 198, 0.1);
+        }
+
+        /* Modal Player Resources */
+        .resource-list-item {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 5px;
+            font-size: 0.95rem;
+            padding: 3px 0;
+        }
+
+        .resource-list-item strong {
+            color: var(--color-primary);
+        }
+
+        .resource-cost {
+            display: inline-block;
+            margin-right: 8px;
+        }
+
+        /* Negociação Modal */
+        .negotiation-modal {
+            background-color: var(--color-surface);
+            border: 1px solid #444;
+            border-radius: 12px;
+            padding: 20px;
+            max-width: 600px;
+            margin: auto;
+        }
+        
+        .negotiation-offer {
+            background-color: var(--color-bg);
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 15px;
+            border-left: 4px solid var(--color-primary);
+        }
+
+        .negotiation-resources {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            margin-top: 10px;
+        }
+
+        .resource-badge {
+            background-color: rgba(50, 184, 198, 0.2);
+            color: var(--color-primary);
+            padding: 5px 10px;
+            border-radius: 6px;
+            font-size: 0.9rem;
+            border: 1px solid var(--color-primary);
+        }
+        
+        /* NOVO: REGION DETAILS POPUP (Fase 2.1) */
+        .region-details-popup {
+            position: fixed; /* Fixado na tela para controle fino */
+            background-color: var(--color-surface);
+            border: 1px solid var(--color-primary);
+            padding: 10px;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.7);
+            z-index: 500; /* Acima do mapa, mas abaixo de modais */
+            pointer-events: none; /* Não bloquear cliques no mapa */
+            opacity: 0;
+            transition: opacity 0.2s; 
+            max-width: 250px;
+            min-width: 150px;
+        }
+
+        .region-details-popup.show {
+            opacity: 1;
+        }
+
+        .popup-title {
+            font-size: 1rem;
+            color: var(--color-primary);
+            border-bottom: 1px solid var(--color-primary-dark);
+            margin-bottom: 5px;
+            padding-bottom: 3px;
+            font-weight: bold;
+        }
+
+        .popup-info-item {
+            font-size: 0.85rem;
+            margin-bottom: 2px;
+            color: var(--color-text-secondary);
+        }
+
+        .popup-info-item strong {
+            color: var(--color-text);
+        }
+
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .main-container {
+                flex-direction: column;
+            }
+
+            .sidebar {
+                width: 100%;
+                max-height: 200px;
+            }
+
+            .game-map-container {
+                height: calc(100vh - 245px); /* Header + Sidebar + Action Panel */
+            }
+
+            .action-panel {
+                min-height: 50px;
+                padding: 6px;
+            }
+
+            .action-btn {
+                flex-grow: 1;
+                min-width: 45%;
+                font-size: 0.9rem;
+                padding: 6px 10px;
+            }
+        }
