@@ -1,550 +1,657 @@
 /*
-    Copie e cole aqui todo o conteúdo CSS 
-    que estava dentro da tag <style> do seu arquivo GaiaDominium.2.html.
+    Conteúdo COMPLETO e ATUALIZADO do arquivo style.css
+    Inclui as correções e implementações dos itens 1, 3 e 4 (estilização).
 */
 
-        :root {
-            --color-primary: #32b8c6;
-            --color-primary-dark: #1d7480;
-            --color-bg: #1a1a1a;
-            --color-surface: #252525;
-            --color-text: #e0e0e0;
-            --color-text-secondary: #a0a0a0;
-            --color-accent: #4caf50;
-            --color-accent-dark: #2e7d31;
-            --color-error: #f44336;
-            --color-warning: #ff9800;
-            --color-success: #4caf50;
-            /* === NOVAS VARIÁVEIS DE CORES DE JOGADORES === */
+:root {
+    --color-primary: #32b8c6;
+    --color-primary-dark: #1d7480;
+    --color-bg: #1a1a1a;
+    --color-surface: #252525;
+    --color-text: #e0e0e0;
+    --color-text-secondary: #a0a0a0;
+    --color-accent: #4caf50;
+    --color-accent-dark: #2e7d31;
+    --color-error: #f44336;
+    --color-warning: #ff9800;
+    --color-success: #4caf50;
+    /* === NOVAS VARIÁVEIS DE CORES DE JOGADORES === */
     --player-color-verde: #4CAF50;    /* Verde */
     --player-color-azul: #2196F3;     /* Azul */
     --player-color-vermelho: #F44336; /* Vermelho */
     --player-color-amarelo: #FFEB3B;  /* Amarelo */
     /* === FIM CORES DE JOGADORES === */
-        }
-
-        * {
-            font-family: 'Inter', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-        }
-
-        html, body {
-            background-color: var(--color-bg);
-            color: var(--color-text);
-            height: 100vh;
-            overflow: hidden;
-            margin: 0;
-            padding: 0;
-        }
-
-        /* Header */
-        .navbar {
-            background-color: var(--color-surface) !important;
-            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.5);
-            height: 45px;
-            padding: 5px 20px !important;
-            min-height: auto;
-        }
-
-        .navbar-brand {
-            font-size: 1.5rem;
-            font-weight: bold;
-            color: var(--color-primary) !important;
-            margin-right: auto;
-        }
-
-        .navbar-text {
-            color: var(--color-text) !important;
-            font-size: 0.9rem;
-        }
-
-        .header-player-list {
-            display: flex;
-            gap: 10px;
-            align-items: center;
-            flex-wrap: wrap;
-        }
-
-        .header-player-item {
-            display: flex;
-            align-items: center;
-            padding: 4px 8px;
-            border-radius: 6px;
-            background-color: var(--color-bg);
-            border: 2px solid transparent;
-            transition: border-color 0.3s, background-color 0.3s;
-            font-size: 0.8rem;
-            font-weight: 500;
-            cursor: pointer;
-        }
-
-        .header-player-item:hover:not(.active-player-header) {
-            background-color: #353535;
-        }
-
-        .header-player-item.active-player-header {
-            border-color: var(--color-primary);
-            background-color: rgba(50, 184, 198, 0.1);
-            box-shadow: 0 0 8px rgba(50, 184, 198, 0.5);
-            font-weight: bold;
-        }
-
-        .header-player-item.selected-player {
-            border-color: #ffffff;
-            background-color: rgba(255, 255, 255, 0.1);
-        }
-
-        .manual-icon {
-            cursor: pointer;
-            color: var(--color-text);
-            font-size: 1.5rem;
-            transition: color 0.2s;
-            margin-left: 15px;
-        }
-
-        .manual-icon:hover {
-            color: var(--color-primary);
-        }
-
-        /* Main Container */
-        .main-container {
-            display: flex;
-            height: calc(100vh - 45px);
-            margin-top: 0;
-        }
-
-        /* Sidebar */
-        .sidebar {
-            width: 180px;
-            background-color: var(--color-surface);
-            padding: 12px 8px;
-            box-shadow: 2px 0 5px rgba(0, 0, 0, 0.5);
-            overflow-y: auto;
-            border-right: 1px solid #444;
-            font-size: 0.85rem;
-        }
-
-        .sidebar h5 {
-            font-size: 0.9rem;
-            color: var(--color-primary);
-            border-bottom: 2px solid var(--color-primary-dark);
-            padding-bottom: 3px;
-            margin-bottom: 8px;
-            margin-top: 0;
-            cursor: pointer;
-        }
-
-        .sidebar h5:hover {
-            color: var(--color-text);
-        }
-
-        .resource-item {
-            display: flex;
-            justify-content: space-between;
-            padding: 5px 6px;
-            background-color: var(--color-bg);
-            border-radius: 4px;
-            font-size: 0.8rem;
-            align-items: center;
-            margin-bottom: 3px;
-        }
-
-        .resource-item .label {
-            display: flex;
-            align-items: center;
-            gap: 5px;
-            color: var(--color-text-secondary);
-        }
-
-        .resource-item .value {
-            font-weight: bold;
-            color: var(--color-text);
-        }
-
-        .player-score-item {
-            display: flex;
-            justify-content: space-between;
-            padding: 5px 4px;
-            border-radius: 4px;
-            transition: background-color 0.2s;
-            font-size: 0.8rem;
-            margin-bottom: 2px;
-            cursor: pointer;
-            user-select: none;
-        }
-        
-        .player-score-item:hover {
-            background-color: rgba(50, 184, 198, 0.1);
-        }
-        
-        .player-score-item.viewing-resources {
-            background-color: rgba(50, 184, 198, 0.2);
-            border: 1px solid var(--color-primary);
-        }
-
-        .player-score-item.active-player {
-            background-color: rgba(50, 184, 198, 0.2);
-            border: 1px solid var(--color-primary);
-            border-radius: 4px;
-            padding: 6px;
-        }
-
-        /* Game Map */
-        .game-map-container {
-            flex-grow: 1;
-            display: flex;
-            flex-direction: column;
-            position: relative; /* Para o popup flutuante */
-        }
-
-        .game-map {
-            flex-grow: 1;
-            display: grid;
-            grid-template-columns: repeat(5, 1fr);
-            grid-template-rows: repeat(5, 1fr);
-            gap: 2px;
-            padding: 8px;
-            background-color: var(--color-bg);
-            overflow: auto;
-        }
-
-        .region {
-            background-color: var(--color-surface);
-            border: 2px solid var(--color-bg);
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            text-align: center;
-            font-size: 0.75rem;
-            cursor: pointer;
-            transition: background-color 0.2s, transform 0.1s, border-color 0.2s;
-            border-radius: 4px;
-            padding: 3px;
-            position: relative;
-        }
-
-        .region:hover {
-            background-color: #353535;
-        }
-
-        .region.selected {
-            border-color: var(--color-error);
-            box-shadow: 0 0 10px var(--color-error);
-            transform: scale(1.02);
-        }
-
-        .region.controlled-by-current {
-            border: 2px dashed #ffffff;
-            /* Usar variável CSS para a cor da borda pulsante, definida em JS */
-            box-shadow: 0 0 15px var(--region-border-color, #fff);
-            animation: pulse-border 1.5s infinite alternate;
-        }
-
-        @keyframes pulse-border {
-            from { opacity: 0.6; }
-            to { opacity: 1; }
-        }
-
-        .region-name {
-            font-weight: bold;
-            margin-bottom: 2px;
-            color: var(--color-primary);
-            font-size: 0.7rem;
-        }
-
-        .region-info {
-            font-size: 0.65rem;
-            color: var(--color-text-secondary);
-        }
-        
-        .structure-icon {
-            font-size: 0.8rem;
-            margin-top: 2px;
-            padding: 2px 4px;
-            background-color: rgba(255, 255, 255, 0.1);
-            border-radius: 4px;
-            color: var(--color-text);
-        }
-
-        /* Action Panel */
-        .action-panel {
-            background-color: var(--color-surface);
-            padding: 8px 12px;
-            display: flex;
-            justify-content: space-around;
-            align-items: center;
-            flex-wrap: wrap;
-            gap: 6px;
-            box-shadow: 0 -2px 5px rgba(0, 0, 0, 0.5);
-            border-top: 1px solid #444;
-            min-height: 70px;
-        }
-
-        .action-btn {
-            background-color: var(--color-primary);
-            color: var(--color-bg);
-            border: none;
-            padding: 8px 15px;
-            border-radius: 6px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: background-color 0.2s, transform 0.1s;
-            flex-grow: 1;
-            min-width: 120px;
-        }
-
-        .action-btn:hover:not(:disabled) {
-            background-color: var(--color-primary-dark);
-            transform: translateY(-2px);
-        }
-
-        .action-btn:disabled {
-            background-color: var(--color-surface);
-            color: var(--color-text-secondary);
-            cursor: not-allowed;
-        }
-
-        /* Feedback Message */
-        #feedbackMessage {
-            position: fixed;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%) scale(0.8);
-            padding: 12px 25px;
-            border-radius: 8px;
-            color: #ffffff;
-            font-weight: 500;
-            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.5);
-            transition: opacity 0.3s, transform 0.3s;
-            opacity: 0;
-            min-width: 400px;
-        }
-
-        #feedbackMessage.info {
-            background-color: rgba(50, 184, 198, 0.9);
-        }
-
-        #feedbackMessage.success {
-            background-color: rgba(76, 175, 80, 0.9);
-        }
-
-        #feedbackMessage.error {
-            background-color: rgba(244, 67, 54, 0.9);
-        }
-
-        #feedbackMessage.show {
-            opacity: 1;
-            transform: translate(-50%, -50%) scale(1);
-        }
-
-        /* Initial Screen */
-        .initial-screen {
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background-color: rgba(26, 26, 26, 0.95);
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            z-index: 1000;
-        }
-
-        .initial-screen.hidden {
-            display: none;
-        }
-
-        .player-setup-form {
-            background-color: var(--color-surface);
-            padding: 40px;
-            border-radius: 12px;
-            max-width: 500px;
-            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
-            border: 1px solid #444;
-        }
-
-        .player-setup-form h1 {
-            color: var(--color-primary);
-            margin-bottom: 20px;
-            text-align: center;
-        }
-
-        .player-setup-form p {
-            color: var(--color-text-secondary);
-            margin-bottom: 20px;
-            text-align: center;
-        }
-
-        .player-input-group {
-            margin-bottom: 20px;
-        }
-
-        .player-input-group label {
-            display: block;
-            color: var(--color-text);
-            margin-bottom: 8px;
-            font-weight: 500;
-        }
-
-        .player-input-group input {
-            width: 100%;
-            padding: 10px;
-            background-color: var(--color-bg);
-            border: 1px solid #444;
-            border-radius: 6px;
-            color: var(--color-text);
-            font-size: 1rem;
-        }
-
-        .player-input-group input:focus {
-            outline: none;
-            border-color: var(--color-primary);
-            box-shadow: 0 0 8px rgba(50, 184, 198, 0.5);
-        }
-
-        #iconSelection {
-            display: flex;
-            gap: 10px;
-            justify-content: center;
-            flex-wrap: wrap;
-        }
-
-        .icon-option {
-            font-size: 1.5rem;
-            padding: 8px;
-            border-radius: 6px;
-            cursor: pointer;
-            border: 2px solid transparent;
-            background-color: var(--color-bg);
-            transition: background-color 0.2s, border-color 0.2s;
-        }
-
-        .icon-option:hover {
-            background-color: #353535;
-        }
-
-        .icon-option.selected {
-            border-color: var(--color-primary);
-            background-color: rgba(50, 184, 198, 0.1);
-        }
-
-        /* Modal Player Resources */
-        .resource-list-item {
-            display: flex;
-            justify-content: space-between;
-            margin-bottom: 5px;
-            font-size: 0.95rem;
-            padding: 3px 0;
-        }
-
-        .resource-list-item strong {
-            color: var(--color-primary);
-        }
-
-        .resource-cost {
-            display: inline-block;
-            margin-right: 8px;
-        }
-
-        /* Negociação Modal */
-        .negotiation-modal {
-            background-color: var(--color-surface);
-            border: 1px solid #444;
-            border-radius: 12px;
-            padding: 20px;
-            max-width: 600px;
-            margin: auto;
-        }
-        
-        .negotiation-offer {
-            background-color: var(--color-bg);
-            padding: 15px;
-            border-radius: 8px;
-            margin-bottom: 15px;
-            border-left: 4px solid var(--color-primary);
-        }
-
-        .negotiation-resources {
-            display: flex;
-            gap: 10px;
-            flex-wrap: wrap;
-            margin-top: 10px;
-        }
-
-        .resource-badge {
-            background-color: rgba(50, 184, 198, 0.2);
-            color: var(--color-primary);
-            padding: 5px 10px;
-            border-radius: 6px;
-            font-size: 0.9rem;
-            border: 1px solid var(--color-primary);
-        }
-        
-        /* NOVO: REGION DETAILS POPUP (Fase 2.1) */
-        .region-details-popup {
-            position: fixed; /* Fixado na tela para controle fino */
-            background-color: var(--color-surface);
-            border: 1px solid var(--color-primary);
-            padding: 10px;
-            border-radius: 8px;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.7);
-            z-index: 500; /* Acima do mapa, mas abaixo de modais */
-            pointer-events: none; /* Não bloquear cliques no mapa */
-            opacity: 0;
-            transition: opacity 0.2s; 
-            max-width: 250px;
-            min-width: 150px;
-        }
-
-        .region-details-popup.show {
-            opacity: 1;
-        }
-
-        .popup-title {
-            font-size: 1rem;
-            color: var(--color-primary);
-            border-bottom: 1px solid var(--color-primary-dark);
-            margin-bottom: 5px;
-            padding-bottom: 3px;
-            font-weight: bold;
-        }
-
-        .popup-info-item {
-            font-size: 0.85rem;
-            margin-bottom: 2px;
-            color: var(--color-text-secondary);
-        }
-
-        .popup-info-item strong {
-            color: var(--color-text);
-        }
-
-
-        /* Responsive */
-        @media (max-width: 768px) {
-            .main-container {
-                flex-direction: column;
-            }
-
-            .sidebar {
-                width: 100%;
-                max-height: 200px;
-            }
-
-            .game-map-container {
-                height: calc(100vh - 245px); /* Header + Sidebar + Action Panel */
-            }
-
-            .action-panel {
-                min-height: 50px;
-                padding: 6px;
-            }
-
-            .action-btn {
-                flex-grow: 1;
-                min-width: 45%;
-                font-size: 0.9rem;
-                padding: 6px 10px;
-            }
-        }
+}
+
+* {
+    font-family: 'Inter', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+html, body {
+    background-color: var(--color-bg);
+    color: var(--color-text);
+    height: 100vh;
+    overflow: hidden;
+    margin: 0;
+    padding: 0;
+}
+
+/* Header */
+.navbar {
+    background-color: var(--color-surface) !important;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.5);
+    height: 45px;
+    padding: 5px 20px !important;
+    min-height: auto;
+}
+
+.navbar-brand {
+    font-size: 1.5rem;
+    font-weight: bold;
+    color: var(--color-primary) !important;
+    margin-right: auto;
+}
+
+.navbar-text {
+    color: var(--color-text) !important;
+    font-size: 0.9rem;
+}
+
+.header-player-list {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    flex-wrap: wrap;
+}
+
+.header-player-item {
+    display: flex;
+    align-items: center;
+    padding: 4px 8px;
+    border-radius: 6px;
+    background-color: var(--color-bg);
+    border: 2px solid transparent;
+    transition: border-color 0.3s, background-color 0.3s;
+    font-size: 0.8rem;
+    font-weight: 500;
+    cursor: pointer;
+}
+
+.header-player-item:hover:not(.active-player-header) {
+    background-color: #353535;
+}
+
+.header-player-item.active-player-header {
+    border-color: var(--color-primary);
+    background-color: rgba(50, 184, 198, 0.1);
+    box-shadow: 0 0 8px rgba(50, 184, 198, 0.5);
+    font-weight: bold;
+}
+
+/* MODIFICAÇÃO ITEM 1: Estilo para o jogador selecionado no header (não ativo), garantindo contraste */
+.header-player-item.selected-player-header { 
+    border-color: #ffffff !important; 
+    background-color: rgba(255, 255, 255, 0.15) !important;
+    box-shadow: 0 0 8px rgba(255, 255, 255, 0.5) !important;
+    font-weight: bold;
+}
+/* FIM MODIFICAÇÃO ITEM 1 */
+
+
+.manual-icon {
+    cursor: pointer;
+    color: var(--color-text);
+    font-size: 1.5rem;
+    transition: color 0.2s;
+    margin-left: 15px;
+}
+
+.manual-icon:hover {
+    color: var(--color-primary);
+}
+
+/* Main Container */
+.main-container {
+    display: flex;
+    height: calc(100vh - 45px);
+    margin-top: 0;
+}
+
+/* Sidebar */
+.sidebar {
+    width: 180px;
+    background-color: var(--color-surface);
+    padding: 12px 8px;
+    box-shadow: 2px 0 5px rgba(0, 0, 0, 0.5);
+    overflow-y: auto;
+    border-right: 1px solid #444;
+    font-size: 0.85rem;
+}
+
+.sidebar h5 {
+    font-size: 0.9rem;
+    color: var(--color-primary);
+    border-bottom: 2px solid var(--color-primary-dark);
+    padding-bottom: 3px;
+    margin-bottom: 8px;
+    margin-top: 0;
+    cursor: pointer;
+}
+
+.sidebar h5:hover {
+    color: var(--color-text);
+}
+
+.resource-item {
+    display: flex;
+    justify-content: space-between;
+    padding: 5px 6px;
+    background-color: var(--color-bg);
+    border-radius: 4px;
+    font-size: 0.8rem;
+    align-items: center;
+    margin-bottom: 3px;
+}
+
+.resource-item .label {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    color: var(--color-text-secondary);
+}
+
+.resource-item .value {
+    font-weight: bold;
+    color: var(--color-text);
+}
+
+.player-score-item {
+    display: flex;
+    justify-content: space-between;
+    padding: 5px 4px;
+    border-radius: 4px;
+    transition: background-color 0.2s;
+    font-size: 0.8rem;
+    margin-bottom: 2px;
+    cursor: pointer;
+    user-select: none;
+}
+
+.player-score-item:hover {
+    background-color: rgba(50, 184, 198, 0.1);
+}
+
+/* MODIFICAÇÃO ITEM 1: Estilo para o jogador selecionado na sidebar */
+.player-score-item.selected-player-sidebar {
+    background-color: rgba(255, 255, 255, 0.15); /* Fundo sutil mais claro */
+    border: 1px solid #ffffff; /* Borda branca para contraste */
+}
+
+/* O jogador ativo usa a cor primária, então sobrescrevemos se for ativo E selecionado */
+.player-score-item.active-player,
+.player-score-item.active-player.selected-player-sidebar {
+    background-color: rgba(50, 184, 198, 0.2);
+    border: 1px solid var(--color-primary);
+    border-radius: 4px;
+    padding: 6px;
+}
+/* FIM MODIFICAÇÃO ITEM 1 */
+
+
+/* Game Map */
+.game-map-container {
+    flex-grow: 1;
+    display: flex;
+    flex-direction: column;
+    position: relative; /* Para o popup flutuante */
+}
+
+.game-map {
+    flex-grow: 1;
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    grid-template-rows: repeat(5, 1fr);
+    gap: 2px;
+    padding: 8px;
+    background-color: var(--color-bg);
+    overflow: auto;
+}
+
+.region {
+    background-color: var(--color-surface);
+    border: 2px solid var(--color-bg);
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+    font-size: 0.75rem;
+    cursor: pointer;
+    transition: background-color 0.2s, transform 0.1s, border-color 0.2s;
+    border-radius: 4px;
+    padding: 3px;
+    position: relative;
+}
+
+.region:hover {
+    background-color: #353535;
+}
+
+.region.selected {
+    border-color: var(--color-error);
+    box-shadow: 0 0 10px var(--color-error);
+    transform: scale(1.02);
+}
+
+.region.controlled-by-current {
+    /* Define a cor de borda no JS */
+}
+
+.region-owner {
+    font-weight: bold;
+    margin-top: 2px;
+}
+
+.region-biome {
+    color: var(--color-text-secondary);
+    font-size: 0.65rem;
+}
+
+.region-level {
+    font-size: 0.65rem;
+    color: var(--color-accent);
+}
+
+.region-structures {
+    font-size: 0.65rem;
+    color: var(--color-warning);
+}
+
+/* Action Panel */
+.action-panel {
+    display: flex;
+    justify-content: space-around;
+    padding: 8px;
+    background-color: var(--color-surface);
+    box-shadow: 0 -2px 5px rgba(0, 0, 0, 0.5);
+    border-top: 1px solid #444;
+}
+
+.action-btn {
+    padding: 8px 15px;
+    background-color: var(--color-primary);
+    color: var(--color-bg);
+    border: none;
+    border-radius: 6px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background-color 0.2s, opacity 0.2s;
+    flex-grow: 1;
+    margin: 0 4px;
+    font-size: 0.9rem;
+}
+
+.action-btn:hover:not(:disabled) {
+    background-color: var(--color-primary-dark);
+    color: var(--color-text);
+}
+
+.action-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    background-color: #555 !important;
+    color: var(--color-text-secondary) !important;
+}
+
+#endTurnBtn {
+    background-color: var(--color-error);
+    margin-left: 10px;
+    flex-grow: 0;
+}
+
+#endTurnBtn:hover:not(:disabled) {
+    background-color: #c4382e;
+}
+
+/* Feedback Message Pop-up */
+#feedbackMessage {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%) scale(0.8);
+    opacity: 0;
+    padding: 15px 25px;
+    border-radius: 8px;
+    color: var(--color-text);
+    font-weight: bold;
+    font-size: 1.1rem;
+    z-index: 1000;
+    pointer-events: none;
+    transition: opacity 0.3s, transform 0.3s;
+    background-color: rgba(0, 0, 0, 0.8);
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.5);
+}
+
+#feedbackMessage.info {
+    background-color: rgba(50, 184, 198, 0.9);
+}
+
+#feedbackMessage.success {
+    background-color: rgba(76, 175, 80, 0.9);
+}
+
+#feedbackMessage.error {
+    background-color: rgba(244, 67, 54, 0.9);
+}
+
+/* MODIFICAÇÃO ITEM 3: Adicionado estilo para a mensagem de warning (limite de ações) */
+#feedbackMessage.warning {
+    background-color: rgba(255, 152, 0, 0.9); /* Cor de warning com opacidade */
+}
+/* FIM MODIFICAÇÃO ITEM 3 */
+
+
+#feedbackMessage.show {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1);
+}
+
+/* Initial Screen */
+.initial-screen {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(26, 26, 26, 0.95);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+}
+
+.initial-screen.hidden {
+    display: none;
+}
+
+.player-setup-form {
+    background-color: var(--color-surface);
+    padding: 40px;
+    border-radius: 12px;
+    max-width: 500px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+    border: 1px solid #444;
+}
+
+.player-setup-form h1 {
+    color: var(--color-primary);
+    margin-bottom: 20px;
+    text-align: center;
+}
+
+.player-setup-form p {
+    color: var(--color-text-secondary);
+    text-align: center;
+}
+
+.player-count-display {
+    text-align: center;
+    font-size: 1.2rem;
+    font-weight: 600;
+    color: var(--color-accent);
+    margin-bottom: 20px;
+}
+
+.player-input-group {
+    margin-bottom: 15px;
+}
+
+.player-input-group label {
+    display: block;
+    margin-bottom: 5px;
+    color: var(--color-text);
+}
+
+.player-input-group input[type="text"] {
+    width: 100%;
+    padding: 10px;
+    border: 1px solid #444;
+    border-radius: 6px;
+    background-color: var(--color-bg);
+    color: var(--color-text);
+    font-size: 1rem;
+}
+
+.icon-selection {
+    display: flex;
+    gap: 10px;
+    justify-content: center;
+    margin-bottom: 20px;
+}
+
+.icon-option {
+    font-size: 1.5rem;
+    cursor: pointer;
+    padding: 8px;
+    border: 2px solid transparent;
+    border-radius: 8px;
+    transition: border-color 0.2s, background-color 0.2s;
+    user-select: none;
+}
+
+.icon-option:hover {
+    background-color: #353535;
+}
+
+.icon-option.selected {
+    border-color: var(--color-accent);
+    background-color: rgba(76, 175, 80, 0.1);
+    box-shadow: 0 0 8px rgba(76, 175, 80, 0.5);
+}
+
+.btn-add-player {
+    background-color: var(--color-accent);
+    color: var(--color-bg);
+    border: none;
+    padding: 10px 20px;
+    border-radius: 6px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background-color 0.2s;
+    width: 100%;
+}
+
+.btn-add-player:hover {
+    background-color: var(--color-accent-dark);
+}
+
+.btn-start-game {
+    background-color: var(--color-primary);
+    color: var(--color-bg);
+    border: none;
+    padding: 12px 25px;
+    border-radius: 8px;
+    font-weight: 700;
+    font-size: 1.1rem;
+    cursor: pointer;
+    transition: background-color 0.2s;
+    margin-top: 30px;
+    width: 100%;
+}
+
+.btn-start-game:hover:not(:disabled) {
+    background-color: var(--color-primary-dark);
+}
+
+.btn-start-game:disabled {
+    background-color: #555;
+    cursor: not-allowed;
+    opacity: 0.6;
+}
+
+/* Bootstrap Overrides (Modal) */
+.modal-content {
+    background-color: var(--color-surface);
+    color: var(--color-text);
+    border: 1px solid var(--color-primary-dark);
+}
+
+.modal-header {
+    border-bottom-color: #353535;
+    background-color: #333;
+    color: var(--color-primary);
+}
+
+.modal-title {
+    color: var(--color-primary);
+    font-weight: bold;
+}
+
+.btn-close-white {
+    filter: invert(1) grayscale(100%) brightness(200%);
+}
+
+.modal-footer {
+    border-top-color: #353535;
+}
+
+/* Build Options Modal Styles */
+.build-option {
+    /* MODIFICAÇÃO ITEM 4: Tornar o background transparente e garantir que a cor do texto seja clara */
+    background-color: transparent !important; 
+    border: 2px solid var(--color-primary-dark);
+    transition: all 0.2s;
+    cursor: pointer;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+    /* Garante a cor base do texto CLARA, resolvendo o problema */
+    color: var(--color-text) !important; 
+}
+
+.build-option:hover {
+    /* MODIFICAÇÃO ITEM 4: Escurece um pouco no hover com semi-transparência */
+    background-color: rgba(50, 50, 50, 0.5) !important; 
+    border-color: var(--color-primary); 
+    box-shadow: 0 0 10px rgba(50, 184, 198, 0.6);
+}
+
+/* CORREÇÕES FOCAIS: Força a cor CLARA em elementos de texto específicos do Bootstrap que são difíceis de sobrescrever */
+.build-option .card-body,
+.build-option .card-text,
+.build-option .card-text strong {
+    color: var(--color-text) !important;
+}
+
+.build-option .card-title {
+    color: var(--color-primary) !important; 
+    font-weight: bold;
+}
+/* FIM MODIFICAÇÃO ITEM 4 */
+
+/* Estilo para o custo de recurso dentro do card (tags de custo) */
+.build-option .resource-cost {
+    display: inline-block;
+    background-color: var(--color-primary-dark);
+    color: var(--color-text);
+    padding: 2px 6px;
+    border-radius: 4px;
+    margin-right: 5px;
+    font-size: 0.75rem;
+    font-weight: 500;
+}
+
+/* Bootstrap Nav-Tabs Override (para Trade Modal) */
+.nav-tabs {
+    border-bottom: 1px solid #444;
+}
+
+.nav-link {
+    color: var(--color-text-secondary) !important;
+    background-color: transparent !important;
+    border-color: transparent !important;
+}
+
+.nav-link.active {
+    color: var(--color-primary) !important;
+    background-color: var(--color-bg) !important;
+    border-color: var(--color-primary-dark) var(--color-primary-dark) transparent !important;
+}
+
+.nav-link:hover {
+    color: var(--color-primary) !important;
+}
+
+/* Region Details Pop-up */
+.region-details-popup {
+    position: absolute;
+    background-color: rgba(37, 37, 37, 0.95); /* var(--color-surface) com transparência */
+    border: 1px solid var(--color-primary);
+    padding: 10px;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.7);
+    z-index: 500; /* Acima do mapa, mas abaixo de modais */
+    pointer-events: none; /* Não bloquear cliques no mapa */
+    opacity: 0;
+    transition: opacity 0.2s;
+    max-width: 250px;
+    min-width: 150px;
+}
+
+.region-details-popup h6 {
+    color: var(--color-primary);
+    border-bottom: 1px solid var(--color-primary-dark);
+    padding-bottom: 5px;
+    margin-bottom: 5px;
+    font-size: 0.9rem;
+}
+
+.region-details-popup p {
+    margin: 0;
+    font-size: 0.8rem;
+    color: var(--color-text);
+}
+
+.region-details-popup .detail-item {
+    margin-bottom: 3px;
+}
+
+.region-details-popup .detail-label {
+    font-weight: 500;
+    color: var(--color-text-secondary);
+}
+
+.region-details-popup .detail-value {
+    font-weight: bold;
+}
+
+/* Estilização das abas do manual (Item 3) */
+.nav-tabs {
+    border-bottom: 2px solid var(--color-primary-dark);
+}
+
+.nav-tabs .nav-link {
+    color: var(--color-text-secondary);
+    background-color: var(--color-surface);
+    border: 1px solid var(--color-primary-dark);
+    border-bottom: none;
+    margin-right: 5px;
+    transition: all 0.2s;
+}
+
+.nav-tabs .nav-link:hover {
+    color: var(--color-primary);
+    border-color: var(--color-primary);
+}
+
+.nav-tabs .nav-link.active {
+    color: var(--color-text);
+    background-color: var(--color-bg);
+    border-color: var(--color-primary);
+    border-bottom-color: var(--color-bg); /* Esconde a linha de baixo */
+    font-weight: bold;
+}
+
+.tab-content {
+    background-color: var(--color-bg);
+    border: 1px solid var(--color-primary-dark);
+    border-top: none;
+}

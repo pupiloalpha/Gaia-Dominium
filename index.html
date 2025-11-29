@@ -13,7 +13,7 @@
 </head>
 <body onmousemove="handleMouseMove(event)">
 
-        <nav class="navbar navbar-dark">
+    <nav class="navbar navbar-dark">
         <span class="navbar-brand">Gaia Dominium</span>
         <div class="header-player-list" id="playerHeaderList">
             <span class="header-player-item">Aguardando Início...</span>
@@ -29,7 +29,7 @@
         <div class="sidebar">
             <h5 id="recursosTitle">Recursos</h5>
             <div id="recursosDisplay">
-                </div>
+            </div>
             
             <h5 id="pvTitle" style="margin-top: 20px;">Placar Global</h5>
             <div class="resource-item">
@@ -37,15 +37,15 @@
                 <span class="value" id="turnoDisplay">0</span>
             </div>
             <div id="playerListDisplay">
-                </div>
+            </div>
         </div>
 
         <div class="game-map-container">
             <div class="game-map" id="gameMap">
-                </div>
+            </div>
             
             <div id="regionDetailsPopup" class="region-details-popup">
-                </div>
+            </div>
 
             <div class="action-panel">
                 <button class="action-btn" id="explorarBtn" disabled title="">Explorar</button>
@@ -66,94 +66,50 @@
             
             <div class="player-input-group">
                 <label for="playerName">Nome:</label>
-                <input type="text" id="playerName" placeholder="Nome do Jogador">
+                <input type="text" id="playerName" class="form-control" placeholder="Seu Nome">
             </div>
-
+            
             <div class="player-input-group">
                 <label>Ícone:</label>
-                <div id="iconSelection">
+                <div class="icon-selection" id="iconSelection">
                     </div>
             </div>
 
-            <div class="d-grid gap-2">
-                <button class="action-btn" id="addPlayerBtn">Adicionar Jogador</button>
-                <button class="action-btn" id="startGameBtn" disabled style="margin-top: 10px;">Iniciar Jogo</button>
-            </div>
-        </div>
-    </div>
-
-    <div id="feedbackMessage"></div>
-
-    <div class="modal fade" id="manualModal" tabindex="-1">
-        <div class="modal-dialog modal-lg">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title">Manual do Jogo</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                </div>
-                <div class="modal-body">
-                    <ul class="nav nav-tabs" id="myTab" role="tablist">
-                        <li class="nav-item">
-                            <button class="nav-link active" id="regras-tab" data-bs-toggle="tab" data-bs-target="#regras" type="button">Regras</button>
-                        </li>
-                        <li class="nav-item">
-                            <button class="nav-link" id="mecanicas-tab" data-bs-toggle="tab" data-bs-target="#mecanicas" type="button">Mecânicas</button>
-                        </li>
-                        <li class="nav-item">
-                            <button class="nav-link" id="estruturas-tab" data-bs-toggle="tab" data-bs-target="#estruturas" type="button">Estruturas</button>
-                        </li>
-                    </ul>
-                    <div class="tab-content" id="myTabContent">
-                        <div class="tab-pane fade show active" id="regras">
-                            <p style="margin-top: 15px;">O objetivo de Gaia Dominium é ser o primeiro a alcançar 25 Pontos de Vitória (PVs) para conquistar o planeta.</p>
-                            <p>Cada jogador controla uma Facção com recursos iniciais e uma renda baseada em regiões e projetos ativos.</p>
-                            <h4 style="margin-top: 20px;">Recursos Essenciais</h4>
-                            <ul>
-                                <li><strong>🌲 Madeira (M):</strong> Recurso primário, usado para construção e recolha.</li>
-                                <li><strong>🗿 Pedra (P):</strong> Usada em construções mais robustas.</li>
-                                <li><strong>💰 Ouro (G):</strong> Recurso estratégico, essencial para negociação.</li>
-                                <li><strong>💧 Água (A):</strong> Recurso vital para produção e desenvolvimento.</li>
-                            </ul>
-                        </div>
-                        <div class="tab-pane fade" id="mecanicas">
-                            <h4>Mecânicas do Jogo</h4>
-                            <p><strong>Fluxo de Um Turno:</strong></p>
-                            <ul>
-                                <li><strong>Fase 1 - Renda Automática:</strong> Sistema calcula e adiciona recursos baseado em regiões controladas e estruturas.</li>
-                                <li><strong>Fase 2 - Ação Principal:</strong> Jogador executa até **duas** ações modulares (Explorar, Construir, Recolher, Negociar). Cada ação só pode ser feita uma vez por turno.</li>
-                                <li><strong>Fase 3 - Passar Turno:</strong> Turno passa para o próximo jogador, verificando a condição de vitória.</li>
-                            </ul>
-                            <h4 style="margin-top: 20px;">Regras Especiais</h4>
-                            <ul>
-                                <li><strong>Limite de Ações:</strong> Máximo de 2 ações por turno.</li>
-                                <li><strong>Exploração:</strong> Regiões não exploradas (`Nível 0`) não geram renda bônus e não podem ser construídas.</li>
-                                <li><strong>Bônus de Diversidade:</strong> +3 PV ao controlar uma região de cada tipo de Bioma.</li>
-                                <li><strong>Sanção por Inatividade:</strong> Se um jogador passar o turno 3 vezes seguidas sem realizar nenhuma ação, sua renda base é suspensa no próximo turno.</li>
-                            </ul>
-                        </div>
-                        <div class="tab-pane fade" id="estruturas">
-                            <h4>Estruturas Disponíveis</h4>
-                            <div id="structuresManualContent">
-                                <p>Carregando informações...</p>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fechar</button>
-                </div>
-            </div>
+            <button class="btn-add-player" id="addPlayerBtn">Adicionar Jogador</button>
+            <button class="btn-start-game" id="startGameBtn" disabled>Iniciar Jogo!</button>
         </div>
     </div>
     
-    <div class="modal fade" id="playerResourcesModal" tabindex="-1" aria-labelledby="playerResourcesModalLabel" aria-hidden="true">
-        <div class="modal-dialog">
-            <div class="modal-content bg-surface text-text">
+    <div id="feedbackMessage"></div>
+
+    <div class="modal fade" id="manualModal" tabindex="-1" aria-labelledby="manualModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg modal-dialog-scrollable">
+            <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title" id="playerResourcesModalLabel">Recursos de Jogador</h5>
+                    <h5 class="modal-title" id="manualModalLabel">📚 Manual de Gaia Dominium</h5>
                     <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
-                <div class="modal-body" id="playerResourcesContent">
+                <div class="modal-body">
+                    <ul class="nav nav-tabs" id="manualTabs" role="tablist">
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link active" id="tab-apresentacao" data-bs-toggle="tab" data-bs-target="#manualConteudoApresentacao" type="button" role="tab" aria-controls="manualConteudoApresentacao" aria-selected="true">Apresentação e Fases</button>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link" id="tab-acoes" data-bs-toggle="tab" data-bs-target="#manualConteudoAcoes" type="button" role="tab" aria-controls="manualConteudoAcoes" aria-selected="false">Ações do Jogador</button>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link" id="tab-info" data-bs-toggle="tab" data-bs-target="#manualConteudoInfo" type="button" role="tab" aria-controls="manualConteudoInfo" aria-selected="false">Informações Adicionais</button>
+                        </li>
+                    </ul>
+                    
+                    <div class="tab-content" id="manualTabsContent">
+                        <div class="tab-pane fade show active p-3" id="manualConteudoApresentacao" role="tabpanel" aria-labelledby="tab-apresentacao">
+                            </div>
+                        <div class="tab-pane fade p-3" id="manualConteudoAcoes" role="tabpanel" aria-labelledby="tab-acoes">
+                            </div>
+                        <div class="tab-pane fade p-3" id="manualConteudoInfo" role="tabpanel" aria-labelledby="tab-info">
+                            </div>
+                    </div>
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fechar</button>
@@ -163,14 +119,14 @@
     </div>
 
     <div class="modal fade" id="buildModal" tabindex="-1" aria-labelledby="buildModalLabel" aria-hidden="true">
-        <div class="modal-dialog modal-lg">
-            <div class="modal-content bg-surface text-text">
+        <div class="modal-dialog modal-dialog-centered modal-lg">
+            <div class="modal-content bg-dark text-white">
                 <div class="modal-header">
-                    <h5 class="modal-title" id="buildModalLabel">🛠️ Selecione a Estrutura para Construir</h5>
+                    <h5 class="modal-title" id="buildModalLabel">🏗️ Construir Estruturas</h5>
                     <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body" id="buildOptionsContent">
-                </div>
+                    </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
                 </div>
@@ -179,14 +135,32 @@
     </div>
     
     <div class="modal fade" id="negotiationModal" tabindex="-1" aria-labelledby="negotiationModalLabel" aria-hidden="true">
-        <div class="modal-dialog">
-            <div class="modal-content bg-surface text-text">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content bg-dark text-white">
                 <div class="modal-header">
-                    <h5 class="modal-title" id="negotiationModalLabel">💰 Negociação</h5>
+                    <h5 class="modal-title" id="negotiationModalLabel">Escolha um Jogador para Negociar</h5>
                     <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
-                <div class="modal-body" id="negotiationContent">
-                    </div>
+                <div class="modal-body" id="negotiationPlayerSelectContent">
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal fade" id="tradeModal" tabindex="-1" aria-labelledby="tradeModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-scrollable modal-lg">
+            <div class="modal-content bg-dark text-white">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="tradeModalLabel">🤝 Negociação com Jogador</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div id="tradeContent">
+                        </div>
+                </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
                 </div>
@@ -196,13 +170,13 @@
 
     <div class="modal fade" id="victoryModal" tabindex="-1" aria-labelledby="victoryModalLabel" aria-hidden="true">
         <div class="modal-dialog">
-            <div class="modal-content bg-surface text-text">
+            <div class="modal-content bg-dark text-white">
                 <div class="modal-header">
                     <h5 class="modal-title" id="victoryModalLabel">🏆 Fim de Jogo!</h5>
                     <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body" id="victoryContent">
-                    </div>
+                </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-primary" data-bs-dismiss="modal" onclick="window.location.reload();">Novo Jogo</button>
                 </div>
