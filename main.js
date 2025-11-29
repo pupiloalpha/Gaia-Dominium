@@ -1,7 +1,10 @@
 /*
-    Conteúdo refatorado do arquivo main.js:
-    - Implementação do ícone de informações e separação da lógica de clique.
-    - Garantia de que a classe 'text-light' é usada no modal de construção para o tema dark.
+    Conteúdo refatorado do arquivo main.js, aplicando a Fase 1 e Correções (1-5):
+    
+    Implementação da Fase 2: Experiência do Usuário (UX/UI)
+    - 2.1 UX: Detalhes da Região (Pop-up flutuante)
+    - 2.2 UX: Custos e Ganhos Visíveis (Tooltips)
+    - 2.3 Alerta de Vitória (Modal de Fim de Jogo)
 */
 
 // ==================== CONFIGURAÇÕES E ESTADO DO JOGO ====================
@@ -27,7 +30,7 @@ const GAME_CONFIG = {
     STRUCTURE_TYPES: {
         'POSTO_AVANCADO': {
             name: 'Posto Avançado',
-            description: 'Aumenta a produção base do bioma em +1.',
+            description: 'Aumenta a produção base do bioma em +1. Requer Nível de Exploração 1.',
             cost: { madeira: 3, pedra: 2, agua: 1, ouro: 0 },
             pv_gain: 2, 
             production_boost: 1, 
@@ -35,7 +38,7 @@ const GAME_CONFIG = {
         },
         'EDIFICIO_PRINCIPAL': {
             name: 'Edifício Principal',
-            description: 'Concede alto PV e PV recorrente.',
+            description: 'Concede alto PV inicial e +1 PV recorrente por turno. Requer Nível de Exploração 2.',
             cost: { madeira: 5, pedra: 5, ouro: 2, agua: 2 },
             pv_gain: 5,
             production_boost: 0,
@@ -43,7 +46,7 @@ const GAME_CONFIG = {
         },
         'CAMPO_CULTIVO': {
             name: 'Campo de Cultivo',
-            description: 'Focado em produção de Água e Madeira.',
+            description: 'Focado em produção, concede +1 Água e +1 Madeira por turno. Requer Nível de Exploração 1.',
             cost: { madeira: 2, pedra: 0, agua: 2, ouro: 0 },
             pv_gain: 1,
             production_boost: 0,
@@ -56,6 +59,26 @@ const GAME_CONFIG = {
         'Floresta Temperada': 'madeira',
         'Savana': 'ouro',
         'Pântano': 'pedra'
+    },
+    
+    // NOVO: DETALHES DE AÇÃO PARA TOOLTIPS (Fase 2.2)
+    ACTION_DETAILS: {
+        explorar: {
+            cost: { madeira: 2, agua: 1 },
+            effect: 'Aumenta Nível de Exploração (+1 Renda de Bioma) e concede **1 PV**. Requer Região Própria não explorada.',
+        },
+        construir: {
+            cost: { /* Varia por estrutura */ },
+            effect: 'Abre o painel de construção. Custo e bônus variam por estrutura. Requer Região Própria explorada.',
+        },
+        recolher: {
+            cost: { madeira: 1 },
+            effect: 'Ganha: +2 Madeira, +2 Pedra, +2 Água, **+1 PV**. Custo: 1 Madeira. (Ação Geral)',
+        },
+        negociar: {
+            cost: { ouro: 1 },
+            effect: 'Abre o painel de negociação. Troca de recurso aleatória com outro jogador **+1 PV para ambos**. Custo: 1 Ouro. (Ação Geral)',
+        },
     }
 };
 
@@ -70,10 +93,41 @@ let gameState = {
     selectedRegion: null,
     selectedAction: null,
     negotiationInProgress: false,
+    gameOver: false, // NOVO (Fase 2.3)
     
+    // Regra 2: Limite de Ações
     actionsTaken: [], 
     actionsLimit: 2,
 };
+
+// ==================== ELEMENTOS DA UI ====================
+const gameMapEl = document.getElementById('gameMap');
+const regionDetailsPopupEl = document.getElementById('regionDetailsPopup'); // NOVO (Fase 2.1)
+
+// ==================== FUNÇÕES AUXILIARES ====================
+function showFeedback(message, type) {
+    const feedbackEl = document.getElementById('feedbackMessage');
+    feedbackEl.textContent = message;
+    feedbackEl.className = `show ${type}`;
+    setTimeout(() => {
+        feedbackEl.classList.remove('show');
+    }, 3000);
+}
+
+function checkCosts(player, costs) {
+    for (const resource in costs) {
+        if (player.resources[resource] < costs[resource]) {
+            return false;
+        }
+    }
+    return true;
+}
+
+function consumeResources(player, costs) {
+    for (const resource in costs) {
+        player.resources[resource] -= costs[resource];
+    }
+}
 
 // ==================== INICIALIZAÇÃO ====================
 function initializeGame() {
@@ -81,15 +135,23 @@ function initializeGame() {
     createRegions();
     distributeRegions();
     updateDisplay();
+    // NOVO: Renderiza o manual de estruturas na inicialização (UX)
+    renderStructuresManual();
 }
 
 function createRegions() {
     gameState.regions = [];
     for (let i = 0; i < GAME_CONFIG.GRID_SIZE * GAME_CONFIG.GRID_SIZE; i++) {
+        // Encontra um nome de região disponível
+        let regionName = GAME_CONFIG.REGION_NAMES[i];
+        
+        // Atribui um bioma aleatório
+        let biome = GAME_CONFIG.BIOMES[Math.floor(Math.random() * GAME_CONFIG.BIOMES.length)];
+
         gameState.regions.push({
             id: i,
-            name: GAME_CONFIG.REGION_NAMES[i],
-            biome: GAME_CONFIG.BIOMES[Math.floor(Math.random() * GAME_CONFIG.BIOMES.length)],
+            name: regionName,
+            biome: biome,
             controller: null,
             explorationLevel: 0,
             structures: []
@@ -98,20 +160,26 @@ function createRegions() {
 }
 
 function distributeRegions() {
-    const regionsPerPlayer = Math.floor((GAME_CONFIG.GRID_SIZE * GAME_CONFIG.GRID_SIZE) / gameState.players.length);
+    const totalRegions = GAME_CONFIG.GRID_SIZE * GAME_CONFIG.GRID_SIZE;
+    const regionsPerPlayer = Math.floor(totalRegions / gameState.players.length);
     let regionIndex = 0;
     
+    // Embaralha o array de regiões para distribuição mais justa
+    const shuffledRegions = [...Array(totalRegions).keys()].sort(() => Math.random() - 0.5);
+
     for (let i = 0; i < gameState.players.length; i++) {
         gameState.players[i].regions = [];
         
         for (let j = 0; j < regionsPerPlayer; j++) {
-            if (regionIndex < gameState.regions.length) {
-                gameState.regions[regionIndex].controller = i;
-                gameState.players[i].regions.push(regionIndex); 
+            if (regionIndex < totalRegions) {
+                const regionId = shuffledRegions[regionIndex];
+                gameState.regions[regionId].controller = i;
+                gameState.players[i].regions.push(regionId);
                 regionIndex++;
             }
         }
     }
+    // As regiões restantes ficam descontroladas (controller: null)
 }
 
 // ==================== GERENCIAMENTO DE JOGADORES ====================
@@ -121,11 +189,16 @@ function addPlayer(name, icon) {
         return false;
     }
     
+    // Garante que a cor e o ícone não se repitam
+    const usedColors = gameState.players.map(p => p.color);
+    const availableColors = GAME_CONFIG.PLAYER_COLORS.filter(c => !usedColors.includes(c));
+    const color = availableColors[0] || GAME_CONFIG.PLAYER_COLORS[gameState.players.length];
+
     gameState.players.push({
         id: gameState.players.length,
         name: name,
         icon: icon,
-        color: GAME_CONFIG.PLAYER_COLORS[gameState.players.length],
+        color: color,
         resources: { ...GAME_CONFIG.INITIAL_RESOURCES },
         victoryPoints: 0,
         structures: 0,
@@ -145,82 +218,399 @@ function updatePlayerCountDisplay() {
     startBtn.disabled = gameState.players.length < 2;
 }
 
-// ==================== INTERFACE DO JOGO (Alterada) ====================
+// ==================== FLUXO DO TURNO ====================
+
+function startTurn() {
+    if (gameState.gameOver) return; // NOVO: Não inicia turno se o jogo acabou
+    
+    const player = gameState.players[gameState.currentPlayerIndex];
+    
+    // Regra 3: Suspensão de renda base por inatividade
+    const baseIncomeSuspended = player.consecutiveNoActionTurns >= 3;
+    
+    applyAutomaticIncome(player, baseIncomeSuspended);
+    
+    // Resetar estado de turno
+    gameState.actionsTaken = [];
+    gameState.selectedRegion = null;
+    gameState.selectedAction = null;
+    
+    // Mensagem de início de turno
+    if (baseIncomeSuspended) {
+         showFeedback(`${player.icon} ${player.name}'s Turno! (Renda Base Suspensa por Inatividade)`, 'warning');
+    } else {
+         showFeedback(`${player.icon} ${player.name}'s Turno!`, 'info');
+    }
+    
+    updateDisplay();
+}
+
+function applyAutomaticIncome(player, baseIncomeSuspended) {
+    const totalIncome = {};
+    
+    // 1. Renda Base + Bônus de Bioma + Bônus de Exploração/Estrutura
+    player.regions.forEach(regionId => {
+        const region = gameState.regions[regionId];
+        const resourceType = GAME_CONFIG.BIOME_BONUSES[region.biome];
+        
+        if (resourceType) {
+            let income = 0;
+            
+            // Renda Base (suspensa se passiva > 2)
+            if (!baseIncomeSuspended) {
+                income += 1;
+            }
+            
+            // Bônus de Exploração (Não suspenso)
+            income += region.explorationLevel; 
+            
+            // Bônus de Produção de Estruturas (Não suspenso)
+            region.structures.forEach(structureEntry => {
+                const structure = GAME_CONFIG.STRUCTURE_TYPES[structureEntry.type];
+                income += structure.production_boost;
+            });
+            
+            if (income > 0) {
+                // Arredonda para o inteiro mais próximo (ou use Math.floor/ceil dependendo da regra)
+                player.resources[resourceType] += Math.round(income); 
+                totalIncome[resourceType] = (totalIncome[resourceType] || 0) + Math.round(income);
+            }
+        }
+        
+        // 2. Renda Recorrente de Estruturas (PV ou outros recursos fixos) - Não suspenso
+        region.structures.forEach(structureEntry => {
+            const structure = GAME_CONFIG.STRUCTURE_TYPES[structureEntry.type];
+            if (structure.bonus_per_turn) {
+                for (const resource in structure.bonus_per_turn) {
+                    const amount = structure.bonus_per_turn[resource];
+                    if (amount > 0) {
+                        if (resource === 'pv') {
+                            player.victoryPoints += amount;
+                            totalIncome['PV Recorrente'] = (totalIncome['PV Recorrente'] || 0) + amount;
+                        } else if (player.resources.hasOwnProperty(resource)) {
+                            player.resources[resource] += amount;
+                            totalIncome[resource] = (totalIncome[resource] || 0) + amount;
+                        }
+                    }
+                }
+            }
+        });
+    });
+    
+    // 3. Checa Bônus de Diversidade
+    const diversityPV = checkDiversityBonus(player);
+    if (diversityPV > 0) {
+        player.victoryPoints += diversityPV;
+        totalIncome['PV Diversidade'] = (totalIncome['PV Diversidade'] || 0) + diversityPV;
+    }
+    
+    let feedbackMsg = "Renda aplicada: ";
+    // Converte totalIncome para uma string amigável
+    const incomeParts = [];
+    for (const res in totalIncome) {
+        incomeParts.push(`${totalIncome[res]} ${res.toUpperCase()}`);
+    }
+    
+    showFeedback(feedbackMsg + (incomeParts.join(', ') || "Nenhum ganho neste turno."), 'info');
+}
+
+// Checa o Bônus de Diversidade
+function checkDiversityBonus(player) {
+    if (player.hasDiversityBonus) return 0;
+    
+    const controlledBiomes = new Set();
+    gameState.regions.forEach(region => {
+        if (region.controller === player.id) {
+            controlledBiomes.add(region.biome);
+        }
+    });
+
+    if (controlledBiomes.size === GAME_CONFIG.ALL_BIOMES.length) {
+        player.hasDiversityBonus = true;
+        return GAME_CONFIG.DIVERSITY_BONUS_PV;
+    }
+    return 0;
+}
+
+function performAction(actionType) {
+    if (gameState.gameOver) { // NOVO (Fase 2.3)
+        showFeedback("O jogo acabou!", 'error');
+        return;
+    }
+    
+    const player = gameState.players[gameState.currentPlayerIndex];
+    let actionSuccess = false;
+
+    // Regra 2: Verifica limite de ações
+    if (gameState.actionsTaken.length >= gameState.actionsLimit) {
+        showFeedback(`Limite de ${gameState.actionsLimit} ações por turno atingido. Finalize seu turno.`, 'warning');
+        return;
+    }
+    
+    // Regra 2: Verifica se a ação já foi realizada
+    if (gameState.actionsTaken.includes(actionType)) {
+        showFeedback(`Você já realizou a ação "${actionType.toUpperCase()}" neste turno.`, 'warning');
+        return;
+    }
+
+    const selectedRegion = gameState.selectedRegion !== null ? gameState.regions[gameState.selectedRegion] : null;
+
+    switch (actionType) {
+        case 'explorar':
+            const exploreCosts = GAME_CONFIG.ACTION_DETAILS.explorar.cost;
+            if (!selectedRegion || selectedRegion.controller !== gameState.currentPlayerIndex) {
+                 showFeedback("Selecione uma região que você controla para explorar.", 'error');
+                 return;
+            }
+            if (selectedRegion.explorationLevel > 0) {
+                 showFeedback("Esta região já foi explorada.", 'warning');
+                 return;
+            }
+            if (checkCosts(player, exploreCosts)) {
+                consumeResources(player, exploreCosts);
+                selectedRegion.explorationLevel += 1;
+                player.victoryPoints += 1;
+                showFeedback('Região explorada! +1 PV e renda bônus por turno!', 'success');
+                actionSuccess = true;
+            } else {
+                showFeedback(`Recursos insuficientes. Necessário: ${Object.entries(exploreCosts).map(([r, c]) => `${c} ${r.substring(0, 1).toUpperCase()}`).join(', ')}.`, 'error');
+            }
+            break;
+
+        case 'construir': 
+            if (!selectedRegion || selectedRegion.controller !== gameState.currentPlayerIndex) {
+                showFeedback("Selecione uma região que você controla para construir.", 'error');
+                return;
+            }
+            openBuildModal(player, selectedRegion);
+            return; // Espera a seleção do modal
+
+        case 'recolher':
+            const gatherCosts = GAME_CONFIG.ACTION_DETAILS.recolher.cost;
+            if (checkCosts(player, gatherCosts)) {
+                 consumeResources(player, gatherCosts);
+                 player.resources.madeira += 2;
+                 player.resources.pedra += 2;
+                 player.resources.agua += 2;
+                 player.victoryPoints += 1;
+                 showFeedback('Recursos recolhidos! +1 PV', 'success');
+                 actionSuccess = true;
+            } else {
+                showFeedback(`Recursos insuficientes. Necessário: ${Object.entries(gatherCosts).map(([r, c]) => `${c} ${r.substring(0, 1).toUpperCase()}`).join(', ')}.`, 'error');
+            }
+            break;
+
+        case 'negociar':
+            const negotiateCosts = GAME_CONFIG.ACTION_DETAILS.negociar.cost;
+            if (checkCosts(player, negotiateCosts)) {
+                player.resources.ouro -= 1; // Custo de ouro consumido imediatamente
+                openNegotiationModal();
+                actionSuccess = true;
+            } else {
+                showFeedback(`Recursos insuficientes. Necessário: ${Object.entries(negotiateCosts).map(([r, c]) => `${c} ${r.substring(0, 1).toUpperCase()}`).join(', ')}.`, 'error');
+            }
+            break;
+    }
+
+    if (actionSuccess) {
+        gameState.actionsTaken.push(actionType);
+        // Regra 3: Se o jogador realizou qualquer ação, o contador de inatividade é zerado
+        player.consecutiveNoActionTurns = 0;
+    }
+    
+    gameState.selectedRegion = null;
+    updateDisplay();
+    checkVictoryCondition();
+}
+
+function endTurn() {
+    if (gameState.gameOver) return; // NOVO (Fase 2.3)
+    
+    const player = gameState.players[gameState.currentPlayerIndex];
+    
+    // Regra 3: Se não realizou ações, incrementa o contador de inatividade
+    if (gameState.actionsTaken.length === 0) {
+        player.consecutiveNoActionTurns++;
+        showFeedback(`Nenhuma ação realizada. Passividade: ${player.consecutiveNoActionTurns}/3.`, 'warning');
+    }
+    
+    // Passa para o próximo jogador
+    gameState.currentPlayerIndex = (gameState.currentPlayerIndex + 1) % gameState.players.length;
+    gameState.turn++;
+    
+    startTurn();
+}
+
+// ==================== CONDIÇÃO DE VITÓRIA (Fase 2.3) ====================
+function checkVictoryCondition() {
+    if (gameState.gameOver) return;
+    
+    const winner = gameState.players.find(p => p.victoryPoints >= GAME_CONFIG.VICTORY_POINTS);
+    
+    if (winner) {
+        gameState.gameOver = true;
+        
+        const victoryContent = document.getElementById('victoryContent');
+        victoryContent.innerHTML = `
+            <h2>Parabéns, ${winner.icon} ${winner.name}!</h2>
+            <p>Você atingiu **${winner.victoryPoints} Pontos de Vitória** e dominou Gaia!</p>
+            <p>O jogo durou **${gameState.turn} turnos**.</p>
+            <hr>
+            <h6>Placar Final:</h6>
+            <ul>
+                ${gameState.players.map(p => `<li>${p.icon} ${p.name}: ${p.victoryPoints} PV</li>`).join('')}
+            </ul>
+        `;
+        
+        const modal = new bootstrap.Modal(document.getElementById('victoryModal'));
+        modal.show();
+    }
+}
+
+
+// ==================== INTERFACE DO JOGO ====================
 function renderGameMap() {
-    const gameMap = document.getElementById('gameMap');
-    gameMap.innerHTML = '';
+    gameMapEl.innerHTML = '';
     
     gameState.regions.forEach(region => {
         const regionEl = document.createElement('div');
         regionEl.className = 'region';
         regionEl.dataset.regionId = region.id;
         
-        if (region.controller !== null) {
+        const isControlled = region.controller !== null;
+        
+        if (isControlled) {
             const player = gameState.players[region.controller];
-            
-            // Borda e cor semi-transparente para identificação de propriedade (Sem Iluminação)
             regionEl.style.border = `3px solid ${player.color}`;
-            regionEl.style.backgroundColor = player.color + '33'; 
+            regionEl.style.backgroundColor = player.color + '33';
             
             if (region.controller === gameState.currentPlayerIndex) {
+                // Adiciona a variável CSS para a animação de pulso na região do jogador atual
+                regionEl.style.setProperty('--region-border-color', player.color);
                 regionEl.classList.add('controlled-by-current');
             }
         }
         
-        // Destaque de região selecionada - O CSS aplica a iluminação SÓ AQUI
         if (gameState.selectedRegion === region.id) {
             regionEl.classList.add('selected');
         }
         
-        const structureIcon = region.structures.length > 0 ? `<div class="structure-icon">🏗️ x${region.structures.length}</div>` : '';
+        // Exibição de estruturas (para UX)
+        const structureIcon = region.structures.length > 0 ? 
+            `<div class="structure-icon" title="${region.structures.length} Estrutura(s)">🏗️ x${region.structures.length}</div>` : '';
         
-        // NOVO: Ícone de Informação 
-        const infoIconHtml = `<div class="info-icon" data-region-id="${region.id}">ℹ️</div>`;
-        
+        const controllerName = isControlled ? gameState.players[region.controller].name : 'Ninguém';
+        const controllerIcon = isControlled ? gameState.players[region.controller].icon : '⚪';
+
         regionEl.innerHTML = `
             <div class="region-name">${region.name}</div>
             <div class="region-info">${region.biome}</div>
-            <div class="region-info">Nível: ${region.explorationLevel}</div>
+            <div class="region-info">${controllerIcon} ${controllerName}</div>
+            <div class="region-info">Exploração: ${region.explorationLevel}</div>
             ${structureIcon}
-            ${infoIconHtml}
         `;
         
-        // NOVO LISTENER: Clique principal SÓ SELECIONA a região para ação
-        regionEl.addEventListener('click', (event) => {
-            // Se o clique não foi no ícone de info (evitando dupla ação)
-            if (!event.target.classList.contains('info-icon')) {
-                selectRegion(region.id);
-            }
-        });
+        regionEl.addEventListener('click', () => selectRegion(region.id));
+        // NOVO: Eventos para Pop-up de Detalhes (Fase 2.1)
+        regionEl.addEventListener('mouseover', (e) => showRegionDetails(region.id, e));
+        regionEl.addEventListener('mouseout', hideRegionDetails);
         
-        gameMap.appendChild(regionEl);
-        
-        // NOVO LISTENER: Clique no ícone de informação ABRE O MODAL
-        const infoIconEl = regionEl.querySelector('.info-icon');
-        if (infoIconEl) {
-            infoIconEl.addEventListener('click', (event) => {
-                event.stopPropagation(); // Impede que o clique selecione a região
-                openRegionDetailsModal(region.id);
-            });
-        }
+        gameMapEl.appendChild(regionEl);
     });
 }
 
-// selectRegion MODIFICADA: Apenas lida com a seleção/desseleção para ações
+// NOVO: Funções para o Pop-up de Detalhes da Região (Fase 2.1)
+function handleMouseMove(event) {
+    // Apenas move o pop-up se ele estiver visível
+    if (regionDetailsPopupEl.classList.contains('show')) {
+        // Move o pop-up ligeiramente para a direita e abaixo do cursor
+        regionDetailsPopupEl.style.left = `${event.pageX + 15}px`;
+        regionDetailsPopupEl.style.top = `${event.pageY + 15}px`;
+
+        // Ajuste para evitar que o pop-up saia da tela
+        const rect = regionDetailsPopupEl.getBoundingClientRect();
+        const viewportWidth = window.innerWidth;
+        const viewportHeight = window.innerHeight;
+
+        // Ajuste horizontal
+        if (rect.right > viewportWidth - 20) {
+            regionDetailsPopupEl.style.left = `${event.pageX - rect.width - 15}px`;
+        }
+        // Ajuste vertical (opcional, pois o mapa geralmente é menor que a viewport)
+        if (rect.bottom > viewportHeight - 20) {
+            regionDetailsPopupEl.style.top = `${event.pageY - rect.height - 15}px`;
+        }
+    }
+}
+
+function showRegionDetails(regionId, event) {
+    const region = gameState.regions[regionId];
+    const isControlled = region.controller !== null;
+    const controller = isControlled ? gameState.players[region.controller] : null;
+    
+    let structuresInfo = 'Nenhuma';
+    if (region.structures.length > 0) {
+        const counts = region.structures.reduce((acc, s) => {
+            acc[s.type] = (acc[s.type] || 0) + 1;
+            return acc;
+        }, {});
+        structuresInfo = Object.entries(counts)
+            .map(([type, count]) => `${GAME_CONFIG.STRUCTURE_TYPES[type].name} (x${count})`)
+            .join(', ');
+    }
+
+    const biomeBonus = GAME_CONFIG.BIOME_BONUSES[region.biome];
+    let productionBoost = 0;
+    let recurrentBonus = [];
+    
+    region.structures.forEach(s => {
+        const struct = GAME_CONFIG.STRUCTURE_TYPES[s.type];
+        productionBoost += struct.production_boost;
+        for (const res in struct.bonus_per_turn) {
+            if (struct.bonus_per_turn[res] > 0) {
+                recurrentBonus.push(`+${struct.bonus_per_turn[res]} ${res.toUpperCase()}`);
+            }
+        }
+    });
+    
+    const recurrentInfo = recurrentBonus.length > 0 ? recurrentBonus.join(', ') : 'Nenhum';
+
+    regionDetailsPopupEl.innerHTML = `
+        <div class="popup-title">${region.name} (${region.biome})</div>
+        <div class="popup-info-item"><strong>Controlador:</strong> ${controller ? controller.icon + ' ' + controller.name : 'Ninguém'}</div>
+        <div class="popup-info-item"><strong>Nível Exploração:</strong> ${region.explorationLevel}</div>
+        <hr style="margin: 5px 0;">
+        <div class="popup-info-item"><strong>Renda Base (+1):</strong> ${biomeBonus.substring(0, 1).toUpperCase()}${biomeBonus.substring(1)}</div>
+        <div class="popup-info-item"><strong>Bônus Exploração:</strong> +${region.explorationLevel} ${biomeBonus.substring(0, 1).toUpperCase()}${biomeBonus.substring(1)}</div>
+        <div class="popup-info-item"><strong>Bônus Estruturas:</strong> +${productionBoost} ${biomeBonus.substring(0, 1).toUpperCase()}${biomeBonus.substring(1)}</div>
+        <div class="popup-info-item"><strong>Recorrente:</strong> ${recurrentInfo}</div>
+        <hr style="margin: 5px 0;">
+        <div class="popup-info-item"><strong>Estruturas:</strong> ${structuresInfo}</div>
+    `;
+    
+    // Posicionamento inicial (será ajustado pelo handleMouseMove)
+    regionDetailsPopupEl.style.left = `${event.pageX + 15}px`;
+    regionDetailsPopupEl.style.top = `${event.pageY + 15}px`;
+    regionDetailsPopupEl.classList.add('show');
+}
+
+function hideRegionDetails() {
+    regionDetailsPopupEl.classList.remove('show');
+}
+
+
 function selectRegion(regionId) {
     const region = gameState.regions[regionId];
-
-    // Toggle: se a mesma região for clicada, desmarca.
-    if (gameState.selectedRegion === regionId) {
-        gameState.selectedRegion = null;
+    // Apenas pode selecionar regiões que controla
+    if (region.controller === gameState.currentPlayerIndex) {
+        gameState.selectedRegion = gameState.selectedRegion === regionId ? null : regionId;
     } else {
-        // Se for uma região controlada, marca para ação.
-        if (region.controller === gameState.currentPlayerIndex) {
-            gameState.selectedRegion = regionId;
-        } else {
-            // Se for região de outro jogador ou selvagem, não marca para ação.
+        // Permite desmarcar a região se for a mesma, mesmo que não seja sua (para limpar o destaque)
+        if (gameState.selectedRegion === regionId) {
             gameState.selectedRegion = null;
-            showFeedback("Você só pode selecionar suas próprias regiões para ações.", 'warning');
+        } else {
+             // Não permite selecionar regiões de outros jogadores para ações
+            showFeedback(`Você só pode selecionar regiões que você controla para ações. Região de ${gameState.players[region.controller].icon} ${gameState.players[region.controller].name}.`, 'warning');
         }
     }
     
@@ -228,68 +618,15 @@ function selectRegion(regionId) {
     updateActionButtons();
 }
 
-// Ação 2.1: Função para abrir o modal de detalhes da região
-function openRegionDetailsModal(regionId) {
-    const region = gameState.regions[regionId];
-    const modalTitle = document.getElementById('regionDetailsModalLabel');
-    const modalBody = document.getElementById('regionDetailsContent');
-
-    modalTitle.textContent = `Detalhes: ${region.name} (${region.biome})`;
-
-    const controllerInfo = region.controller !== null
-        ? gameState.players[region.controller].icon + ' ' + gameState.players[region.controller].name
-        : 'Ninguém (Selvagem)';
-
-    const resourceType = GAME_CONFIG.BIOME_BONUSES[region.biome];
-    const currentIncomeBase = region.controller !== null && gameState.players[region.controller].consecutiveNoActionTurns <= 2 ? 1 : 0;
-
-    const structureDetails = region.structures.map(s => {
-        const struct = GAME_CONFIG.STRUCTURE_TYPES[s.type];
-        
-        let bonusText = '';
-        if (struct.production_boost > 0) {
-            bonusText += `${struct.production_boost} ${resourceType.substring(0, 1).toUpperCase()}${resourceType.substring(1)} | `;
-        }
-        if (struct.bonus_per_turn.pv > 0) {
-            bonusText += `${struct.bonus_per_turn.pv} PV/Turno | `;
-        }
-        if (struct.bonus_per_turn.madeira > 0 || struct.bonus_per_turn.agua > 0) {
-            bonusText += 'Outros Recursos | ';
-        }
-
-        return `<li>${struct.name} (Bônus: ${bonusText.slice(0, -3) || 'Nenhum'})</li>`;
-    }).join('');
-
-    
-    let content = `
-        <p><strong>Controlador:</strong> ${controllerInfo}</p>
-        <p><strong>Bioma:</strong> ${region.biome} (Recurso Principal: ${resourceType.substring(0, 1).toUpperCase()}${resourceType.substring(1)})</p>
-        <p><strong>Nível de Exploração:</strong> ${region.explorationLevel}</p>
-        <hr>
-        <h6>Produção Estimada (Por Turno):</h6>
-        <ul>
-            <li>Renda Base do Bioma: ${currentIncomeBase} ${resourceType.substring(0, 1).toUpperCase()}${resourceType.substring(1)} (Suspenso se Passivo)</li>
-            <li>Bônus Exploração: ${region.explorationLevel} ${resourceType.substring(0, 1).toUpperCase()}${resourceType.substring(1)}</li>
-        </ul>
-        <hr>
-        <h6>Estruturas Construídas (${region.structures.length}):</h6>
-        <ul class="structure-list">${structureDetails || 'Nenhuma'}</ul>
-    `;
-    
-    modalBody.innerHTML = content;
-    const modal = new bootstrap.Modal(document.getElementById('regionDetailsModal'));
-    modal.show();
-}
-
 function updateDisplay() {
     renderGameMap();
     updateResourcesDisplay(); 
     updatePlayersList();
-    updateActionButtons(); 
+    updateActionButtons();
     updateHeaderPlayerList();
 }
 
-function updateResourcesDisplay() { /* ... (Mantido o mesmo) ... */
+function updateResourcesDisplay() {
     const player = gameState.players[gameState.currentPlayerIndex];
     const recursosDisplay = document.getElementById('recursosDisplay');
     const recursosTitle = document.getElementById('recursosTitle');
@@ -318,7 +655,7 @@ function updateResourcesDisplay() { /* ... (Mantido o mesmo) ... */
     document.getElementById('turnoDisplay').textContent = gameState.turn;
 }
 
-function updatePlayersList() { /* ... (Mantido o mesmo) ... */
+function updatePlayersList() {
     const playerListDisplay = document.getElementById('playerListDisplay');
     playerListDisplay.innerHTML = '';
     
@@ -346,7 +683,7 @@ function updatePlayersList() { /* ... (Mantido o mesmo) ... */
     });
 }
 
-function selectPlayerForResources(playerIndex) { /* ... (Mantido o mesmo) ... */
+function selectPlayerForResources(playerIndex) {
     const player = gameState.players[playerIndex];
     
     if (gameState.selectedPlayerForResources === playerIndex) {
@@ -358,25 +695,45 @@ function selectPlayerForResources(playerIndex) { /* ... (Mantido o mesmo) ... */
     
     const modalTitle = document.getElementById('playerResourcesModalLabel');
     const modalBody = document.getElementById('playerResourcesContent');
+    
+    // Lista de estruturas do jogador
+    let playerStructures = {};
+    gameState.regions.forEach(region => {
+        if (region.controller === playerIndex) {
+            region.structures.forEach(s => {
+                playerStructures[s.type] = (playerStructures[s.type] || 0) + 1;
+            });
+        }
+    });
+
+    const structuresHtml = Object.entries(playerStructures)
+        .map(([type, count]) => `<li>${GAME_CONFIG.STRUCTURE_TYPES[type].name} (x${count})</li>`)
+        .join('');
+        
     const playerActions = playerIndex === gameState.currentPlayerIndex ? gameState.actionsTaken.join(', ') || 'Nenhuma' : 'Turno Encerrado';
+
 
     modalTitle.textContent = `Recursos Detalhados de ${player.icon} ${player.name}`;
     
     let content = `
-        <p><strong>Pontos de Vitória:</strong> ${player.victoryPoints} PV</p>
+        <p><strong>Pontos de Vitória:</strong> <span class="text-primary fw-bold">${player.victoryPoints} PV</span></p>
         <p><strong>Ações no Turno:</strong> ${playerActions} (${gameState.actionsTaken.length}/${gameState.actionsLimit})</p>
-        ${player.consecutiveNoActionTurns > 0 ? `<p class="text-warning">Turnos passivos seguidos: ${player.consecutiveNoActionTurns} (Limite: 2)</p>` : ''}
+        ${player.consecutiveNoActionTurns > 0 ? `<p class="text-warning">Turnos passivos seguidos: ${player.consecutiveNoActionTurns}</p>` : ''}
         <hr>
         <h6>Recursos:</h6>
         <ul>
-            <li>🌲 Madeira: ${player.resources.madeira}</li>
-            <li>🗿 Pedra: ${player.resources.pedra}</li>
-            <li>💰 Ouro: ${player.resources.ouro}</li>
-            <li>💧 Água: ${player.resources.agua}</li>
+            <li class="resource-list-item"><span>🌲 Madeira:</span> <strong>${player.resources.madeira}</strong></li>
+            <li class="resource-list-item"><span>🗿 Pedra:</span> <strong>${player.resources.pedra}</strong></li>
+            <li class="resource-list-item"><span>💰 Ouro:</span> <strong>${player.resources.ouro}</strong></li>
+            <li class="resource-list-item"><span>💧 Água:</span> <strong>${player.resources.agua}</strong></li>
         </ul>
         <hr>
         <p><strong>Regiões Controladas:</strong> ${player.regions ? player.regions.length : 0}</p>
-        ${player.hasDiversityBonus ? '<p class="text-success">🌟 Bônus de Diversidade Adquirido</p>' : ''}
+        <p class="text-success">${player.hasDiversityBonus ? '🌟 Bônus de Diversidade Adquirido' : 'Bônus de Diversidade Pendente'}</p>
+        <h6>Estruturas:</h6>
+        <ul>
+            ${structuresHtml || '<li>Nenhuma Estrutura Construída</li>'}
+        </ul>
     `;
     
     modalBody.innerHTML = content;
@@ -386,7 +743,7 @@ function selectPlayerForResources(playerIndex) { /* ... (Mantido o mesmo) ... */
 }
 
 
-function updateHeaderPlayerList() { /* ... (Mantido o mesmo) ... */
+function updateHeaderPlayerList() {
     const playerHeaderList = document.getElementById('playerHeaderList');
     playerHeaderList.innerHTML = '';
     
@@ -396,384 +753,184 @@ function updateHeaderPlayerList() { /* ... (Mantido o mesmo) ... */
         if (index === gameState.currentPlayerIndex) {
             playerItem.classList.add('active-player-header');
         }
-        
         playerItem.textContent = `${player.icon} ${player.name}`;
         playerHeaderList.appendChild(playerItem);
     });
 }
 
-// Ação 2.2: Função para obter detalhes de custo e ganho da ação
-function getActionDetails(actionType) { /* ... (Mantido o mesmo) ... */
-    let details = { cost: {}, gain: {}, description: '' };
-
-    switch (actionType) {
-        case 'explorar':
-            details.cost = { madeira: 2, agua: 1 };
-            details.gain = { pv: 1 };
-            details.description = 'Expande o domínio e aumenta o Nível de Exploração da região.';
-            break;
-        case 'construir':
-            // Exibe o custo mínimo/típico de uma construção
-            const minCost = GAME_CONFIG.STRUCTURE_TYPES['CAMPO_CULTIVO'].cost;
-            const minPV = GAME_CONFIG.STRUCTURE_TYPES['CAMPO_CULTIVO'].pv_gain;
-            
-            details.cost = minCost;
-            details.gain = { pv: minPV }; 
-            details.description = 'Abre modal para selecionar estrutura e custo. PV e bônus variam (começa em +1 PV).';
-            break;
-        case 'recolher':
-            details.cost = { madeira: 1 };
-            details.gain = { madeira: 2, pedra: 2, agua: 2, pv: 1 };
-            details.description = 'Troca 1 Madeira por um pacote de recursos e PV.';
-            break;
-        case 'negociar':
-            details.cost = { ouro: 1 };
-            details.gain = { pv: 1 };
-            details.description = 'Inicia negociação com outro jogador. Ouro é gasto mesmo se recusado.';
-            break;
-    }
-    return details;
-}
-
-// Ação 2.2: Atualiza o estado dos botões de ação E os tooltips
-function updateActionButtons() { /* ... (Mantido o mesmo) ... */
+// Atualiza o estado dos botões de ação e adiciona tooltips (Fase 2.2)
+function updateActionButtons() {
     const player = gameState.players[gameState.currentPlayerIndex];
     const selectedRegion = gameState.selectedRegion !== null ? gameState.regions[gameState.selectedRegion] : null;
-    
     const actionsRemaining = gameState.actionsLimit - gameState.actionsTaken.length;
+    const isActionLimitReached = actionsRemaining <= 0 || gameState.gameOver; // NOVO: Bloqueia se o jogo acabou
 
-    const actionButtons = [
-        { id: 'explorarBtn', action: 'explorar' },
-        { id: 'construirBtn', action: 'construir' },
-        { id: 'recolherBtn', action: 'recolher' },
-        { id: 'negociarBtn', action: 'negociar' }
-    ];
-
-    const isActionLimitReached = actionsRemaining <= 0;
+    const explorarBtn = document.getElementById('explorarBtn');
+    const construirBtn = document.getElementById('construirBtn');
+    const recolherBtn = document.getElementById('recolherBtn');
+    const negociarBtn = document.getElementById('negociarBtn');
+    const endTurnBtn = document.getElementById('endTurnBtn');
     
-    if (isActionLimitReached) {
-        actionButtons.forEach(btn => document.getElementById(btn.id).disabled = true);
-        document.getElementById('endTurnBtn').disabled = false;
+    // Regra 2: Bloqueia todos os botões de ação se o limite for atingido ou jogo acabou
+    if (isActionLimitReached && !gameState.gameOver) {
+        explorarBtn.disabled = construirBtn.disabled = recolherBtn.disabled = negociarBtn.disabled = true;
+        endTurnBtn.disabled = false;
         showFeedback(`Limite de ${gameState.actionsLimit} ações por turno atingido. Finalize seu turno.`, 'warning');
         return;
-    }
-
-    actionButtons.forEach(btn => {
-        const details = getActionDetails(btn.action);
-        const element = document.getElementById(btn.id);
-        const actionType = btn.action;
-        
-        let costHtml = Object.keys(details.cost)
-            .filter(res => details.cost[res] > 0)
-            .map(res => `${details.cost[res]} ${res.substring(0, 1).toUpperCase()}${res.substring(1)}`)
-            .join(' | ');
-        
-        let gainHtml = Object.keys(details.gain)
-            .filter(res => details.gain[res] > 0)
-            .map(res => `${details.gain[res]} ${res.substring(0, 1).toUpperCase()}${res.substring(1)}`)
-            .join(' | ');
-            
-        let tooltipContent = `<strong>Custo:</strong> ${costHtml || 'Nenhum'}<br><strong>Ganho:</strong> ${gainHtml || 'Nenhum'}<br>${details.description}`;
-        
-        // Ação 2.2: Atualiza o tooltip
-        element.dataset.bsOriginalTitle = tooltipContent;
-        
-        // Regra 2: Checagem de desativação
-        const alreadyTaken = gameState.actionsTaken.includes(actionType);
-        let disabled = alreadyTaken;
-
-        switch (actionType) {
-            case 'explorar':
-                if (!selectedRegion || selectedRegion.controller !== gameState.currentPlayerIndex || 
-                    player.resources.madeira < 2 || player.resources.agua < 1) {
-                    disabled = true;
-                }
-                break;
-            case 'construir':
-                // Checa o custo da mais barata como referência
-                const cheapestCost = GAME_CONFIG.STRUCTURE_TYPES['CAMPO_CULTIVO'].cost;
-                if (!selectedRegion || selectedRegion.controller !== gameState.currentPlayerIndex || 
-                    !checkCosts(player, cheapestCost)) {
-                    disabled = true;
-                }
-                break;
-            case 'recolher':
-                if (player.resources.madeira < 1) {
-                    disabled = true;
-                }
-                break;
-            case 'negociar':
-                if (player.resources.ouro < 1) {
-                    disabled = true;
-                }
-                break;
-        }
-        
-        element.disabled = disabled;
-    });
-    
-    document.getElementById('endTurnBtn').disabled = false;
-}
-
-// ==================== FUNÇÕES AUXILIARES ====================
-function checkCosts(player, costs) { /* ... (Mantido o mesmo) ... */
-    for (const resource in costs) {
-        if (player.resources[resource.toLowerCase()] < costs[resource]) {
-            return false;
-        }
-    }
-    return true;
-}
-
-function consumeResources(player, costs) { /* ... (Mantido o mesmo) ... */
-    for (const resource in costs) {
-        player.resources[resource.toLowerCase()] -= costs[resource];
-    }
-}
-
-// Ação 2.3: Aplica a renda do turno com feedback detalhado
-function applyIncome(player) { /* ... (Mantido o mesmo) ... */
-    let totalIncome = {}; 
-    let baseIncomeSuspended = player.consecutiveNoActionTurns > 2;
-    
-    if (baseIncomeSuspended) {
-        showFeedback(`Renda base suspensa! Turnos passivos seguidos: ${player.consecutiveNoActionTurns}.`, 'error');
-    }
-
-    // 1. Renda Base, Exploração e Produção de Estruturas
-    gameState.regions.forEach(region => {
-        if (region.controller === player.id) {
-            const biome = region.biome;
-            const resourceType = GAME_CONFIG.BIOME_BONUSES[biome];
-            
-            if (resourceType) {
-                let income = 0; 
-                
-                if (!baseIncomeSuspended) {
-                    income += 1; // Renda Base (1)
-                }
-                
-                income += region.explorationLevel; // Bônus Exploração
-
-                // Bônus de Produção de Estruturas
-                region.structures.forEach(structureEntry => {
-                    const structure = GAME_CONFIG.STRUCTURE_TYPES[structureEntry.type];
-                    income += structure.production_boost;
-                    
-                    // Renda de recursos recorrentes (excluindo PV)
-                    for (const res in structure.bonus_per_turn) {
-                        if (res !== 'pv') {
-                            const amount = structure.bonus_per_turn[res];
-                            if (amount > 0) {
-                                player.resources[res] += amount;
-                                totalIncome[res] = (totalIncome[res] || 0) + amount;
-                            }
-                        }
-                    }
-                });
-                
-                if (income > 0) {
-                    player.resources[resourceType] += Math.round(income);
-                    totalIncome[resourceType] = (totalIncome[resourceType] || 0) + Math.round(income);
-                }
-            }
-            
-            // 2. Renda Recorrente de PV de Estruturas
-            region.structures.forEach(structureEntry => {
-                const structure = GAME_CONFIG.STRUCTURE_TYPES[structureEntry.type];
-                if (structure.bonus_per_turn.pv > 0) {
-                    const amount = structure.bonus_per_turn.pv;
-                    player.victoryPoints += amount;
-                    totalIncome['pv'] = (totalIncome['pv'] || 0) + amount;
-                }
-            });
-        }
-    });
-    
-    // Ação 2.3: Feedback de Renda com Emoji e Nomes
-    const resourceNames = { madeira: '🌲 Madeira', pedra: '🗿 Pedra', ouro: '💰 Ouro', agua: '💧 Água', pv: '✨ PV Recorrente' };
-
-    let incomeParts = [];
-    for (const res in totalIncome) {
-        incomeParts.push(`${totalIncome[res]} ${resourceNames[res] || res.substring(0, 1).toUpperCase()}${res.substring(1)}`);
-    }
-
-    let feedbackMsg = incomeParts.join(', ');
-
-    showFeedback(`Renda aplicada: ${feedbackMsg}` || "Nenhum ganho neste turno.", 'info');
-}
-
-function checkDiversityBonus(player) { /* ... (Mantido o mesmo) ... */
-    if (player.hasDiversityBonus) return 0; 
-    
-    const controlledBiomes = new Set();
-    
-    gameState.regions.forEach(region => {
-        if (region.controller === player.id) {
-            controlledBiomes.add(region.biome);
-        }
-    });
-
-    if (controlledBiomes.size === GAME_CONFIG.ALL_BIOMES.length) {
-        player.hasDiversityBonus = true; 
-        return GAME_CONFIG.DIVERSITY_BONUS_PV;
-    }
-    
-    return 0;
-}
-
-// ==================== AÇÕES DO JOGO ====================
-function performAction(actionType) { /* ... (Mantido o mesmo) ... */
-    const player = gameState.players[gameState.currentPlayerIndex];
-    const selectedRegion = gameState.selectedRegion !== null ? gameState.regions[gameState.selectedRegion] : null;
-
-    if (gameState.actionsTaken.includes(actionType)) {
-        showFeedback(`Você já realizou a ação '${actionType}' neste turno. Escolha outra ação.`, 'error');
-        return;
-    }
-
-    if (gameState.actionsTaken.length >= gameState.actionsLimit && actionType !== 'endTurn') {
-        showFeedback(`Limite de ${gameState.actionsLimit} ações por turno atingido. Finalize seu turno.`, 'error');
+    } else if (gameState.gameOver) { // Jogo acabou
+        explorarBtn.disabled = construirBtn.disabled = recolherBtn.disabled = negociarBtn.disabled = endTurnBtn.disabled = true;
         return;
     }
     
-    let actionSuccess = false;
+    // Funções auxiliares para checar se a ação já foi feita (Regra 2)
+    const explored = gameState.actionsTaken.includes('explorar');
+    const built = gameState.actionsTaken.includes('construir');
+    const gathered = gameState.actionsTaken.includes('recolher');
+    const negotiated = gameState.actionsTaken.includes('negociar');
 
-    switch(actionType) {
-        case 'explorar':
-            if (selectedRegion && selectedRegion.controller === gameState.currentPlayerIndex &&
-                player.resources.madeira >= 2 && player.resources.agua >= 1) {
-                
-                consumeResources(player, { madeira: 2, agua: 1 });
-                selectedRegion.explorationLevel++;
-                player.victoryPoints += 1;
-                showFeedback('Região explorada! +1 PV', 'success');
-                actionSuccess = true;
-            } else if (!selectedRegion || selectedRegion.controller !== gameState.currentPlayerIndex) {
-                 showFeedback("Selecione uma região que você controla para explorar.", 'error');
-            }
-            break;
-            
-        case 'construir':
-            if (!selectedRegion || selectedRegion.controller !== gameState.currentPlayerIndex) {
-                showFeedback("Selecione uma região que você controla para construir.", 'error');
-                return;
-            }
-            openBuildModal(player, selectedRegion);
-            return; 
+    // Explorar: 2 Madeira + 1 Água
+    const canExplore = !explored && selectedRegion && selectedRegion.controller === gameState.currentPlayerIndex && selectedRegion.explorationLevel === 0 && checkCosts(player, GAME_CONFIG.ACTION_DETAILS.explorar.cost);
+    explorarBtn.disabled = !canExplore;
+    explorarBtn.title = `Custo: ${GAME_CONFIG.ACTION_DETAILS.explorar.cost.madeira} M, ${GAME_CONFIG.ACTION_DETAILS.explorar.cost.agua} A. Efeito: ${GAME_CONFIG.ACTION_DETAILS.explorar.effect}`;
 
-        case 'recolher':
-            if (player.resources.madeira >= 1) {
-                consumeResources(player, { madeira: 1 });
-                player.resources.madeira += 2;
-                player.resources.pedra += 2;
-                player.resources.agua += 2;
-                player.victoryPoints += 1;
-                showFeedback('Recursos recolhidos! +1 PV', 'success');
-                actionSuccess = true;
-            }
-            break;
-            
-        case 'negociar':
-            if (player.resources.ouro >= 1) {
-                player.resources.ouro -= 1;
-                openNegotiationModal();
-                actionSuccess = true;
-            }
-            break;
+    // Construir: Abre modal, mas o custo mais alto é 5 P, 5 M, 2 O, 2 A
+    const canBuild = !built && selectedRegion && selectedRegion.controller === gameState.currentPlayerIndex && selectedRegion.explorationLevel > 0;
+    construirBtn.disabled = !canBuild;
+    construirBtn.title = `Efeito: ${GAME_CONFIG.ACTION_DETAILS.construir.effect}`;
+    if (canBuild) {
+        // Exibe o custo máximo para o tooltip
+        const maxCosts = { madeira: 5, pedra: 5, ouro: 2, agua: 2 };
+        construirBtn.title = `Custo Máx: ${maxCosts.madeira} M, ${maxCosts.pedra} P, ${maxCosts.ouro} O, ${maxCosts.agua} A. Efeito: ${GAME_CONFIG.ACTION_DETAILS.construir.effect}`;
     }
+
+    // Recolher: 1 Madeira
+    const canGather = !gathered && checkCosts(player, GAME_CONFIG.ACTION_DETAILS.recolher.cost);
+    recolherBtn.disabled = !canGather;
+    recolherBtn.title = `Custo: ${GAME_CONFIG.ACTION_DETAILS.recolher.cost.madeira} M. Efeito: ${GAME_CONFIG.ACTION_DETAILS.recolher.effect}`;
     
-    if (actionSuccess) {
-        gameState.actionsTaken.push(actionType); 
-    }
+    // Negociar: 1 Ouro
+    const canNegotiate = !negotiated && checkCosts(player, GAME_CONFIG.ACTION_DETAILS.negociar.cost);
+    negociarBtn.disabled = !canNegotiate;
+    negociarBtn.title = `Custo: ${GAME_CONFIG.ACTION_DETAILS.negociar.cost.ouro} O. Efeito: ${GAME_CONFIG.ACTION_DETAILS.negociar.effect}`;
 
-    gameState.selectedRegion = null;
-    updateDisplay();
-    checkVictoryCondition();
+    endTurnBtn.disabled = false; // Sempre pode finalizar o turno
 }
 
+// Regra 5: Abre o modal de construção
 function openBuildModal(player, region) {
     const structureTypes = GAME_CONFIG.STRUCTURE_TYPES;
     const buildOptionsContent = document.getElementById('buildOptionsContent');
     buildOptionsContent.innerHTML = '';
     
-    let optionsHtml = '<div class="row">';
+    if (region.explorationLevel === 0) {
+        buildOptionsContent.innerHTML = `<p class="text-warning">⚠️ A região ${region.name} precisa ser explorada (Nível > 0) antes de construir estruturas.</p>`;
+        const modal = new bootstrap.Modal(document.getElementById('buildModal'));
+        modal.show();
+        return;
+    }
     
+    let optionsHtml = '<div class="row">';
     for (const key in structureTypes) {
         const structure = structureTypes[key];
         const canAfford = checkCosts(player, structure.cost);
         const disabledClass = canAfford ? '' : 'disabled opacity-50';
         
+        // Verifica requisito de exploração (simples: 1 para posto/campo, 2 para principal)
+        let requirement = 0;
+        if (key === 'POSTO_AVANCADO' || key === 'CAMPO_CULTIVO') requirement = 1;
+        if (key === 'EDIFICIO_PRINCIPAL') requirement = 2;
+        
+        const meetsRequirement = region.explorationLevel >= requirement;
+        const reqDisabledClass = meetsRequirement ? '' : 'disabled opacity-50';
+        const reqMessage = meetsRequirement ? '' : `Requer Exploração Nível ${requirement}.`;
+
         const costsHtml = Object.keys(structure.cost)
             .filter(res => structure.cost[res] > 0)
-            .map(res => `<span class="resource-cost">${structure.cost[res]} ${res.substring(0, 1).toUpperCase()}${res.substring(1)}</span>`)
+            .map(res => `<span class="resource-cost">${structure.cost[res]} ${res.substring(0, 1).toUpperCase()}</span>`)
             .join(' | ');
+
+        const isFullyDisabled = !canAfford || !meetsRequirement;
 
         optionsHtml += `
             <div class="col-md-4 mb-3">
-                <div class="card build-option ${disabledClass}" 
-                     data-structure-key="${key}" ${!canAfford ? 'style="pointer-events: none;"' : ''}
-                     onclick="${canAfford ? `handleBuildSelection('${key}')` : 'void(0)'}">
+                <div class="card build-option ${isFullyDisabled ? 'disabled' : ''}" 
+                     data-structure-key="${key}" 
+                     ${isFullyDisabled ? 'style="pointer-events: none;"' : ''} 
+                     onclick="${isFullyDisabled ? 'void(0)' : `handleBuildSelection('${key}')`}">
                     <div class="card-body">
-                        <h5 class="card-title text-light">${structure.name}</h5> 
-                        <p class="card-text small text-light-secondary">${structure.description}</p>
-                        <p class="card-text text-success"><strong>+${structure.pv_gain} PV</strong> (Instantâneo)</p>
-                        <p class="card-text text-info"><strong>Bônus/Turno:</strong> ${structure.bonus_per_turn.pv || 0} PV</p>
-                        <hr>
-                        <p class="card-text text-danger"><strong>Custo:</strong> ${costsHtml || 'Nenhum'}</p>
+                        <h5 class="card-title">${structure.name}</h5>
+                        <p class="card-text small">${structure.description}</p>
+                        <p class="card-text small mb-1"><strong>Custo:</strong> ${costsHtml || 'Nenhum'}</p>
+                        <p class="card-text small text-success"><strong>Ganha:</strong> ${structure.pv_gain} PV (Inicial)</p>
+                        <p class="card-text small text-info"><strong>Renda Extra:</strong> +${structure.production_boost} Renda Bioma | ${Object.keys(structure.bonus_per_turn).filter(r => structure.bonus_per_turn[r] > 0).map(r => `+${structure.bonus_per_turn[r]} ${r.toUpperCase()}`).join(', ') || 'Nenhum'}</p>
+                        <p class="card-text small text-danger">${reqMessage}</p>
+                        ${!canAfford ? '<p class="text-danger small mt-2">Recursos Insuficientes</p>' : ''}
                     </div>
                 </div>
             </div>
         `;
     }
-    
     optionsHtml += '</div>';
     buildOptionsContent.innerHTML = optionsHtml;
-    
+
     const modal = new bootstrap.Modal(document.getElementById('buildModal'));
     modal.show();
 }
 
-window.handleBuildSelection = function(structureKey) { /* ... (Mantido o mesmo) ... */
-    const modal = bootstrap.Modal.getInstance(document.getElementById('buildModal'));
-    modal.hide();
-
+// Funções de Construção
+function handleBuildSelection(structureKey) {
     const player = gameState.players[gameState.currentPlayerIndex];
-    const selectedRegion = gameState.regions[gameState.selectedRegion];
+    const region = gameState.regions[gameState.selectedRegion];
     const structure = GAME_CONFIG.STRUCTURE_TYPES[structureKey];
-
-    if (!structure) return;
     
-    if (!checkCosts(player, structure.cost)) {
-        showFeedback(`Recursos insuficientes para construir ${structure.name}. Tente novamente.`, 'error');
+    // Reverifica custos e requisitos de exploração
+    let requirement = 0;
+    if (structureKey === 'POSTO_AVANCADO' || structureKey === 'CAMPO_CULTIVO') requirement = 1;
+    if (structureKey === 'EDIFICIO_PRINCIPAL') requirement = 2;
+    
+    if (region.explorationLevel < requirement) {
+        showFeedback(`Erro: Requer nível de exploração ${requirement} para construir ${structure.name}.`, 'error');
         return;
     }
     
-    consumeResources(player, structure.cost); 
-    
-    selectedRegion.structures.push({ type: structureKey, name: structure.name }); 
-    player.structures++;
-    player.victoryPoints += structure.pv_gain; 
-    
-    gameState.actionsTaken.push('construir'); 
-    showFeedback(`${structure.name} construído(a) na Região ${selectedRegion.name}! +${structure.pv_gain} PV.`, 'success');
-    
-    gameState.selectedRegion = null;
-    updateDisplay();
-    checkVictoryCondition();
-};
+    if (checkCosts(player, structure.cost)) {
+        consumeResources(player, structure.cost);
+        region.structures.push({ type: structureKey });
+        player.victoryPoints += structure.pv_gain;
+        gameState.actionsTaken.push('construir');
+        player.consecutiveNoActionTurns = 0; // Zera passividade
+        
+        showFeedback(`${structure.name} construído na região ${region.name}! +${structure.pv_gain} PV.`, 'success');
+        
+        // Esconde o modal e atualiza
+        const modal = bootstrap.Modal.getInstance(document.getElementById('buildModal'));
+        modal.hide();
+        gameState.selectedRegion = null;
+        updateDisplay();
+        checkVictoryCondition();
+    } else {
+        showFeedback('Recursos insuficientes para esta construção.', 'error');
+    }
+}
 
-function openNegotiationModal() { /* ... (Mantido o mesmo) ... */
+// Abre o modal de negociação
+function openNegotiationModal() {
     const player = gameState.players[gameState.currentPlayerIndex];
-    const otherPlayers = gameState.players.filter((p, i) => i !== gameState.currentPlayerIndex);
+    const otherPlayers = gameState.players.filter(p => p.id !== player.id);
+
+    let content = '<h6>Selecione um jogador para tentar negociar:</h6>';
+    content += '<div class="row">';
     
-    let content = '<p>Selecione um jogador para negociar:</p>';
-    content += '<div class="negotiation-resources">';
-    
-    otherPlayers.forEach(otherPlayer => {
-        content += `<button class="resource-badge" onclick="initiateNegotiation(${otherPlayer.id})">${otherPlayer.icon} ${otherPlayer.name}</button>`;
+    otherPlayers.forEach(targetPlayer => {
+        // Simplesmente mostra o jogador, a negociação é aleatória no `initiateNegotiation`
+        content += `
+            <div class="col-md-6 mb-3">
+                <button class="btn btn-secondary w-100" onclick="initiateNegotiation(${targetPlayer.id})">
+                    ${targetPlayer.icon} ${targetPlayer.name}
+                </button>
+            </div>
+        `;
     });
-    
     content += '</div>';
     
     document.getElementById('negotiationContent').innerHTML = content;
@@ -781,116 +938,99 @@ function openNegotiationModal() { /* ... (Mantido o mesmo) ... */
     modal.show();
 }
 
-function initiateNegotiation(targetPlayerId) { /* ... (Mantido o mesmo) ... */
+function initiateNegotiation(targetPlayerId) {
     const player = gameState.players[gameState.currentPlayerIndex];
     const targetPlayer = gameState.players[targetPlayerId];
-    
     const resourceTypes = ['madeira', 'pedra', 'ouro', 'agua'];
+    
+    // Seleciona um recurso para oferecer e um para receber (aleatório)
     const offerType = resourceTypes[Math.floor(Math.random() * resourceTypes.length)];
     const receiveType = resourceTypes[Math.floor(Math.random() * resourceTypes.length)];
     
+    // Verifica se ambos têm o recurso para a troca 1:1
     if (player.resources[offerType] > 0 && targetPlayer.resources[receiveType] > 0) {
+        // Executa a troca
         player.resources[offerType]--;
         targetPlayer.resources[receiveType]--;
         player.resources[receiveType]++;
         targetPlayer.resources[offerType]++;
         
+        // Ganho de PV por negociação
         player.victoryPoints += 1;
         targetPlayer.victoryPoints += 1;
         
-        showFeedback(`Negociação bem-sucedida! +1 PV para ambos`, 'success');
+        showFeedback(`Negociação bem-sucedida com ${targetPlayer.icon} ${targetPlayer.name}: ${offerType.toUpperCase()} por ${receiveType.toUpperCase()}! +1 PV para ambos.`, 'success');
     } else {
-        showFeedback(`Negociação falhou. Recursos insuficientes.`, 'error');
+        showFeedback(`Negociação falhou. Um dos jogadores não tinha os recursos para a troca.`, 'error');
+        // Não reverte o custo de Ouro, pois a ação de negociar foi tentada.
     }
     
     const modal = bootstrap.Modal.getInstance(document.getElementById('negotiationModal'));
     modal.hide();
     
-    if (gameState.actionsTaken.includes('negociar')) {
-        // Nada a fazer, já foi adicionado em performAction
-    } else {
-        gameState.actionsTaken.push('negociar'); 
-    }
-    
     updateDisplay();
+    checkVictoryCondition();
 }
 
-function endTurn() { /* ... (Mantido o mesmo) ... */
-    const previousPlayer = gameState.players[gameState.currentPlayerIndex];
-
-    if (gameState.actionsTaken.length === 0) {
-        previousPlayer.consecutiveNoActionTurns = (previousPlayer.consecutiveNoActionTurns || 0) + 1;
+// NOVO: Adiciona a renderização do manual de estruturas (UX)
+function renderStructuresManual() {
+    const structuresManualContent = document.getElementById('structuresManualContent');
+    const structureTypes = GAME_CONFIG.STRUCTURE_TYPES;
+    
+    let html = '<h6>Detalhes das Estruturas e seus Efeitos:</h6><ul>';
+    for (const key in structureTypes) {
+        const structure = structureTypes[key];
+        const costsHtml = Object.keys(structure.cost)
+            .filter(res => structure.cost[res] > 0)
+            .map(res => `${structure.cost[res]} ${res.substring(0, 1).toUpperCase()}`)
+            .join(', ');
         
-        if (previousPlayer.consecutiveNoActionTurns > 2) {
-            showFeedback(`ATENÇÃO: Renda base de ${previousPlayer.icon} ${previousPlayer.name} será suspensa no próximo turno.`, 'error');
-        } else if (previousPlayer.consecutiveNoActionTurns === 2) {
-            showFeedback(`${previousPlayer.icon} ${previousPlayer.name} atingiu 2 turnos passivos seguidos. Mais um e a renda base será suspensa.`, 'warning');
+        let recurrent = '';
+        const recurrentKeys = Object.keys(structure.bonus_per_turn).filter(r => structure.bonus_per_turn[r] > 0);
+        if (recurrentKeys.length > 0) {
+            recurrent = recurrentKeys.map(r => `+${structure.bonus_per_turn[r]} ${r.toUpperCase()}`).join(', ');
         }
-    } else {
-        previousPlayer.consecutiveNoActionTurns = 0;
-    }
-    
-    gameState.turn++;
-    
-    gameState.currentPlayerIndex = (gameState.currentPlayerIndex + 1) % gameState.players.length;
-    
-    const player = gameState.players[gameState.currentPlayerIndex];
-    
-    applyIncome(player);
-    
-    const diversityBonus = checkDiversityBonus(player);
 
-    if (diversityBonus > 0) {
-        player.victoryPoints += diversityBonus;
-        showFeedback(`Bônus de Diversidade de Biomas! +${diversityBonus} PV.`, 'success');
+        html += `
+            <li style="margin-bottom: 15px;">
+                <strong>${structure.name}:</strong> ${structure.description}
+                <ul>
+                    <li><strong>Custo:</strong> ${costsHtml || 'Nenhum'}</li>
+                    <li><strong>Ganho Inicial:</strong> ${structure.pv_gain} PV</li>
+                    <li><strong>Bônus de Renda:</strong> +${structure.production_boost} Renda Bioma.</li>
+                    <li><strong>Renda Recorrente:</strong> ${recurrent || 'Nenhum'} por turno.</li>
+                </ul>
+            </li>
+        `;
     }
-    
-    gameState.actionsTaken = []; 
-    gameState.selectedRegion = null;
-    updateDisplay();
-    checkVictoryCondition(); 
+    html += '</ul>';
+    structuresManualContent.innerHTML = html;
 }
 
-function checkVictoryCondition() { /* ... (Mantido o mesmo) ... */
-    const winner = gameState.players.find(p => p.victoryPoints >= GAME_CONFIG.VICTORY_POINTS);
-    if (winner) {
-        showFeedback(`${winner.icon} ${winner.name} venceu com ${winner.victoryPoints} PV!`, 'success');
-        setTimeout(() => location.reload(), 3000);
-    }
-}
-
-// ==================== INTERFACE ====================
-function showFeedback(message, type = 'info') { /* ... (Mantido o mesmo) ... */
-    const feedbackEl = document.getElementById('feedbackMessage');
-    feedbackEl.innerHTML = message; 
-    feedbackEl.className = `${type} show`;
-    
-    setTimeout(() => {
-        feedbackEl.classList.remove('show');
-    }, 3000);
-}
-
-// ==================== EVENT LISTENERS E INICIALIZAÇÃO ====================
-document.getElementById('addPlayerBtn').addEventListener('click', () => { /* ... (Mantido o mesmo) ... */
+// ==================== EVENT LISTENERS ====================
+document.getElementById('addPlayerBtn').addEventListener('click', () => {
     const name = document.getElementById('playerName').value.trim();
-    const selectedIcon = document.querySelector('.icon-option.selected');
-    
-    if (!name || !selectedIcon) {
-        showFeedback('Preencha nome e selecione um ícone!', 'error');
+    const selectedIconEl = document.querySelector('.icon-option.selected');
+    const icon = selectedIconEl ? selectedIconEl.textContent : null;
+
+    if (!name || !icon) {
+        showFeedback('Preencha nome e selecione um ícone.', 'error');
         return;
     }
-    
-    if (addPlayer(name, selectedIcon.textContent)) {
+
+    if (addPlayer(name, icon)) {
         document.getElementById('playerName').value = '';
-        selectedIcon.classList.remove('selected');
+        selectedIconEl.classList.remove('selected');
         showFeedback(`${name} adicionado!`, 'success');
     }
 });
 
-document.getElementById('startGameBtn').addEventListener('click', () => { /* ... (Mantido o mesmo) ... */
+document.getElementById('startGameBtn').addEventListener('click', () => {
     gameState.gameStarted = true;
     document.getElementById('initialScreen').classList.add('hidden');
     initializeGame();
+    // Inicia o primeiro turno após a inicialização
+    startTurn();
 });
 
 document.getElementById('explorarBtn').addEventListener('click', () => performAction('explorar'));
@@ -899,8 +1039,9 @@ document.getElementById('recolherBtn').addEventListener('click', () => performAc
 document.getElementById('negociarBtn').addEventListener('click', () => performAction('negociar'));
 document.getElementById('endTurnBtn').addEventListener('click', endTurn);
 
-document.addEventListener('DOMContentLoaded', () => { /* ... (Mantido o mesmo) ... */
-    // Gerar ícones 
+// ==================== INICIALIZAÇÃO DA PÁGINA ====================
+document.addEventListener('DOMContentLoaded', () => {
+    // Gerar ícones
     const iconSelection = document.getElementById('iconSelection');
     GAME_CONFIG.PLAYER_ICONS.forEach(icon => {
         const iconOption = document.createElement('div');
@@ -911,12 +1052,5 @@ document.addEventListener('DOMContentLoaded', () => { /* ... (Mantido o mesmo) .
             iconOption.classList.add('selected');
         });
         iconSelection.appendChild(iconOption);
-    });
-    
-    // Ação 2.2: Inicialização dos Tooltips do Bootstrap
-    const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
-    tooltipTriggerList.map(function (tooltipTriggerEl) {
-        // Permite HTML para a formatação de custo/ganho
-        return new bootstrap.Tooltip(tooltipTriggerEl, { html: true, sanitize: false }); 
     });
 });
