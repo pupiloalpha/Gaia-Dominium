@@ -1,191 +1,220 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Gaia Dominium - Multiplayer Local</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-    
-    <link rel="stylesheet" href="style.css">
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Gaia Dominium</title>
+
+  <!-- Tailwind quick prototipagem -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
 </head>
-<body onmousemove="handleMouseMove(event)">
+<body class="bg-cover bg-center bg-fixed" style="background-image: url('gaia-inicio.png');">
 
-    <nav class="navbar navbar-dark">
-        <span class="navbar-brand">Gaia Dominium</span>
-        <div class="header-player-list" id="playerHeaderList">
-            <span class="header-player-item">Aguardando Início...</span>
-        </div>
-        <span class="manual-icon" id="manualIcon" data-bs-toggle="modal" data-bs-target="#manualModal">
-            <svg class="svg-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24" fill="currentColor">
-                <path d="M18 2H6C4.9 2 4 2.9 4 4v16c0 1.1 0.9 2 2 2h12c1.1 0 2-0.9 2-2V4C20 2.9 19.1 2 18 2zM6 4h12v16H6V4zm7 14h-2v-2h2v2zm0-4h-2V7h2v7z"/>
-            </svg>
-        </span>
-    </nav>
+  <!-- MANUAL ICON -->
+  <button id="manualIcon" class="fixed top-5 right-5 z-50 p-3 rounded-full bg-black/50 backdrop-blur-sm border border-yellow-400/30 shadow-lg hover:scale-105 transition" aria-label="Abrir Manual">
+    <svg class="w-6 h-6 text-yellow-200" viewBox="0 0 24 24" fill="currentColor"><path d="M18 2H6C4.89 2 4 2.89 4 4V20C4 21.11 4.89 22 6 22H18C19.11 22 20 21.11 20 20V4C20 2.89 19.11 2 18 2M16 8H8V6H16V8M16 12H8V10H16V12M14 16H8V14H14V16Z"/></svg>
+  </button>
 
-    <div class="main-container">
-        <div class="sidebar">
-            <h5 id="recursosTitle">Recursos</h5>
-            <div id="recursosDisplay">
-            </div>
-            
-            <h5 id="pvTitle" style="margin-top: 20px;">Placar Global</h5>
-            <div class="resource-item">
-                <span class="label">Turno:</span>
-                <span class="value" id="turnoDisplay">0</span>
-            </div>
-            <div id="playerListDisplay">
-            </div>
-        </div>
-
-        <div class="game-map-container">
-            <div class="game-map" id="gameMap">
-            </div>
-            
-            <div id="regionDetailsPopup" class="region-details-popup">
-            </div>
-
-            <div class="action-panel">
-                <button class="action-btn" id="explorarBtn" disabled title="">Explorar</button>
-                <button class="action-btn" id="construirBtn" disabled title="">Construir</button>
-                <button class="action-btn" id="recolherBtn" disabled title="">Recolher</button>
-                <button class="action-btn" id="negociarBtn" disabled title="">Negociar</button>
-                <button class="action-btn" id="endTurnBtn" disabled>Finalizar Turno</button>
-            </div>
-        </div>
+  <!-- NAVBAR -->
+  <nav id="gameNavbar" class="hidden fixed top-0 left-0 right-0 z-40 bg-black/60 backdrop-blur-md border-b border-white/6">
+  <div class="max-w-7xl mx-auto flex items-center justify-between px-4 py-3">
+    <div class="flex items-center gap-4">
+      <h1 class="text-xl font-semibold text-yellow-300">Gaia Dominium</h1>
+      <div id="turnInfo" class="text-sm text-gray-200">Turno: 0 • Jogador: —</div>
     </div>
-
-    <div class="initial-screen" id="initialScreen">
-        <div class="player-setup-form">
-            <h1>Configuração de Partida</h1>
-            <p>Multiplayer local para 2 a 4 jogadores. Cadastre os jogadores para começar.</p>
-            
-            <div class="player-count-display" id="playerCountDisplay">0/4 Jogadores Registrados</div>
-            
-            <div class="player-input-group">
-                <label for="playerName">Nome:</label>
-                <input type="text" id="playerName" class="form-control" placeholder="Seu Nome">
-            </div>
-            
-            <div class="player-input-group">
-                <label>Ícone:</label>
-                <div class="icon-selection" id="iconSelection">
-                    </div>
-            </div>
-
-            <button class="btn-add-player" id="addPlayerBtn">Adicionar Jogador</button>
-            <button class="btn-start-game" id="startGameBtn" disabled>Iniciar Jogo!</button>
-        </div>
+    <div class="flex items-center gap-4">
+      <div id="playerHeaderList" class="flex items-center gap-3"></div>
+      <button id="manualIconNavbar" class="p-2 rounded-full bg-white/10 hover:bg-white/20 transition" aria-label="Abrir Manual">
+        <svg class="w-6 h-6 text-yellow-200" viewBox="0 0 24 24" fill="currentColor"><path d="M18 2H6C4.89 2 4 2.89 4 4V20C4 21.11 4.89 22 6 22H18C19.11 22 20 21.11 20 20V4C20 2.89 19.11 2 18 2M16 8H8V6H16V8M16 12H8V10H16V12M14 16H8V14H14V16Z"/></svg>
+      </button>
     </div>
-    
-    <div id="feedbackMessage"></div>
+  </div>
+</nav>
 
-    <div class="modal fade" id="manualModal" tabindex="-1" aria-labelledby="manualModalLabel" aria-hidden="true">
-        <div class="modal-dialog modal-lg modal-dialog-scrollable">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title" id="manualModalLabel">📚 Manual de Gaia Dominium</h5>
-                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
-                </div>
-                <div class="modal-body">
-                    <ul class="nav nav-tabs" id="manualTabs" role="tablist">
-                        <li class="nav-item" role="presentation">
-                            <button class="nav-link active" id="tab-apresentacao" data-bs-toggle="tab" data-bs-target="#manualConteudoApresentacao" type="button" role="tab" aria-controls="manualConteudoApresentacao" aria-selected="true">Apresentação e Fases</button>
-                        </li>
-                        <li class="nav-item" role="presentation">
-                            <button class="nav-link" id="tab-acoes" data-bs-toggle="tab" data-bs-target="#manualConteudoAcoes" type="button" role="tab" aria-controls="manualConteudoAcoes" aria-selected="false">Ações do Jogador</button>
-                        </li>
-                        <li class="nav-item" role="presentation">
-                            <button class="nav-link" id="tab-info" data-bs-toggle="tab" data-bs-target="#manualConteudoInfo" type="button" role="tab" aria-controls="manualConteudoInfo" aria-selected="false">Informações Adicionais</button>
-                        </li>
-                    </ul>
-                    
-                    <div class="tab-content" id="manualTabsContent">
-                        <div class="tab-pane fade show active p-3" id="manualConteudoApresentacao" role="tabpanel" aria-labelledby="tab-apresentacao">
-                            </div>
-                        <div class="tab-pane fade p-3" id="manualConteudoAcoes" role="tabpanel" aria-labelledby="tab-acoes">
-                            </div>
-                        <div class="tab-pane fade p-3" id="manualConteudoInfo" role="tabpanel" aria-labelledby="tab-info">
-                            </div>
-                    </div>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fechar</button>
-                </div>
-            </div>
-        </div>
-    </div>
+  <!-- INITIAL SCREEN / PLAYER REGISTRATION -->
+  <div id="initialScreen" class="fixed inset-0 z-50 flex items-center justify-center p-6">
+    <div class="absolute inset-0 bg-black/25"></div>
+    <div class="relative w-full max-w-4xl mx-4">
+      <div class="player-modal rounded-3xl overflow-hidden">
+        <div class="flex items-center gap-4 px-6 py-4">
+          <div>
+            <h2 class="text-2xl font-semibold text-yellow-300">Adicione jogadores</h2>
+            <p id="playerCountDisplay" class="text-sm text-gray-200 mt-1">0/4 Jogadores Registrados</p>
+          </div>
 
-    <div class="modal fade" id="buildModal" tabindex="-1" aria-labelledby="buildModalLabel" aria-hidden="true">
-        <div class="modal-dialog modal-dialog-centered modal-lg">
-            <div class="modal-content bg-dark text-white">
-                <div class="modal-header">
-                    <h5 class="modal-title" id="buildModalLabel">🏗️ Construir Estruturas</h5>
-                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
-                </div>
-                <div class="modal-body" id="buildOptionsContent">
-                    </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-                </div>
-            </div>
-        </div>
-    </div>
-    
-    <div class="modal fade" id="negotiationModal" tabindex="-1" aria-labelledby="negotiationModalLabel" aria-hidden="true">
-        <div class="modal-dialog modal-dialog-centered">
-            <div class="modal-content bg-dark text-white">
-                <div class="modal-header">
-                    <h5 class="modal-title" id="negotiationModalLabel">Escolha um Jogador para Negociar</h5>
-                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
-                </div>
-                <div class="modal-body" id="negotiationPlayerSelectContent">
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-                </div>
-            </div>
-        </div>
-    </div>
+          <div class="flex-1 flex items-center gap-3">
+            <input id="playerName" type="text" placeholder="Nome do jogador"
+              class="w-full bg-gray-800/60 text-gray-100 placeholder-gray-400 border border-white/6 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-green-400" />
+            <button id="addPlayerBtn" class="px-4 py-3 bg-green-600 rounded-lg text-white font-medium hover:bg-green-700 transition">Adicionar</button>
+          </div>
 
-    <div class="modal fade" id="tradeModal" tabindex="-1" aria-labelledby="tradeModalLabel" aria-hidden="true">
-        <div class="modal-dialog modal-dialog-scrollable modal-lg">
-            <div class="modal-content bg-dark text-white">
-                <div class="modal-header">
-                    <h5 class="modal-title" id="tradeModalLabel">🤝 Negociação com Jogador</h5>
-                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
-                </div>
-                <div class="modal-body">
-                    <div id="tradeContent">
-                        </div>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-                </div>
-            </div>
+          <button id="startGameBtn" disabled class="px-6 py-3 bg-blue-600 rounded-lg text-white font-semibold disabled:opacity-40 hover:bg-blue-700 transition">Inicializar Jogo</button>
         </div>
-    </div>
 
-    <div class="modal fade" id="victoryModal" tabindex="-1" aria-labelledby="victoryModalLabel" aria-hidden="true">
-        <div class="modal-dialog">
-            <div class="modal-content bg-dark text-white">
-                <div class="modal-header">
-                    <h5 class="modal-title" id="victoryModalLabel">🏆 Fim de Jogo!</h5>
-                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
-                </div>
-                <div class="modal-body" id="victoryContent">
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-primary" data-bs-dismiss="modal" onclick="window.location.reload();">Novo Jogo</button>
-                </div>
-            </div>
+        <div class="px-6 pt-2 pb-4">
+          <label class="text-gray-200 text-sm mb-2 block">Selecione um ícone</label>
+          <div id="iconSelection" class="flex flex-wrap gap-2"></div>
         </div>
-    </div>
 
-    
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="main.js"></script>
+        <div class="px-6 pb-6">
+          <div id="registeredPlayersList" class="grid grid-cols-2 md:grid-cols-4 gap-2"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- GAME CONTAINER -->
+  <div id="gameContainer" class="hidden mt-20 p-4 max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-[320px_1fr] gap-4">
+    <!-- SIDEBAR -->
+        <aside id="sidebar" class="hidden bg-gray-900/80 backdrop-blur-md border border-white/8 rounded-xl p-4 overflow-auto h-[70vh]">
+      <div id="sidebarPlayerHeader" class="flex items-center gap-3 mb-3"></div>
+
+      <div class="mb-4">
+        <h3 class="text-sm text-gray-300 font-medium mb-2">Recursos</h3>
+        <ul id="resourceList" class="mt-2 text-gray-100 text-sm"></ul>
+      </div>
+
+      <div>
+        <h3 class="text-sm text-gray-300 font-medium mb-2">Regiões Controladas</h3>
+        <div id="controlledRegions" class="mt-2 text-sm text-gray-100"></div>
+      </div>
+      
+      <!-- scoreBlock mantido invisível para compatibilidade com código existente -->
+      <div id="scoreBlock" class="hidden"></div>
+    </aside>
+
+    <!-- MAP -->
+    <main id="gameMap" class="hidden relative">
+      <div id="boardContainer" class="grid grid-cols-5 gap-3"></div>
+      <!-- Tooltip (aparece ao hover) -->
+      <div id="regionTooltip" class="hidden absolute z-50 w-64 bg-gray-900/95 border border-white/8 rounded-lg p-3 text-sm shadow-xl">
+        <div id="tooltipTitle" class="font-semibold text-white"></div>
+        <div id="tooltipBody" class="text-gray-300 mt-2"></div>
+      </div>
+    </main>
+  </div>
+
+  <!-- FOOTER ACTIONS -->
+  <footer id="gameFooter" class="hidden fixed bottom-4 left-1/2 -translate-x-1/2 z-40 w-full max-w-4xl px-4">
+    <div class="bg-gray-900/85 backdrop-blur-md border border-white/8 rounded-lg p-3 flex items-center justify-between gap-3">
+      <div class="flex gap-2">
+        <button id="actionExplore" class="action-btn px-3 py-2 rounded-md">Explorar</button>
+        <button id="actionCollect" class="action-btn px-3 py-2 rounded-md">Coletar</button>
+        <button id="actionBuild" class="action-btn px-3 py-2 rounded-md">Construir</button>
+        <button id="actionNegotiate" class="action-btn px-3 py-2 rounded-md">Negociar</button>
+      </div>
+
+      <div class="flex items-center gap-3">
+        <div id="actionsLeft" class="text-sm text-gray-200">Ações restantes: 2</div>
+        <button id="endTurnBtn" class="px-4 py-2 bg-rose-600 rounded-md text-white font-semibold">Término do Turno</button>
+      </div>
+    </div>
+  </footer>
+
+  <!-- MANUAL MODAL -->
+  <div id="manualModal" class="hidden fixed inset-0 z-100 flex items-center justify-center p-6">
+    <div class="absolute inset-0 bg-black/60"></div>
+    <div class="relative w-full max-w-4xl bg-gray-900/95 backdrop-blur-md border border-white/10 rounded-2xl shadow-xl p-6">
+      <div class="flex justify-between items-center mb-6">
+        <h2 class="text-2xl text-yellow-300 font-semibold">Manual do Jogo — Gaia Dominium</h2>
+        <div class="flex items-center gap-3">
+          <button id="manualCloseBtn" class="text-gray-300 hover:text-white text-xl" aria-label="Fechar manual">✖</button>
+        </div>
+      </div>
+      <div class="flex flex-col md:flex-row gap-6">
+        <nav class="w-full md:w-48">
+          <ul id="manualTabs" class="space-y-2">
+            <li><button class="manual-tab w-full text-left px-4 py-2 rounded-md" data-tab="tab-o-jogo">O Jogo</button></li>
+            <li><button class="manual-tab w-full text-left px-4 py-2 rounded-md" data-tab="tab-regras">Regras</button></li>
+            <li><button class="manual-tab w-full text-left px-4 py-2 rounded-md" data-tab="tab-acoes">Ações</button></li>
+            <li><button class="manual-tab w-full text-left px-4 py-2 rounded-md" data-tab="tab-estrutura">Estrutura</button></li>
+          </ul>
+        </nav>
+        <div class="flex-1 overflow-auto max-h-[60vh]">
+          <section id="tab-o-jogo" class="manual-content p-2"></section>
+          <section id="tab-regras" class="manual-content hidden p-2"></section>
+          <section id="tab-acoes" class="manual-content hidden p-2"></section>
+          <section id="tab-estrutura" class="manual-content hidden p-2"></section>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- GLOBAL ALERT / CONFIRM MODAL -->
+  <div id="alertModal" class="hidden fixed inset-0 z-100 flex items-center justify-center p-4">
+    <div class="absolute inset-0 bg-black/70"></div>
+    <div class="relative w-full max-w-md bg-gray-900 rounded-xl border border-white/8 shadow-2xl p-6">
+      <div class="flex items-start gap-4">
+        <div id="alertIcon" class="text-3xl">ℹ️</div>
+        <div class="flex-1">
+          <h3 id="alertTitle" class="text-lg font-semibold text-white">Título</h3>
+          <p id="alertMessage" class="text-gray-300 mt-2">Mensagem...</p>
+        </div>
+      </div>
+      <div id="alertButtons" class="mt-6 text-right space-x-2">
+        <!-- buttons injected dynamically -->
+      </div>
+    </div>
+  </div>
+
+  <!-- NEGOTIATION MODAL (offer creation) -->
+  <div id="negotiationModal" class="hidden fixed inset-0 z-70 flex items-center justify-center p-6">
+    <div class="absolute inset-0 bg-black/70"></div>
+    <div class="relative w-full max-w-3xl bg-gray-900 rounded-xl border border-white/8 p-6 shadow-xl overflow-auto max-h-[80vh]">
+      <h3 class="text-lg font-semibold text-yellow-300 mb-3">Negociação — Crie sua proposta</h3>
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div>
+          <label class="text-sm text-gray-300">Selecionar alvo</label>
+          <select id="negTarget" class="w-full mt-2 bg-gray-800 text-white p-2 rounded-md"></select>
+
+          <label class="text-sm text-gray-300 mt-4 block">Recursos oferecidos</label>
+          <div class="grid grid-cols-2 gap-2 mt-2">
+            <input type="number" id="offer_madeira" min="0" placeholder="Madeira" class="p-2 bg-gray-800 text-white rounded-md" />
+            <input type="number" id="offer_pedra" min="0" placeholder="Pedra" class="p-2 bg-gray-800 text-white rounded-md" />
+            <input type="number" id="offer_ouro" min="0" placeholder="Ouro" class="p-2 bg-gray-800 text-white rounded-md" />
+            <input type="number" id="offer_agua" min="0" placeholder="Água" class="p-2 bg-gray-800 text-white rounded-md" />
+          </div>
+
+          <label class="text-sm text-gray-300 mt-4 block">Regiões oferecidas (selecione)</label>
+          <div id="offerRegions" class="mt-2 grid grid-cols-2 gap-2"></div>
+        </div>
+
+        <div>
+          <label class="text-sm text-gray-300">Recursos solicitados</label>
+          <div class="grid grid-cols-2 gap-2 mt-2">
+            <input type="number" id="req_madeira" min="0" placeholder="Madeira" class="p-2 bg-gray-800 text-white rounded-md" />
+            <input type="number" id="req_pedra" min="0" placeholder="Pedra" class="p-2 bg-gray-800 text-white rounded-md" />
+            <input type="number" id="req_ouro" min="0" placeholder="Ouro" class="p-2 bg-gray-800 text-white rounded-md" />
+            <input type="number" id="req_agua" min="0" placeholder="Água" class="p-2 bg-gray-800 text-white rounded-md" />
+          </div>
+
+          <label class="text-sm text-gray-300 mt-4 block">Regiões solicitadas</label>
+          <div id="reqRegions" class="mt-2 grid grid-cols-2 gap-2"></div>
+
+          <div class="mt-4 text-right">
+            <button id="negCancelBtn" class="px-4 py-2 bg-gray-800 border border-white/6 rounded-md text-white mr-2">Cancelar</button>
+            <button id="negSendBtn" class="px-4 py-2 bg-green-600 rounded-md text-white">Enviar Proposta (custa 1 Ouro)</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- NEGOTIATION RESPONSE MODAL (target view) -->
+  <div id="negResponseModal" class="hidden fixed inset-0 z-80 flex items-center justify-center p-6">
+    <div class="absolute inset-0 bg-black/70"></div>
+    <div class="relative w-full max-w-lg bg-gray-900 rounded-xl border border-white/8 p-6 shadow-xl">
+      <h3 id="negResponseTitle" class="text-lg font-semibold text-yellow-300 mb-2">Proposta Recebida</h3>
+      <div id="negResponseBody" class="text-gray-200 text-sm"></div>
+      <div class="mt-4 text-right">
+        <button id="negDeclineBtn" class="px-4 py-2 bg-rose-600 rounded-md text-white mr-2">Recusar</button>
+        <button id="negAcceptBtn" class="px-4 py-2 bg-green-600 rounded-md text-white">Aceitar</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="main.js"></script>
 </body>
 </html>
