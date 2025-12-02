@@ -59,7 +59,11 @@ position: relative;
 .board-cell:hover{transform:translateY(-4px); box-shadow:0 10px 30px rgba(0,0,0,0.5);}
 
 /* neutral vs controlled tint */
-.board-cell.controlled{ box-shadow: 0 6px 18px rgba(72,187,120,0.06); border-color: rgba(72,187,120,0.18) }
+.board-cell.controlled {
+  background: rgba(var(--player-rgb), 0.8) !important;
+  border-left: 6px solid var(--player-color);
+}
+
 .board-cell.neutral{ border-color: rgba(255,255,255,0.03) }
 
 /* Seleção visual - funciona para QUALQUER região */
@@ -217,4 +221,143 @@ z-index: 10001;
 .event-mixed {
   background: linear-gradient(135deg, rgba(168, 85, 247, 0.15), rgba(147, 51, 234, 0.15));
   border-color: rgba(168, 85, 247, 0.4);
+}
+
+/* Activity Log Panel */
+#activityLog {
+  animation: slideUp 0.3s ease-out;
+}
+
+@keyframes slideUp {
+  from {
+    transform: translateY(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+.log-entry {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.log-entry:last-child {
+  border-bottom: none;
+}
+
+.log-entry-icon {
+  min-width: 16px;
+  font-size: 12px;
+}
+
+.log-entry-text {
+  flex: 1;
+  line-height: 1.3;
+}
+
+.log-entry-player {
+  font-weight: 500;
+}
+
+.log-entry-turn {
+  color: rgba(255, 255, 255, 0.5);
+  font-size: 11px;
+  margin-left: auto;
+}
+
+.log-filter {
+  transition: all 0.2s ease;
+  border: 1px solid transparent;
+}
+
+.log-filter:hover {
+  background: rgba(255, 255, 255, 0.1) !important;
+}
+
+.log-filter.active {
+  background: rgba(59, 130, 246, 0.2) !important;
+  border-color: rgba(59, 130, 246, 0.4) !important;
+  color: #60a5fa !important;
+}
+
+.log-type-action { color: #60a5fa; }
+.log-type-build { color: #f59e0b; }
+.log-type-explore { color: #10b981; }
+.log-type-collect { color: #8b5cf6; }
+.log-type-negotiate { color: #f97316; }
+.log-type-event { color: #ef4444; }
+.log-type-victory { color: #10b981; }
+
+/* Hide log on small screens or when sidebar is open */
+@media (max-width: 768px) {
+  #activityLog {
+    display: none;
+  }
+}
+
+/* Activity Log Sidebar */
+.log-filter-sidebar {
+  transition: all 0.2s ease;
+  border: 1px solid transparent;
+}
+
+.log-filter-sidebar:hover {
+  background: rgba(255, 255, 255, 0.1) !important;
+}
+
+.log-filter-sidebar.active {
+  background: rgba(59, 130, 246, 0.2) !important;
+  border-color: rgba(59, 130, 246, 0.4) !important;
+  color: #60a5fa !important;
+}
+
+/* Victory Modal */
+#victoryModal {
+  animation: fadeIn 0.3s ease-out;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+/* Achievements */
+.achievement {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.achievement-icon {
+  font-size: 16px;
+}
+
+.achievement-name {
+  font-weight: 500;
+  color: #fff;
+}
+
+.achievement-desc {
+  font-size: 12px;
+  color: #aaa;
+}
+
+.achievement-unlocked {
+  opacity: 1;
+}
+
+.achievement-locked {
+  opacity: 0.5;
 }

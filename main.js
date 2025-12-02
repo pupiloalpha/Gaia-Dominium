@@ -9,7 +9,7 @@
 const GAME_CONFIG = {
   GRID_SIZE: 5,
   PLAYER_ICONS: ['🦁','🐯','🐻','🦊','🐺','🦅','🐉','🦈'],
-  PLAYER_COLORS: ['#FF6B6B', '#4ECDC4', '#45B7D1', '#FFA07A'],
+  PLAYER_COLORS: ['#166A38', '#1E40AF', '#991B1B', '#A16207'],
   BIOMES: ['Floresta Tropical','Floresta Temperada','Savana','Pântano'],
   REGION_NAMES: Array.from({length:25}, (_,i)=>`Região ${String.fromCharCode(65+i)}`),
   INITIAL_RESOURCES: { madeira:10, pedra:5, ouro:3, agua:5 },
@@ -252,13 +252,57 @@ const GAME_EVENTS = [
   }
 ];
 
-
 const RESOURCE_ICONS = {
   madeira: '🪵',
   pedra: '🪨', 
   ouro: '🪙',
   agua: '💧'
 };
+
+// Sistema de Conquistas
+const ACHIEVEMENTS = [
+  {
+    id: 'explorador',
+    name: 'Explorador',
+    description: 'Explore 10 regiões',
+    icon: '🗺️',
+    condition: (state) => state.totalExplored >= 10,
+    unlocked: false
+  },
+  {
+    id: 'construtor',
+    name: 'Construtor',
+    description: 'Construa 5 estruturas',
+    icon: '🏗️',
+    condition: (state) => state.totalBuilt >= 5,
+    unlocked: false
+  },
+  {
+    id: 'diplomata',
+    name: 'Diplomata',
+    description: 'Realize 10 negociações',
+    icon: '🤝',
+    condition: (state) => state.totalNegotiations >= 10,
+    unlocked: false
+  },
+  {
+    id: 'guardiao',
+    name: 'Guardião de Gaia',
+    description: 'Vencer uma partida',
+    icon: '🏆',
+    condition: (state) => state.wins > 0,
+    unlocked: false
+  }
+];
+
+// Estado de conquistas
+let achievementsState = {
+  totalExplored: 0,
+  totalBuilt: 0,
+  totalNegotiations: 0,
+  wins: 0
+};
+
 
 let gameState = {
   players: [],
@@ -337,6 +381,28 @@ const negResponseTitle = document.getElementById('negResponseTitle');
 const negResponseBody = document.getElementById('negResponseBody');
 const negAcceptBtn = document.getElementById('negAcceptBtn');
 const negDeclineBtn = document.getElementById('negDeclineBtn');
+
+// Activity Log elements
+const activityLog = document.getElementById('activityLog');
+const logEntries = document.getElementById('logEntries');
+const logFilterAll = document.getElementById('logFilterAll');
+const logFilterMine = document.getElementById('logFilterMine');
+const logFilterEvents = document.getElementById('logFilterEvents');
+
+// Activity Log Sidebar elements
+const logEntriesSidebar = document.getElementById('logEntriesSidebar');
+const logFilterAllSidebar = document.getElementById('logFilterAllSidebar');
+const logFilterMineSidebar = document.getElementById('logFilterMineSidebar');
+const logFilterEventsSidebar = document.getElementById('logFilterEventsSidebar');
+
+// Achievements elements
+const achievementsList = document.getElementById('achievementsList');
+
+// Victory Modal elements
+const victoryModal = document.getElementById('victoryModal');
+const victoryModalTitle = document.getElementById('victoryModalTitle');
+const victoryModalMessage = document.getElementById('victoryModalMessage');
+const victoryModalClose = document.getElementById('victoryModalClose');
 
 /* ---------------- Initialization ---------------- */
 document.addEventListener('DOMContentLoaded', () => {
@@ -538,6 +604,11 @@ eventOkBtn?.addEventListener('click', () => {
   closeEventModal();
 });
 
+victoryModalClose?.addEventListener('click', () => {
+  victoryModal.classList.add('hidden');
+});
+
+
 /* Small wrapper for compatibility */
 function showFeedback(message, type='info'){ const t = type === 'error' ? 'Erro' : type === 'success' ? 'Sucesso' : 'Informação'; showAlert(t, message, type); }
 
@@ -628,6 +699,133 @@ function refreshUIAfterStateChange() {
   updateFooter();
 }
 
+// Sistema de Logs de Atividade
+let activityLogHistory = [];
+
+// Função para adicionar log
+function addActivityLog(type, playerName, action, details = '', turn = gameState.turn) {
+  const timestamp = new Date().toLocaleTimeString('pt-BR', { 
+    hour: '2-digit', 
+    minute: '2-digit' 
+  });
+  
+  const logEntry = {
+    id: Date.now(),
+    timestamp,
+    turn,
+    type,
+    playerName,
+    action,
+    details,
+    isEvent: type === 'event',
+    isMine: playerName === gameState.players[gameState.currentPlayerIndex]?.name
+  };
+  
+  activityLogHistory.unshift(logEntry);
+  activityLogHistory = activityLogHistory.slice(0, 15); // Manter apenas últimas 15 entradas
+  
+  renderActivityLog();
+  scrollLogToTop();
+}
+
+// Função para renderizar logs
+function renderActivityLog(filter = 'all') {
+  // Renderizar no painel principal (se existir)
+  if (logEntries) {
+    logEntries.innerHTML = '';
+    const filteredLogs = activityLogHistory.filter(log => {
+      if (filter === 'mine') return log.isMine;
+      if (filter === 'events') return log.isEvent;
+      return true;
+    });
+    
+    filteredLogs.forEach(log => {
+      const entry = document.createElement('div');
+      entry.className = `log-entry ${log.type}`;
+      
+      let icon = '';
+      switch(log.type) {
+        case 'action': icon = '⚡'; break;
+        case 'build': icon = '🏗️'; break;
+        case 'explore': icon = '⛏️'; break;
+        case 'collect': icon = '🌾'; break;
+        case 'negotiate': icon = '🤝'; break;
+        case 'event': icon = '🎴'; break;
+        case 'victory': icon = '🏆'; break;
+        default: icon = '📝';
+      }
+      
+      entry.innerHTML = `
+        <span class="log-entry-icon">${icon}</span>
+        <div class="log-entry-text">
+          <span class="log-entry-player">${log.playerName}</span> ${log.action} 
+          <span class="text-gray-400">${log.details}</span>
+        </div>
+        <span class="log-entry-turn">T${log.turn}</span>
+      `;
+      
+      logEntries.appendChild(entry);
+    });
+  }
+  
+  // Renderizar no sidebar
+  if (logEntriesSidebar) {
+    logEntriesSidebar.innerHTML = '';
+    const filteredLogs = activityLogHistory.filter(log => {
+      if (filter === 'mine') return log.isMine;
+      if (filter === 'events') return log.isEvent;
+      return true;
+    });
+    
+    filteredLogs.forEach(log => {
+      const entry = document.createElement('div');
+      entry.className = 'flex items-center gap-1';
+      
+      let icon = '';
+      switch(log.type) {
+        case 'action': icon = '⚡'; break;
+        case 'build': icon = '🏗️'; break;
+        case 'explore': icon = '⛏️'; break;
+        case 'collect': icon = '🌾'; break;
+        case 'negotiate': icon = '🤝'; break;
+        case 'event': icon = '🎴'; break;
+        case 'victory': icon = '🏆'; break;
+        default: icon = '📝';
+      }
+      
+      entry.innerHTML = `
+        <span class="text-xs">${icon}</span>
+        <span class="truncate">${log.playerName} ${log.action} ${log.details}</span>
+        <span class="ml-auto text-[9px] text-gray-500">T${log.turn}</span>
+      `;
+      
+      logEntriesSidebar.appendChild(entry);
+    });
+  }
+  
+  // Atualizar filtros visuais
+  document.querySelectorAll('.log-filter-sidebar').forEach(btn => {
+    btn.classList.toggle('active', btn.dataset.filter === filter);
+  });
+}
+
+// Função para scroll automático
+function scrollLogToTop() {
+  const logContainer = logEntries.parentElement;
+  if (logContainer) {
+    logContainer.scrollTop = 0;
+  }
+}
+
+// Listeners dos filtros
+logFilterAll?.addEventListener('click', () => renderActivityLog('all'));
+logFilterMine?.addEventListener('click', () => renderActivityLog('mine'));
+logFilterEvents?.addEventListener('click', () => renderActivityLog('events'));
+// Listeners dos filtros do sidebar
+logFilterAllSidebar?.addEventListener('click', () => renderActivityLog('all'));
+logFilterMineSidebar?.addEventListener('click', () => renderActivityLog('mine'));
+logFilterEventsSidebar?.addEventListener('click', () => renderActivityLog('events'));
+
 // Função utilitária para limpar seleção de região
 function clearRegionSelection() {
   gameState.selectedRegionId = null;
@@ -654,11 +852,24 @@ function renderBoard(){
     if (region.controller !== null) cell.classList.add('controlled'); else cell.classList.add('neutral');
     cell.dataset.regionId = region.id;
 
-    // Adicionar cor sutil do jogador nas regiões controladas
-    if (region.controller !== null) {
-      const player = gameState.players[region.controller];
-      cell.style.borderLeft = `4px solid ${player.color}`;
-    }
+    // Converter hex para RGB
+function hexToRgb(hex) {
+  const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+  return result ? [
+    parseInt(result[1], 16),
+    parseInt(result[2], 16),
+    parseInt(result[3], 16)
+  ] : [255, 255, 255];
+}
+
+// Adicionar cor do jogador
+if (region.controller !== null) {
+  const player = gameState.players[region.controller];
+  const rgb = hexToRgb(player.color);
+  cell.style.setProperty('--player-rgb', rgb.join(', '));
+  cell.style.setProperty('--player-color', player.color);
+}
+
 
     const header = document.createElement('div'); header.className = 'flex items-center justify-between';
     header.innerHTML = `<div><div class="text-xs font-semibold leading-tight">${region.name}</div><div class="text-[10px] text-gray-400">${region.biome}</div></div><div class="text-xs">${region.explorationLevel}⭐</div>`;
@@ -764,6 +975,7 @@ function renderSidebar(playerIndex){
   // Header compacto com cor do jogador
   const isCurrentPlayer = playerIndex === gameState.currentPlayerIndex;
   const playerColorStyle = `border-left: 4px solid ${p.color}`;
+
   sidebarPlayerHeader.innerHTML = `
     <div class="flex items-center gap-3 p-2 rounded-lg" style="${playerColorStyle}; background: rgba(${hexToRgb(p.color)}, 0.05);">
       <div class="text-3xl">${p.icon}</div>
@@ -833,6 +1045,29 @@ function renderSidebar(playerIndex){
   }
 }
 
+function renderAchievements() {
+  if (!achievementsList) return;
+  
+  achievementsList.innerHTML = '';
+  
+  ACHIEVEMENTS.forEach(achievement => {
+    const unlocked = achievement.condition(achievementsState);
+    achievement.unlocked = unlocked;
+    
+    const item = document.createElement('div');
+    item.className = `achievement ${unlocked ? 'achievement-unlocked' : 'achievement-locked'}`;
+    
+    item.innerHTML = `
+      <span class="achievement-icon">${achievement.icon}</span>
+      <div class="achievement-info">
+        <div class="achievement-name">${achievement.name}</div>
+        <div class="achievement-desc">${achievement.description}</div>
+      </div>
+    `;
+    
+    achievementsList.appendChild(item);
+  });
+}
 
 // Função auxiliar para converter hex para RGB
 function hexToRgb(hex) {
@@ -906,6 +1141,8 @@ actionExploreBtn.addEventListener('click', async ()=>{
     player.regions.push(gameState.selectedRegionId);
     
     showFeedback(`${region.name} agora está sob seu controle! -${pvCost} PV`, 'success');
+    // Registrar no log
+    addActivityLog('explore', player.name, 'assumiu domínio de', region.name, gameState.turn);
   } else if (region.controller === gameState.currentPlayerIndex) {
     // EXPLORAR (região própria)
     const cost = GAME_CONFIG.ACTION_DETAILS.explorar.cost;
@@ -931,6 +1168,14 @@ actionExploreBtn.addEventListener('click', async ()=>{
     } else {
       showFeedback(`${region.name} explorada. Nível: ${region.explorationLevel}⭐`, 'success');
     }
+
+    // Após explorar uma região
+    achievementsState.totalExplored++;
+    renderAchievements();
+
+    // Registrar no log
+    const desc = Math.random() < 0.10 ? 'explorou (Descoberta Rara!)' : `explorou (Nível ${region.explorationLevel})`;
+    addActivityLog('explore', player.name, desc, region.name, gameState.turn);
     
   } else {
     showFeedback('Você não pode explorar regiões de outros jogadores.', 'error');
@@ -1013,6 +1258,9 @@ actionCollectBtn.addEventListener('click', () => {
 
   player.victoryPoints += 1;
   showFeedback(`Recursos recolhidos de ${region.name}. +1 PV`, 'success');
+  
+  // Registrar no log
+  addActivityLog('collect', player.name, 'recolheu recursos', region.name, gameState.turn);
 
   // Limpar seleção e atualizar UI
   clearRegionSelection();
@@ -1054,7 +1302,14 @@ actionBuildBtn.addEventListener('click', ()=> {
   
   player.victoryPoints += pvGain;
   showFeedback(`Construído Abrigo em ${region.name}. +${pvGain} PV.`, 'success');
-  
+
+  // Após construir uma estrutura
+  achievementsState.totalBuilt++;
+  renderAchievements();
+
+  // Registrar no log
+  addActivityLog('build', player.name, 'construiu Abrigo', region.name, gameState.turn);  
+
   clearRegionSelection();
   refreshUIAfterStateChange();
 });
@@ -1241,6 +1496,14 @@ function handleNegResponse(accepted){
     target.victoryPoints += 1;
 
     showFeedback('Negociação aceita — troca realizada. Ambos ganham +1 PV.', 'success');
+    
+    // Após concluir negociação
+    achievementsState.totalNegotiations++;
+    renderAchievements();
+
+    // Registrar no log
+    addActivityLog('negotiate', `${initiator.name} e ${target.name}`, 'negociaram com sucesso', 'troca realizada', gameState.turn);
+
     clearRegionSelection();
     refreshUIAfterStateChange();
 
@@ -1829,6 +2092,7 @@ endTurnBtn.addEventListener('click', ()=> {
 
   updateTurnInfo(); 
   refreshUIAfterStateChange();
+  checkVictory();
 
   showFeedback(`Agora é o turno de ${gameState.players[gameState.currentPlayerIndex].name}`, 'info');
 });
@@ -2008,6 +2272,9 @@ function triggerRandomEvent() {
     ev.apply(gameState);
   }
 
+  // Registrar evento no log
+  addActivityLog('event', 'GAIA', `disparou evento: ${ev.name}`, ev.description, gameState.turn);
+
   openEventModal(ev);
   
   // Atualizar banner após fechar modal
@@ -2117,6 +2384,27 @@ function updateFooter(){
   
 }
 
+function checkVictory() {
+  const winner = gameState.players.find(p => p.victoryPoints >= GAME_CONFIG.VICTORY_POINTS);
+  if (winner) {
+    showFeedback(`${winner.name} venceu o jogo!`, 'success');
+    // Aqui você pode adicionar lógica para encerrar o jogo
+    // Desabilita ações
+    actionExploreBtn.disabled = true;
+    actionCollectBtn.disabled = true;
+    actionBuildBtn.disabled = true;
+    actionNegotiateBtn.disabled = true;
+    endTurnBtn.disabled = true;
+    // Mostra modal de vitória
+    openVictoryModal(winner);
+  }
+}
+
+function openVictoryModal(winner) {
+  victoryModalTitle.textContent = 'Vitória!';
+  victoryModalMessage.textContent = `Parabéns, ${winner.name}! Você venceu Gaia!`;
+  victoryModal.classList.remove('hidden');
+}
 
 /* ---------------- Utilities / expose ---------------- */
 window.gameState = gameState;

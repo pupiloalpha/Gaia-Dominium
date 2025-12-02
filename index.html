@@ -95,6 +95,32 @@
       
       <!-- scoreBlock mantido invisível para compatibilidade com código existente -->
       <div id="scoreBlock" class="hidden"></div>
+
+      <!-- HISTÓRICO DE ATIVIDADES -->
+      <div class="mt-3">
+        <div class="flex items-center justify-between mb-1">
+          <h4 class="text-xs font-semibold text-gray-200">Histórico</h4>
+          <div class="flex gap-1 text-[10px]">
+            <button id="logFilterAllSidebar" class="log-filter-sidebar px-1.5 py-0.5 rounded bg-blue-600/20 text-blue-300" data-filter="all">Todas</button>
+            <button id="logFilterMineSidebar" class="log-filter-sidebar px-1.5 py-0.5 rounded bg-gray-600/20 text-gray-300" data-filter="mine">Minhas</button>
+            <button id="logFilterEventsSidebar" class="log-filter-sidebar px-1.5 py-0.5 rounded bg-gray-600/20 text-gray-300" data-filter="events">Eventos</button>
+          </div>
+        </div>
+        <div id="logEntriesSidebar" class="text-[11px] text-gray-300 max-h-28 overflow-y-auto space-y-0.5"></div>
+      </div>
+
+      <!-- CONQUISTAS -->
+      <div class="mt-3">
+        <h4 class="text-xs font-semibold text-gray-200 mb-2">Conquistas</h4>
+        <div id="achievementsList" class="space-y-2"></div>
+      </div>
+
+      <!-- INDICADOR DE FASE -->
+      <div class="mt-3">
+        <h4 class="text-xs font-semibold text-gray-200 mb-2">Fase do Turno</h4>
+        <div id="turnPhaseIndicator" class="text-sm text-gray-300">Renda</div>
+      </div>
+
     </aside>
 
     <!-- MAP -->
@@ -258,6 +284,17 @@
       </div>
     </div>
   </div>
+
+<!-- MODAL DE VITÓRIA -->
+<div id="victoryModal" class="fixed inset-0 bg-black/70 flex items-center justify-center z-50 hidden">
+  <div class="bg-gray-900/90 backdrop-blur-md border border-yellow-500/40 rounded-lg p-6 max-w-md mx-4 text-center">
+    <div class="text-6xl mb-4">🏆</div>
+    <h3 id="victoryModalTitle" class="text-xl font-bold text-yellow-300 mb-2">Vitória!</h3>
+    <p id="victoryModalMessage" class="text-gray-200 mb-4">Parabéns, [nome do jogador]! Você venceu Gaia!</p>
+    <button id="victoryModalClose" class="px-4 py-2 bg-yellow-600 hover:bg-yellow-500 rounded-lg text-white">Fechar</button>
+  </div>
+</div>
+
 
   <script src="main.js"></script>
 </body>
