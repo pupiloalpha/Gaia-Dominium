@@ -127,13 +127,15 @@
         <nav class="w-full md:w-48">
           <ul id="manualTabs" class="space-y-2">
             <li><button class="manual-tab w-full text-left px-4 py-2 rounded-md" data-tab="tab-o-jogo">O Jogo</button></li>
+            <li><button class="manual-tab w-full text-left px-4 py-2 rounded-md" data-tab="tab-regioes">Regiões de Gaia</button></li>
             <li><button class="manual-tab w-full text-left px-4 py-2 rounded-md" data-tab="tab-regras">Regras</button></li>
             <li><button class="manual-tab w-full text-left px-4 py-2 rounded-md" data-tab="tab-acoes">Ações</button></li>
-            <li><button class="manual-tab w-full text-left px-4 py-2 rounded-md" data-tab="tab-estrutura">Estrutura</button></li>
+            <li><button class="manual-tab w-full text-left px-4 py-2 rounded-md" data-tab="tab-estrutura">Estruturas</button></li>
           </ul>
         </nav>
         <div class="flex-1 overflow-auto max-h-[60vh]">
           <section id="tab-o-jogo" class="manual-content p-2"></section>
+          <section id="tab-regioes" class="manual-content hidden p-2"></section>
           <section id="tab-regras" class="manual-content hidden p-2"></section>
           <section id="tab-acoes" class="manual-content hidden p-2"></section>
           <section id="tab-estrutura" class="manual-content hidden p-2"></section>
@@ -141,6 +143,36 @@
       </div>
     </div>
   </div>
+
+    <!-- EVENTO GLOBAL -->
+    <div id="eventModal" class="hidden fixed inset-0 z-[95] flex items-center justify-center p-6">
+      <div class="absolute inset-0 bg-black/70"></div>
+      <div class="relative bg-gray-900/90 border border-yellow-400/40 rounded-xl max-w-lg w-full p-5 shadow-2xl">
+        <div class="flex items-start gap-3">
+          <div id="eventIcon" class="text-4xl">🎴</div>
+          <div class="flex-1">
+            <h3 id="eventTitle" class="text-lg font-semibold text-yellow-300 mb-1">
+              Evento Global
+            </h3>
+            <p id="eventDescription" class="text-sm text-gray-200 mb-2">
+              Descrição do evento.
+            </p>
+            <p id="eventEffect" class="text-xs text-yellow-200">
+              Efeito: —
+            </p>
+            <p id="eventDuration" class="text-xs text-gray-400 mt-1">
+              Duração: —
+            </p>
+          </div>
+        </div>
+
+        <div class="mt-4 flex justify-end">
+          <button id="eventOkBtn" class="px-4 py-1.5 rounded-md bg-yellow-400/90 text-gray-900 text-sm font-semibold hover:bg-yellow-300 transition">
+            Entendi
+          </button>
+        </div>
+      </div>
+    </div>
 
   <!-- GLOBAL ALERT / CONFIRM MODAL -->
   <div id="alertModal" class="hidden fixed inset-0 z-100 flex items-center justify-center p-4">
