@@ -987,6 +987,9 @@ function renderSidebar(playerIndex){
     </div>
   `;
   
+   // Sistema de conquistas
+   renderAchievements();
+
   // Recursos compactos com ícones (sem padding extra)
   resourceListEl.innerHTML = Object.entries(p.resources).map(([k,v])=>
     `<li class="flex justify-between items-center py-0.5">
@@ -1054,8 +1057,10 @@ function renderAchievements() {
     const unlocked = achievement.condition(achievementsState);
     achievement.unlocked = unlocked;
     
+    if (!unlocked) return; // Não exibir conquistas não conquistadas
+    
     const item = document.createElement('div');
-    item.className = `achievement ${unlocked ? 'achievement-unlocked' : 'achievement-locked'}`;
+    item.className = `achievement achievement-unlocked`;
     
     item.innerHTML = `
       <span class="achievement-icon">${achievement.icon}</span>
@@ -1737,6 +1742,46 @@ function renderManualFromText(){
         </tbody>
       </table>
     </div>
+
+<h4 class="text-base font-semibold text-green-300 mb-2">🏆 Conquistas</h4>
+<p class="text-sm text-gray-200 mb-3">
+  Ao longo do jogo, você pode desbloquear conquistas que recompensam suas ações estratégicas. 
+  Cada conquista traz um título que aparece apenas quando você a obtém.
+</p>
+
+<div class="grid grid-cols-2 gap-3 mb-4">
+  <div class="bg-gradient-to-r from-green-900/40 to-emerald-900/40 border border-green-500/40 rounded-lg p-3">
+    <h5 class="text-sm font-bold text-green-300 mb-2">🗺️ Explorador</h5>
+    <p class="text-xs text-gray-200 mb-2">
+      Explore 10 regiões para desbloquear este título.
+    </p>
+    <p class="text-xs text-green-300 mt-2"><strong>Benefício:</strong> +1 PV por turno</p>
+  </div>
+
+  <div class="bg-gradient-to-r from-teal-900/40 to-cyan-900/40 border border-teal-500/40 rounded-lg p-3">
+    <h5 class="text-sm font-bold text-teal-300 mb-2">🏗️ Construtor</h5>
+    <p class="text-xs text-gray-200 mb-2">
+      Construa 5 estruturas para desbloquear este título.
+    </p>
+    <p class="text-xs text-teal-300 mt-2"><strong>Benefício:</strong> -1 recurso ao construir</p>
+  </div>
+
+  <div class="bg-gradient-to-r from-yellow-900/40 to-orange-900/40 border border-yellow-500/40 rounded-lg p-3">
+    <h5 class="text-sm font-bold text-yellow-300 mb-2">🤝 Diplomata</h5>
+    <p class="text-xs text-gray-200 mb-2">
+      Realize 10 negociações para desbloquear este título.
+    </p>
+    <p class="text-xs text-yellow-300 mt-2"><strong>Benefício:</strong> -1 Ouro ao negociar</p>
+  </div>
+
+  <div class="bg-gradient-to-r from-blue-900/40 to-indigo-900/40 border border-blue-500/40 rounded-lg p-3">
+    <h5 class="text-sm font-bold text-blue-300 mb-2">🏆 Guardião de Gaia</h5>
+    <p class="text-xs text-gray-200 mb-2">
+      Vencer uma partida para desbloquear este título.
+    </p>
+    <p class="text-xs text-blue-300 mt-2"><strong>Benefício:</strong> +2 PV por turno</p>
+  </div>
+</div>
 
     <h4 class="text-base font-semibold text-green-300 mb-2">⭐ Níveis de Exploração</h4>
     <p class="text-sm text-gray-200 mb-3">

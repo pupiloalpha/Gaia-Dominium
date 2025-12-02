@@ -341,16 +341,17 @@ z-index: 10001;
 }
 
 .achievement-icon {
-  font-size: 16px;
+  font-size: 14px;
 }
 
 .achievement-name {
   font-weight: 500;
   color: #fff;
+  font-size: 12px;
 }
 
 .achievement-desc {
-  font-size: 12px;
+  font-size: 11px;
   color: #aaa;
 }
 
