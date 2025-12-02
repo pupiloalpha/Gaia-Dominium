@@ -442,6 +442,14 @@ const eventDescriptionEl = document.getElementById('eventDescription');
 const eventEffectEl = document.getElementById('eventEffect');
 const eventDurationEl = document.getElementById('eventDuration');
 const eventOkBtn = document.getElementById('eventOkBtn');
+// Event Banner elements
+const eventBanner = document.getElementById('eventBanner');
+const eventBannerContent = document.getElementById('eventBannerContent');
+const eventBannerIcon = document.getElementById('eventBannerIcon');
+const eventBannerTitle = document.getElementById('eventBannerTitle');
+const eventBannerTurns = document.getElementById('eventBannerTurns');
+const eventBannerEffect = document.getElementById('eventBannerEffect');
+const eventBannerClose = document.getElementById('eventBannerClose');
 
 function openEventModal(ev) {
   if (!ev) return;
@@ -459,6 +467,71 @@ function openEventModal(ev) {
 function closeEventModal() {
   eventModalEl.classList.add('hidden');
 }
+
+// ------- EVENT BANNER -------
+function showEventBanner(event) {
+  if (!event) return;
+  
+  // Definir conteúdo
+  eventBannerIcon.textContent = event.icon;
+  eventBannerTitle.textContent = event.name;
+  eventBannerTurns.textContent = `${gameState.eventTurnsLeft} turno${gameState.eventTurnsLeft > 1 ? 's' : ''} restante${gameState.eventTurnsLeft > 1 ? 's' : ''}`;
+  eventBannerEffect.textContent = event.effect;
+  
+  // Determinar categoria e cor
+  const category = getEventCategory(event.id);
+  
+  // Resetar classes e adicionar nova categoria
+  eventBanner.className = 'mb-3 p-3 rounded-lg border animate-pulse-slow';
+  eventBanner.classList.add(`event-${category}`);
+  
+  // Ajustar cor do texto
+  if (category === 'positive') {
+    eventBannerTitle.className = 'text-xs font-bold flex-1 text-green-300';
+    eventBannerEffect.className = 'text-xs mb-1 text-green-200';
+  } else if (category === 'negative') {
+    eventBannerTitle.className = 'text-xs font-bold flex-1 text-red-300';
+    eventBannerEffect.className = 'text-xs mb-1 text-red-200';
+  } else if (category === 'neutral') {
+    eventBannerTitle.className = 'text-xs font-bold flex-1 text-yellow-300';
+    eventBannerEffect.className = 'text-xs mb-1 text-yellow-200';
+  } else {
+    eventBannerTitle.className = 'text-xs font-bold flex-1 text-purple-300';
+    eventBannerEffect.className = 'text-xs mb-1 text-purple-200';
+  }
+  
+  // Mostrar banner
+  eventBanner.classList.remove('hidden');
+}
+
+function hideEventBanner() {
+  eventBanner.classList.add('hidden');
+}
+
+function updateEventBanner() {
+  if (gameState.currentEvent && gameState.eventTurnsLeft > 0) {
+    showEventBanner(gameState.currentEvent);
+  } else {
+    hideEventBanner();
+  }
+}
+
+function getEventCategory(eventId) {
+  const positive = ['primavera', 'mercado', 'festival', 'exploracao', 'enchente'];
+  const negative = ['seca', 'tempestade', 'inflacao', 'escassez_pedra', 'areia', 'depressao'];
+  const mixed = ['jazida', 'inverno', 'tecnologia', 'arqueologia'];
+  
+  if (positive.includes(eventId)) return 'positive';
+  if (negative.includes(eventId)) return 'negative';
+  if (mixed.includes(eventId)) return 'mixed';
+  return 'neutral';
+}
+
+// Listener do botão de fechar
+eventBannerClose?.addEventListener('click', () => {
+  hideEventBanner();
+});
+
 
 // Listener do botão "Entendi"
 eventOkBtn?.addEventListener('click', () => {
@@ -545,7 +618,7 @@ function distributeInitialRegions(){
 }
 
 /* ---------------- Rendering ---------------- */
-function renderAll(){ renderHeaderPlayers(); renderBoard(); renderSidebar(gameState.selectedPlayerForSidebar); }
+function renderAll(){ renderHeaderPlayers(); renderBoard(); renderSidebar(gameState.selectedPlayerForSidebar); updateEventBanner(); }
 
 // Função utilitária para atualizar toda a UI após mudança de estado
 function refreshUIAfterStateChange() {
@@ -868,66 +941,86 @@ actionExploreBtn.addEventListener('click', async ()=>{
 });
 
 
-/* Collect */
-actionCollectBtn.addEventListener('click', ()=> {
-  if(gameState.selectedRegionId === null){ showFeedback('Selecione uma região para coletar.', 'error'); return; }
-  if(!consumeAction()) return;
-  
+/* FUNÇÃO DO BOTÃO RECOLHER */
+actionCollectBtn.addEventListener('click', () => {
+  if (gameState.selectedRegionId === null) {
+    showFeedback('Selecione uma região para recolher.', 'error');
+    return;
+  }
+
+  if (!consumeAction()) {
+    showFeedback('Sem ações restantes neste turno.', 'warning');
+    return;
+  }
+
   const region = gameState.regions[gameState.selectedRegionId];
   const player = gameState.players[gameState.currentPlayerIndex];
-  
-  if(region.controller === gameState.currentPlayerIndex && region.explorationLevel > 0){
-    // Percentual base de coleta
-    let harvestPercent = 0.5;
-    
-    // ⭐ BÔNUS DE EXPLORAÇÃO
-    const explLevel = region.explorationLevel || 0;
-    if (explLevel === 1) {
-      // Nível 1: +1 recurso aleatório
-      const resourceTypes = Object.keys(region.resources).filter(k => region.resources[k] > 0);
-      if (resourceTypes.length > 0) {
-        const randomRes = resourceTypes[Math.floor(Math.random() * resourceTypes.length)];
-        player.resources[randomRes] += 1;
-        showFeedback(`Bônus de exploração: +1 ${randomRes}!`, 'info');
-      }
-    } else if (explLevel === 3) {
-      // Nível 3: +50% recursos coletados
-      harvestPercent = 0.75;
-    }
-    
-    // Bônus de evento (Festival da Colheita)
-    if (gameState.eventModifiers.festivalBonus) {
-      const resourceTypes = ['madeira', 'pedra', 'ouro', 'agua'];
-      const bonus1 = resourceTypes[Math.floor(Math.random() * resourceTypes.length)];
-      const bonus2 = resourceTypes[Math.floor(Math.random() * resourceTypes.length)];
-      player.resources[bonus1] += 2;
-      player.resources[bonus2] += 2;
-      showFeedback(`Festival! +2 ${bonus1} e +2 ${bonus2}!`, 'success');
-    }
-    
-    // Bônus de evento (Inverno Rigoroso)
-    if (gameState.eventModifiers.coletaBonus) {
-      Object.keys(gameState.eventModifiers.coletaBonus).forEach(res => {
-        player.resources[res] += gameState.eventModifiers.coletaBonus[res];
-      });
-    }
-    
-    // Coleta normal
-    Object.keys(region.resources).forEach(k => {
-      const amount = Math.max(0, Math.floor(region.resources[k] * harvestPercent));
-      player.resources[k] += amount;
-      region.resources[k] = Math.max(0, region.resources[k] - amount);
-    });
-    
-    player.victoryPoints += 1;
-    showFeedback(`Coleta realizada de ${region.name}.`, 'success');
+
+  // Validação: região deve ser controlada pelo jogador E ter exploração > 0
+  if (region.controller !== player.id) {
+    showFeedback('Você não controla essa região.', 'error');
+    return;
   }
-  
+
+  if (region.explorationLevel === 0) {
+    showFeedback('Você deve explorar a região antes de recolher.', 'warning');
+    return;
+  }
+
+  // ✅ RECOLHER RECURSOS
+  let harvestPercent = 0.5;
+
+  // Bônus de exploração nível 1: +1 recurso aleatório
+  if (region.explorationLevel >= 1) {
+    const resourceTypes = Object.keys(region.resources).filter(k => region.resources[k] > 0);
+    if (resourceTypes.length > 0) {
+      const randomRes = resourceTypes[Math.floor(Math.random() * resourceTypes.length)];
+      player.resources[randomRes] += 1;
+      showFeedback(`Bônus de exploração: +1 ${randomRes}!`, 'info');
+    }
+  }
+
+  // Bônus de exploração nível 3: +50% recursos (75% total)
+  if (region.explorationLevel === 3) {
+    harvestPercent = 0.75;
+    showFeedback('Recolha potencializada! +50% recursos.', 'info');
+  }
+
+  // Bônus de evento: Festival da Colheita
+  if (gameState.eventModifiers.festivalBonus) {
+    const resourceTypes = ['madeira', 'pedra', 'ouro', 'agua'];
+    const bonus1 = resourceTypes[Math.floor(Math.random() * resourceTypes.length)];
+    const bonus2 = resourceTypes[Math.floor(Math.random() * resourceTypes.length)];
+    player.resources[bonus1] += 2;
+    player.resources[bonus2] += 2;
+    showFeedback(`Festival! +2 ${bonus1} e +2 ${bonus2}!`, 'success');
+  }
+
+  // Bônus de evento: Inverno Rigoroso
+  if (gameState.eventModifiers.coletaBonus) {
+    Object.keys(gameState.eventModifiers.coletaBonus).forEach(res => {
+      player.resources[res] += gameState.eventModifiers.coletaBonus[res];
+    });
+    showFeedback('Inverno rigoroso torna a coleta mais valiosa!', 'info');
+  }
+
+  // Coleta normal
+  Object.keys(region.resources).forEach(k => {
+    const amount = Math.max(0, Math.floor(region.resources[k] * harvestPercent));
+    player.resources[k] += amount;
+    region.resources[k] = Math.max(0, region.resources[k] - amount);
+  });
+
+  player.victoryPoints += 1;
+  showFeedback(`Recursos recolhidos de ${region.name}. +1 PV`, 'success');
+
+  // Limpar seleção e atualizar UI
   clearRegionSelection();
   refreshUIAfterStateChange();
 });
 
-/* Build */
+
+/* FUNÇÃO DO BOTÃO CONSTRUIR */
 actionBuildBtn.addEventListener('click', ()=> {
   if(gameState.selectedRegionId === null){ showFeedback('Selecione uma região para construir.', 'error'); return; }
   if(!consumeAction()) return;
@@ -1752,8 +1845,12 @@ function handleTurnAdvanceForEvents() {
       gameState.currentEvent = null;
       gameState.eventModifiers = {};
       showFeedback('O evento global terminou.', 'info');
+      updateEventBanner(); // ← ADICIONAR ESTA LINHA
+    } else {
+      updateEventBanner(); // ← ADICIONAR ESTA LINHA
     }
   }
+
 
   // 2. Contar até o próximo evento
   if (!gameState.currentEvent) {
@@ -1912,7 +2009,13 @@ function triggerRandomEvent() {
   }
 
   openEventModal(ev);
+  
+  // Atualizar banner após fechar modal
+  setTimeout(() => {
+    updateEventBanner();
+  }, 100);
 }
+
 
 function canPlayerAfford(cost){
   const p = gameState.players[gameState.currentPlayerIndex];
@@ -1973,27 +2076,30 @@ function updateFooter(){
     const hasEnoughPV = player.victoryPoints >= 2;
     const canPayBiome = Object.entries(region.resources).every(([k,v]) => player.resources[k] >= v);
     actionExploreBtn.disabled = !baseEnabled || !hasEnoughPV || !canPayBiome;
+    actionExploreBtn.textContent = 'Assumir Domínio';
   } else if (isOwnRegion) {
     // Explorar região própria
     const canAfford = canPlayerAfford(GAME_CONFIG.ACTION_DETAILS.explorar.cost);
     actionExploreBtn.disabled = !baseEnabled || !canAfford;
+    actionExploreBtn.textContent = 'Explorar';
   } else {
     // Regiões inimigas não podem ser exploradas
     actionExploreBtn.disabled = true;
+    actionExploreBtn.textContent = 'Explorar';
   }
 
-  // 2. CONSTRUIR: apenas em próprias ou neutras
+  // 2. CONSTRUIR: apenas em próprias (neutras precisam assumir domínio primeiro)
   try {
     const canAffordBuild = canPlayerAfford(GAME_CONFIG.ACTION_DETAILS.construir.cost);
-    actionBuildBtn.disabled = !baseEnabled || isEnemyRegion || !canAffordBuild;
+    actionBuildBtn.disabled = !baseEnabled || isNeutral || isEnemyRegion || !canAffordBuild;
   } catch (e) {
     actionBuildBtn.disabled = true;
   }
 
-  // 3. RECOLHER: apenas em próprias ou neutras
+  // 3. RECOLHER: apenas em próprias (neutras precisam assumir domínio primeiro)
   try {
     const canAffordCollect = canPlayerAfford(GAME_CONFIG.ACTION_DETAILS.recolher.cost);
-    actionCollectBtn.disabled = !baseEnabled || isEnemyRegion || !canAffordCollect;
+    actionCollectBtn.disabled = !baseEnabled || isNeutral || isEnemyRegion || !canAffordCollect;
   } catch (e) {
     actionCollectBtn.disabled = true;
   }

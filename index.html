@@ -71,6 +71,18 @@
         <aside id="sidebar" class="hidden bg-gray-900/80 backdrop-blur-md border border-white/8 rounded-xl p-4 overflow-auto h-[70vh]">
       <div id="sidebarPlayerHeader" class="flex items-center gap-3 mb-3"></div>
 
+      <!-- EVENTO ATIVO -->
+      <div id="eventBanner" class="hidden mb-3 p-3 rounded-lg border animate-pulse-slow">
+        <div class="flex items-center gap-2 mb-1">
+          <span id="eventBannerIcon" class="text-xl"></span>
+          <h4 id="eventBannerTitle" class="text-xs font-bold flex-1"></h4>
+          <button id="eventBannerClose" class="text-white/60 hover:text-white text-lg">×</button>
+        </div>
+        <p id="eventBannerEffect" class="text-xs mb-1"></p>
+        <div id="eventBannerTurns" class="text-xs px-2 py-0.5 rounded bg-black/30 inline-block"></div>
+      </div>
+
+
       <div class="mb-4">
         <h3 class="text-sm text-gray-300 font-medium mb-2">Recursos</h3>
         <ul id="resourceList" class="mt-2 text-gray-100 text-sm"></ul>
@@ -101,7 +113,7 @@
     <div class="bg-gray-900/85 backdrop-blur-md border border-white/8 rounded-lg p-3 flex items-center justify-between gap-3">
       <div class="flex gap-2">
         <button id="actionExplore" class="action-btn px-3 py-2 rounded-md">Explorar</button>
-        <button id="actionCollect" class="action-btn px-3 py-2 rounded-md">Coletar</button>
+        <button id="actionCollect" class="action-btn px-3 py-2 rounded-md">Recolher</button>
         <button id="actionBuild" class="action-btn px-3 py-2 rounded-md">Construir</button>
         <button id="actionNegotiate" class="action-btn px-3 py-2 rounded-md">Negociar</button>
       </div>
