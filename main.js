@@ -24,6 +24,34 @@ const GAME_CONFIG = {
   }
 };
 
+const RESOURCE_ICONS = {
+  madeira: '🪵',
+  pedra: '🪨', 
+  ouro: '🪙',
+  agua: '💧'
+};
+
+// Sistema de Renda por Bioma
+const BIOME_INCOME = {
+  'Floresta Tropical': { madeira: 1, pedra: 0, ouro: 0.5, agua: 1.5 },
+  'Floresta Temperada': { madeira: 1.5, pedra: 0.5, ouro: 0, agua: 1 },
+  'Savana': { madeira: 0.5, pedra: 0, ouro: 1.5, agua: 0.5 },
+  'Pântano': { madeira: 0.5, pedra: 1, ouro: 0, agua: 2 }
+};
+
+// Renda por Estrutura
+const STRUCTURE_INCOME = {
+  'Abrigo': { madeira: 0.5, agua: 0.5 }
+};
+
+// Bônus por Nível de Exploração
+const EXPLORATION_BONUS = {
+  0: 0,      // Nenhum bônus
+  1: 0.25,   // +25% produção
+  2: 0.5,    // +50% produção
+  3: 1.0     // +100% produção
+};
+
 /* Sistema de Eventos Aleatórios */
 const GAME_EVENTS = [
   {
@@ -251,13 +279,6 @@ const GAME_EVENTS = [
     remove: (state) => {}
   }
 ];
-
-const RESOURCE_ICONS = {
-  madeira: '🪵',
-  pedra: '🪨', 
-  ouro: '🪙',
-  agua: '💧'
-};
 
 // Sistema de Conquistas
 const ACHIEVEMENTS = [
@@ -653,6 +674,7 @@ startGameBtn.addEventListener('click', ()=>{
   setupRegions(); distributeInitialRegions(); renderAll();
   gameState.gameStarted = true; gameState.turn = 1; gameState.actionsLeft = GAME_CONFIG.ACTIONS_PER_TURN;
   updateTurnInfo(); updateFooter();
+  setupMapZoomOnGameStart(); // Ativa zoom do mapa
 });
 
 /* ---------------- Regions (setup/distribute) ---------------- */
@@ -844,32 +866,42 @@ function renderHeaderPlayers(){
     </button>`).join('');
   playerHeaderList.querySelectorAll('button').forEach(btn=> btn.addEventListener('click', ()=>{ const idx = Number(btn.dataset.index); gameState.selectedPlayerForSidebar = idx; renderSidebar(idx); }));
 }
+
 function renderBoard(){
   boardContainer.innerHTML = '';
   gameState.regions.forEach(region=>{
     const cell = document.createElement('div');
     cell.className = 'board-cell';
-    if (region.controller !== null) cell.classList.add('controlled'); else cell.classList.add('neutral');
+
+    if (region.controller !== null) {
+        cell.classList.add('controlled');
+    } else {
+        cell.classList.add('neutral');
+    }
+
+    /* Manter ID numérico */
     cell.dataset.regionId = region.id;
 
+    /* Adicionar letra A–Y para linkar ao CSS dos tiles */
+    cell.dataset.region = String.fromCharCode(65 + region.id);
+
     // Converter hex para RGB
-function hexToRgb(hex) {
-  const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
-  return result ? [
-    parseInt(result[1], 16),
-    parseInt(result[2], 16),
-    parseInt(result[3], 16)
-  ] : [255, 255, 255];
-}
+    function hexToRgb(hex) {
+     const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+     return result ? [
+       parseInt(result[1], 16),
+       parseInt(result[2], 16),
+       parseInt(result[3], 16)
+     ] : [255, 255, 255];
+    }
 
-// Adicionar cor do jogador
-if (region.controller !== null) {
-  const player = gameState.players[region.controller];
-  const rgb = hexToRgb(player.color);
-  cell.style.setProperty('--player-rgb', rgb.join(', '));
-  cell.style.setProperty('--player-color', player.color);
-}
-
+   // Adicionar cor do jogador
+   if (region.controller !== null) {
+     const player = gameState.players[region.controller];
+     const rgb = hexToRgb(player.color);
+     cell.style.setProperty('--player-rgb', rgb.join(', '));
+     cell.style.setProperty('--player-color', player.color);
+   }
 
     const header = document.createElement('div'); header.className = 'flex items-center justify-between';
     header.innerHTML = `<div><div class="text-xs font-semibold leading-tight">${region.name}</div><div class="text-[10px] text-gray-400">${region.biome}</div></div><div class="text-xs">${region.explorationLevel}⭐</div>`;
@@ -916,6 +948,84 @@ if (region.controller !== null) {
   });
 }
 
+function calculatePlayerIncome(player) {
+  let income = { madeira: 0, pedra: 0, ouro: 0, agua: 0 };
+
+  // 1. Renda das regiões controladas
+  player.regions.forEach(regionId => {
+    const region = gameState.regions[regionId];
+    
+    // Renda base do bioma
+    const biomeIncome = BIOME_INCOME[region.biome];
+    Object.keys(biomeIncome).forEach(resource => {
+      income[resource] += biomeIncome[resource];
+    });
+
+    // Bônus de exploração
+    const explorationMultiplier = 1 + EXPLORATION_BONUS[region.explorationLevel];
+    Object.keys(income).forEach(resource => {
+      income[resource] *= explorationMultiplier;
+    });
+
+    // Renda das estruturas
+    region.structures.forEach(structure => {
+      if (STRUCTURE_INCOME[structure]) {
+        Object.keys(STRUCTURE_INCOME[structure]).forEach(resource => {
+          income[resource] += STRUCTURE_INCOME[structure][resource];
+        });
+      }
+    });
+  });
+
+  // 2. Aplicar modificadores de eventos
+  if (gameState.eventModifiers.madeiraMultiplier) {
+    income.madeira *= gameState.eventModifiers.madeiraMultiplier;
+  }
+  if (gameState.eventModifiers.aguaMultiplier) {
+    income.agua *= gameState.eventModifiers.aguaMultiplier;
+  }
+  if (gameState.eventModifiers.pedraMultiplier) {
+    income.pedra *= gameState.eventModifiers.pedraMultiplier;
+  }
+  if (gameState.eventModifiers.savanaBloqueada && player.regions.some(rid => gameState.regions[rid].biome === 'Savana')) {
+    income.madeira *= 0;
+    income.ouro *= 0;
+  }
+  if (gameState.eventModifiers.pantanoBonus) {
+    const pantanoRegions = player.regions.filter(rid => gameState.regions[rid].biome === 'Pântano');
+    pantanoRegions.forEach(rid => {
+      income.agua += gameState.eventModifiers.pantanoBonus;
+    });
+  }
+
+  // 3. Arredondar para números inteiros
+  Object.keys(income).forEach(resource => {
+    income[resource] = Math.round(income[resource] * 100) / 100; // 2 casas decimais
+  });
+
+  return income;
+}
+
+function applyPlayerIncome(player) {
+  const income = calculatePlayerIncome(player);
+  
+  // Adicionar recursos ao jogador
+  Object.keys(income).forEach(resource => {
+    player.resources[resource] += income[resource];
+  });
+
+  // Exibir feedback
+  const incomeText = Object.entries(income)
+    .filter(([_, amount]) => amount > 0)
+    .map(([resource, amount]) => `+${amount} ${resource}`)
+    .join(', ');
+  
+  if (incomeText) {
+    showFeedback(`${player.name} recebeu: ${incomeText}`, 'success');
+  }
+}
+
+// Atualiza todas os elementos e informações na tela
 function refreshUIAfterStateChange() {
   renderHeaderPlayers();
   renderBoard();
@@ -928,43 +1038,126 @@ function refreshUIAfterStateChange() {
 function showRegionTooltip(region, targetEl){
   tooltipTitle.textContent = `${region.name} — ${region.biome}`;
   const owner = region.controller !== null ? `${gameState.players[region.controller].icon} ${gameState.players[region.controller].name}` : 'Neutro';
-  const structures = region.structures.length ? region.structures.join(', ') : '—';
+  const structures = region.structures.length ? region.structures.join(', ') : 'Nenhuma';
   tooltipBody.innerHTML = `
-    <div class="text-xs text-gray-300">Exploração: <strong>${region.explorationLevel}</strong></div>
-    <div class="text-xs text-gray-300 mt-1">Controlado por: <strong>${owner}</strong></div>
-    <div class="text-xs text-gray-300 mt-1">Estruturas: <strong>${structures}</strong></div>
-    <div class="text-xs text-gray-300 mt-2">Recursos:</div>
-    <div class="mt-1">${Object.entries(region.resources).map(([k,v])=>`<span class="badge mr-1">${k}: ${v}</span>`).join('')}</div>
+    <div class="text-xs text-gray-300">Exploração <strong>${region.explorationLevel}⭐</strong></div>
+    <div class="text-xs text-gray-300 mt-1">Controlado por <strong>${owner}</strong></div>
+    <div class="text-xs text-gray-300 mt-1">Estruturas <strong>${structures}</strong></div>
+    <div class="text-xs text-gray-300 mt-2">Recursos</div>
+    <div class="mt-1 flex flex-col gap-1">
+      ${Object.entries(region.resources)
+        .map(([k, v]) => `
+          <div class="flex items-center gap-1.5">
+            <span class="text-base">${RESOURCEICONS[k]}</span>
+            <span class="text-xs font-medium">${v}</span>
+          </div>
+        `)
+        .join('')}
+    </div>
   `;
   // show and position
   regionTooltip.classList.remove('hidden'); regionTooltip.classList.add('visible');
   positionTooltip(targetEl);
 }
-function positionTooltip(targetEl){
+
+function positionTooltip(targetEl) {
   const rect = targetEl.getBoundingClientRect();
   const tooltipRect = regionTooltip.getBoundingClientRect();
 
-  // 1. Tentar posicionar no topo (mantido para compatibilidade vertical)
-  const top = (rect.top - tooltipRect.height - 8) > 10 ? rect.top - tooltipRect.height - 8 : rect.bottom + 8;
+  // 1. Posicionar VERTICALMENTE ao lado do cursor (mais perto)
+  // Alinha ao topo do elemento, pouco abaixo
+  let top = rect.top + 8; // Fica 8px abaixo do topo da célula
 
-  // 2. Priorizar POSICIONAMENTO À ESQUERDA da região, centralizado verticalmente na largura da região.
-  let left = rect.left - tooltipRect.width - 8; // Tenta à esquerda
-  
-  // 3. Se não houver espaço à esquerda (i.e., perto da borda esquerda da tela)
+  // 2. Posicionar À ESQUERDA do cursor
+  let left = rect.left - tooltipRect.width - 10; // 10px à esquerda
+
+  // 3. Se não houver espaço à esquerda, reposicionar para a direita
   if (left < 10) {
-    // Reposiciona para a direita da região
-    left = rect.right + 8;
-    // Se ainda assim não couber (ou se estiver muito perto da borda direita da tela), centraliza no topo da região
-    if (left + tooltipRect.width > window.innerWidth - 10) {
-        left = Math.min(window.innerWidth - tooltipRect.width - 10, Math.max(10, rect.left + (rect.width/2) - (tooltipRect.width/2)));
-    }
+    left = rect.right + 10; // 10px à direita
   }
 
-  regionTooltip.style.top = `${top + window.scrollY}px`;
-  regionTooltip.style.left = `${left + window.scrollX}px`;
+  // 4. Garantir que não saia da tela verticalmente
+  const bottomOverflow = top + tooltipRect.height - window.innerHeight;
+  if (bottomOverflow > 0) {
+    top = window.innerHeight - tooltipRect.height - 10;
+  }
+
+  regionTooltip.style.top = (top + window.scrollY) + 'px';
+  regionTooltip.style.left = (left + window.scrollX) + 'px';
 }
+
 function hideRegionTooltip(){
   regionTooltip.classList.add('hidden'); regionTooltip.classList.remove('visible');
+}
+
+// ============ SISTEMA DE ZOOM DO MAPA ============
+
+let currentZoom = 1;
+const minZoom = 0.8;
+const maxZoom = 3;
+const zoomStep = 0.1;
+
+function setupMapZoom() {
+  const gameMapEl = document.getElementById('gameMap');
+  const boardContainerEl = document.getElementById('boardContainer');
+  
+  if (!gameMapEl || !boardContainerEl) return;
+
+  // Zoom com scroll do mouse
+  gameMapEl.addEventListener('wheel', (e) => {
+    // Permitir scroll normal se Ctrl não estiver pressionado
+    if (!e.ctrlKey && !e.metaKey) return;
+
+    e.preventDefault();
+    
+    const delta = e.deltaY > 0 ? -zoomStep : zoomStep;
+    const newZoom = Math.max(minZoom, Math.min(maxZoom, currentZoom + delta));
+    
+    if (newZoom !== currentZoom) {
+      currentZoom = newZoom;
+      applyZoom(boardContainerEl);
+    }
+  }, { passive: false });
+
+  // Zoom com +/- em teclado
+  document.addEventListener('keydown', (e) => {
+    if (e.key === '+' || e.key === '=') {
+      e.preventDefault();
+      currentZoom = Math.min(maxZoom, currentZoom + zoomStep);
+      applyZoom(boardContainerEl);
+    }
+    if (e.key === '-' || e.key === '_') {
+      e.preventDefault();
+      currentZoom = Math.max(minZoom, currentZoom - zoomStep);
+      applyZoom(boardContainerEl);
+    }
+    // Reset com 0
+    if (e.key === '0') {
+      e.preventDefault();
+      currentZoom = 1;
+      applyZoom(boardContainerEl);
+    }
+  });
+
+  // Mostrar dica de controles
+  console.log('🔍 Controles de Zoom:');
+  console.log('  • Roda do mouse + Ctrl: Zoom in/out');
+  console.log('  • + / - : Aumentar/Diminuir zoom');
+  console.log('  • 0 : Reset zoom');
+}
+
+function applyZoom(element) {
+  element.style.transform = `scale(${currentZoom})`;
+  
+  // Exibir zoom atual no console (opcional)
+  console.log(`🔍 Zoom: ${Math.round(currentZoom * 100)}%`);
+}
+
+// Chamar setup de zoom quando o jogo começar
+function setupMapZoomOnGameStart() {
+  setTimeout(() => {
+    setupMapZoom();
+  }, 100);
 }
 
 /* ---------------- Sidebar ---------------- */
@@ -2110,36 +2303,67 @@ function handleManualTabClick(e){ manualTabs.forEach(t=>t.classList.remove('acti
 function showManualTab(tabId){ manualContents.forEach(c=> c.classList.add('hidden')); const el = document.getElementById(tabId); if (el) el.classList.remove('hidden'); }
 
 /* ---------------- End turn & footer update ---------------- */
-endTurnBtn.addEventListener('click', ()=> {
-  // Avança jogador / turno
-  gameState.currentPlayerIndex = (gameState.currentPlayerIndex + 1) % gameState.players.length;
-
-  // APLICAR RENDA AUTOMÁTICA PARA O PRÓXIMO JOGADOR
-  const nextPlayer = gameState.players[gameState.currentPlayerIndex];
-  applyIncomeForPlayer(nextPlayer);
-
-  const cycled = (gameState.currentPlayerIndex === 0);
-  if (cycled) {
-    gameState.turn += 1;
-
-    // Atualizar contador de eventos apenas quando fecha uma rodada completa
-    handleTurnAdvanceForEvents();
+endTurnBtn.addEventListener('click', () => {
+  // Fase 1: RENDA
+  if (currentPhase === TURN_PHASES.RENDA) {
+    const currentPlayer = gameState.players[gameState.currentPlayerIndex];
+    applyPlayerIncome(currentPlayer);
+    updateTurnPhase(TURN_PHASES.ACOES);
+    gameState.actionsLeft = GAME_CONFIG.ACTIONSPERTURN;
+    updateTurnInfo();
+    updateFooter();
+    refreshUIAfterStateChange();
+    return;
   }
 
-  gameState.actionsLeft = GAME_CONFIG.ACTIONS_PER_TURN;
-  gameState.selectedRegionId = null;
+  // Fase 2: AÇÕES
+  if (currentPhase === TURN_PHASES.ACOES) {
+    if (gameState.actionsLeft > 0) {
+      showFeedback('Você ainda tem ações restantes!', 'warning');
+      return;
+    }
+    updateTurnPhase(TURN_PHASES.NEGOCIACAO);
+    updateTurnInfo();
+    updateFooter();
+    return;
+  }
 
-  // Remover a seleção visual de TODAS as células ao passar o turno
-  document.querySelectorAll('.board-cell').forEach(c=>c.classList.remove('region-selected'));
+  // Fase 3: NEGOCIAÇÃO
+  if (currentPhase === TURN_PHASES.NEGOCIACAO) {
+    updateTurnPhase(TURN_PHASES.RENDA);
+    
+    // Avançar para o próximo jogador
+    gameState.currentPlayerIndex = (gameState.currentPlayerIndex + 1) % gameState.players.length;
+    if (gameState.currentPlayerIndex === 0) {
+      gameState.turn++;
+      gameState.turnsUntilNextEvent--;
+      
+      // Verificar se dispara evento
+      if (gameState.turnsUntilNextEvent <= 0) {
+        triggerRandomEvent();
+        gameState.turnsUntilNextEvent = 4;
+      }
+    }
 
-  // Atualizar painel lateral para mostrar o jogador atual
-  gameState.selectedPlayerForSidebar = gameState.currentPlayerIndex;
-
-  updateTurnInfo(); 
-  refreshUIAfterStateChange();
-  checkVictory();
-
-  showFeedback(`Agora é o turno de ${gameState.players[gameState.currentPlayerIndex].name}`, 'info');
+    gameState.actionsLeft = GAME_CONFIG.ACTIONSPERTURN;
+    gameState.selectedRegionId = null;
+    clearRegionSelection();
+    
+    updateTurnInfo();
+    updateFooter();
+    renderAll();
+    showFeedback(`Turno do ${gameState.players[gameState.currentPlayerIndex].name}`, 'info');
+    
+    // Aplicar renda automaticamente para o novo jogador
+    setTimeout(() => {
+      const newPlayer = gameState.players[gameState.currentPlayerIndex];
+      applyPlayerIncome(newPlayer);
+      updateTurnPhase(TURN_PHASES.ACOES);
+      updateTurnInfo();
+      updateFooter();
+      refreshUIAfterStateChange();
+    }, 500);
+  }
 });
 
 function handleTurnAdvanceForEvents() {
@@ -2340,6 +2564,18 @@ function canPlayerAfford(cost){
 }
 
 function updateFooter(){
+
+// Atualizar indicador de fase
+const phaseIndicator = document.getElementById('phaseIndicator');
+if (phaseIndicator) {
+  const phaseNames = {
+    'renda': 'Renda',
+    'acoes': 'Ações',
+    'negociacao': 'Negociação'
+  };
+  phaseIndicator.textContent = `Fase: ${phaseNames[currentPhase]}`;
+}
+
 
   const player = gameState.players[gameState.currentPlayerIndex];
   const regionId = gameState.selectedRegionId;

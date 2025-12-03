@@ -39,22 +39,132 @@ border: 1px solid rgba(255,255,255,0.06);
 border-radius: 10px;
 }
 
-/* Board cell - COMPACTO para caber mais na tela */
-.board-cell{
-min-height:70px;
-border-radius:8px;
-padding:8px;
-display:flex;
-flex-direction:column;
-justify-content:space-between;
-cursor:pointer;
-transition: transform .12s, box-shadow .12s, border-color .2s ease;
-background: rgba(31,31,31,0.80);
-backdrop-filter: blur(8px);
-border: 1px solid rgba(255,255,255,0.06);
-color: #EAEAEA;
-position: relative;
+/* --- MAPA DIVIDIDO EM 25 QUADRANTES (5x5) --- */
+/* --- CONTAINER DO MAPA 1024x1024 RESPONSIVO --- */
+#gameMap {
+  width: 90vw !important;
+  height: 90vw !important;
+  max-width: 1024px !important;
+  max-height: 1024px !important;
+  aspect-ratio: 1 / 1 !important;
+  margin: 20px auto !important;
+  border-radius: 0 !important;
+  overflow: hidden;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+  position: relative !important;
 }
+
+/* Imagem de fundo do mapa */
+#gameMap img {
+  position: absolute !important;
+  inset: 0 !important;
+  width: 100% !important;
+  height: 100% !important;
+  object-fit: cover !important;
+  object-position: center !important;
+  pointer-events: none !important;
+  z-index: 1 !important;
+}
+
+#boardContainer {
+  grid-template-columns: repeat(5, 1fr) !important;
+  grid-template-rows: repeat(5, 1fr) !important;
+  gap: 0px !important;
+  padding: 0px !important;
+  position: relative !important;
+  z-index: 10 !important;
+  transform-origin: center center !important;
+  transition: transform 0.1s ease-out !important;
+}
+
+.board-cell {
+  position: relative;
+  overflow: hidden;
+  min-height: unset !important;
+  aspect-ratio: 1 / 1 !important;
+  border-radius: 0 !important;
+}
+
+/* Remove o ::before que duplicava a imagem */
+.board-cell::before {
+  display: none !important;
+}
+
+/* Responsividade para telas menores */
+@media (max-width: 1024px) {
+  #gameMap {
+    width: 95vw !important;
+    height: 95vw !important;
+  }
+}
+
+@media (max-width: 768px) {
+  #gameMap {
+    width: 98vw !important;
+    height: 98vw !important;
+    margin: 10px auto !important;
+    border-radius: 0;
+  }
+
+  .board-cell {
+    border-radius: 0;
+  }
+}
+
+@media (max-width: 480px) {
+  #gameMap {
+    width: 100vw !important;
+    height: 100vw !important;
+    margin: 0 !important;
+    border-radius: 0;
+  }
+
+  #boardContainer {
+    gap: 0px !important;
+    padding: 0px !important;
+  }
+
+  .board-cell {
+    border-radius: 0;
+  }
+}
+
+/* Tile A–Y → posição do pedaço do mapa */
+.board-cell[data-region="A"]::before { background-position:   0%   0%; }
+.board-cell[data-region="B"]::before { background-position:  25%   0%; }
+.board-cell[data-region="C"]::before { background-position:  50%   0%; }
+.board-cell[data-region="D"]::before { background-position:  75%   0%; }
+.board-cell[data-region="E"]::before { background-position: 100%   0%; }
+
+.board-cell[data-region="F"]::before { background-position:   0%  25%; }
+.board-cell[data-region="G"]::before { background-position:  25%  25%; }
+.board-cell[data-region="H"]::before { background-position:  50%  25%; }
+.board-cell[data-region="I"]::before { background-position:  75%  25%; }
+.board-cell[data-region="J"]::before { background-position: 100%  25%; }
+
+.board-cell[data-region="K"]::before { background-position:   0%  50%; }
+.board-cell[data-region="L"]::before { background-position:  25%  50%; }
+.board-cell[data-region="M"]::before { background-position:  50%  50%; }
+.board-cell[data-region="N"]::before { background-position:  75%  50%; }
+.board-cell[data-region="O"]::before { background-position: 100%  50%; }
+
+.board-cell[data-region="P"]::before { background-position:   0%  75%; }
+.board-cell[data-region="Q"]::before { background-position:  25%  75%; }
+.board-cell[data-region="R"]::before { background-position:  50%  75%; }
+.board-cell[data-region="S"]::before { background-position:  75%  75%; }
+.board-cell[data-region="T"]::before { background-position: 100%  75%; }
+
+.board-cell[data-region="U"]::before { background-position:   0% 100%; }
+.board-cell[data-region="V"]::before { background-position:  25% 100%; }
+.board-cell[data-region="W"]::before { background-position:  50% 100%; }
+.board-cell[data-region="X"]::before { background-position:  75% 100%; }
+.board-cell[data-region="Y"]::before { background-position: 100% 100%; }
+
+/* Destaque ao passar o mouse */
+.board-cell:hover::before {
+  opacity: 0.8;
+}
+
 
 .board-cell:hover{transform:translateY(-4px); box-shadow:0 10px 30px rgba(0,0,0,0.5);}
 
@@ -72,6 +182,11 @@ position: relative;
     box-shadow: 0 0 25px rgba(248,214,92,0.5), 0 8px 20px rgba(248,214,92,0.3) !important;
     transform: translateY(-2px) scale(1.02) !important;
     z-index: 10;
+}
+
+.board-cell.region-selected::before {
+  opacity: 0.65; /* aumenta visibilidade do tile selecionado */
+  filter: saturate(1.05) contrast(1.02);
 }
 
 /* badge */
@@ -361,4 +476,32 @@ z-index: 10001;
 
 .achievement-locked {
   opacity: 0.5;
+}
+
+/* --- MAPA COM ZOOM E PAN --- */
+
+#mapViewport {
+  overflow: hidden;
+  position: relative;
+  cursor: grab;
+}
+
+#mapViewport:active {
+  cursor: grabbing;
+}
+
+#mapTransform {
+  transform-origin: center center;
+  transition: transform 0.15s ease-out;
+}
+
+/* Ajusta o board ao zoom */
+#mapTransform > #boardContainer {
+  transform-origin: top left;
+}
+
+/* Evita que o user selecione texto durante o pan */
+#mapViewport, 
+#mapViewport * {
+  user-select: none;
 }

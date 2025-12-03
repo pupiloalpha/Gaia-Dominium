@@ -95,7 +95,7 @@
       
       <!-- scoreBlock mantido invisível para compatibilidade com código existente -->
       <div id="scoreBlock" class="hidden"></div>
-
+ 
       <!-- HISTÓRICO DE ATIVIDADES -->
       <div class="mt-3">
         <div class="flex items-center justify-between mb-1">
@@ -124,15 +124,22 @@
     </aside>
 
     <!-- MAP -->
-    <main id="gameMap" class="hidden relative">
-      <div id="boardContainer" class="grid grid-cols-5 gap-3"></div>
+    <main id="gameMap" class="hidden relative w-full h-full">
+      <!-- Imagem do mapa (fica como fundo real do tabuleiro) -->
+      <img 
+        src="gaia-mapa.png" 
+        alt="Mapa de Gaia" 
+        class="absolute inset-0 w-full h-full object-cover pointer-events-none select-none"
+      />
+      <!-- Grid de 25 quadrantes do mapa -->
+      <div id="boardContainer" class="absolute inset-0 grid grid-cols-5 gap-3 p-4">
+      </div>
       <!-- Tooltip (aparece ao hover) -->
       <div id="regionTooltip" class="hidden absolute z-50 w-64 bg-gray-900/95 border border-white/8 rounded-lg p-3 text-sm shadow-xl">
-        <div id="tooltipTitle" class="font-semibold text-white"></div>
-        <div id="tooltipBody" class="text-gray-300 mt-2"></div>
+      <div id="tooltipTitle" class="font-semibold text-white"></div>
+      <div id="tooltipBody" class="text-gray-300 mt-2"></div>
       </div>
     </main>
-  </div>
 
   <!-- FOOTER ACTIONS -->
   <footer id="gameFooter" class="hidden fixed bottom-4 left-1/2 -translate-x-1/2 z-40 w-full max-w-4xl px-4">
@@ -145,6 +152,7 @@
       </div>
 
       <div class="flex items-center gap-3">
+        <div id="phaseIndicator" class="text-sm text-yellow-300 font-semibold">Fase: Renda</div>
         <div id="actionsLeft" class="text-sm text-gray-200">Ações restantes: 2</div>
         <button id="endTurnBtn" class="px-4 py-2 bg-rose-600 rounded-md text-white font-semibold">Término do Turno</button>
       </div>
