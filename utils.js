@@ -112,13 +112,12 @@ const Utils = {
   },
   
   // Setup map zoom
-  // utils.js - Adicione esta função
-
 setupMapZoom() {
   const mapViewport = document.getElementById('mapViewport');
   const mapTransform = document.getElementById('mapTransform');
+  const mapImageContainer = document.getElementById('mapImageContainer');
   
-  if (!mapViewport || !mapTransform) return;
+  if (!mapViewport || !mapTransform || !mapImageContainer) return;
   
   let currentZoom = 1;
   const minZoom = 0.5;
@@ -128,18 +127,16 @@ setupMapZoom() {
   let startX, startY;
   let translateX = 0, translateY = 0;
   
-  // Aplicar transformações
+  // Aplicar transformações no container da imagem E no overlay
   const applyTransform = () => {
-    mapTransform.style.transform = `
-      translate(${translateX}px, ${translateY}px)
-      scale(${currentZoom})
-    `;
+    const transform = `translate(${translateX}px, ${translateY}px) scale(${currentZoom})`;
+    mapTransform.style.transform = transform;
+    mapImageContainer.style.transform = transform;
   };
   
-  // Zoom com scroll
+  // Zoom com scroll (Ctrl + scroll)
   mapViewport.addEventListener('wheel', (e) => {
-    // Permitir scroll normal se Ctrl não estiver pressionado
-    if (!e.ctrlKey && !e.metaKey) return;
+    if (!e.ctrlKey) return;
     
     e.preventDefault();
     
@@ -147,7 +144,7 @@ setupMapZoom() {
     const newZoom = Math.max(minZoom, Math.min(maxZoom, currentZoom + delta));
     
     if (newZoom !== currentZoom) {
-      // Ajustar a posição de tradução para zoom no cursor
+      // Ajustar posição para zoom no ponto do cursor
       const rect = mapViewport.getBoundingClientRect();
       const x = e.clientX - rect.left;
       const y = e.clientY - rect.top;
@@ -165,7 +162,7 @@ setupMapZoom() {
   
   // Sistema de arrastar (pan)
   mapViewport.addEventListener('mousedown', (e) => {
-    if (e.button !== 0) return; // Apenas botão esquerdo
+    if (e.button !== 0) return;
     
     isDragging = true;
     startX = e.clientX - translateX;
@@ -187,32 +184,31 @@ setupMapZoom() {
     mapViewport.style.cursor = 'grab';
   });
   
-  // Zoom com teclado
+  // Atalhos de teclado
   document.addEventListener('keydown', (e) => {
-    if (e.key === '+' || e.key === '=') {
-      e.preventDefault();
-      currentZoom = Math.min(maxZoom, currentZoom + zoomStep);
-      applyTransform();
-    }
-    if (e.key === '-' || e.key === '_') {
-      e.preventDefault();
-      currentZoom = Math.max(minZoom, currentZoom - zoomStep);
-      applyTransform();
-    }
-    // Reset com 0
-    if (e.key === '0') {
-      e.preventDefault();
-      currentZoom = 1;
-      translateX = 0;
-      translateY = 0;
-      applyTransform();
+    if (e.ctrlKey || e.metaKey) {
+      if (e.key === '+' || e.key === '=') {
+        e.preventDefault();
+        currentZoom = Math.min(maxZoom, currentZoom + zoomStep);
+        applyTransform();
+      }
+      if (e.key === '-' || e.key === '_') {
+        e.preventDefault();
+        currentZoom = Math.max(minZoom, currentZoom - zoomStep);
+        applyTransform();
+      }
+      if (e.key === '0') {
+        e.preventDefault();
+        currentZoom = 1;
+        translateX = 0;
+        translateY = 0;
+        applyTransform();
+      }
     }
   });
   
   // Configurar cursor inicial
   mapViewport.style.cursor = 'grab';
-  
-  console.log('🎮 Sistema de zoom/pan configurado');
 }
 
 };
