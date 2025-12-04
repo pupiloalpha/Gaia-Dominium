@@ -483,7 +483,7 @@ renderAchievements() {
     
     achievementsList.appendChild(item);
   });
-  
+  /*
   // Botão "Ver todas as conquistas" - CORRIGIDO
   const existingBtn = achievementsList.parentElement.querySelector('.view-all-btn');
   if (existingBtn) existingBtn.remove();
@@ -502,6 +502,7 @@ renderAchievements() {
   });
   
   achievementsList.parentElement.appendChild(viewAllBtn);
+  */
 }
 
 // Gerencia e atualiza o painel lateral do jogo
