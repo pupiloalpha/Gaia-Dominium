@@ -257,19 +257,10 @@ this.structureModal?.addEventListener('click', (e) => {
 
   // Cria as regiões no mapa
   createRegionCell(region, index) {
-
   const cell = document.createElement('div');
   cell.className = 'board-cell';
   cell.dataset.regionId = region.id;
   cell.dataset.region = String.fromCharCode(65 + region.id);
-
-  if (region.controller !== null) {
-    cell.classList.add('controlled');
-    const player = gameState.players[region.controller];
-    const rgb = this.hexToRgb(player.color);
-    cell.style.setProperty('--player-rgb', rgb.join(', '));
-    cell.style.setProperty('--player-color', this.rgbToRgba(rgb, 0.8));
-  }
   
   // Estilização baseada no controlador
   if (region.controller !== null) {
@@ -282,8 +273,7 @@ this.structureModal?.addEventListener('click', (e) => {
     cell.classList.add('neutral');
   }
   
-  // CONTEÚDO MINIMALISTA - APENAS INFORMAÇÕES ESSENCIAIS
-  
+  // CONTEÚDO MINIMALISTA
   // Header: Nome da região e nível de exploração
   const header = document.createElement('div');
   header.className = 'flex items-center justify-between mb-1';
@@ -294,7 +284,7 @@ this.structureModal?.addEventListener('click', (e) => {
   
   // Recursos: Apenas ícones (sem números)
   const resources = document.createElement('div');
-  resources.className = 'flex items-center justify-center gap-1 mb-2';
+  resources.className = 'flex items-center justify-center gap-1 mb-2 flex-wrap';
   
   // Mostrar apenas ícones dos recursos disponíveis
   Object.entries(region.resources).forEach(([key, value]) => {
@@ -302,7 +292,7 @@ this.structureModal?.addEventListener('click', (e) => {
       const span = document.createElement('span');
       span.className = 'text-base';
       span.innerHTML = RESOURCE_ICONS[key];
-      span.title = `${value} ${key}`; // Tooltip nativo
+      span.title = `${value} ${key}`;
       resources.appendChild(span);
     }
   });
@@ -337,7 +327,7 @@ this.structureModal?.addEventListener('click', (e) => {
   cell.appendChild(resources);
   cell.appendChild(footer);
   
-  // Event listeners mantidos
+  // Event listeners
   cell.addEventListener('mouseenter', (e) => this.showRegionTooltip(region, e.currentTarget));
   cell.addEventListener('mousemove', (e) => this.positionTooltip(e.currentTarget));
   cell.addEventListener('mouseleave', () => this.hideRegionTooltip());
