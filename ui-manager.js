@@ -832,6 +832,9 @@ getAchievementRewardText(achievement) {
     currentPhase === 'acoes' ? 'text-yellow-400' :
     'text-blue-400'
   }`;
+
+    // Destacar regiões com ações disponíveis
+  this.highlightActionableRegions();
 }
 
   updateTurnInfo() {
@@ -1217,6 +1220,33 @@ renderStructureOptions(region) {
   }
 }
 
+// Destacar regiões com ações disponíveis
+highlightActionableRegions() {
+  const player = gameState.players[gameState.currentPlayerIndex];
+  if (!player) return;
+  
+  document.querySelectorAll('.board-cell').forEach(cell => {
+    cell.classList.remove('action-available');
+    
+    const regionId = Number(cell.dataset.regionId);
+    const region = gameState.regions[regionId];
+    if (!region) return;
+    
+    const isActionPhase = gameState.currentPhase === TURN_PHASES.ACOES;
+    const hasActionsLeft = gameState.actionsLeft > 0;
+    
+    if (isActionPhase && hasActionsLeft) {
+      const isOwnRegion = region.controller === player.id;
+      const isNeutral = region.controller === null;
+      
+      // Destacar se a região tem alguma ação disponível
+      if (isNeutral || isOwnRegion) {
+        cell.classList.add('action-available');
+      }
+    }
+  });
+}
+  
 }
 
 // Exportar para uso global
