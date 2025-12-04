@@ -894,4 +894,207 @@ class GameLogic {
   async handleEndTurn() {
     const player = gameState.players[gameState.currentPlayerIndex];
     
-    switch (
+    switch (this.currentPhase) {
+      case TURN_PHASES.RENDA:
+        this.applyPlayerIncome(player);
+        this.currentPhase = TURN_PHASES.ACOES;
+        gameState.currentPhase = this.currentPhase; // Sincronizar
+        gameState.actionsLeft = GAME_CONFIG.ACTIONS_PER_TURN;
+        
+        addActivityLog({
+          type: 'phase',
+          playerName: player.name,
+          action: 'avançou para fase de Ações',
+          details: '',
+          isEvent: false,
+          isMine: true
+        });
+        
+        window.uiManager.updateUI();
+        window.utils.showFeedback(`${player.name} recebeu renda. Fase: Ações`, 'info');
+        break;
+        
+      case TURN_PHASES.ACOES:
+        if (gameState.actionsLeft > 0) {
+          const confirm = await window.utils.showConfirm(
+            'Ações Restantes',
+            `Você ainda tem ${gameState.actionsLeft} ação(ões) não utilizada(s). Deseja realmente avançar?`
+          );
+          
+          if (!confirm) return;
+        }
+        
+        this.currentPhase = TURN_PHASES.NEGOCIACAO;
+        gameState.currentPhase = this.currentPhase; // Sincronizar
+        
+        addActivityLog({
+          type: 'phase',
+          playerName: player.name,
+          action: 'avançou para fase de Negociação',
+          details: '',
+          isEvent: false,
+          isMine: true
+        });
+        
+        window.uiManager.updateUI();
+        window.utils.showFeedback('Fase: Negociação. Você pode propor trocas com outros jogadores.', 'info');
+        break;
+        
+      case TURN_PHASES.NEGOCIACAO:
+        this.currentPhase = TURN_PHASES.RENDA;
+        gameState.currentPhase = this.currentPhase; // Sincronizar
+        gameState.currentPlayerIndex = (gameState.currentPlayerIndex + 1) % gameState.players.length;
+        
+        if (gameState.currentPlayerIndex === 0) {
+          gameState.turn++;
+          gameState.turnsUntilNextEvent--;
+          achievementsState.fastestWin = Math.min(achievementsState.fastestWin, gameState.turn);
+          
+          if (gameState.turnsUntilNextEvent <= 0) {
+            this.triggerRandomEvent();
+            gameState.turnsUntilNextEvent = 4;
+          }
+        }
+        
+        gameState.actionsLeft = GAME_CONFIG.ACTIONS_PER_TURN;
+        gameState.selectedRegionId = null;
+        this.clearRegionSelection();
+        this.updateEventDuration();
+        
+        addActivityLog({
+          type: 'turn',
+          playerName: 'SISTEMA',
+          action: `Turno ${gameState.turn} iniciado`,
+          details: `Jogador atual: ${gameState.players[gameState.currentPlayerIndex]?.name}`,
+          isEvent: false,
+          isMine: false
+        });
+        
+        window.uiManager.updateUI();
+        window.utils.showFeedback(
+          `Turno do ${gameState.players[gameState.currentPlayerIndex]?.name}. Fase: Renda`,
+          'success'
+        );
+        break;
+    }
+  }
+
+  // Sistema de eventos
+  triggerRandomEvent() {
+    if (this.GAME_EVENTS.length === 0) return;
+    
+    const ev = this.GAME_EVENTS[Math.floor(Math.random() * this.GAME_EVENTS.length)];
+    
+    if (gameState.currentEvent && typeof gameState.currentEvent.remove === 'function') {
+      gameState.currentEvent.remove(gameState);
+    }
+    
+    gameState.currentEvent = ev;
+    gameState.eventTurnsLeft = ev.duration;
+    gameState.eventModifiers = {};
+    
+    if (typeof ev.apply === 'function') {
+      ev.apply(gameState);
+    }
+    
+    addActivityLog({
+      type: 'event',
+      playerName: 'GAIA',
+      action: `disparou evento: ${ev.name}`,
+      details: ev.description,
+      isEvent: true,
+      isMine: false
+    });
+    
+    document.getElementById('eventModal')?.classList.remove('hidden');
+    
+    setTimeout(() => {
+      window.uiManager.updateEventBanner();
+    }, 100);
+  }
+
+  updateEventDuration() {
+    if (gameState.currentEvent && gameState.eventTurnsLeft > 0) {
+      gameState.eventTurnsLeft -= 1;
+      
+      if (gameState.eventTurnsLeft <= 0) {
+        if (typeof gameState.currentEvent.remove === 'function') {
+          gameState.currentEvent.remove(gameState);
+        }
+        gameState.currentEvent = null;
+        gameState.eventModifiers = {};
+        window.utils.showFeedback('O evento global terminou.', 'info');
+      }
+      
+      window.uiManager.updateEventBanner();
+    }
+  }
+
+  // Utilitários
+  clearRegionSelection() {
+    gameState.selectedRegionId = null;
+    document.querySelectorAll('.board-cell').forEach(c => c.classList.remove('region-selected'));
+  }
+
+  checkVictory() {
+    const winner = gameState.players.find(p => p.victoryPoints >= GAME_CONFIG.VICTORY_POINTS);
+    if (winner) {
+      window.utils.showFeedback(`${winner.name} venceu o jogo!`, 'success');
+      
+      document.getElementById('actionExplore')?.setAttribute('disabled', 'true');
+      document.getElementById('actionCollect')?.setAttribute('disabled', 'true');
+      document.getElementById('actionBuild')?.setAttribute('disabled', 'true');
+      document.getElementById('actionNegotiate')?.setAttribute('disabled', 'true');
+      document.getElementById('endTurnBtn')?.setAttribute('disabled', 'true');
+      
+      document.getElementById('victoryModal')?.classList.remove('hidden');
+      document.getElementById('victoryModalTitle').textContent = 'Vitória!';
+      document.getElementById('victoryModalMessage').textContent = 
+        `Parabéns, ${winner.name}! Você venceu Gaia!`;
+      
+      achievementsState.wins++;
+      setAchievementsState(achievementsState);
+      
+      addActivityLog({
+        type: 'victory',
+        playerName: winner.name,
+        action: 'venceu o jogo!',
+        details: `${winner.victoryPoints} PV`,
+        isEvent: false,
+        isMine: winner.id === gameState.currentPlayerIndex
+      });
+    }
+  }
+
+  updatePlayerBiomes(playerId) {
+    const player = gameState.players[playerId];
+    const playerStats = achievementsState.playerAchievements[playerId];
+    
+    if (!playerStats) return;
+    
+    playerStats.controlledBiomes.clear();
+    
+    player.regions.forEach(regionId => {
+      const region = gameState.regions[regionId];
+      playerStats.controlledBiomes.add(region.biome);
+    });
+    
+    const newAchievements = checkAchievements(playerId);
+    if (newAchievements.length > 0) {
+      newAchievements.forEach(achievementName => {
+        window.utils.showFeedback(`🎉 Conquista Desbloqueada: ${achievementName}!`, 'success');
+        
+        addActivityLog({
+          type: 'achievement',
+          playerName: player.name,
+          action: 'desbloqueou conquista',
+          details: achievementName,
+          isEvent: false,
+          isMine: true
+        });
+      });
+    }
+  }
+}
+
+export { GameLogic };
