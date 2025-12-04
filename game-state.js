@@ -15,11 +15,11 @@ let gameState = {
   eventTurnsLeft: 0,
   eventModifiers: {},
   turnsUntilNextEvent: 4,
-  currentPhase: 'renda'
+  currentPhase: 'renda' 
 };
 
 let activityLogHistory = [];
-let currentPhase = 'renda';
+let currentPhase = 'renda'; 
 
 let achievementsState = {
   // Contadores globais
@@ -192,4 +192,3 @@ export {
   checkAchievements,
   updateMaxResources
 };
-
