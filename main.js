@@ -38,21 +38,17 @@ document.addEventListener('DOMContentLoaded', () => {
 function initializeEnhancedMap() {
   console.log('🗺️ Sistema de mapa aprimorado inicializado');
   
-  // Configurar estilo do mapa
-  const gameMap = document.getElementById('gameMap');
-  if (gameMap) {
-    gameMap.style.backgroundImage = "url('gaia-mapa.png')";
-    gameMap.style.backgroundSize = 'cover';
-    gameMap.style.backgroundPosition = 'center';
-    gameMap.style.backgroundRepeat = 'no-repeat';
-  }
-  
   // Forçar redesenho do mapa
   setTimeout(() => {
     if (window.uiManager && window.uiManager.renderBoard) {
       window.uiManager.renderBoard();
     }
-  }, 100);
+    
+    // Inicializar zoom após o mapa ser renderizado
+    setTimeout(() => {
+      Utils.setupMapZoom();
+    }, 100);
+  }, 200);
 }
 
 // Função para configurar os tabs do manual (mantida do código original)
