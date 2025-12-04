@@ -406,64 +406,41 @@ class GameLogic {
   }
 
   applyPlayerIncome(player) {
-    const { resources, pv } = this.calculatePlayerIncome(player);
-    
-    // Adicionar recursos
-    Object.keys(resources).forEach(resource => {
-      player.resources[resource] += resources[resource];
-    });
-    
-    // Adicionar PV por turno das estruturas
-    if (pv > 0) {
-      player.victoryPoints += pv;
-    }
-    
-    // Atualizar recursos máximos para conquista Magnata
-    updateMaxResources(player.id);
-    
-    // Verificar conquistas baseadas em recursos
-    const newAchievements = checkAchievements(player.id);
-    if (newAchievements.length > 0) {
-      newAchievements.forEach(achievementName => {
-        window.utils.showFeedback(`🎉 Conquista Desbloqueada: ${achievementName}!`, 'success');
-        
-        addActivityLog({
-          type: 'achievement',
-          playerName: player.name,
-          action: 'desbloqueou conquista',
-          details: achievementName,
-          isEvent: false,
-          isMine: true
-        });
-      });
-    }
-    
-    // Feedback
-    const incomeText = Object.entries(resources)
-      .filter(([_, amount]) => amount > 0)
-      .map(([resource, amount]) => `+${amount} ${resource}`)
-      .join(', ');
-    
-    const feedbackMessages = [];
-    if (incomeText) {
-      feedbackMessages.push(`Recursos: ${incomeText}`);
-    }
-    if (pv > 0) {
-      feedbackMessages.push(`+${pv} PV de estruturas`);
-    }
-    
-    if (feedbackMessages.length > 0) {
-      window.utils.showFeedback(`${player.name} recebeu: ${feedbackMessages.join(' | ')}`, 'success');
-      addActivityLog({
-        type: 'income',
-        playerName: player.name,
-        action: 'recebeu renda',
-        details: feedbackMessages.join(' | '),
-        isEvent: false,
-        isMine: player.id === gameState.currentPlayerIndex
-      });
-    }
+  const { resources, pv } = this.calculatePlayerIncome(player);
+  
+  // Adicionar recursos (agora inteiros)
+  Object.keys(resources).forEach(resource => {
+    player.resources[resource] += Math.round(resources[resource]);
+  });
+  
+  // Adicionar PV por turno das estruturas
+  if (pv > 0) {
+    player.victoryPoints += Math.round(pv);
   }
+  
+  // Atualizar recursos máximos para conquista Magnata
+  updateMaxResources(player.id);
+  
+  // Verificar conquistas baseadas em recursos
+  const newAchievements = checkAchievements(player.id);
+  if (newAchievements.length > 0) {
+    newAchievements.forEach(achievementName => {
+      window.utils.showFeedback(`🎉 Conquista Desbloqueada: ${achievementName}!`, 'success');
+      
+      addActivityLog({
+        type: 'achievement',
+        playerName: player.name,
+        action: 'desbloqueou conquista',
+        details: achievementName,
+        isEvent: false,
+        isMine: true
+      });
+    });
+  }
+  
+  // Retornar os valores para feedback
+  return { resources, pv };
+}
 
   // Sistema de ações
   canAffordAction(actionType) {
@@ -892,92 +869,121 @@ class GameLogic {
   }
 
   async handleEndTurn() {
-    const player = gameState.players[gameState.currentPlayerIndex];
-    
-    switch (this.currentPhase) {
-      case TURN_PHASES.RENDA:
-        this.applyPlayerIncome(player);
-        this.currentPhase = TURN_PHASES.ACOES;
-        gameState.currentPhase = this.currentPhase; // Sincronizar
-        gameState.actionsLeft = GAME_CONFIG.ACTIONS_PER_TURN;
-        
-        addActivityLog({
-          type: 'phase',
-          playerName: player.name,
-          action: 'avançou para fase de Ações',
-          details: '',
-          isEvent: false,
-          isMine: true
-        });
-        
-        window.uiManager.updateUI();
-        window.utils.showFeedback(`${player.name} recebeu renda. Fase: Ações`, 'info');
-        break;
-        
-      case TURN_PHASES.ACOES:
-        if (gameState.actionsLeft > 0) {
-          const confirm = await window.utils.showConfirm(
-            'Ações Restantes',
-            `Você ainda tem ${gameState.actionsLeft} ação(ões) não utilizada(s). Deseja realmente avançar?`
-          );
-          
-          if (!confirm) return;
-        }
-        
-        this.currentPhase = TURN_PHASES.NEGOCIACAO;
-        gameState.currentPhase = this.currentPhase; // Sincronizar
-        
-        addActivityLog({
-          type: 'phase',
-          playerName: player.name,
-          action: 'avançou para fase de Negociação',
-          details: '',
-          isEvent: false,
-          isMine: true
-        });
-        
-        window.uiManager.updateUI();
-        window.utils.showFeedback('Fase: Negociação. Você pode propor trocas com outros jogadores.', 'info');
-        break;
-        
-      case TURN_PHASES.NEGOCIACAO:
-        this.currentPhase = TURN_PHASES.RENDA;
-        gameState.currentPhase = this.currentPhase; // Sincronizar
-        gameState.currentPlayerIndex = (gameState.currentPlayerIndex + 1) % gameState.players.length;
-        
-        if (gameState.currentPlayerIndex === 0) {
-          gameState.turn++;
-          gameState.turnsUntilNextEvent--;
-          achievementsState.fastestWin = Math.min(achievementsState.fastestWin, gameState.turn);
-          
-          if (gameState.turnsUntilNextEvent <= 0) {
-            this.triggerRandomEvent();
-            gameState.turnsUntilNextEvent = 4;
+  const player = gameState.players[gameState.currentPlayerIndex];
+  
+  switch (gameState.currentPhase) { // Usar gameState.currentPhase diretamente
+    case TURN_PHASES.RENDA:
+      // Aplicar renda e obter valores
+      const income = this.applyPlayerIncome(player);
+      
+      // Feedback da renda
+      const incomeText = Object.entries(income.resources)
+        .filter(([_, amount]) => amount > 0)
+        .map(([resource, amount]) => `+${Math.round(amount)} ${resource}`)
+        .join(', ');
+      
+      const feedbackMessages = [];
+      if (incomeText) {
+        feedbackMessages.push(`Recursos: ${incomeText}`);
+      }
+      if (income.pv > 0) {
+        feedbackMessages.push(`+${Math.round(income.pv)} PV de estruturas`);
+      }
+      
+      if (feedbackMessages.length > 0) {
+        // Mostrar feedback e mudar fase após fechar
+        await window.utils.showFeedbackWithCallback(
+          'Renda Recebida',
+          `${player.name} recebeu: ${feedbackMessages.join(' | ')}`,
+          'success',
+          () => {
+            // Mudar para fase de ações após fechar o modal
+            gameState.currentPhase = TURN_PHASES.ACOES;
+            gameState.actionsLeft = GAME_CONFIG.ACTIONS_PER_TURN;
+            
+            addActivityLog({
+              type: 'phase',
+              playerName: player.name,
+              action: 'avançou para fase de Ações',
+              details: '',
+              isEvent: false,
+              isMine: true
+            });
+            
+            window.uiManager.updateUI();
+            window.utils.showFeedback(`${player.name} agora está na fase de Ações. Você tem ${gameState.actionsLeft} ações.`, 'info');
           }
-        }
-        
-        gameState.actionsLeft = GAME_CONFIG.ACTIONS_PER_TURN;
-        gameState.selectedRegionId = null;
-        this.clearRegionSelection();
-        this.updateEventDuration();
-        
-        addActivityLog({
-          type: 'turn',
-          playerName: 'SISTEMA',
-          action: `Turno ${gameState.turn} iniciado`,
-          details: `Jogador atual: ${gameState.players[gameState.currentPlayerIndex]?.name}`,
-          isEvent: false,
-          isMine: false
-        });
-        
-        window.uiManager.updateUI();
-        window.utils.showFeedback(
-          `Turno do ${gameState.players[gameState.currentPlayerIndex]?.name}. Fase: Renda`,
-          'success'
         );
-        break;
-    }
+      } else {
+        // Se não houve renda, mudar direto
+        gameState.currentPhase = TURN_PHASES.ACOES;
+        gameState.actionsLeft = GAME_CONFIG.ACTIONS_PER_TURN;
+        window.uiManager.updateUI();
+      }
+      break;
+      
+    case TURN_PHASES.ACOES:
+      if (gameState.actionsLeft > 0) {
+        const confirm = await window.utils.showConfirm(
+          'Ações Restantes',
+          `Você ainda tem ${gameState.actionsLeft} ação(ões) não utilizada(s). Deseja realmente avançar?`
+        );
+        
+        if (!confirm) return;
+      }
+      
+      gameState.currentPhase = TURN_PHASES.NEGOCIACAO;
+      
+      addActivityLog({
+        type: 'phase',
+        playerName: player.name,
+        action: 'avançou para fase de Negociação',
+        details: '',
+        isEvent: false,
+        isMine: true
+      });
+      
+      window.uiManager.updateUI();
+      window.utils.showFeedback('Fase: Negociação. Você pode propor trocas com outros jogadores.', 'info');
+      break;
+      
+    case TURN_PHASES.NEGOCIACAO:
+      gameState.currentPhase = TURN_PHASES.RENDA;
+      gameState.currentPlayerIndex = (gameState.currentPlayerIndex + 1) % gameState.players.length;
+      
+      if (gameState.currentPlayerIndex === 0) {
+        gameState.turn++;
+        gameState.turnsUntilNextEvent--;
+        achievementsState.fastestWin = Math.min(achievementsState.fastestWin, gameState.turn);
+        
+        if (gameState.turnsUntilNextEvent <= 0) {
+          this.triggerRandomEvent();
+          gameState.turnsUntilNextEvent = 4;
+        }
+      }
+      
+      gameState.actionsLeft = GAME_CONFIG.ACTIONS_PER_TURN;
+      gameState.selectedRegionId = null;
+      this.clearRegionSelection();
+      this.updateEventDuration();
+      
+      addActivityLog({
+        type: 'turn',
+        playerName: 'SISTEMA',
+        action: `Turno ${gameState.turn} iniciado`,
+        details: `Jogador atual: ${gameState.players[gameState.currentPlayerIndex]?.name}`,
+        isEvent: false,
+        isMine: false
+      });
+      
+      window.uiManager.updateUI();
+      window.utils.showFeedback(
+        `Turno do ${gameState.players[gameState.currentPlayerIndex]?.name}. Fase: Renda`,
+        'success'
+      );
+      break;
   }
+}
 
   // Sistema de eventos
   triggerRandomEvent() {
