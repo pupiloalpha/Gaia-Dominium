@@ -351,59 +351,61 @@ class GameLogic {
 
   // Sistema de renda
   calculatePlayerIncome(player) {
-    let income = { madeira: 0, pedra: 0, ouro: 0, agua: 0 };
-    let pvIncome = 0;
+  let income = { madeira: 0, pedra: 0, ouro: 0, agua: 0 };
+  let pvIncome = 0;
+  
+  player.regions.forEach(regionId => {
+    const region = gameState.regions[regionId];
     
-    player.regions.forEach(regionId => {
-      const region = gameState.regions[regionId];
-      
-      // Renda base do bioma
-      const biomeIncome = BIOME_INCOME[region.biome] || {};
-      Object.keys(biomeIncome).forEach(resource => {
-        income[resource] += biomeIncome[resource];
-      });
-      
-      // Bônus de exploração
-      const explorationMultiplier = 1 + (EXPLORATION_BONUS[region.explorationLevel] || 0);
+    // Renda base do bioma (valores inteiros)
+    const biomeIncome = BIOME_INCOME[region.biome] || {};
+    Object.keys(biomeIncome).forEach(resource => {
+      income[resource] += biomeIncome[resource];
+    });
+    
+    // Bônus de exploração (soma inteira, não multiplicação)
+    const explorationBonus = EXPLORATION_BONUS[region.explorationLevel] || 0;
+    if (explorationBonus > 0) {
       Object.keys(income).forEach(resource => {
-        income[resource] *= explorationMultiplier;
+        income[resource] += explorationBonus;
       });
-      
-      // Renda das estruturas
-      region.structures.forEach(structure => {
-        if (STRUCTURE_INCOME[structure]) {
-          Object.keys(STRUCTURE_INCOME[structure]).forEach(resource => {
-            if (resource === 'pv') {
-              pvIncome += STRUCTURE_INCOME[structure][resource];
-            } else {
-              income[resource] += STRUCTURE_INCOME[structure][resource];
-            }
-          });
-        }
-      });
+    }
+    
+    // Renda das estruturas (valores inteiros)
+    region.structures.forEach(structure => {
+      if (STRUCTURE_INCOME[structure]) {
+        Object.keys(STRUCTURE_INCOME[structure]).forEach(resource => {
+          if (resource === 'pv') {
+            pvIncome += STRUCTURE_INCOME[structure][resource];
+          } else {
+            income[resource] += STRUCTURE_INCOME[structure][resource];
+          }
+        });
+      }
     });
-    
-    // Aplicar modificadores de eventos
-    if (gameState.eventModifiers.madeiraMultiplier) {
-      income.madeira *= gameState.eventModifiers.madeiraMultiplier;
-    }
-    if (gameState.eventModifiers.aguaMultiplier) {
-      income.agua *= gameState.eventModifiers.aguaMultiplier;
-    }
-    if (gameState.eventModifiers.pedraMultiplier) {
-      income.pedra *= gameState.eventModifiers.pedraMultiplier;
-    }
-    if (gameState.eventModifiers.ouroMultiplier) {
-      income.ouro *= gameState.eventModifiers.ouroMultiplier;
-    }
-    
-    // Arredondar
-    Object.keys(income).forEach(resource => {
-      income[resource] = Math.round(income[resource] * 100) / 100;
-    });
-    
-    return { resources: income, pv: pvIncome };
+  });
+  
+  // Aplicar modificadores de eventos (arredondando para inteiros)
+  if (gameState.eventModifiers.madeiraMultiplier) {
+    income.madeira = Math.round(income.madeira * gameState.eventModifiers.madeiraMultiplier);
   }
+  if (gameState.eventModifiers.aguaMultiplier) {
+    income.agua = Math.round(income.agua * gameState.eventModifiers.aguaMultiplier);
+  }
+  if (gameState.eventModifiers.pedraMultiplier) {
+    income.pedra = Math.round(income.pedra * gameState.eventModifiers.pedraMultiplier);
+  }
+  if (gameState.eventModifiers.ouroMultiplier) {
+    income.ouro = Math.round(income.ouro * gameState.eventModifiers.ouroMultiplier);
+  }
+  
+  // Garantir que não há decimais
+  Object.keys(income).forEach(resource => {
+    income[resource] = Math.max(0, Math.round(income[resource]));
+  });
+  
+  return { resources: income, pv: Math.round(pvIncome) };
+}
 
   applyPlayerIncome(player) {
   const { resources, pv } = this.calculatePlayerIncome(player);
