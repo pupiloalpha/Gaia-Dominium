@@ -25,18 +25,18 @@ const RESOURCE_ICONS = {
 };
 
 const BIOME_INCOME = {
-  'Floresta Tropical': { madeira: 1, pedra: 0, ouro: 0.5, agua: 1.5 },
-  'Floresta Temperada': { madeira: 1.5, pedra: 0.5, ouro: 0, agua: 1 },
-  'Savana': { madeira: 0.5, pedra: 0, ouro: 1.5, agua: 0.5 },
-  'Pântano': { madeira: 0.5, pedra: 1, ouro: 0, agua: 2 }
+  'Floresta Tropical': { madeira: 1, pedra: 0, ouro: 1, agua: 2 },
+  'Floresta Temperada': { madeira: 2, pedra: 1, ouro: 0, agua: 1 },
+  'Savana': { madeira: 1, pedra: 0, ouro: 2, agua: 1 },
+  'Pântano': { madeira: 0, pedra: 1, ouro: 0, agua: 2 }
 };
 
 const STRUCTURE_INCOME = {
-  'Abrigo': { madeira: 0.5, agua: 0.5 },
-  'Torre de Vigia': { pv: 1 }, // +1 PV por turno
-  'Mercado': { ouro: 1 }, // +1 Ouro por turno
-  'Laboratório': { ouro: 0.5 }, // +0.5 Ouro por turno
-  'Santuário': { pv: 0.5 } // +0.5 PV por turno
+  'Abrigo': { madeira: 1, agua: 1 },
+  'Torre de Vigia': { pv: 1 },
+  'Mercado': { ouro: 1 },
+  'Laboratório': { ouro: 1 },
+  'Santuário': { pv: 1 }
 };
 
 const STRUCTURE_COSTS = {
@@ -77,9 +77,9 @@ const STRUCTURE_LIMITS = {
 
 const EXPLORATION_BONUS = {
   0: 0,
-  1: 0.25,
-  2: 0.5,
-  3: 1.0
+  1: 0,    // Reduzido para não gerar decimais
+  2: 1,    // +1 recurso extra
+  3: 2     // +2 recursos extras
 };
 
 const TURN_PHASES = {
