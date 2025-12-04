@@ -180,10 +180,9 @@ input[type="text"]:focus, select:focus, input[type="number"]:focus {
 
 /* Fundo do mapa - imagem completa visível */
 #gameMap {
-  background-image: url('gaia-mapa.png');
-  background-size: cover;
-  background-position: center;
-  background-repeat: no-repeat;
+  position: relative;
+  background-color: #0a0a0a; /* Cor de fundo caso a imagem não cubra tudo */
+  overflow: hidden;
 }
 
 /* Remove a imagem como elemento separado */
@@ -191,21 +190,60 @@ input[type="text"]:focus, select:focus, input[type="number"]:focus {
   display: none;
 }
 
-/* Células individuais do tabuleiro - TOTALMENTE TRANSPARENTES */
+#mapViewport {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Container da imagem com proporções corretas */
+#mapImageContainer {
+  position: relative;
+  max-width: 100%;
+  max-height: 100%;
+  aspect-ratio: 1/1; /* Força proporção quadrada */
+}
+
+#mapImage {
+  width: 100%;
+  height: 100%;
+  object-fit: contain; /* Mantém proporção sem cortar */
+  pointer-events: none;
+  user-select: none;
+}
+
+/* Container do tabuleiro sobre a imagem */
+#boardOverlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  grid-template-rows: repeat(5, 1fr);
+  gap: 2px;
+  padding: 2%;
+}
+
+/* Células do tabuleiro ajustadas */
 .board-cell {
   position: relative;
-  border: 1px solid rgba(255, 255, 255, 0.15);
-  background: transparent !important;
+  border: 1px solid rgba(255, 255, 255, 0.2);
   border-radius: 4px;
   transition: all 0.2s ease;
   display: flex;
   flex-direction: column;
   justify-content: space-between;
-  padding: 6px;
+  padding: 8px;
   overflow: hidden;
   cursor: pointer;
   user-select: none;
-  backdrop-filter: none !important;
+  background: rgba(0, 0, 0, 0.4); /* Fundo semitransparente */
+  backdrop-filter: blur(2px);
 }
 
 /* Overlay de cor do jogador com transparência */
@@ -289,20 +327,6 @@ input[type="text"]:focus, select:focus, input[type="number"]:focus {
   }
 }
 
-/* Tooltip aprimorado */
-#regionTooltip {
-  background: linear-gradient(
-    135deg,
-    rgba(20, 20, 30, 0.95) 0%,
-    rgba(10, 10, 20, 0.98) 100%
-  );
-  backdrop-filter: blur(10px);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  box-shadow: 
-    0 10px 30px rgba(0, 0, 0, 0.5),
-    0 0 0 1px rgba(248, 214, 92, 0.1);
-}
-
 /* Indicador de nível de exploração */
 .board-cell .text-xs:last-child {
   background: rgba(0, 0, 0, 0.6);
@@ -313,6 +337,69 @@ input[type="text"]:focus, select:focus, input[type="number"]:focus {
   align-items: center;
   justify-content: center;
   border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+/* Tile A–Y → posição do pedaço do mapa */
+.board-cell[data-region="A"]::before { background-position:   0%   0%; }
+.board-cell[data-region="B"]::before { background-position:  25%   0%; }
+.board-cell[data-region="C"]::before { background-position:  50%   0%; }
+.board-cell[data-region="D"]::before { background-position:  75%   0%; }
+.board-cell[data-region="E"]::before { background-position: 100%   0%; }
+
+.board-cell[data-region="F"]::before { background-position:   0%  25%; }
+.board-cell[data-region="G"]::before { background-position:  25%  25%; }
+.board-cell[data-region="H"]::before { background-position:  50%  25%; }
+.board-cell[data-region="I"]::before { background-position:  75%  25%; }
+.board-cell[data-region="J"]::before { background-position: 100%  25%; }
+
+.board-cell[data-region="K"]::before { background-position:   0%  50%; }
+.board-cell[data-region="L"]::before { background-position:  25%  50%; }
+.board-cell[data-region="M"]::before { background-position:  50%  50%; }
+.board-cell[data-region="N"]::before { background-position:  75%  50%; }
+.board-cell[data-region="O"]::before { background-position: 100%  50%; }
+
+.board-cell[data-region="P"]::before { background-position:   0%  75%; }
+.board-cell[data-region="Q"]::before { background-position:  25%  75%; }
+.board-cell[data-region="R"]::before { background-position:  50%  75%; }
+.board-cell[data-region="S"]::before { background-position:  75%  75%; }
+.board-cell[data-region="T"]::before { background-position: 100%  75%; }
+
+.board-cell[data-region="U"]::before { background-position:   0% 100%; }
+.board-cell[data-region="V"]::before { background-position:  25% 100%; }
+.board-cell[data-region="W"]::before { background-position:  50% 100%; }
+.board-cell[data-region="X"]::before { background-position:  75% 100%; }
+.board-cell[data-region="Y"]::before { background-position: 100% 100%; }
+
+.board-cell:hover {
+  background: rgba(0, 0, 0, 0.6);
+  transform: scale(1.02);
+  z-index: 10;
+}
+
+/* Destaque ao passar o mouse */
+.board-cell:hover::before {
+  opacity: 0.8;
+}
+
+/* neutral vs controlled tint */
+.board-cell.controlled {
+  background: rgba(var(--player-rgb), 0.3) !important;
+  border-left: 6px solid var(--player-color);
+}
+
+.board-cell.neutral{ border-color: rgba(255,255,255,0.3) }
+
+/* Seleção visual - funciona para QUALQUER região */
+.board-cell.region-selected {
+    border: 3px solid var(--accent) !important;
+    box-shadow: 0 0 25px rgba(248,214,92,0.5), 0 8px 20px rgba(248,214,92,0.3) !important;
+    transform: translateY(-2px) scale(1.02) !important;
+    z-index: 10;
+}
+
+.board-cell.region-selected::before {
+  opacity: 0.65; /* aumenta visibilidade do tile selecionado */
+  filter: saturate(1.05) contrast(1.02);
 }
 
 /* ==== SIDEBAR ==== */
@@ -350,6 +437,16 @@ input[type="text"]:focus, select:focus, input[type="number"]:focus {
   pointer-events: none !important;
   transition: opacity 0.15s ease, transform 0.15s ease;
   z-index: 90;
+  background: linear-gradient(
+    135deg,
+    rgba(20, 20, 30, 0.95) 0%,
+    rgba(10, 10, 20, 0.98) 100%
+  );
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 
+    0 10px 30px rgba(0, 0, 0, 0.5),
+    0 0 0 1px rgba(248, 214, 92, 0.1);
 }
 
 #regionTooltip.visible {
@@ -808,85 +905,6 @@ border:1px solid rgba(255,255,255,0.06);
 backdrop-filter: blur(12px) saturate(120%);
 box-shadow:0 12px 40px rgba(0,0,0,0.6);
 z-index: 9999;
-}
-  
-  /* Células individuais do tabuleiro */
-.board-cell {
-  position: relative;
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  background: rgba(30, 30, 30, 0.8);
-  backdrop-filter: blur(4px);
-  border-radius: 4px;
-  transition: all 0.2s ease;
-  display: flex;
-  flex-direction: column;
-  justify-content: space-between;
-  padding: 6px;
-  overflow: hidden;
-}
-
-
-/* Tile A–Y → posição do pedaço do mapa */
-.board-cell[data-region="A"]::before { background-position:   0%   0%; }
-.board-cell[data-region="B"]::before { background-position:  25%   0%; }
-.board-cell[data-region="C"]::before { background-position:  50%   0%; }
-.board-cell[data-region="D"]::before { background-position:  75%   0%; }
-.board-cell[data-region="E"]::before { background-position: 100%   0%; }
-
-.board-cell[data-region="F"]::before { background-position:   0%  25%; }
-.board-cell[data-region="G"]::before { background-position:  25%  25%; }
-.board-cell[data-region="H"]::before { background-position:  50%  25%; }
-.board-cell[data-region="I"]::before { background-position:  75%  25%; }
-.board-cell[data-region="J"]::before { background-position: 100%  25%; }
-
-.board-cell[data-region="K"]::before { background-position:   0%  50%; }
-.board-cell[data-region="L"]::before { background-position:  25%  50%; }
-.board-cell[data-region="M"]::before { background-position:  50%  50%; }
-.board-cell[data-region="N"]::before { background-position:  75%  50%; }
-.board-cell[data-region="O"]::before { background-position: 100%  50%; }
-
-.board-cell[data-region="P"]::before { background-position:   0%  75%; }
-.board-cell[data-region="Q"]::before { background-position:  25%  75%; }
-.board-cell[data-region="R"]::before { background-position:  50%  75%; }
-.board-cell[data-region="S"]::before { background-position:  75%  75%; }
-.board-cell[data-region="T"]::before { background-position: 100%  75%; }
-
-.board-cell[data-region="U"]::before { background-position:   0% 100%; }
-.board-cell[data-region="V"]::before { background-position:  25% 100%; }
-.board-cell[data-region="W"]::before { background-position:  50% 100%; }
-.board-cell[data-region="X"]::before { background-position:  75% 100%; }
-.board-cell[data-region="Y"]::before { background-position: 100% 100%; }
-
-.board-cell:hover {
-  background: rgba(40, 40, 40, 0.8);
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
-}
-
-/* Destaque ao passar o mouse */
-.board-cell:hover::before {
-  opacity: 0.8;
-}
-
-/* neutral vs controlled tint */
-.board-cell.controlled {
-  background: rgba(var(--player-rgb), 0.3) !important;
-  border-left: 6px solid var(--player-color);
-}
-
-.board-cell.neutral{ border-color: rgba(255,255,255,0.3) }
-
-/* Seleção visual - funciona para QUALQUER região */
-.board-cell.region-selected {
-    border: 3px solid var(--accent) !important;
-    box-shadow: 0 0 25px rgba(248,214,92,0.5), 0 8px 20px rgba(248,214,92,0.3) !important;
-    transform: translateY(-2px) scale(1.02) !important;
-    z-index: 10;
-}
-
-.board-cell.region-selected::before {
-  opacity: 0.65; /* aumenta visibilidade do tile selecionado */
-  filter: saturate(1.05) contrast(1.02);
 }
 
 /* ===== ESTILOS PARA MODAIS DE EVENTO COLORIDOS ===== */
