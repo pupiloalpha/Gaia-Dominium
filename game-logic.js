@@ -363,7 +363,7 @@ class GameLogic {
       income[resource] += biomeIncome[resource];
     });
     
-    // Bônus de exploração (soma inteira, não multiplicação)
+    // Bônus de exploração (soma inteira)
     const explorationBonus = EXPLORATION_BONUS[region.explorationLevel] || 0;
     if (explorationBonus > 0) {
       Object.keys(income).forEach(resource => {
@@ -399,54 +399,12 @@ class GameLogic {
     income.ouro = Math.round(income.ouro * gameState.eventModifiers.ouroMultiplier);
   }
   
-  // Garantir que não há decimais
+  // Garantir que não há negativos
   Object.keys(income).forEach(resource => {
-    income[resource] = Math.max(0, Math.round(income[resource]));
+    income[resource] = Math.max(0, income[resource]);
   });
   
-  return { resources: income, pv: Math.round(pvIncome) };
-}
-
-  applyPlayerIncome(player) {
-  const { resources, pv } = this.calculatePlayerIncome(player);
-  
-  // Adicionar recursos (valores inteiros)
-  Object.keys(resources).forEach(resource => {
-    player.resources[resource] += Math.max(0, Math.round(resources[resource]));
-  });
-  
-  // Adicionar PV por turno das estruturas
-  if (pv > 0) {
-    player.victoryPoints += Math.round(pv);
-  }
-  
-  // Atualizar recursos máximos para conquista Magnata
-  updateMaxResources(player.id);
-  
-  // Verificar conquistas baseadas em recursos
-  const newAchievements = checkAchievements(player.id);
-  if (newAchievements.length > 0) {
-    newAchievements.forEach(achievementName => {
-      window.utils.showFeedback(`🎉 Conquista Desbloqueada: ${achievementName}!`, 'success');
-      
-      addActivityLog({
-        type: 'achievement',
-        playerName: player.name,
-        action: 'desbloqueou conquista',
-        details: achievementName,
-        isEvent: false,
-        isMine: true
-      });
-    });
-  }
-  
-  // Retornar valores para feedback
-  return { 
-    resources: Object.fromEntries(
-      Object.entries(resources).map(([key, value]) => [key, Math.round(value)])
-    ), 
-    pv: Math.round(pv) 
-  };
+  return { resources: income, pv: pvIncome };
 }
 
   // Sistema de ações
@@ -878,15 +836,20 @@ class GameLogic {
   async handleEndTurn() {
   const player = gameState.players[gameState.currentPlayerIndex];
   
+  // Log para debug
+  console.log(`Fase atual: ${gameState.currentPhase}, Jogador: ${player.name}`);
+  
   switch (gameState.currentPhase) {
     case TURN_PHASES.RENDA:
+      console.log("Processando fase de renda...");
+      
       // Aplicar renda
       const income = this.applyPlayerIncome(player);
       
       // Preparar mensagem de feedback
       const incomeText = Object.entries(income.resources)
         .filter(([_, amount]) => amount > 0)
-        .map(([resource, amount]) => `+${Math.round(amount)} ${resource}`)
+        .map(([resource, amount]) => `+${amount} ${resource}`)
         .join(', ');
       
       const feedbackMessages = [];
@@ -894,44 +857,38 @@ class GameLogic {
         feedbackMessages.push(`Recursos: ${incomeText}`);
       }
       if (income.pv > 0) {
-        feedbackMessages.push(`+${Math.round(income.pv)} PV de estruturas`);
+        feedbackMessages.push(`+${income.pv} PV`);
       }
       
+      // Mostrar modal e mudar fase quando fechar
       if (feedbackMessages.length > 0) {
-        // Usar showFeedback normal e depois mudar de fase
-        window.utils.showFeedback(
+        await window.utils.showConfirm(
           'Renda Recebida',
-          `${player.name} recebeu: ${feedbackMessages.join(' | ')}`,
-          'success'
+          `${player.name} recebeu: ${feedbackMessages.join(' | ')}`
         );
-        
-        // Mudar para fase de ações após 1.5 segundos (tempo para ler o feedback)
-        setTimeout(() => {
-          gameState.currentPhase = TURN_PHASES.ACOES;
-          gameState.actionsLeft = GAME_CONFIG.ACTIONS_PER_TURN;
-          
-          addActivityLog({
-            type: 'phase',
-            playerName: player.name,
-            action: 'avançou para fase de Ações',
-            details: '',
-            isEvent: false,
-            isMine: true
-          });
-          
-          window.uiManager.updateUI();
-          window.utils.showFeedback(`${player.name} agora está na fase de Ações. Você tem ${gameState.actionsLeft} ações.`, 'info');
-        }, 1500);
-      } else {
-        // Se não houve renda, mudar direto
-        gameState.currentPhase = TURN_PHASES.ACOES;
-        gameState.actionsLeft = GAME_CONFIG.ACTIONS_PER_TURN;
-        window.uiManager.updateUI();
-        window.utils.showFeedback(`${player.name} agora está na fase de Ações. Você tem ${gameState.actionsLeft} ações.`, 'info');
       }
+      
+      // Mudar para fase de ações
+      gameState.currentPhase = TURN_PHASES.ACOES;
+      gameState.actionsLeft = GAME_CONFIG.ACTIONS_PER_TURN;
+      
+      addActivityLog({
+        type: 'phase',
+        playerName: player.name,
+        action: 'avançou para fase de Ações',
+        details: '',
+        isEvent: false,
+        isMine: true
+      });
+      
+      console.log(`Mudou para fase: ${gameState.currentPhase}`);
+      window.uiManager.updateUI();
+      window.utils.showFeedback(`${player.name} agora está na fase de Ações. Você tem ${gameState.actionsLeft} ações.`, 'info');
       break;
       
     case TURN_PHASES.ACOES:
+      console.log("Processando fase de ações...");
+      
       if (gameState.actionsLeft > 0) {
         const confirm = await window.utils.showConfirm(
           'Ações Restantes',
@@ -941,6 +898,7 @@ class GameLogic {
         if (!confirm) return;
       }
       
+      // Mudar para fase de negociação
       gameState.currentPhase = TURN_PHASES.NEGOCIACAO;
       
       addActivityLog({
@@ -952,16 +910,24 @@ class GameLogic {
         isMine: true
       });
       
+      console.log(`Mudou para fase: ${gameState.currentPhase}`);
       window.uiManager.updateUI();
       window.utils.showFeedback('Fase: Negociação. Você pode propor trocas com outros jogadores.', 'info');
       break;
       
     case TURN_PHASES.NEGOCIACAO:
+      console.log("Processando fase de negociação...");
+      
+      // Mudar para fase de renda do próximo jogador
       gameState.currentPhase = TURN_PHASES.RENDA;
       gameState.currentPlayerIndex = (gameState.currentPlayerIndex + 1) % gameState.players.length;
       
+      // Se voltou ao primeiro jogador, incrementar turno
       if (gameState.currentPlayerIndex === 0) {
         gameState.turn++;
+        console.log(`Novo turno: ${gameState.turn}`);
+        
+        // Verificar eventos
         gameState.turnsUntilNextEvent--;
         achievementsState.fastestWin = Math.min(achievementsState.fastestWin, gameState.turn);
         
@@ -971,6 +937,7 @@ class GameLogic {
         }
       }
       
+      // Resetar ações
       gameState.actionsLeft = GAME_CONFIG.ACTIONS_PER_TURN;
       gameState.selectedRegionId = null;
       this.clearRegionSelection();
@@ -985,6 +952,7 @@ class GameLogic {
         isMine: false
       });
       
+      console.log(`Mudou para jogador: ${gameState.currentPlayerIndex}, Fase: ${gameState.currentPhase}`);
       window.uiManager.updateUI();
       window.utils.showFeedback(
         `Turno do ${gameState.players[gameState.currentPlayerIndex]?.name}. Fase: Renda`,
