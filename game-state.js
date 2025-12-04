@@ -15,6 +15,7 @@ let gameState = {
   eventTurnsLeft: 0,
   eventModifiers: {},
   turnsUntilNextEvent: 4
+  currentPhase: 'renda'
 };
 
 let activityLogHistory = [];
