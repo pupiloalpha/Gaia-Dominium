@@ -96,6 +96,11 @@ this.structureOptions = document.getElementById('structureOptions');
     document.getElementById('manualIcon')?.addEventListener('click', () => this.openManual());
     document.getElementById('manualIconNavbar')?.addEventListener('click', () => this.openManual());
     document.getElementById('manualCloseBtn')?.addEventListener('click', () => this.closeManual());
+
+    // Botão de conquistas na navbar
+  document.getElementById('achievementsNavBtn')?.addEventListener('click', () => {
+    this.renderAchievementsModal();
+  });
     
 // Structure modal
 this.structureModalClose?.addEventListener('click', () => this.closeStructureModal());
@@ -412,82 +417,101 @@ renderAchievements() {
   
   achievementsList.innerHTML = '';
   
-  // Obter jogador atual
   const playerIndex = gameState.selectedPlayerForSidebar;
   const player = gameState.players[playerIndex];
   if (!player) return;
   
   const unlockedAchievements = achievementsState.unlockedAchievements[playerIndex] || [];
-  const playerStats = achievementsState.playerAchievements[playerIndex];
+  const playerStats = achievementsState.playerAchievements[playerIndex] || {};
   
-  // Converter ACHIEVEMENTS_CONFIG para array
-  const achievementsArray = Object.values(ACHIEVEMENTS_CONFIG);
+  // Converter para array e pegar apenas algumas para mostrar na sidebar
+  const achievementsArray = Object.values(ACHIEVEMENTS_CONFIG).slice(0, 5);
   
-  // Renderizar todas as conquistas
+  if (achievementsArray.length === 0) {
+    achievementsList.innerHTML = `
+      <div class="text-center py-4">
+        <p class="text-gray-500 text-sm">Nenhuma conquista disponível</p>
+      </div>
+    `;
+    return;
+  }
+  
   achievementsArray.forEach(achievement => {
     const isUnlocked = unlockedAchievements.includes(achievement.id);
     
+    // Apenas mostrar conquistas desbloqueadas ou em progresso
     const item = document.createElement('div');
-    item.className = `achievement ${isUnlocked ? 'achievement-unlocked' : 'achievement-locked'}`;
+    item.className = `achievement-item p-3 rounded-lg border ${isUnlocked ? 'border-yellow-500/50 bg-yellow-900/10' : 'border-gray-700/50 bg-gray-800/20'}`;
     
-    // Determinar progresso
     let progress = 0;
     let progressText = '';
     
     switch (achievement.type) {
       case 'explored':
-        progress = playerStats?.explored || 0;
-        progressText = `${progress}/${achievement.requirement} regiões exploradas`;
+        progress = playerStats.explored || 0;
+        progressText = `${progress}/${achievement.requirement}`;
         break;
       case 'built':
-        progress = playerStats?.built || 0;
-        progressText = `${progress}/${achievement.requirement} estruturas construídas`;
+        progress = playerStats.built || 0;
+        progressText = `${progress}/${achievement.requirement}`;
         break;
       case 'negotiated':
-        progress = playerStats?.negotiated || 0;
-        progressText = `${progress}/${achievement.requirement} negociações`;
+        progress = playerStats.negotiated || 0;
+        progressText = `${progress}/${achievement.requirement}`;
         break;
       case 'collected':
-        progress = playerStats?.collected || 0;
-        progressText = `${progress}/${achievement.requirement} regiões coletadas`;
-        break;
-      case 'biomes':
-        progress = playerStats?.controlledBiomes?.size || 0;
-        progressText = `${progress}/${achievement.requirement} biomas diferentes`;
-        break;
-      case 'resources':
-        const resourceCount = Object.values(playerStats?.maxResources || {})
-          .filter(value => value >= achievement.requirement).length;
-        progress = resourceCount;
-        progressText = `${progress}/4 recursos com ${achievement.requirement}+`;
+        progress = playerStats.collected || 0;
+        progressText = `${progress}/${achievement.requirement}`;
         break;
       default:
-        progressText = isUnlocked ? 'Desbloqueado' : 'Bloqueado';
+        progressText = isUnlocked ? '✅' : '🔒';
     }
     
     const progressPercent = Math.min(100, (progress / achievement.requirement) * 100);
     
     item.innerHTML = `
-      <span class="achievement-icon text-xl">${achievement.icon}</span>
-      <div class="achievement-info flex-1">
-        <div class="achievement-name ${isUnlocked ? 'text-yellow-300' : 'text-gray-400'} font-semibold">
-          ${achievement.name}
-          ${isUnlocked ? ' ✓' : ''}
-        </div>
-        <div class="achievement-desc text-xs ${isUnlocked ? 'text-green-300' : 'text-gray-500'}">
-          ${achievement.description}
-        </div>
-        <div class="achievement-progress mt-1">
-          <div class="w-full bg-gray-700 rounded-full h-1.5">
-            <div class="bg-green-500 h-1.5 rounded-full" style="width: ${progressPercent}%"></div>
+      <div class="flex items-center gap-3">
+        <span class="text-xl ${isUnlocked ? 'text-yellow-300' : 'text-gray-500'}">
+          ${achievement.icon}
+        </span>
+        <div class="flex-1 min-w-0">
+          <div class="flex justify-between items-center mb-1">
+            <span class="text-sm font-medium ${isUnlocked ? 'text-white' : 'text-gray-400'} truncate">
+              ${achievement.name}
+            </span>
+            <span class="text-xs ${isUnlocked ? 'text-green-400' : 'text-gray-500'}">
+              ${progressText}
+            </span>
           </div>
-          <div class="text-xs text-gray-400 mt-0.5">${progressText}</div>
+          <div class="w-full bg-gray-700 rounded-full h-1.5">
+            <div class="bg-gradient-to-r ${isUnlocked ? 'from-green-500 to-green-400' : 'from-yellow-500 to-yellow-400'} h-1.5 rounded-full transition-all duration-300" 
+                 style="width: ${progressPercent}%"></div>
+          </div>
         </div>
       </div>
     `;
     
     achievementsList.appendChild(item);
   });
+  
+  // Botão "Ver todas as conquistas" - CORRIGIDO
+  const existingBtn = achievementsList.parentElement.querySelector('.view-all-btn');
+  if (existingBtn) existingBtn.remove();
+  
+  const viewAllBtn = document.createElement('button');
+  viewAllBtn.className = 'view-all-btn w-full mt-4 px-4 py-2 bg-yellow-900/30 hover:bg-yellow-800/40 border border-yellow-500/30 rounded-lg text-yellow-300 text-sm font-medium transition-all duration-200';
+  viewAllBtn.innerHTML = `
+    <div class="flex items-center justify-center gap-2">
+      <span>Ver todas as conquistas</span>
+      <span>→</span>
+    </div>
+  `;
+  
+  viewAllBtn.addEventListener('click', () => {
+    this.renderAchievementsModal();
+  });
+  
+  achievementsList.parentElement.appendChild(viewAllBtn);
 }
 
 // Gerencia e atualiza o painel lateral do jogo
@@ -553,24 +577,36 @@ renderAchievementsModal() {
   if (!modal) {
     modal = document.createElement('div');
     modal.id = 'achievementsModal';
-    modal.className = 'hidden fixed inset-0 z-[110] flex items-center justify-center p-6';
+    modal.className = 'fixed inset-0 z-[110] flex items-center justify-center p-4 bg-black/70 hidden';
     modal.innerHTML = `
-      <div class="absolute inset-0 bg-black/70"></div>
-      <div class="relative w-full max-w-4xl bg-gray-900/95 backdrop-blur-md border border-yellow-500/30 rounded-2xl shadow-xl p-6">
-        <div class="flex justify-between items-center mb-6">
-          <h2 class="text-2xl text-yellow-300 font-semibold">🏆 Conquistas</h2>
-          <button id="achievementsModalClose" class="text-gray-300 hover:text-white text-xl">✖</button>
+      <div class="relative w-full max-w-4xl max-h-[80vh] bg-gray-900/95 backdrop-blur-md border border-yellow-500/30 rounded-2xl shadow-xl overflow-hidden">
+        <div class="flex justify-between items-center p-6 border-b border-yellow-500/20">
+          <h2 class="text-2xl text-yellow-300 font-bold flex items-center gap-2">
+            <span>🏆</span>
+            <span>Conquistas</span>
+          </h2>
+          <button id="achievementsModalClose" class="text-gray-300 hover:text-white text-2xl p-2">✖</button>
         </div>
-        <div id="achievementsModalContent" class="grid grid-cols-1 md:grid-cols-2 gap-4 max-h-[60vh] overflow-y-auto"></div>
+        <div id="achievementsModalContent" class="p-6 overflow-y-auto grid grid-cols-1 md:grid-cols-2 gap-4 max-h-[60vh]"></div>
       </div>
     `;
     document.body.appendChild(modal);
     
-    // Adicionar event listener
-    document.getElementById('achievementsModalClose')?.addEventListener('click', () => {
+    // Adicionar event listener para fechar
+    modal.querySelector('#achievementsModalClose').addEventListener('click', () => {
       modal.classList.add('hidden');
     });
+    
+    // Fechar ao clicar fora
+    modal.addEventListener('click', (e) => {
+      if (e.target === modal) {
+        modal.classList.add('hidden');
+      }
+    });
   }
+  
+  // Garantir que está visível
+  modal.classList.remove('hidden');
   
   // Preencher conteúdo
   const content = document.getElementById('achievementsModalContent');
@@ -581,66 +617,92 @@ renderAchievementsModal() {
   // Obter jogador atual
   const playerIndex = gameState.selectedPlayerForSidebar;
   const unlockedAchievements = achievementsState.unlockedAchievements[playerIndex] || [];
-  const playerStats = achievementsState.playerAchievements[playerIndex];
+  const playerStats = achievementsState.playerAchievements[playerIndex] || {};
   
-  Object.values(ACHIEVEMENTS_CONFIG).forEach(achievement => {
+  // Converter ACHIEVEMENTS_CONFIG para array
+  const achievementsArray = Object.values(ACHIEVEMENTS_CONFIG);
+  
+  // Renderizar todas as conquistas
+  achievementsArray.forEach(achievement => {
     const isUnlocked = unlockedAchievements.includes(achievement.id);
     
     const card = document.createElement('div');
-    card.className = `p-4 rounded-lg border ${isUnlocked ? 'border-yellow-500/50 bg-yellow-900/10' : 'border-gray-700/50 bg-gray-800/30'}`;
+    card.className = `p-4 rounded-xl border-2 ${isUnlocked ? 'border-yellow-500 bg-yellow-900/20' : 'border-gray-700 bg-gray-800/30'}`;
     
     // Determinar progresso
     let progress = 0;
     let progressText = '';
+    let progressPercent = 0;
     
     switch (achievement.type) {
       case 'explored':
-        progress = playerStats?.explored || 0;
+        progress = playerStats.explored || 0;
+        progressPercent = Math.min(100, (progress / achievement.requirement) * 100);
         progressText = `Exploradas: ${progress}/${achievement.requirement}`;
         break;
       case 'built':
-        progress = playerStats?.built || 0;
+        progress = playerStats.built || 0;
+        progressPercent = Math.min(100, (progress / achievement.requirement) * 100);
         progressText = `Construídas: ${progress}/${achievement.requirement}`;
         break;
       case 'negotiated':
-        progress = playerStats?.negotiated || 0;
+        progress = playerStats.negotiated || 0;
+        progressPercent = Math.min(100, (progress / achievement.requirement) * 100);
         progressText = `Negociações: ${progress}/${achievement.requirement}`;
         break;
       case 'collected':
-        progress = playerStats?.collected || 0;
+        progress = playerStats.collected || 0;
+        progressPercent = Math.min(100, (progress / achievement.requirement) * 100);
         progressText = `Regiões coletadas: ${progress}/${achievement.requirement}`;
         break;
       case 'biomes':
-        progress = playerStats?.controlledBiomes?.size || 0;
-        const biomesList = playerStats?.controlledBiomes ? Array.from(playerStats.controlledBiomes).join(', ') : 'Nenhum';
-        progressText = `Biomas: ${progress}/${achievement.requirement} (${biomesList})`;
+        progress = playerStats.controlledBiomes?.size || 0;
+        progressPercent = Math.min(100, (progress / achievement.requirement) * 100);
+        progressText = `Biomas: ${progress}/${achievement.requirement}`;
         break;
       case 'resources':
-        const resources = playerStats?.maxResources || {};
-        progressText = `
-          Madeira: ${resources.madeira || 0}/${achievement.requirement}<br>
-          Pedra: ${resources.pedra || 0}/${achievement.requirement}<br>
-          Ouro: ${resources.ouro || 0}/${achievement.requirement}<br>
-          Água: ${resources.agua || 0}/${achievement.requirement}
-        `;
+        const resources = playerStats.maxResources || {};
+        const resourceCount = Object.values(resources).filter(value => value >= achievement.requirement).length;
+        progress = resourceCount;
+        progressPercent = Math.min(100, (progress / 4) * 100); // 4 recursos totais
+        progressText = `${progress}/4 recursos com ${achievement.requirement}+`;
         break;
       default:
         progressText = isUnlocked ? '✅ Desbloqueado' : '🔒 Bloqueado';
+        progressPercent = isUnlocked ? 100 : 0;
     }
     
     card.innerHTML = `
-      <div class="flex items-start gap-3">
-        <span class="text-2xl">${achievement.icon}</span>
+      <div class="flex items-start gap-4">
+        <div class="text-3xl ${isUnlocked ? 'text-yellow-300' : 'text-gray-500'}">
+          ${achievement.icon}
+        </div>
         <div class="flex-1">
-          <h3 class="font-bold ${isUnlocked ? 'text-yellow-300' : 'text-gray-300'}">
-            ${achievement.name}
-            ${isUnlocked ? '<span class="text-green-400 ml-2">✓</span>' : ''}
-          </h3>
-          <p class="text-sm text-gray-300 mt-1">${achievement.description}</p>
-          <div class="mt-2 text-xs text-gray-400">${progressText.replace('<br>', '<br>')}</div>
+          <div class="flex items-center justify-between mb-2">
+            <h3 class="font-bold ${isUnlocked ? 'text-yellow-300' : 'text-gray-300'}">
+              ${achievement.name}
+              ${isUnlocked ? '<span class="text-green-400 ml-2">✓</span>' : ''}
+            </h3>
+            <span class="text-sm ${isUnlocked ? 'text-green-400' : 'text-gray-500'}">
+              ${isUnlocked ? 'Desbloqueada' : 'Bloqueada'}
+            </span>
+          </div>
+          <p class="text-sm text-gray-300 mb-3">${achievement.description}</p>
+          
+          <div class="space-y-2">
+            <div class="flex justify-between text-xs">
+              <span class="text-gray-400">Progresso</span>
+              <span class="${isUnlocked ? 'text-green-400' : 'text-gray-400'}">${progressText}</span>
+            </div>
+            <div class="w-full bg-gray-700 rounded-full h-2">
+              <div class="bg-gradient-to-r ${isUnlocked ? 'from-green-500 to-green-400' : 'from-yellow-500 to-yellow-400'} h-2 rounded-full transition-all duration-500" 
+                   style="width: ${progressPercent}%"></div>
+            </div>
+          </div>
+          
           ${isUnlocked ? `
-            <div class="mt-2 text-xs text-green-300">
-              <strong>Recompensa:</strong> ${this.getAchievementRewardText(achievement)}
+            <div class="mt-3 p-2 bg-green-900/30 rounded border border-green-500/30">
+              <p class="text-xs text-green-300 font-semibold">🎁 Recompensa: ${this.getAchievementRewardText(achievement)}</p>
             </div>
           ` : ''}
         </div>
@@ -649,6 +711,17 @@ renderAchievementsModal() {
     
     content.appendChild(card);
   });
+  
+  // Se não houver conquistas
+  if (achievementsArray.length === 0) {
+    content.innerHTML = `
+      <div class="col-span-2 text-center py-12">
+        <div class="text-4xl mb-4">📭</div>
+        <p class="text-gray-400 text-lg">Nenhuma conquista disponível ainda</p>
+        <p class="text-gray-500 text-sm mt-2">Jogue mais para desbloquear conquistas!</p>
+      </div>
+    `;
+  }
 }
 
 // Função auxiliar para texto da recompensa
@@ -683,71 +756,83 @@ getAchievementRewardText(achievement) {
 
   // Atualiza a barra de botões de ações do jogo
   updateFooter() {
-    const player = gameState.players[gameState.currentPlayerIndex];
-    const regionId = gameState.selectedRegionId;
-    
-    // Validações básicas
-    if (!player || !gameState.gameStarted) {
-      [this.actionExploreBtn, this.actionCollectBtn, this.actionBuildBtn, this.actionNegotiateBtn]
-        .forEach(b => b.disabled = true);
-      this.actionsLeftEl.textContent = `Ações restantes: ${gameState.actionsLeft}`;
-      return;
-    }
-    
-    if (regionId === null || regionId === undefined) {
-      [this.actionExploreBtn, this.actionCollectBtn, this.actionBuildBtn, this.actionNegotiateBtn]
-        .forEach(b => b.disabled = true);
-      this.actionsLeftEl.textContent = `Ações restantes: ${gameState.actionsLeft}`;
-      return;
-    }
-    
-    const region = gameState.regions[regionId];
-    if (!region) {
-      [this.actionExploreBtn, this.actionCollectBtn, this.actionBuildBtn, this.actionNegotiateBtn]
-        .forEach(b => b.disabled = true);
-      return;
-    }
-    
-    const baseEnabled = gameState.actionsLeft > 0;
-    const isOwnRegion = region.controller === player.id;
-    const isNeutral = region.controller === null;
-    const isEnemyRegion = region.controller !== null && region.controller !== player.id;
-    
-    // Atualizar botão Explorar/Assumir Domínio
-    if (isNeutral) {
-      const hasEnoughPV = player.victoryPoints >= 2;
-      const canPayBiome = Object.entries(region.resources)
-        .every(([key, value]) => player.resources[key] >= value);
-      this.actionExploreBtn.disabled = !baseEnabled || !hasEnoughPV || !canPayBiome;
-      this.actionExploreBtn.textContent = 'Assumir Domínio';
-    } else if (isOwnRegion) {
-      const canAfford = window.gameLogic.canAffordAction('explorar');
-      this.actionExploreBtn.disabled = !baseEnabled || !canAfford;
-      this.actionExploreBtn.textContent = 'Explorar';
-    } else {
-      this.actionExploreBtn.disabled = true;
-      this.actionExploreBtn.textContent = 'Explorar';
-    }
-    
-    // Atualizar outros botões
-    this.actionBuildBtn.disabled = !baseEnabled || isNeutral || isEnemyRegion || 
-                                   !window.gameLogic.canAffordAction('construir');
-    this.actionCollectBtn.disabled = !baseEnabled || isNeutral || isEnemyRegion || 
-                                     !window.gameLogic.canAffordAction('recolher');
-    this.actionNegotiateBtn.disabled = !baseEnabled || !isEnemyRegion || 
-                                       !window.gameLogic.canAffordAction('negociar');
-    
-    // Atualizar contadores
+  const player = gameState.players[gameState.currentPlayerIndex];
+  const regionId = gameState.selectedRegionId;
+  
+  // Validações básicas
+  if (!player || !gameState.gameStarted) {
+    [this.actionExploreBtn, this.actionCollectBtn, this.actionBuildBtn, this.actionNegotiateBtn]
+      .forEach(b => b.disabled = true);
     this.actionsLeftEl.textContent = `Ações restantes: ${gameState.actionsLeft}`;
-    
-    // Atualizar fase
-    const phaseNames = {
-      'renda': '💰 Renda',
-      'acoes': '⚡ Ações',
-      'negociacao': '🤝 Negociação'
-    };
-    this.phaseIndicator.textContent = `Fase: ${phaseNames[TURN_PHASES.RENDA] || 'Renda'}`;
+    return;
   }
+  
+  // Obter a fase atual correta do gameState
+  const currentPhase = gameState.currentPhase || TURN_PHASES.RENDA;
+  
+  if (regionId === null || regionId === undefined) {
+    [this.actionExploreBtn, this.actionCollectBtn, this.actionBuildBtn, this.actionNegotiateBtn]
+      .forEach(b => b.disabled = true);
+    this.actionsLeftEl.textContent = `Ações restantes: ${gameState.actionsLeft}`;
+    return;
+  }
+  
+  const region = gameState.regions[regionId];
+  if (!region) {
+    [this.actionExploreBtn, this.actionCollectBtn, this.actionBuildBtn, this.actionNegotiateBtn]
+      .forEach(b => b.disabled = true);
+    return;
+  }
+  
+  // Verificar se estamos na fase de ações
+  const isActionPhase = currentPhase === TURN_PHASES.ACOES;
+  const baseEnabled = isActionPhase && gameState.actionsLeft > 0;
+  
+  const isOwnRegion = region.controller === player.id;
+  const isNeutral = region.controller === null;
+  const isEnemyRegion = region.controller !== null && region.controller !== player.id;
+  
+  // Atualizar botão Explorar/Assumir Domínio
+  if (isNeutral) {
+    const hasEnoughPV = player.victoryPoints >= 2;
+    const canPayBiome = Object.entries(region.resources)
+      .every(([key, value]) => player.resources[key] >= value);
+    this.actionExploreBtn.disabled = !baseEnabled || !hasEnoughPV || !canPayBiome;
+    this.actionExploreBtn.textContent = 'Assumir Domínio';
+  } else if (isOwnRegion) {
+    const canAfford = window.gameLogic.canAffordAction('explorar');
+    this.actionExploreBtn.disabled = !baseEnabled || !canAfford;
+    this.actionExploreBtn.textContent = 'Explorar';
+  } else {
+    this.actionExploreBtn.disabled = true;
+    this.actionExploreBtn.textContent = 'Explorar';
+  }
+  
+  // Atualizar outros botões
+  this.actionBuildBtn.disabled = !baseEnabled || isNeutral || isEnemyRegion || 
+                                 !window.gameLogic.canAffordAction('construir');
+  this.actionCollectBtn.disabled = !baseEnabled || isNeutral || isEnemyRegion || 
+                                   !window.gameLogic.canAffordAction('recolher');
+  this.actionNegotiateBtn.disabled = !baseEnabled || !isEnemyRegion || 
+                                     !window.gameLogic.canAffordAction('negociar');
+  
+  // Atualizar contadores
+  this.actionsLeftEl.textContent = `Ações restantes: ${gameState.actionsLeft}`;
+  
+  // Atualizar fase - CORREÇÃO CRÍTICA
+  const phaseNames = {
+    'renda': '💰 Fase de Renda',
+    'acoes': '⚡ Fase de Ações',
+    'negociacao': '🤝 Fase de Negociação'
+  };
+  
+  this.phaseIndicator.textContent = phaseNames[currentPhase] || '💰 Fase de Renda';
+  this.phaseIndicator.className = `text-sm font-semibold ${
+    currentPhase === 'renda' ? 'text-green-400' :
+    currentPhase === 'acoes' ? 'text-yellow-400' :
+    'text-blue-400'
+  }`;
+}
 
   updateTurnInfo() {
     const currentPlayer = gameState.players[gameState.currentPlayerIndex];
