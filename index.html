@@ -282,28 +282,32 @@
     </aside>
 
     <!-- MAPA -->
-    <main id="gameMap" class="hidden relative">
-      <!-- Viewport para zoom/pan -->
-      <div id="mapViewport" class="absolute inset-0 overflow-hidden">
-        <!-- Container para transformações de zoom -->
-        <div id="mapTransform" class="relative w-full h-full">
-          <!-- Imagem do mapa (fundo) -->
-          <!-- <img src="gaia-mapa.png" alt="Mapa de Gaia" class="absolute inset-0 w-full h-full object-cover pointer-events-none select-none" /> -->
-          <!-- MANTER APENAS O BACKGROUND CSS NO #gameMap -->
-          <!-- Grid de 25 quadrantes do mapa -->
-          <div id="boardContainer" class="absolute inset-0 grid grid-cols-5 gap-0">
-            <!-- As células serão geradas aqui pelo JavaScript -->
-          </div>
+    <!-- Substitua a seção do mapa atual por: -->
+<main id="gameMap" class="hidden relative bg-gradient-to-b from-gray-900 to-black">
+  <!-- Viewport para zoom/pan -->
+  <div id="mapViewport" class="absolute inset-0 overflow-hidden">
+    <!-- Container para transformações de zoom -->
+    <div id="mapTransform" class="relative w-full h-full flex items-center justify-center">
+      <!-- Container da imagem do mapa -->
+      <div id="mapImageContainer" class="relative">
+        <!-- Imagem do mapa (fundo) -->
+        <img id="mapImage" src="gaia-mapa.png" alt="Mapa de Gaia" 
+             class="w-full h-full object-contain" />
+        
+        <!-- Overlay do tabuleiro (25 células) -->
+        <div id="boardOverlay" class="absolute inset-0">
+          <!-- As células serão geradas aqui pelo JavaScript -->
         </div>
       </div>
-      
-      <!-- Tooltip (aparece ao hover) -->
-      <div id="regionTooltip" class="hidden absolute z-50 w-64 bg-gray-900/95 border border-white/8 rounded-lg p-3 text-sm shadow-xl">
-        <div id="tooltipTitle" class="font-semibold text-white"></div>
-        <div id="tooltipBody" class="text-gray-300 mt-2"></div>
-      </div>
-    </main>
+    </div>
   </div>
+  
+  <!-- Tooltip (aparece ao hover) -->
+  <div id="regionTooltip" class="fixed z-[9999] w-64 bg-gray-900/95 backdrop-blur-md border border-white/10 rounded-lg p-4 text-sm shadow-2xl opacity-0 invisible transition-all duration-200">
+    <div id="tooltipTitle" class="font-semibold text-white text-base mb-2"></div>
+    <div id="tooltipBody" class="text-gray-300"></div>
+  </div>
+</main>
 
   <!-- FOOTER DE AÇÕES -->
   <footer id="gameFooter" class="hidden fixed bottom-4 left-1/2 -translate-x-1/2 z-45 w-full max-w-4xl px-4">
