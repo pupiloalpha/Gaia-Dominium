@@ -282,14 +282,13 @@
     </aside>
 
     <!-- MAPA -->
-    <!-- Substitua a seção do mapa atual por: -->
-<main id="gameMap" class="hidden relative bg-gradient-to-b from-gray-900 to-black">
+    <main id="gameMap" class="hidden">
   <!-- Viewport para zoom/pan -->
   <div id="mapViewport" class="absolute inset-0 overflow-hidden">
     <!-- Container para transformações de zoom -->
-    <div id="mapTransform" class="relative w-full h-full flex items-center justify-center">
+    <div id="mapTransform" class="relative w-full h-full">
       <!-- Container da imagem do mapa -->
-      <div id="mapImageContainer" class="relative">
+      <div id="mapImageContainer" class="relative w-full h-full">
         <!-- Imagem do mapa (fundo) -->
         <img id="mapImage" src="gaia-mapa.png" alt="Mapa de Gaia" 
              class="w-full h-full object-contain" />
@@ -307,19 +306,19 @@
     <div id="tooltipTitle" class="font-semibold text-white text-base mb-2"></div>
     <div id="tooltipBody" class="text-gray-300"></div>
   </div>
-
+  
   <!-- Controles de Zoom -->
-<div id="zoomControls" class="hidden">
-  <button id="zoomIn" class="zoom-btn" title="Zoom In">+</button>
-  <button id="zoomOut" class="zoom-btn" title="Zoom Out">-</button>
-  <button id="resetZoom" class="zoom-btn" title="Reset Zoom">↺</button>
-</div>
-
-<!-- Indicador de Posição no Mini-mapa -->
-<div id="miniMapIndicator" class="hidden">
-  <div>Posição: <span id="mapPosition">0%, 0%</span></div>
-  <div>Zoom: <span id="zoomLevel">100%</span></div>
-</div>
+  <div id="zoomControls">
+    <button id="zoomIn" class="zoom-btn" title="Zoom In">+</button>
+    <button id="zoomOut" class="zoom-btn" title="Zoom Out">-</button>
+    <button id="resetZoom" class="zoom-btn" title="Reset Zoom">↺</button>
+  </div>
+  
+  <!-- Indicador de Posição no Mini-mapa -->
+  <div id="miniMapIndicator">
+    <div>Posição: <span id="mapPosition">0px, 0px</span></div>
+    <div>Zoom: <span id="zoomLevel">100%</span></div>
+  </div>
 </main>
 
   <!-- FOOTER DE AÇÕES -->
