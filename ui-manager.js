@@ -236,6 +236,7 @@ this.structureModal?.addEventListener('click', (e) => {
     });
   }
 
+  // Define as bordas do mapa
   renderBoard() {
     this.boardContainer.innerHTML = '';
     
@@ -245,6 +246,7 @@ this.structureModal?.addEventListener('click', (e) => {
     });
   }
 
+  // Cria as regiões no mapa
   createRegionCell(region, index) {
 
   const cell = document.createElement('div');
@@ -351,7 +353,7 @@ this.structureModal?.addEventListener('click', (e) => {
   return cell;
 }
   
-
+// Ajustes das Regiões controladas
   renderControlledRegions(player) {
     if (player.regions.length === 0) {
       this.controlledRegions.innerHTML = `
@@ -484,6 +486,7 @@ renderAchievements() {
   });
 }
 
+// Gerencia e atualiza o painel lateral do jogo
 renderSidebar(playerIndex) {
     const player = gameState.players[playerIndex];
     if (!player) return;
@@ -674,6 +677,7 @@ getAchievementRewardText(achievement) {
     turnPhaseIndicator.textContent = phaseNames[TURN_PHASES.RENDA] || 'Renda';
   }
 
+  // Atualiza a barra de botões de ações do jogo
   updateFooter() {
     const player = gameState.players[gameState.currentPlayerIndex];
     const regionId = gameState.selectedRegionId;
@@ -750,10 +754,27 @@ getAchievementRewardText(achievement) {
   }
 
   // Tooltip functions
-  showRegionTooltip(region, targetEl) {
+  // Na função showRegionTooltip, substitua TODO o conteúdo atual:
+showRegionTooltip(region, targetEl) {
   const owner = region.controller !== null 
     ? `${gameState.players[region.controller].icon} ${gameState.players[region.controller].name}`
     : '<span class="text-gray-400">Região Neutra</span>';
+  
+  // IMPORTANTE: Adicione estas importações no topo do arquivo se não existirem
+  // ou garanta que as constantes estão disponíveis
+  const BIOME_INCOME = {
+    'Floresta Tropical': { madeira: 1, ouro: 0.5, agua: 1.5 },
+    'Floresta Temperada': { madeira: 1.5, pedra: 0.5, agua: 1 },
+    'Savana': { madeira: 0.5, ouro: 1.5, agua: 0.5 },
+    'Pântano': { pedra: 1, agua: 2 }
+  };
+  
+  const EXPLORATION_BONUS = {
+    0: 0,
+    1: 0.25,
+    2: 0.5,
+    3: 1.0
+  };
   
   // Calcular produção da região
   let production = [];
@@ -813,6 +834,7 @@ getAchievementRewardText(achievement) {
       </div>
       
       <!-- Produção por turno -->
+      ${production.length > 0 || structureProduction.length > 0 ? `
       <div>
         <div class="text-xs text-gray-300 mb-1">Produção por turno</div>
         <div class="flex flex-wrap gap-1">
@@ -824,6 +846,7 @@ getAchievementRewardText(achievement) {
           `).join('')}
         </div>
       </div>
+      ` : ''}
       
       <!-- Estruturas -->
       ${region.structures.length > 0 ? `
@@ -846,35 +869,47 @@ getAchievementRewardText(achievement) {
     </div>
   `;
   
+  // CORREÇÃO: Remover 'hidden' e adicionar 'visible' corretamente
   this.regionTooltip.classList.remove('hidden');
-  this.regionTooltip.classList.add('visible');
   this.positionTooltip(targetEl);
 }
 
   positionTooltip(targetEl) {
-    const rect = targetEl.getBoundingClientRect();
-    const tooltipRect = this.regionTooltip.getBoundingClientRect();
-    
-    let top = rect.top + 8;
-    let left = rect.left - tooltipRect.width - 10;
-    
-    if (left < 10) {
-      left = rect.right + 10;
-    }
-    
-    const bottomOverflow = top + tooltipRect.height - window.innerHeight;
-    if (bottomOverflow > 0) {
-      top = window.innerHeight - tooltipRect.height - 10;
-    }
-    
-    this.regionTooltip.style.top = (top + window.scrollY) + 'px';
-    this.regionTooltip.style.left = (left + window.scrollX) + 'px';
+  const rect = targetEl.getBoundingClientRect();
+  const tooltipRect = this.regionTooltip.getBoundingClientRect();
+  const viewportWidth = window.innerWidth;
+  const viewportHeight = window.innerHeight;
+  
+  // Posição inicial: à direita da célula
+  let left = rect.right + 10;
+  let top = rect.top + window.scrollY;
+  
+  // Se não couber à direita, posicionar à esquerda
+  if (left + tooltipRect.width > viewportWidth) {
+    left = rect.left - tooltipRect.width - 10;
   }
+  
+  // Ajustar verticalmente para não sair da tela
+  if (top + tooltipRect.height > viewportHeight) {
+    top = viewportHeight - tooltipRect.height - 10;
+  }
+  
+  if (top < 10) {
+    top = 10;
+  }
+  
+  this.regionTooltip.style.left = `${left}px`;
+  this.regionTooltip.style.top = `${top}px`;
+  
+  // Garantir que está visível
+  this.regionTooltip.style.opacity = '1';
+  this.regionTooltip.style.visibility = 'visible';
+}
 
-  hideRegionTooltip() {
-    this.regionTooltip.classList.add('hidden');
-    this.regionTooltip.classList.remove('visible');
-  }
+ hideRegionTooltip() {
+  this.regionTooltip.style.opacity = '0';
+  this.regionTooltip.style.visibility = 'hidden';
+}
 
   // Utilitários
   hexToRgb(hex) {
