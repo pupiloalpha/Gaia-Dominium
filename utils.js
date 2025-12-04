@@ -112,31 +112,30 @@ const Utils = {
   },
   
   // Setup map zoom
-// setupMapZoom - VERSÃO APRIMORADA
 setupMapZoom() {
   const mapViewport = document.getElementById('mapViewport');
   const mapTransform = document.getElementById('mapTransform');
-  const zoomControls = document.getElementById('zoomControls');
-  const miniMapIndicator = document.getElementById('miniMapIndicator');
+  const mapImageContainer = document.getElementById('mapImageContainer');
+  const boardOverlay = document.getElementById('boardOverlay');
   
-  if (!mapViewport || !mapTransform) return;
+  if (!mapViewport || !mapTransform || !mapImageContainer) return;
   
   let currentZoom = 1;
-  const minZoom = 0.5;
-  const maxZoom = 3;
+  const minZoom = 0.7;
+  const maxZoom = 2.5;
   const zoomStep = 0.1;
   let isDragging = false;
   let startX, startY;
   let translateX = 0, translateY = 0;
   
-  // Inicializar controles visíveis
-  if (zoomControls) zoomControls.classList.remove('hidden');
-  if (miniMapIndicator) miniMapIndicator.classList.remove('hidden');
+  // Mostrar controles
+  document.getElementById('zoomControls')?.classList.remove('hidden');
+  document.getElementById('miniMapIndicator')?.classList.remove('hidden');
   
-  // Aplicar transformações
+  // Aplicar transformação apenas no container (imagem e overlay juntos)
   const applyTransform = () => {
-    mapTransform.style.transform = 
-      `translate(${translateX}px, ${translateY}px) scale(${currentZoom})`;
+    const transform = `translate(${translateX}px, ${translateY}px) scale(${currentZoom})`;
+    mapTransform.style.transform = transform;
     
     // Atualizar indicadores
     updateIndicators();
@@ -144,16 +143,22 @@ setupMapZoom() {
   
   // Atualizar indicadores
   const updateIndicators = () => {
-    if (miniMapIndicator) {
-      document.getElementById('zoomLevel').textContent = 
-        `${Math.round(currentZoom * 100)}%`;
-      document.getElementById('mapPosition').textContent = 
-        `${Math.round(translateX)}px, ${Math.round(translateY)}px`;
+    const positionEl = document.getElementById('mapPosition');
+    const zoomLevelEl = document.getElementById('zoomLevel');
+    
+    if (positionEl) {
+      positionEl.textContent = `${Math.round(translateX)}px, ${Math.round(translateY)}px`;
+    }
+    
+    if (zoomLevelEl) {
+      zoomLevelEl.textContent = `${Math.round(currentZoom * 100)}%`;
     }
   };
   
-  // Zoom com scroll
+  // Zoom com scroll (Ctrl + scroll)
   mapViewport.addEventListener('wheel', (e) => {
+    if (!e.ctrlKey) return;
+    
     e.preventDefault();
     
     const delta = e.deltaY > 0 ? -zoomStep : zoomStep;
@@ -161,15 +166,21 @@ setupMapZoom() {
     currentZoom = Math.max(minZoom, Math.min(maxZoom, currentZoom + delta));
     
     if (currentZoom !== oldZoom) {
-      // Zoom no ponto do cursor
+      // Calcular zoom centrado no cursor
       const rect = mapViewport.getBoundingClientRect();
-      const mouseX = e.clientX - rect.left;
-      const mouseY = e.clientY - rect.top;
+      const x = e.clientX - rect.left;
+      const y = e.clientY - rect.top;
       
-      // Calcular nova posição para zoom centrado no cursor
       const zoomRatio = currentZoom / oldZoom;
-      translateX = mouseX - (mouseX - translateX) * zoomRatio;
-      translateY = mouseY - (mouseY - translateY) * zoomRatio;
+      
+      // Ajustar posição para zoom no ponto do cursor
+      translateX = x - (x - translateX) * zoomRatio;
+      translateY = y - (y - translateY) * zoomRatio;
+      
+      // Limitar movimento
+      const maxTranslate = 200;
+      translateX = Math.max(-maxTranslate, Math.min(maxTranslate, translateX));
+      translateY = Math.max(-maxTranslate, Math.min(maxTranslate, translateY));
       
       applyTransform();
     }
@@ -183,7 +194,6 @@ setupMapZoom() {
     startX = e.clientX - translateX;
     startY = e.clientY - translateY;
     mapViewport.style.cursor = 'grabbing';
-    mapViewport.classList.add('grabbing');
     e.preventDefault();
   });
   
@@ -193,10 +203,10 @@ setupMapZoom() {
     translateX = e.clientX - startX;
     translateY = e.clientY - startY;
     
-    // Limitar movimento para não sair muito dos limites
-    const maxMove = 300;
-    translateX = Math.max(-maxMove, Math.min(maxMove, translateX));
-    translateY = Math.max(-maxMove, Math.min(maxMove, translateY));
+    // Limitar movimento
+    const maxTranslate = 200;
+    translateX = Math.max(-maxTranslate, Math.min(maxTranslate, translateX));
+    translateY = Math.max(-maxTranslate, Math.min(maxTranslate, translateY));
     
     applyTransform();
   });
@@ -204,10 +214,9 @@ setupMapZoom() {
   document.addEventListener('mouseup', () => {
     isDragging = false;
     mapViewport.style.cursor = 'grab';
-    mapViewport.classList.remove('grabbing');
   });
   
-  // Controles de zoom por botão
+  // Controles de botão
   document.getElementById('zoomIn')?.addEventListener('click', () => {
     currentZoom = Math.min(maxZoom, currentZoom + zoomStep);
     applyTransform();
@@ -228,88 +237,32 @@ setupMapZoom() {
   // Atalhos de teclado
   document.addEventListener('keydown', (e) => {
     if (e.ctrlKey || e.metaKey) {
-      switch(e.key) {
-        case '+':
-        case '=':
-          e.preventDefault();
-          currentZoom = Math.min(maxZoom, currentZoom + zoomStep);
-          applyTransform();
-          break;
-        case '-':
-        case '_':
-          e.preventDefault();
-          currentZoom = Math.max(minZoom, currentZoom - zoomStep);
-          applyTransform();
-          break;
-        case '0':
-          e.preventDefault();
-          currentZoom = 1;
-          translateX = 0;
-          translateY = 0;
-          applyTransform();
-          break;
+      if (e.key === '+' || e.key === '=') {
+        e.preventDefault();
+        currentZoom = Math.min(maxZoom, currentZoom + zoomStep);
+        applyTransform();
+      }
+      if (e.key === '-' || e.key === '_') {
+        e.preventDefault();
+        currentZoom = Math.max(minZoom, currentZoom - zoomStep);
+        applyTransform();
+      }
+      if (e.key === '0') {
+        e.preventDefault();
+        currentZoom = 1;
+        translateX = 0;
+        translateY = 0;
+        applyTransform();
       }
     }
     
-    // Tecla R para reset
+    // Reset com R
     if (e.key === 'r' || e.key === 'R') {
       currentZoom = 1;
       translateX = 0;
       translateY = 0;
       applyTransform();
     }
-  });
-  
-  // Touch events para dispositivos móveis
-  let touchStartDistance = 0;
-  let touchStartZoom = 1;
-  
-  mapViewport.addEventListener('touchstart', (e) => {
-    if (e.touches.length === 2) {
-      // Pinch zoom
-      const touch1 = e.touches[0];
-      const touch2 = e.touches[1];
-      touchStartDistance = Math.hypot(
-        touch2.clientX - touch1.clientX,
-        touch2.clientY - touch1.clientY
-      );
-      touchStartZoom = currentZoom;
-    } else if (e.touches.length === 1) {
-      // Drag
-      isDragging = true;
-      startX = e.touches[0].clientX - translateX;
-      startY = e.touches[0].clientY - translateY;
-    }
-  }, { passive: true });
-  
-  mapViewport.addEventListener('touchmove', (e) => {
-    e.preventDefault();
-    
-    if (e.touches.length === 2) {
-      // Pinch zoom
-      const touch1 = e.touches[0];
-      const touch2 = e.touches[1];
-      const currentDistance = Math.hypot(
-        touch2.clientX - touch1.clientX,
-        touch2.clientY - touch1.clientY
-      );
-      
-      if (touchStartDistance > 0) {
-        const zoomFactor = currentDistance / touchStartDistance;
-        currentZoom = Math.max(minZoom, Math.min(maxZoom, touchStartZoom * zoomFactor));
-        applyTransform();
-      }
-    } else if (e.touches.length === 1 && isDragging) {
-      // Drag
-      translateX = e.touches[0].clientX - startX;
-      translateY = e.touches[0].clientY - startY;
-      applyTransform();
-    }
-  }, { passive: false });
-  
-  mapViewport.addEventListener('touchend', () => {
-    isDragging = false;
-    touchStartDistance = 0;
   });
   
   // Inicializar
