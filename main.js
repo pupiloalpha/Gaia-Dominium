@@ -16,9 +16,6 @@ document.addEventListener('DOMContentLoaded', () => {
   // Inicializar Game Logic
   window.gameLogic = new GameLogic();
   
-  // Setup inicial
-  Utils.tryRequestFullscreenOnce();
-  
   // Configurar tabs do manual
   setupManualTabs();
 
