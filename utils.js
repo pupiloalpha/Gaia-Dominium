@@ -270,6 +270,47 @@ setupMapZoom() {
   mapViewport.style.cursor = 'grab';
 }
 
+showFeedbackWithCallback(title, message, type = 'info', callback) {
+  return new Promise(resolve => {
+    const alertModal = document.getElementById('alertModal');
+    const alertIcon = document.getElementById('alertIcon');
+    const alertTitle = document.getElementById('alertTitle');
+    const alertMessage = document.getElementById('alertMessage');
+    const alertButtons = document.getElementById('alertButtons');
+    
+    if (!alertModal) {
+      resolve();
+      return;
+    }
+    
+    let icon = 'ℹ️';
+    if (type === 'warning') icon = '🟡';
+    if (type === 'error') icon = '🔴';
+    if (type === 'success') icon = '🟢';
+    
+    alertIcon.textContent = icon;
+    alertTitle.textContent = title;
+    alertMessage.textContent = message;
+    
+    // Clear buttons
+    alertButtons.innerHTML = '';
+    
+    const okButton = document.createElement('button');
+    okButton.className = 'px-4 py-2 bg-yellow-600 hover:bg-yellow-500 rounded-full text-white transition';
+    okButton.textContent = 'OK';
+    okButton.addEventListener('click', () => {
+      this.hideAlert();
+      if (callback) callback();
+      resolve();
+    });
+    
+    alertButtons.appendChild(okButton);
+    alertModal.classList.remove('hidden');
+    
+    setTimeout(() => alertModal.classList.add('show'), 10);
+  });
+}
+  
 };
 
 export { Utils };
