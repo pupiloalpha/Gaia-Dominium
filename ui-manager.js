@@ -302,13 +302,14 @@ this.structureModal?.addEventListener('click', (e) => {
     }
   });
   
-  // Footer: Controlador e estruturas (ícones apenas)
+  // Footer: Controlador e estruturas (ícones maiores)
   const footer = document.createElement('div');
-  footer.className = 'flex items-center justify-between text-xs';
+  footer.className = 'flex items-center justify-between text-sm';
   
+  // ÍCONE DO JOGADOR MAIOR
   const controller = region.controller !== null 
-    ? `<span class="opacity-80">${gameState.players[region.controller].icon}</span>`
-    : '<span class="opacity-50">○</span>';
+    ? `<span class="text-xl opacity-90">${gameState.players[region.controller].icon}</span>`
+    : '<span class="text-lg opacity-50">○</span>';
   
   // Ícones de estruturas
   const structureIcons = {
