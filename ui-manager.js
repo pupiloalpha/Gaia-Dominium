@@ -193,6 +193,11 @@ this.structureModal?.addEventListener('click', (e) => {
       window.utils.showFeedback('São necessários ao menos 2 jogadores.', 'error');
       return;
     }
+
+      // Tentar fullscreen APÓS interação do usuário (agora é permitido)
+  setTimeout(() => {
+    window.utils.tryRequestFullscreenOnce();
+  }, 100);
     
     this.initialScreen.style.display = 'none';
     this.gameNavbar.classList.remove('hidden');
