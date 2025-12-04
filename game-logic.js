@@ -1,4 +1,4 @@
-// game-logic.js - VERSÃO CORRIGIDA COMPLETA
+// game-logic.js - VERSÃO COMPLETA E CORRIGIDA
 import { 
   gameState, 
   achievementsState, 
@@ -23,313 +23,283 @@ import {
 
 class GameLogic {
   constructor() {
-  this.currentPhase = TURN_PHASES.RENDA;
-  gameState.currentPhase = this.currentPhase; // Sincronizar com gameState
-  this.GAME_EVENTS = this.initializeGameEvents();
-}
-  // game-logic.js - LOCALIZE e SUBSTITUA a função initializeGameEvents() completa
+    this.currentPhase = TURN_PHASES.RENDA;
+    gameState.currentPhase = this.currentPhase; // Sincronizar
+    this.GAME_EVENTS = this.initializeGameEvents();
+  }
 
-initializeGameEvents() {
-  return [
-    // ==================== EVENTOS POSITIVOS (4) ====================
-    {
-      id: 'primavera_abundante',
-      name: 'Primavera Abundante',
-      icon: '🌺',
-      type: 'positive',
-      description: 'A primavera traz crescimento e fertilidade a Gaia.',
-      effect: 'Produção de Madeira aumentada em 100%',
-      duration: 2,
-      apply: (state) => { 
-        state.eventModifiers.madeiraMultiplier = 2.0;
-        state.eventModifiers.aguaMultiplier = 1.2;
+  initializeGameEvents() {
+    return [
+      {
+        id: 1,
+        name: 'Primavera Abundante',
+        icon: '🌺',
+        description: 'Florestas florescem com vida nova',
+        effect: 'Produção de Madeira +100%',
+        duration: 2,
+        type: 'positive',
+        apply: (state) => {
+          state.eventModifiers.madeiraMultiplier = 2.0;
+        },
+        remove: (state) => {
+          state.eventModifiers.madeiraMultiplier = 1.0;
+        }
       },
-      remove: (state) => { 
-        delete state.eventModifiers.madeiraMultiplier;
-        delete state.eventModifiers.aguaMultiplier;
-      }
-    },
-    {
-      id: 'mercado_aquecido',
-      name: 'Mercado Aquecido',
-      icon: '📈',
-      type: 'positive',
-      description: 'O comércio entre as facções está em alta.',
-      effect: 'Negociações custam 0 Ouro (mas ainda dão +1 PV)',
-      duration: 2,
-      apply: (state) => { 
-        state.eventModifiers.negociacaoGratis = true;
-        state.eventModifiers.negociacaoBonusPV = 0; // Já está incluso no base
+      {
+        id: 2,
+        name: 'Seca',
+        icon: '🌵',
+        description: 'Escassez de água afeta todas as regiões',
+        effect: 'Produção de Água -50%',
+        duration: 2,
+        type: 'negative',
+        apply: (state) => {
+          state.eventModifiers.aguaMultiplier = 0.5;
+        },
+        remove: (state) => {
+          state.eventModifiers.aguaMultiplier = 1.0;
+        }
       },
-      remove: (state) => { 
-        delete state.eventModifiers.negociacaoGratis;
-        delete state.eventModifiers.negociacaoBonusPV;
-      }
-    },
-    {
-      id: 'festival_cultural',
-      name: 'Festival Cultural',
-      icon: '🎉',
-      type: 'positive',
-      description: 'Um festival une as facções em celebração.',
-      effect: 'Todos os jogadores ganham 1 PV',
-      duration: 0,
-      apply: (state) => {
-        state.players.forEach(p => {
-          p.victoryPoints += 1;
-        });
-        // Adicionar ao log
-        window.gameLogic?.addActivityLog?.({
-          type: 'event',
-          playerName: 'GAIA',
-          action: `disparou evento: Festival Cultural`,
-          details: 'Todos ganharam +1 PV',
-          isEvent: true,
-          isMine: false
-        });
-      },
-      remove: (state) => {}
-    },
-    {
-      id: 'era_exploracao',
-      name: 'Era da Exploração',
-      icon: '🧭',
-      type: 'positive',
-      description: 'Um espírito de exploração se espalha por Gaia.',
-      effect: 'Explorar custa 1 Madeira a menos',
-      duration: 2,
-      apply: (state) => { 
-        state.eventModifiers.explorarDesconto = true;
-      },
-      remove: (state) => { 
-        delete state.eventModifiers.explorarDesconto;
-      }
-    },
-
-    // ==================== EVENTOS NEGATIVOS (5) ====================
-    {
-      id: 'seca',
-      name: 'Seca',
-      icon: '🌵',
-      type: 'negative',
-      description: 'Uma seca severa assola Gaia.',
-      effect: 'Produção de Água reduzida em 50%',
-      duration: 2,
-      apply: (state) => { 
-        state.eventModifiers.aguaMultiplier = 0.5;
-      },
-      remove: (state) => { 
-        delete state.eventModifiers.aguaMultiplier;
-      }
-    },
-    {
-      id: 'tempestade',
-      name: 'Tempestade',
-      icon: '⛈️',
-      type: 'negative',
-      description: 'Uma tempestade violenta causa estragos.',
-      effect: 'Produção de todas as regiões reduzida em 25%',
-      duration: 1,
-      apply: (state) => {
-        state.eventModifiers.madeiraMultiplier = 0.75;
-        state.eventModifiers.pedraMultiplier = 0.75;
-        state.eventModifiers.ouroMultiplier = 0.75;
-        state.eventModifiers.aguaMultiplier = 0.75;
-      },
-      remove: (state) => {
-        delete state.eventModifiers.madeiraMultiplier;
-        delete state.eventModifiers.pedraMultiplier;
-        delete state.eventModifiers.ouroMultiplier;
-        delete state.eventModifiers.aguaMultiplier;
-      }
-    },
-    {
-      id: 'inflacao',
-      name: 'Inflação',
-      icon: '💰',
-      type: 'negative',
-      description: 'Os recursos estão escassos e os preços subiram.',
-      effect: 'Custo de construir aumenta em 1 Pedra e 1 Madeira',
-      duration: 2,
-      apply: (state) => { 
-        state.eventModifiers.construirCustoExtra = true;
-      },
-      remove: (state) => { 
-        delete state.eventModifiers.construirCustoExtra;
-      }
-    },
-    {
-      id: 'inverno_rigoroso',
-      name: 'Inverno Rigoroso',
-      icon: '❄️',
-      type: 'negative',
-      description: 'O inverno é mais rigoroso que o esperado.',
-      effect: 'Produção de Madeira e Água reduzida em 30%',
-      duration: 2,
-      apply: (state) => {
-        state.eventModifiers.madeiraMultiplier = 0.7;
-        state.eventModifiers.aguaMultiplier = 0.7;
-      },
-      remove: (state) => {
-        delete state.eventModifiers.madeiraMultiplier;
-        delete state.eventModifiers.aguaMultiplier;
-      }
-    },
-    {
-      id: 'escassez',
-      name: 'Escassez',
-      icon: '🆘',
-      type: 'negative',
-      description: 'Os recursos estão cada vez mais raros.',
-      effect: 'Recolher produz 25% menos recursos',
-      duration: 2,
-      apply: (state) => { 
-        state.eventModifiers.recolherPenalidade = 0.75;
-      },
-      remove: (state) => { 
-        delete state.eventModifiers.recolherPenalidade;
-      }
-    },
-
-    // ==================== EVENTOS MISTOS (6) ====================
-    {
-      id: 'descoberta_jazida',
-      name: 'Descoberta de Jazida',
-      icon: '💎',
-      type: 'mixed',
-      description: 'Uma nova jazida de recursos é descoberta.',
-      effect: 'Todos ganham 2 Pedra, mas perdem 1 PV',
-      duration: 0,
-      apply: (state) => {
-        state.players.forEach(p => {
-          p.resources.pedra += 2;
-          p.victoryPoints = Math.max(0, p.victoryPoints - 1);
-        });
-        window.gameLogic?.addActivityLog?.({
-          type: 'event',
-          playerName: 'GAIA',
-          action: `disparou evento: Descoberta de Jazida`,
-          details: '+2 Pedra, -1 PV para todos',
-          isEvent: true,
-          isMine: false
-        });
-      },
-      remove: (state) => {}
-    },
-    {
-      id: 'boom_tecnologico',
-      name: 'Boom Tecnológico',
-      icon: '⚙️',
-      type: 'mixed',
-      description: 'Avanços tecnológicos aceleram construções, mas consomem recursos.',
-      effect: 'Construir dá +1 PV extra, mas custa +1 Ouro',
-      duration: 2,
-      apply: (state) => {
-        state.eventModifiers.construirBonus = 1;
-        state.eventModifiers.construirCustoOuroExtra = true;
-      },
-      remove: (state) => {
-        delete state.eventModifiers.construirBonus;
-        delete state.eventModifiers.construirCustoOuroExtra;
-      }
-    },
-    {
-      id: 'tempestade_areia',
-      name: 'Tempestade de Areia',
-      icon: '🌪️',
-      type: 'mixed',
-      description: 'Uma tempestade de areia cobre várias regiões.',
-      effect: 'Produção de Pedra +50%, Produção de Madeira -50%',
-      duration: 1,
-      apply: (state) => {
-        state.eventModifiers.pedraMultiplier = 1.5;
-        state.eventModifiers.madeiraMultiplier = 0.5;
-      },
-      remove: (state) => {
-        delete state.eventModifiers.pedraMultiplier;
-        delete state.eventModifiers.madeiraMultiplier;
-      }
-    },
-    {
-      id: 'enchente',
-      name: 'Enchente',
-      icon: '🌊',
-      type: 'mixed',
-      description: 'Chuvas torrenciais causam enchentes.',
-      effect: 'Produção de Água +100%, Produção de Madeira -50%',
-      duration: 2,
-      apply: (state) => {
-        state.eventModifiers.aguaMultiplier = 2.0;
-        state.eventModifiers.madeiraMultiplier = 0.5;
-      },
-      remove: (state) => {
-        delete state.eventModifiers.aguaMultiplier;
-        delete state.eventModifiers.madeiraMultiplier;
-      }
-    },
-    {
-      id: 'paz_diplomatica',
-      name: 'Paz Diplomática',
-      icon: '🕊️',
-      type: 'mixed',
-      description: 'Um período de paz favorece a diplomacia.',
-      effect: 'Negociar dá +2 PV (em vez de +1)',
-      duration: 2,
-      apply: (state) => { 
-        state.eventModifiers.negociacaoBonusPV = 2;
-      },
-      remove: (state) => { 
-        delete state.eventModifiers.negociacaoBonusPV;
-      }
-    },
-    {
-      id: 'depressao_economica',
-      name: 'Depressão Econômica',
-      icon: '📉',
-      type: 'mixed',
-      description: 'A economia desacelera drasticamente.',
-      effect: 'Todos os jogadores perdem 1 de cada recurso',
-      duration: 0,
-      apply: (state) => {
-        state.players.forEach(p => {
-          Object.keys(p.resources).forEach(resource => {
-            p.resources[resource] = Math.max(0, p.resources[resource] - 1);
+      {
+        id: 3,
+        name: 'Descoberta de Jazida',
+        icon: '💎',
+        description: 'Enorme depósito de pedra é descoberto',
+        effect: '+2 Pedra para todos, mas -1 PV',
+        duration: 0,
+        type: 'mixed',
+        apply: (state) => {
+          state.players.forEach(p => {
+            p.resources.pedra += 2;
+            p.victoryPoints = Math.max(0, p.victoryPoints - 1);
           });
-        });
-        window.gameLogic?.addActivityLog?.({
-          type: 'event',
-          playerName: 'GAIA',
-          action: `disparou evento: Depressão Econômica`,
-          details: '-1 de cada recurso para todos',
-          isEvent: true,
-          isMine: false
-        });
+        }
       },
-      remove: (state) => {}
-    }
-  ];
-}
+      {
+        id: 4,
+        name: 'Tempestade',
+        icon: '⛈️',
+        description: 'Tempestade violenta atinge Gaia',
+        effect: 'Produção de todos recursos -25%',
+        duration: 1,
+        type: 'negative',
+        apply: (state) => {
+          state.eventModifiers.madeiraMultiplier = 0.75;
+          state.eventModifiers.pedraMultiplier = 0.75;
+          state.eventModifiers.ouroMultiplier = 0.75;
+          state.eventModifiers.aguaMultiplier = 0.75;
+        },
+        remove: (state) => {
+          state.eventModifiers.madeiraMultiplier = 1.0;
+          state.eventModifiers.pedraMultiplier = 1.0;
+          state.eventModifiers.ouroMultiplier = 1.0;
+          state.eventModifiers.aguaMultiplier = 1.0;
+        }
+      },
+      {
+        id: 5,
+        name: 'Mercado Aquecido',
+        icon: '📈',
+        description: 'Demanda por ouro atinge pico histórico',
+        effect: 'Negociar não custa Ouro',
+        duration: 1,
+        type: 'positive',
+        apply: (state) => {
+          state.eventModifiers.negociacaoGratis = true;
+        },
+        remove: (state) => {
+          state.eventModifiers.negociacaoGratis = false;
+        }
+      },
+      {
+        id: 6,
+        name: 'Boom Tecnológico',
+        icon: '⚙️',
+        description: 'Avanços tecnológicos revolucionam construções',
+        effect: 'Construir dá +1 PV e +1 Ouro extra',
+        duration: 2,
+        type: 'mixed',
+        apply: (state) => {
+          state.eventModifiers.construirBonus = 1;
+          state.eventModifiers.construirOuroExtra = 1;
+        },
+        remove: (state) => {
+          state.eventModifiers.construirBonus = 0;
+          state.eventModifiers.construirOuroExtra = 0;
+        }
+      },
+      {
+        id: 7,
+        name: 'Inflação',
+        icon: '💰',
+        description: 'Custos de construção disparam',
+        effect: 'Construir custa +1 de cada recurso',
+        duration: 2,
+        type: 'negative',
+        apply: (state) => {
+          state.eventModifiers.construirCustoExtra = true;
+        },
+        remove: (state) => {
+          state.eventModifiers.construirCustoExtra = false;
+        }
+      },
+      {
+        id: 8,
+        name: 'Tempestade de Areia',
+        icon: '🌪️',
+        description: 'Ventos fortes afetam produção',
+        effect: '+50% Pedra, -50% Madeira',
+        duration: 1,
+        type: 'mixed',
+        apply: (state) => {
+          state.eventModifiers.pedraMultiplier = 1.5;
+          state.eventModifiers.madeiraMultiplier = 0.5;
+        },
+        remove: (state) => {
+          state.eventModifiers.pedraMultiplier = 1.0;
+          state.eventModifiers.madeiraMultiplier = 1.0;
+        }
+      },
+      {
+        id: 9,
+        name: 'Festival Cultural',
+        icon: '🎉',
+        description: 'Celebrações unem as facções',
+        effect: 'Todos ganham +1 PV',
+        duration: 0,
+        type: 'positive',
+        apply: (state) => {
+          state.players.forEach(p => {
+            p.victoryPoints += 1;
+          });
+        }
+      },
+      {
+        id: 10,
+        name: 'Enchente',
+        icon: '🌊',
+        description: 'Chuvas torrenciais inundam regiões',
+        effect: '+100% Água, -50% Madeira',
+        duration: 1,
+        type: 'mixed',
+        apply: (state) => {
+          state.eventModifiers.aguaMultiplier = 2.0;
+          state.eventModifiers.madeiraMultiplier = 0.5;
+        },
+        remove: (state) => {
+          state.eventModifiers.aguaMultiplier = 1.0;
+          state.eventModifiers.madeiraMultiplier = 1.0;
+        }
+      },
+      {
+        id: 11,
+        name: 'Inverno Rigoroso',
+        icon: '❄️',
+        description: 'Frio extremo afeta produção',
+        effect: '-30% Madeira e Água',
+        duration: 2,
+        type: 'negative',
+        apply: (state) => {
+          state.eventModifiers.madeiraMultiplier = 0.7;
+          state.eventModifiers.aguaMultiplier = 0.7;
+        },
+        remove: (state) => {
+          state.eventModifiers.madeiraMultiplier = 1.0;
+          state.eventModifiers.aguaMultiplier = 1.0;
+        }
+      },
+      {
+        id: 12,
+        name: 'Era da Exploração',
+        icon: '🧭',
+        description: 'Novas técnicas de exploração são desenvolvidas',
+        effect: 'Explorar custa -1 Madeira',
+        duration: 2,
+        type: 'positive',
+        apply: (state) => {
+          state.eventModifiers.explorarDesconto = true;
+        },
+        remove: (state) => {
+          state.eventModifiers.explorarDesconto = false;
+        }
+      },
+      {
+        id: 13,
+        name: 'Paz Diplomática',
+        icon: '🕊️',
+        description: 'Tratados de paz facilitam negociações',
+        effect: 'Negociar dá +2 PV extra',
+        duration: 1,
+        type: 'mixed',
+        apply: (state) => {
+          state.eventModifiers.negociacaoPvExtra = 2;
+        },
+        remove: (state) => {
+          state.eventModifiers.negociacaoPvExtra = 0;
+        }
+      },
+      {
+        id: 14,
+        name: 'Escassez',
+        icon: '🆘',
+        description: 'Recursos naturais estão escassos',
+        effect: 'Recolher dá -25% recursos',
+        duration: 2,
+        type: 'negative',
+        apply: (state) => {
+          state.eventModifiers.recolherPenalidade = 0.75;
+        },
+        remove: (state) => {
+          state.eventModifiers.recolherPenalidade = 1.0;
+        }
+      },
+      {
+        id: 15,
+        name: 'Depressão Econômica',
+        icon: '📉',
+        description: 'Crise econômica afeta todas as facções',
+        effect: '-1 de todos os recursos por turno',
+        duration: 1,
+        type: 'mixed',
+        apply: (state) => {
+          state.players.forEach(p => {
+            p.resources.madeira = Math.max(0, p.resources.madeira - 1);
+            p.resources.pedra = Math.max(0, p.resources.pedra - 1);
+            p.resources.ouro = Math.max(0, p.resources.ouro - 1);
+            p.resources.agua = Math.max(0, p.resources.agua - 1);
+          });
+        }
+      }
+    ];
+  }
 
   // Inicialização do jogo
   initializeGame() {
-  this.setupRegions();
-  this.distributeInitialRegions();
-  
-  // Inicializar conquistas
-  gameState.players.forEach((player, index) => {
-    initializePlayerAchievements(index);
-  });
-  
-  gameState.gameStarted = true;
-  gameState.turn = 1;
-  gameState.actionsLeft = GAME_CONFIG.ACTIONS_PER_TURN;
-  gameState.currentPhase = TURN_PHASES.RENDA; // Garantir fase inicial
-  
-  this.applyPlayerIncome(gameState.players[gameState.currentPlayerIndex]);
-  
-  window.uiManager.updateUI();
-  window.uiManager.updateEventBanner();
-}
+    this.setupRegions();
+    this.distributeInitialRegions();
+    
+    // Inicializar conquistas para cada jogador
+    gameState.players.forEach((player, index) => {
+      initializePlayerAchievements(index);
+      
+      // Contar biomas iniciais
+      const playerStats = achievementsState.playerAchievements[index];
+      player.regions.forEach(regionId => {
+        const region = gameState.regions[regionId];
+        playerStats.controlledBiomes.add(region.biome);
+      });
+    });
+    
+    gameState.gameStarted = true;
+    gameState.turn = 1;
+    gameState.actionsLeft = GAME_CONFIG.ACTIONS_PER_TURN;
+    gameState.currentPhase = TURN_PHASES.RENDA;
+    
+    this.applyPlayerIncome(gameState.players[gameState.currentPlayerIndex]);
+    
+    window.uiManager.updateUI();
+    window.uiManager.updateEventBanner();
+  }
 
   setupRegions() {
     gameState.regions = [];
@@ -525,7 +495,7 @@ initializeGameEvents() {
   }
 
   checkPhaseRestriction(actionType) {
-    if (this.currentPhase !== TURN_PHASES.ACOES) {
+    if (gameState.currentPhase !== TURN_PHASES.ACOES) {
       const phaseNames = {
         [TURN_PHASES.RENDA]: 'Renda (recursos automáticos)',
         [TURN_PHASES.ACOES]: 'Ações',
@@ -533,7 +503,7 @@ initializeGameEvents() {
       };
       
       window.utils.showFeedback(
-        `Ação "${actionType}" só pode ser realizada na fase de Ações. Fase atual: ${phaseNames[this.currentPhase]}`,
+        `Ação "${actionType}" só pode ser realizada na fase de Ações. Fase atual: ${phaseNames[gameState.currentPhase]}`,
         'warning'
       );
       return false;
@@ -598,6 +568,13 @@ initializeGameEvents() {
     region.controller = player.id;
     player.regions.push(region.id);
     
+    // Atualizar biomas controlados
+    const playerStats = achievementsState.playerAchievements[player.id];
+    if (playerStats) {
+      playerStats.controlledBiomes.add(region.biome);
+      checkAchievements(player.id);
+    }
+    
     window.utils.showFeedback(`${region.name} agora está sob seu controle! -${pvCost} PV`, 'success');
     addActivityLog({
       type: 'explore',
@@ -660,7 +637,9 @@ initializeGameEvents() {
     
     const playerId = player.id;
     const playerStats = achievementsState.playerAchievements[playerId];
-    playerStats.explored++;
+    if (playerStats) {
+      playerStats.explored++;
+    }
     
     const newAchievements = checkAchievements(playerId);
     if (newAchievements.length > 0) {
@@ -745,7 +724,9 @@ initializeGameEvents() {
     
     const playerId = player.id;
     const playerStats = achievementsState.playerAchievements[playerId];
-    playerStats.collected++;
+    if (playerStats) {
+      playerStats.collected++;
+    }
     
     const newAchievements = checkAchievements(playerId);
     if (newAchievements.length > 0) {
@@ -911,149 +892,6 @@ initializeGameEvents() {
   }
 
   async handleEndTurn() {
-  const player = gameState.players[gameState.currentPlayerIndex];
-  
-  switch (this.currentPhase) {
-    case TURN_PHASES.RENDA:
-      this.applyPlayerIncome(player);
-      this.currentPhase = TURN_PHASES.ACOES;
-      gameState.currentPhase = this.currentPhase; // Sincronizar
-      gameState.actionsLeft = GAME_CONFIG.ACTIONS_PER_TURN;
-      
-      window.uiManager.updateUI();
-      window.utils.showFeedback(`${player.name} recebeu renda. Fase: Ações`, 'info');
-      break;
-      
-    case TURN_PHASES.ACOES:
-      // ... código existente ...
-      this.currentPhase = TURN_PHASES.NEGOCIACAO;
-      gameState.currentPhase = this.currentPhase; // Sincronizar
-      break;
-      
-    case TURN_PHASES.NEGOCIACAO:
-      // ... código existente ...
-      this.currentPhase = TURN_PHASES.RENDA;
-      gameState.currentPhase = this.currentPhase; // Sincronizar
-      break;
-  }
-}
-
-  // Sistema de eventos
-  triggerRandomEvent() {
-    if (this.GAME_EVENTS.length === 0) return;
+    const player = gameState.players[gameState.currentPlayerIndex];
     
-    const ev = this.GAME_EVENTS[Math.floor(Math.random() * this.GAME_EVENTS.length)];
-    
-    if (gameState.currentEvent && typeof gameState.currentEvent.remove === 'function') {
-      gameState.currentEvent.remove(gameState);
-    }
-    
-    gameState.currentEvent = ev;
-    gameState.eventTurnsLeft = ev.duration;
-    gameState.eventModifiers = {};
-    
-    if (typeof ev.apply === 'function') {
-      ev.apply(gameState);
-    }
-    
-    addActivityLog({
-      type: 'event',
-      playerName: 'GAIA',
-      action: `disparou evento: ${ev.name}`,
-      details: ev.description,
-      isEvent: true,
-      isMine: false
-    });
-    
-    document.getElementById('eventModal')?.classList.remove('hidden');
-    
-    setTimeout(() => {
-      window.uiManager.updateEventBanner();
-    }, 100);
-  }
-
-  updateEventDuration() {
-    if (gameState.currentEvent && gameState.eventTurnsLeft > 0) {
-      gameState.eventTurnsLeft -= 1;
-      
-      if (gameState.eventTurnsLeft <= 0) {
-        if (typeof gameState.currentEvent.remove === 'function') {
-          gameState.currentEvent.remove(gameState);
-        }
-        gameState.currentEvent = null;
-        gameState.eventModifiers = {};
-        window.utils.showFeedback('O evento global terminou.', 'info');
-      }
-      
-      window.uiManager.updateEventBanner();
-    }
-  }
-
-  // Utilitários
-  clearRegionSelection() {
-    gameState.selectedRegionId = null;
-    document.querySelectorAll('.board-cell').forEach(c => c.classList.remove('region-selected'));
-  }
-
-  checkVictory() {
-    const winner = gameState.players.find(p => p.victoryPoints >= GAME_CONFIG.VICTORY_POINTS);
-    if (winner) {
-      window.utils.showFeedback(`${winner.name} venceu o jogo!`, 'success');
-      
-      document.getElementById('actionExplore')?.setAttribute('disabled', 'true');
-      document.getElementById('actionCollect')?.setAttribute('disabled', 'true');
-      document.getElementById('actionBuild')?.setAttribute('disabled', 'true');
-      document.getElementById('actionNegotiate')?.setAttribute('disabled', 'true');
-      document.getElementById('endTurnBtn')?.setAttribute('disabled', 'true');
-      
-      document.getElementById('victoryModal')?.classList.remove('hidden');
-      document.getElementById('victoryModalTitle').textContent = 'Vitória!';
-      document.getElementById('victoryModalMessage').textContent = 
-        `Parabéns, ${winner.name}! Você venceu Gaia!`;
-      
-      achievementsState.wins++;
-      setAchievementsState(achievementsState);
-      
-      addActivityLog({
-        type: 'victory',
-        playerName: winner.name,
-        action: 'venceu o jogo!',
-        details: `${winner.victoryPoints} PV`,
-        isEvent: false,
-        isMine: winner.id === gameState.currentPlayerIndex
-      });
-    }
-  }
-
-  updatePlayerBiomes(playerId) {
-    const player = gameState.players[playerId];
-    const playerStats = achievementsState.playerAchievements[playerId];
-    
-    if (!playerStats) return;
-    
-    playerStats.controlledBiomes.clear();
-    
-    player.regions.forEach(regionId => {
-      const region = gameState.regions[regionId];
-      playerStats.controlledBiomes.add(region.biome);
-    });
-    
-    const newAchievements = checkAchievements(playerId);
-    if (newAchievements.length > 0) {
-      newAchievements.forEach(achievementName => {
-        window.utils.showFeedback(`🎉 Conquista Desbloqueada: ${achievementName}!`, 'success');
-        
-        addActivityLog({
-          type: 'achievement',
-          playerName: player.name,
-          action: 'desbloqueou conquista',
-          details: achievementName,
-          isEvent: false,
-          isMine: true
-        });
-      });
-    }
-  }
-}
-
-export { GameLogic };
+    switch (
