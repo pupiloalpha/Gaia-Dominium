@@ -238,13 +238,17 @@ this.structureModal?.addEventListener('click', (e) => {
 
   // Define as bordas do mapa
   renderBoard() {
-    this.boardContainer.innerHTML = '';
-    
-    gameState.regions.forEach((region, index) => {
-      const cell = this.createRegionCell(region, index);
-      this.boardContainer.appendChild(cell);
-    });
-  }
+  // Use boardOverlay em vez de boardContainer
+  const boardContainer = document.getElementById('boardOverlay');
+  if (!boardContainer) return;
+  
+  boardContainer.innerHTML = '';
+  
+  gameState.regions.forEach((region, index) => {
+    const cell = this.createRegionCell(region, index);
+    boardContainer.appendChild(cell);
+  });
+}
 
   // Cria as regiões no mapa
   createRegionCell(region, index) {
