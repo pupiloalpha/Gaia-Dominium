@@ -282,19 +282,18 @@
     </aside>
 
     <!-- MAPA -->
-    <main id="gameMap" class="hidden">
+    <!-- Mapa -->
+<main id="gameMap" class="hidden relative bg-cover bg-center bg-no-repeat">
+  <!-- A imagem é carregada via CSS background-image -->
+  
   <!-- Viewport para zoom/pan -->
   <div id="mapViewport" class="absolute inset-0 overflow-hidden">
     <!-- Container para transformações de zoom -->
-    <div id="mapTransform" class="relative w-full h-full">
+    <div id="mapTransform" class="relative w-full h-full flex items-center justify-center">
       <!-- Container da imagem do mapa -->
       <div id="mapImageContainer" class="relative w-full h-full">
-        <!-- Imagem do mapa (fundo) -->
-        <img id="mapImage" src="gaia-mapa.png" alt="Mapa de Gaia" 
-             class="w-full h-full object-contain" />
-        
         <!-- Overlay do tabuleiro (25 células) -->
-        <div id="boardOverlay" class="absolute inset-0">
+        <div id="boardOverlay" class="absolute inset-0 grid grid-cols-5 grid-rows-5 gap-0 p-1">
           <!-- As células serão geradas aqui pelo JavaScript -->
         </div>
       </div>
@@ -305,19 +304,6 @@
   <div id="regionTooltip" class="fixed z-[9999] w-64 bg-gray-900/95 backdrop-blur-md border border-white/10 rounded-lg p-4 text-sm shadow-2xl opacity-0 invisible transition-all duration-200">
     <div id="tooltipTitle" class="font-semibold text-white text-base mb-2"></div>
     <div id="tooltipBody" class="text-gray-300"></div>
-  </div>
-  
-  <!-- Controles de Zoom -->
-  <div id="zoomControls">
-    <button id="zoomIn" class="zoom-btn" title="Zoom In">+</button>
-    <button id="zoomOut" class="zoom-btn" title="Zoom Out">-</button>
-    <button id="resetZoom" class="zoom-btn" title="Reset Zoom">↺</button>
-  </div>
-  
-  <!-- Indicador de Posição no Mini-mapa -->
-  <div id="miniMapIndicator">
-    <div>Posição: <span id="mapPosition">0px, 0px</span></div>
-    <div>Zoom: <span id="zoomLevel">100%</span></div>
   </div>
 </main>
 
