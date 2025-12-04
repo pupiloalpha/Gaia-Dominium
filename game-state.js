@@ -139,7 +139,9 @@ function setAchievementsState(newState) {
 }
 
 function setCurrentPhase(phase) {
-  currentPhase = phase;
+  if (['renda', 'acoes', 'negociacao'].includes(phase)) {
+    gameState.currentPhase = phase;
+  }
 }
 
 // Funções auxiliares de estado
