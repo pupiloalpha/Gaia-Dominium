@@ -410,9 +410,9 @@ class GameLogic {
   applyPlayerIncome(player) {
   const { resources, pv } = this.calculatePlayerIncome(player);
   
-  // Adicionar recursos (agora inteiros)
+  // Adicionar recursos (valores inteiros)
   Object.keys(resources).forEach(resource => {
-    player.resources[resource] += Math.round(resources[resource]);
+    player.resources[resource] += Math.max(0, Math.round(resources[resource]));
   });
   
   // Adicionar PV por turno das estruturas
@@ -440,8 +440,13 @@ class GameLogic {
     });
   }
   
-  // Retornar os valores para feedback
-  return { resources, pv };
+  // Retornar valores para feedback
+  return { 
+    resources: Object.fromEntries(
+      Object.entries(resources).map(([key, value]) => [key, Math.round(value)])
+    ), 
+    pv: Math.round(pv) 
+  };
 }
 
   // Sistema de ações
@@ -873,12 +878,12 @@ class GameLogic {
   async handleEndTurn() {
   const player = gameState.players[gameState.currentPlayerIndex];
   
-  switch (gameState.currentPhase) { // Usar gameState.currentPhase diretamente
+  switch (gameState.currentPhase) {
     case TURN_PHASES.RENDA:
-      // Aplicar renda e obter valores
+      // Aplicar renda
       const income = this.applyPlayerIncome(player);
       
-      // Feedback da renda
+      // Preparar mensagem de feedback
       const incomeText = Object.entries(income.resources)
         .filter(([_, amount]) => amount > 0)
         .map(([resource, amount]) => `+${Math.round(amount)} ${resource}`)
@@ -893,34 +898,36 @@ class GameLogic {
       }
       
       if (feedbackMessages.length > 0) {
-        // Mostrar feedback e mudar fase após fechar
-        await window.utils.showFeedbackWithCallback(
+        // Usar showFeedback normal e depois mudar de fase
+        window.utils.showFeedback(
           'Renda Recebida',
           `${player.name} recebeu: ${feedbackMessages.join(' | ')}`,
-          'success',
-          () => {
-            // Mudar para fase de ações após fechar o modal
-            gameState.currentPhase = TURN_PHASES.ACOES;
-            gameState.actionsLeft = GAME_CONFIG.ACTIONS_PER_TURN;
-            
-            addActivityLog({
-              type: 'phase',
-              playerName: player.name,
-              action: 'avançou para fase de Ações',
-              details: '',
-              isEvent: false,
-              isMine: true
-            });
-            
-            window.uiManager.updateUI();
-            window.utils.showFeedback(`${player.name} agora está na fase de Ações. Você tem ${gameState.actionsLeft} ações.`, 'info');
-          }
+          'success'
         );
+        
+        // Mudar para fase de ações após 1.5 segundos (tempo para ler o feedback)
+        setTimeout(() => {
+          gameState.currentPhase = TURN_PHASES.ACOES;
+          gameState.actionsLeft = GAME_CONFIG.ACTIONS_PER_TURN;
+          
+          addActivityLog({
+            type: 'phase',
+            playerName: player.name,
+            action: 'avançou para fase de Ações',
+            details: '',
+            isEvent: false,
+            isMine: true
+          });
+          
+          window.uiManager.updateUI();
+          window.utils.showFeedback(`${player.name} agora está na fase de Ações. Você tem ${gameState.actionsLeft} ações.`, 'info');
+        }, 1500);
       } else {
         // Se não houve renda, mudar direto
         gameState.currentPhase = TURN_PHASES.ACOES;
         gameState.actionsLeft = GAME_CONFIG.ACTIONS_PER_TURN;
         window.uiManager.updateUI();
+        window.utils.showFeedback(`${player.name} agora está na fase de Ações. Você tem ${gameState.actionsLeft} ações.`, 'info');
       }
       break;
       
