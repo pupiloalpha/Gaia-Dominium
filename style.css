@@ -185,7 +185,10 @@ input[type="text"]:focus, select:focus, input[type="number"]:focus {
   height: calc(100vh - 200px);
   min-height: 600px;
   overflow: hidden;
-  background-color: #0a0a0a;
+  background-image: url('gaia-mapa.png');
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
 }
 
 /* Remove a imagem como elemento separado */
@@ -255,8 +258,8 @@ input[type="text"]:focus, select:focus, input[type="number"]:focus {
   overflow: hidden;
   cursor: pointer;
   user-select: none;
-  background: rgba(0, 0, 0, 0.3);
-  backdrop-filter: blur(1px);
+  background: rgba(0, 0, 0, 0.4);
+  backdrop-filter: blur(2px);
 }
 
 /* Overlay de cor do jogador com transparência */
@@ -292,15 +295,19 @@ input[type="text"]:focus, select:focus, input[type="number"]:focus {
   z-index: 1;
 }
 
-/* Ajustes para texto dentro das células */
-.board-cell .text-xs {
-  font-size: 11px;
-  line-height: 1.2;
-  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.8);
+/* Aumentar o tamanho do ícone do jogador */
+.board-cell .text-xl {
+  font-size: 1.5rem !important; /* Tamanho normal do ícone */
 }
 
-.board-cell .text-\[10px\] {
-  font-size: 10px;
+/* Aumentar ícones de recursos */
+.board-cell .text-base {
+  font-size: 1.2rem !important;
+}
+
+/* Aumentar ícone das estruturas */
+.board-cell .text-sm {
+  font-size: 1.1rem !important;
 }
 
 /* Efeito de brilho suave nas bordas das células controladas */
@@ -386,8 +393,18 @@ input[type="text"]:focus, select:focus, input[type="number"]:focus {
   border-left: 4px solid rgba(var(--player-rgb), 0.8);
 }
 
+.board-cell.controlled::before {
+  background-color: rgba(var(--player-rgb), 0.3);
+  border-left: 4px solid rgba(var(--player-rgb), 0.8);
+}
+
 .board-cell.neutral {
   background: rgba(255, 255, 255, 0.05);
+  border-left: 4px solid rgba(255, 255, 255, 0.15);
+}
+
+.board-cell.neutral::before {
+  background-color: rgba(255, 255, 255, 0.05);
   border-left: 4px solid rgba(255, 255, 255, 0.15);
 }
 
