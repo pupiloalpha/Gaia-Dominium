@@ -1,293 +1,407 @@
-:root{
---bg: #0b0d0f;
---accent: #f8d65c;
+:root {
+  --bg: #0b0d0f;
+  --accent: #f8d65c;
+  --player-rgb: 255, 255, 255;
+  --player-color: #ffffff;
 }
 
 /* Base */
-*{font-family:'Inter',system-ui,-apple-system,Segoe UI,Roboto,"Helvetica Neue",Arial;box-sizing:border-box}
-html,body{height:100%;margin:0;background-attachment:fixed;background-size:cover;background-position:center;color:#EEE}
-
-/* Player modal glass */
-.player-modal{
-background: linear-gradient(180deg, rgba(12,12,12,0.56), rgba(8,8,8,0.45));
-border:1px solid rgba(255,255,255,0.06);
-backdrop-filter: blur(12px) saturate(120%);
-box-shadow:0 12px 40px rgba(0,0,0,0.6);
-z-index: 9999;
+* {
+  font-family: 'Inter', system-ui, -apple-system, Segoe UI, Roboto, "Helvetica Neue", Arial;
+  box-sizing: border-box;
 }
 
-/* Input dark */
-input[type="text"], select, input[type="number"]{
-background: rgba(31,31,31,0.85);
-color: #EEE;
-border: 1px solid rgba(255,255,255,0.04);
-}
-
-/* Icon options */
-.icon-option{
-min-width:50px;min-height:50px;border-radius:10px;background: rgba(255,255,255,0.02);display:flex;align-items:center;justify-content:center;font-size:1.5rem;cursor:pointer;transition:.12s;
-}
-
-.icon-option:hover{transform:translateY(-4px)}
-.icon-option.selected{border:2px solid var(--accent); background: rgba(248,214,92,0.06); transform:scale(1.06)}
-
-/* SIDEBAR / REGION common glass background */
-.bg-panel-like{
-background: rgba(31,31,31,0.80);
-backdrop-filter: blur(8px);
-border: 1px solid rgba(255,255,255,0.06);
-border-radius: 10px;
-}
-
-/* --- MAPA DIVIDIDO EM 25 QUADRANTES (5x5) --- */
-/* --- CONTAINER DO MAPA 1024x1024 RESPONSIVO --- */
-#gameMap {
-  width: 90vw !important;
-  height: 90vw !important;
-  max-width: 1024px !important;
-  max-height: 1024px !important;
-  aspect-ratio: 1 / 1 !important;
-  margin: 20px auto !important;
-  border-radius: 0 !important;
+html, body {
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  background-attachment: fixed;
+  background-size: cover;
+  background-position: center;
+  color: #EEE;
   overflow: hidden;
-  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
-  position: relative !important;
 }
 
-/* Imagem de fundo do mapa */
-#gameMap img {
-  position: absolute !important;
-  inset: 0 !important;
-  width: 100% !important;
-  height: 100% !important;
-  object-fit: cover !important;
-  object-position: center !important;
-  pointer-events: none !important;
-  z-index: 1 !important;
+/* ==== HIERARQUIA DE Z-INDEX ==== */
+/* Tela inicial */
+#initialScreen {
+  z-index: 50;
 }
 
-#boardContainer {
-  grid-template-columns: repeat(5, 1fr) !important;
-  grid-template-rows: repeat(5, 1fr) !important;
-  gap: 0px !important;
-  padding: 0px !important;
-  position: relative !important;
-  z-index: 10 !important;
-  transform-origin: center center !important;
-  transition: transform 0.1s ease-out !important;
+/* Icone do manual flutuante */
+#manualIcon {
+  z-index: 60;
 }
 
-.board-cell {
-  position: relative;
-  overflow: hidden;
-  min-height: unset !important;
-  aspect-ratio: 1 / 1 !important;
-  border-radius: 0 !important;
+/* Navbar do jogo */
+#gameNavbar {
+  z-index: 40;
 }
 
-/* Remove o ::before que duplicava a imagem */
-.board-cell::before {
+/* Footer do jogo */
+#gameFooter {
+  z-index: 45;
+}
+
+/* Modais globais (acima de TUDO) */
+#manualModal {
+  z-index: 100 !important;
+}
+
+#alertModal {
+  z-index: 101 !important;
+}
+
+#victoryModal {
+  z-index: 102 !important;
+}
+
+#negotiationModal, 
+#negResponseModal {
+  z-index: 98 !important;
+}
+
+#eventModal {
+  z-index: 95 !important;
+}
+
+/* Tooltip das regiões */
+#regionTooltip {
+  z-index: 90 !important;
+}
+
+/* ==== ESTILOS ESPECÍFICOS PARA MODAIS ==== */
+/* Garantir que modais fiquem visíveis */
+#manualModal.hidden,
+#alertModal.hidden,
+#eventModal.hidden,
+#negotiationModal.hidden,
+#negResponseModal.hidden,
+#victoryModal.hidden {
   display: none !important;
 }
 
-/* Responsividade para telas menores */
-@media (max-width: 1024px) {
-  #gameMap {
-    width: 95vw !important;
-    height: 95vw !important;
+#manualModal:not(.hidden),
+#alertModal:not(.hidden),
+#eventModal:not(.hidden),
+#negotiationModal:not(.hidden),
+#negResponseModal:not(.hidden),
+#victoryModal:not(.hidden) {
+  display: flex !important;
+}
+
+/* Overlay dos modais */
+#manualModal > .absolute,
+#alertModal > .absolute,
+#eventModal > .absolute,
+#negotiationModal > .absolute,
+#negResponseModal > .absolute,
+#victoryModal > .bg-black {
+  position: fixed !important;
+  width: 100vw !important;
+  height: 100vh !important;
+}
+
+/* ==== TELA INICIAL ==== */
+/* Player modal glass */
+.player-modal {
+  background: linear-gradient(180deg, rgba(12,12,12,0.56), rgba(8,8,8,0.45));
+  border: 1px solid rgba(255,255,255,0.06);
+  backdrop-filter: blur(12px) saturate(120%);
+  box-shadow: 0 12px 40px rgba(0,0,0,0.6);
+  z-index: 51; /* Acima do overlay da tela inicial */
+  position: relative;
+}
+
+/* Input dark */
+input[type="text"], select, input[type="number"] {
+  background: rgba(31,31,31,0.85);
+  color: #EEE;
+  border: 1px solid rgba(255,255,255,0.04);
+  border-radius: 8px;
+  padding: 10px 12px;
+  font-size: 14px;
+}
+
+input[type="text"]:focus, select:focus, input[type="number"]:focus {
+  outline: none;
+  border-color: #f8d65c;
+  box-shadow: 0 0 0 2px rgba(248, 214, 92, 0.2);
+}
+
+/* Icon options */
+.icon-option {
+  min-width: 50px;
+  min-height: 50px;
+  border-radius: 10px;
+  background: rgba(255,255,255,0.02);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.5rem;
+  cursor: pointer;
+  transition: .12s;
+}
+
+.icon-option:hover {
+  transform: translateY(-4px);
+  background: rgba(255,255,255,0.05);
+}
+
+.icon-option.selected {
+  border: 2px solid var(--accent);
+  background: rgba(248,214,92,0.06);
+  transform: scale(1.06);
+}
+
+/* ==== LAYOUT DO JOGO ==== */
+/* Container principal do jogo */
+#gameContainer {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1rem;
+  height: calc(100vh - 180px);
+  margin-top: 80px;
+  margin-bottom: 80px;
+  padding: 0 1rem;
+  overflow: hidden;
+}
+
+@media (min-width: 1024px) {
+  #gameContainer {
+    grid-template-columns: 320px 1fr;
+    height: calc(100vh - 160px);
   }
 }
 
-@media (max-width: 768px) {
-  #gameMap {
-    width: 98vw !important;
-    height: 98vw !important;
-    margin: 10px auto !important;
-    border-radius: 0;
-  }
+/* ==== MAPA RESPONSIVO ==== */
+/* Container do mapa - ocupa o espaço disponível */
+/* ===== NOVO SISTEMA DE CÉLULAS DO MAPA ===== */
 
-  .board-cell {
-    border-radius: 0;
-  }
+/* Fundo do mapa - imagem completa visível */
+#gameMap {
+  background-image: url('gaia-mapa.png');
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
 }
 
-@media (max-width: 480px) {
-  #gameMap {
-    width: 100vw !important;
-    height: 100vw !important;
-    margin: 0 !important;
-    border-radius: 0;
-  }
-
-  #boardContainer {
-    gap: 0px !important;
-    padding: 0px !important;
-  }
-
-  .board-cell {
-    border-radius: 0;
-  }
+/* Remove a imagem como elemento separado */
+#gameMap img {
+  display: none;
 }
 
-/* Tile A–Y → posição do pedaço do mapa */
-.board-cell[data-region="A"]::before { background-position:   0%   0%; }
-.board-cell[data-region="B"]::before { background-position:  25%   0%; }
-.board-cell[data-region="C"]::before { background-position:  50%   0%; }
-.board-cell[data-region="D"]::before { background-position:  75%   0%; }
-.board-cell[data-region="E"]::before { background-position: 100%   0%; }
-
-.board-cell[data-region="F"]::before { background-position:   0%  25%; }
-.board-cell[data-region="G"]::before { background-position:  25%  25%; }
-.board-cell[data-region="H"]::before { background-position:  50%  25%; }
-.board-cell[data-region="I"]::before { background-position:  75%  25%; }
-.board-cell[data-region="J"]::before { background-position: 100%  25%; }
-
-.board-cell[data-region="K"]::before { background-position:   0%  50%; }
-.board-cell[data-region="L"]::before { background-position:  25%  50%; }
-.board-cell[data-region="M"]::before { background-position:  50%  50%; }
-.board-cell[data-region="N"]::before { background-position:  75%  50%; }
-.board-cell[data-region="O"]::before { background-position: 100%  50%; }
-
-.board-cell[data-region="P"]::before { background-position:   0%  75%; }
-.board-cell[data-region="Q"]::before { background-position:  25%  75%; }
-.board-cell[data-region="R"]::before { background-position:  50%  75%; }
-.board-cell[data-region="S"]::before { background-position:  75%  75%; }
-.board-cell[data-region="T"]::before { background-position: 100%  75%; }
-
-.board-cell[data-region="U"]::before { background-position:   0% 100%; }
-.board-cell[data-region="V"]::before { background-position:  25% 100%; }
-.board-cell[data-region="W"]::before { background-position:  50% 100%; }
-.board-cell[data-region="X"]::before { background-position:  75% 100%; }
-.board-cell[data-region="Y"]::before { background-position: 100% 100%; }
-
-/* Destaque ao passar o mouse */
-.board-cell:hover::before {
-  opacity: 0.8;
+/* Células individuais do tabuleiro - TOTALMENTE TRANSPARENTES */
+.board-cell {
+  position: relative;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  background: transparent !important;
+  border-radius: 4px;
+  transition: all 0.2s ease;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  padding: 6px;
+  overflow: hidden;
+  cursor: pointer;
+  user-select: none;
+  backdrop-filter: none !important;
 }
 
+/* Overlay de cor do jogador com transparência */
+.board-cell::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 0;
+  opacity: 0.25;
+  border-radius: 3px;
+  pointer-events: none;
+}
 
-.board-cell:hover{transform:translateY(-4px); box-shadow:0 10px 30px rgba(0,0,0,0.5);}
+/* Região controlada - aplica cor do jogador */
+.board-cell.controlled::before {
+  background-color: rgba(var(--player-rgb), 0.3);
+  border-left: 4px solid rgba(var(--player-rgb), 0.8);
+}
 
-/* neutral vs controlled tint */
+/* Região neutra - leve destaque */
+.board-cell.neutral::before {
+  background-color: rgba(255, 255, 255, 0.05);
+  border-left: 4px solid rgba(255, 255, 255, 0.15);
+}
+
+/* Conteúdo da célula (flutuante sobre o overlay) */
+.board-cell > * {
+  position: relative;
+  z-index: 1;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.8);
+}
+
+/* Texto minimalista */
+/* Melhor contraste para texto sobre o mapa */
+.board-cell .text-xs {
+  background: linear-gradient(to bottom, 
+    rgba(0, 0, 0, 0.7) 0%, 
+    rgba(0, 0, 0, 0.4) 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  text-shadow: 
+    0 1px 1px rgba(0, 0, 0, 0.8),
+    0 0 10px rgba(255, 255, 255, 0.1);
+}
+
+/* Efeito de brilho suave nas bordas das células controladas */
 .board-cell.controlled {
-  background: rgba(var(--player-rgb), 0.8) !important;
-  border-left: 6px solid var(--player-color);
+  box-shadow: 
+    inset 0 0 15px rgba(var(--player-rgb), 0.1),
+    0 0 5px rgba(var(--player-rgb), 0.1);
 }
 
-.board-cell.neutral{ border-color: rgba(255,255,255,0.03) }
-
-/* Seleção visual - funciona para QUALQUER região */
-.board-cell.region-selected {
-    border: 3px solid var(--accent) !important;
-    box-shadow: 0 0 25px rgba(248,214,92,0.5), 0 8px 20px rgba(248,214,92,0.3) !important;
-    transform: translateY(-2px) scale(1.02) !important;
-    z-index: 10;
+/* Animações suaves para transições de estado */
+.board-cell {
+  transition: 
+    transform 0.2s ease,
+    box-shadow 0.3s ease,
+    border-color 0.3s ease,
+    opacity 0.3s ease;
 }
 
-.board-cell.region-selected::before {
-  opacity: 0.65; /* aumenta visibilidade do tile selecionado */
-  filter: saturate(1.05) contrast(1.02);
+.board-cell::before {
+  transition: opacity 0.3s ease, filter 0.3s ease;
 }
 
-/* badge */
-.badge{ display:inline-block;padding:4px 8px;border-radius:999px;font-size:12px;background:rgba(255,255,255,0.03); color:#fff }
-
-/* Tooltip styling */
-#regionTooltip{
-pointer-events: none !important;
-transition: opacity .15s ease, transform .15s ease;
-z-index: 10001;
+/* Feedback visual para ações disponíveis */
+.board-cell.action-available {
+  animation: pulse-glow 2s infinite;
 }
 
-#regionTooltip.visible{ 
-    display:block; 
-    opacity:1; 
-    transform: translateY(0); 
-    pointer-events: none !important; 
+@keyframes pulse-glow {
+  0%, 100% { 
+    box-shadow: 0 0 5px rgba(248, 214, 92, 0.1);
+  }
+  50% { 
+    box-shadow: 0 0 15px rgba(248, 214, 92, 0.3);
+  }
 }
 
-/* Manual tabs */
-.manual-tab{ color:#cfcfcf; background:transparent; border:1px solid transparent }
-.manual-tab:hover{ color:#fff; background:rgba(255,255,255,0.02) }
-.manual-tab.active{ color:var(--accent); border-color:rgba(248,214,92,0.12); background:linear-gradient(180deg, rgba(248,214,92,0.03), rgba(255,255,255,0.01)); }
-
-/* Action buttons */
-.action-btn{ background: linear-gradient(180deg, rgba(255,255,255,0.02), rgba(0,0,0,0.18)); color:#fff;padding:8px 12px;border-radius:8px;border:1px solid rgba(255,255,255,0.04) }
-.action-btn:disabled{ opacity:0.45; cursor:not-allowed }
-
-/* ===== BUG 2 FIX: Alert/confirm modal z-index ALTO ===== */
-#alertModal, #confirmModal {
-    z-index: 10002 !important;
+/* Tooltip aprimorado */
+#regionTooltip {
+  background: linear-gradient(
+    135deg,
+    rgba(20, 20, 30, 0.95) 0%,
+    rgba(10, 10, 20, 0.98) 100%
+  );
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 
+    0 10px 30px rgba(0, 0, 0, 0.5),
+    0 0 0 1px rgba(248, 214, 92, 0.1);
 }
 
-#alertModal .relative, #confirmModal .relative { 
-    transform: translateY(0); 
-    transition: transform .18s ease, opacity .18s ease; 
+/* Indicador de nível de exploração */
+.board-cell .text-xs:last-child {
+  background: rgba(0, 0, 0, 0.6);
+  border-radius: 50%;
+  width: 20px;
+  height: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid rgba(255, 255, 255, 0.2);
 }
 
-#alertModal.show, #confirmModal.show { 
-    display:flex !important; 
+/* ==== SIDEBAR ==== */
+/* SIDEBAR / REGION common glass background */
+.bg-panel-like {
+  background: rgba(31,31,31,0.80);
+  backdrop-filter: blur(8px);
+  border: 1px solid rgba(255,255,255,0.06);
+  border-radius: 10px;
 }
 
-/* Manual modal */
-#manualModal {
-    z-index: 9998;
+#sidebar {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  max-height: calc(100vh - 200px);
+  overflow-y: auto;
 }
 
-/* Negotiation modal small adjustments */
-#negotiationModal, #negResponseModal {
-    z-index: 9997;
-}
-
-#negotiationModal .relative, #negResponseModal .relative { 
-    max-height: 78vh; 
-    overflow:auto; 
-}
-
-/* Botão flutuante do manual */
-#manualIcon {
-    z-index: 9500;
-}
-
-/* Utilitários adicionais para compactação dos cards */
-.gap-0\.5 { gap: 0.125rem; }
-.gap-1\.5 { gap: 0.375rem; }
-.text-\[10px\] { font-size: 10px; }
-.leading-tight { line-height: 1.25; }
-
-/* Responsive */
-@media (max-width: 1024px){
-#sidebar{ display:none }
-#gameContainer { grid-template-columns: 1fr; padding: 1rem }
-.board-cell{ min-height:70px }
-}
-
-/* Cores dos jogadores nas regiões - tons sutis e dark */
-.board-cell[data-player-color] {
-  transition: background 0.3s ease, border-color 0.3s ease;
-}
-
-/* Painel lateral compacto */
+/* Estilos do conteúdo da sidebar */
 #resourceList li {
-  padding: 2px 0;
+  padding: 4px 0;
   border-bottom: 1px solid rgba(255,255,255,0.02);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
 }
 
 #resourceList li:last-child {
   border-bottom: none;
 }
 
-
-/* Badge de turno atual */
-.current-turn-badge {
-  animation: pulse 2s ease-in-out infinite;
+/* ==== TOOLTIP ==== */
+#regionTooltip {
+  pointer-events: none !important;
+  transition: opacity 0.15s ease, transform 0.15s ease;
+  z-index: 90;
 }
 
-@keyframes pulse {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.6; }
+#regionTooltip.visible {
+  display: block !important;
+  opacity: 1 !important;
+  transform: translateY(0) !important;
 }
 
+/* ==== MANUAL ==== */
+/* Manual tabs */
+.manual-tab {
+  color: #cfcfcf;
+  background: transparent;
+  border: 1px solid transparent;
+  transition: all 0.2s ease;
+}
+
+.manual-tab:hover {
+  color: #fff;
+  background: rgba(255,255,255,0.02);
+}
+
+.manual-tab.active {
+  color: var(--accent);
+  border-color: rgba(248,214,92,0.12);
+  background: linear-gradient(180deg, rgba(248,214,92,0.03), rgba(255,255,255,0.01));
+}
+
+/* ==== BOTÕES DE AÇÃO ==== */
+.action-btn {
+  background: linear-gradient(180deg, rgba(255,255,255,0.02), rgba(0,0,0,0.18));
+  color: #fff;
+  padding: 8px 12px;
+  border-radius: 8px;
+  border: 1px solid rgba(255,255,255,0.04);
+  font-weight: 500;
+  transition: all 0.2s ease;
+  cursor: pointer;
+}
+
+.action-btn:hover:not(:disabled) {
+  background: linear-gradient(180deg, rgba(255,255,255,0.05), rgba(0,0,0,0.25));
+  border-color: rgba(255,255,255,0.1);
+}
+
+.action-btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+  background: linear-gradient(180deg, rgba(255,255,255,0.01), rgba(0,0,0,0.1));
+}
+
+/* ==== EVENTOS ==== */
 /* Event Banner */
 #eventBanner {
   animation: slideDown 0.3s ease-out;
@@ -338,22 +452,7 @@ z-index: 10001;
   border-color: rgba(168, 85, 247, 0.4);
 }
 
-/* Activity Log Panel */
-#activityLog {
-  animation: slideUp 0.3s ease-out;
-}
-
-@keyframes slideUp {
-  from {
-    transform: translateY(100%);
-    opacity: 0;
-  }
-  to {
-    transform: translateY(0);
-    opacity: 1;
-  }
-}
-
+/* ==== LOG DE ATIVIDADES ==== */
 .log-entry {
   display: flex;
   align-items: center;
@@ -386,40 +485,11 @@ z-index: 10001;
   margin-left: auto;
 }
 
-.log-filter {
-  transition: all 0.2s ease;
-  border: 1px solid transparent;
-}
-
-.log-filter:hover {
-  background: rgba(255, 255, 255, 0.1) !important;
-}
-
-.log-filter.active {
-  background: rgba(59, 130, 246, 0.2) !important;
-  border-color: rgba(59, 130, 246, 0.4) !important;
-  color: #60a5fa !important;
-}
-
-.log-type-action { color: #60a5fa; }
-.log-type-build { color: #f59e0b; }
-.log-type-explore { color: #10b981; }
-.log-type-collect { color: #8b5cf6; }
-.log-type-negotiate { color: #f97316; }
-.log-type-event { color: #ef4444; }
-.log-type-victory { color: #10b981; }
-
-/* Hide log on small screens or when sidebar is open */
-@media (max-width: 768px) {
-  #activityLog {
-    display: none;
-  }
-}
-
-/* Activity Log Sidebar */
+/* Filtros do log */
 .log-filter-sidebar {
   transition: all 0.2s ease;
   border: 1px solid transparent;
+  cursor: pointer;
 }
 
 .log-filter-sidebar:hover {
@@ -432,37 +502,44 @@ z-index: 10001;
   color: #60a5fa !important;
 }
 
-/* Victory Modal */
-#victoryModal {
-  animation: fadeIn 0.3s ease-out;
-}
+/* Cores dos tipos de log */
+.log-type-action { color: #60a5fa; }
+.log-type-build { color: #f59e0b; }
+.log-type-explore { color: #10b981; }
+.log-type-collect { color: #8b5cf6; }
+.log-type-negotiate { color: #f97316; }
+.log-type-event { color: #ef4444; }
+.log-type-victory { color: #10b981; }
+.log-type-income { color: #22c55e; }
 
-@keyframes fadeIn {
-  from {
-    opacity: 0;
-  }
-  to {
-    opacity: 1;
-  }
-}
-
-/* Achievements */
+/* ==== CONQUISTAS ==== */
 .achievement {
   display: flex;
   align-items: center;
   gap: 8px;
-  padding: 4px 0;
+  padding: 8px;
   border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  border-radius: 6px;
+  transition: all 0.2s ease;
+}
+
+.achievement:hover {
+  background: rgba(255, 255, 255, 0.03);
 }
 
 .achievement-icon {
-  font-size: 14px;
+  font-size: 16px;
+  min-width: 24px;
+}
+
+.achievement-info {
+  flex: 1;
 }
 
 .achievement-name {
-  font-weight: 500;
+  font-weight: 600;
   color: #fff;
-  font-size: 12px;
+  font-size: 13px;
 }
 
 .achievement-desc {
@@ -476,32 +553,394 @@ z-index: 10001;
 
 .achievement-locked {
   opacity: 0.5;
+  filter: grayscale(0.8);
 }
 
-/* --- MAPA COM ZOOM E PAN --- */
+/* style.css - ADICIONE após os estilos de conquistas existentes */
 
-#mapViewport {
-  overflow: hidden;
+/* Barra de progresso */
+.achievement-progress {
+  transition: all 0.3s ease;
+}
+
+/* Efeito de desbloqueio */
+.achievement-unlocked {
+  animation: achievementUnlock 0.5s ease-out;
+}
+
+@keyframes achievementUnlock {
+  0% {
+    transform: scale(1);
+    box-shadow: 0 0 0 rgba(245, 158, 11, 0);
+  }
+  50% {
+    transform: scale(1.05);
+    box-shadow: 0 0 20px rgba(245, 158, 11, 0.5);
+  }
+  100% {
+    transform: scale(1);
+    box-shadow: 0 0 0 rgba(245, 158, 11, 0);
+  }
+}
+
+/* Modal de conquistas */
+#achievementsModal .achievement-card {
+  transition: all 0.2s ease;
+}
+
+#achievementsModal .achievement-card:hover {
+  transform: translateY(-2px);
+  border-color: rgba(245, 158, 11, 0.3);
+}
+
+/* Ícones de conquistas */
+.achievement-icon {
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.3));
+}
+
+.achievement-locked .achievement-icon {
+  filter: grayscale(1) opacity(0.5);
+}
+
+/* Modal de Estruturas */
+#structureModal .structure-option {
+  transition: all 0.2s ease;
+  border-width: 2px;
+}
+
+#structureModal .structure-option:hover:not(.opacity-50) {
+  transform: translateY(-4px);
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
+}
+
+#structureModal .structure-option:active:not(.opacity-50) {
+  transform: translateY(-2px);
+}
+
+/* Cores das estruturas */
+.bg-orange-500\/30 { background-color: rgba(249, 115, 22, 0.3); }
+.border-orange-500\/30 { border-color: rgba(249, 115, 22, 0.3); }
+
+.bg-blue-500\/30 { background-color: rgba(59, 130, 246, 0.3); }
+.border-blue-500\/30 { border-color: rgba(59, 130, 246, 0.3); }
+
+.bg-yellow-500\/30 { background-color: rgba(234, 179, 8, 0.3); }
+.border-yellow-500\/30 { border-color: rgba(234, 179, 8, 0.3); }
+
+.bg-purple-500\/30 { background-color: rgba(168, 85, 247, 0.3); }
+.border-purple-500\/30 { border-color: rgba(168, 85, 247, 0.3); }
+
+.bg-green-500\/30 { background-color: rgba(34, 197, 94, 0.3); }
+.border-green-500\/30 { border-color: rgba(34, 197, 94, 0.3); }
+
+/* Texto colorido para estruturas */
+.text-orange-300 { color: #fdba74; }
+.text-blue-300 { color: #93c5fd; }
+.text-yellow-300 { color: #fde047; }
+.text-purple-300 { color: #d8b4fe; }
+.text-green-300 { color: #86efac; }
+
+
+/* ==== BADGES ==== */
+.badge {
+  display: inline-block;
+  padding: 4px 8px;
+  border-radius: 999px;
+  font-size: 12px;
+  background: rgba(255,255,255,0.03);
+  color: #fff;
+  font-weight: 500;
+}
+
+/* Badge de turno atual */
+.current-turn-badge {
+  animation: pulse 2s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.6; }
+}
+
+/* ==== RESPONSIVIDADE ==== */
+@media (max-width: 1024px) {
+  #sidebar {
+    display: none;
+  }
+  
+  #gameContainer {
+    grid-template-columns: 1fr;
+    height: calc(100vh - 200px);
+    margin-top: 70px;
+    margin-bottom: 100px;
+  }
+}
+
+@media (max-width: 768px) {
+  #gameContainer {
+    height: calc(100vh - 220px);
+    margin-top: 60px;
+    margin-bottom: 120px;
+    padding: 0.5rem;
+  }
+  
+  .board-cell {
+    padding: 6px;
+  }
+  
+  /* Ajuste dos botões de ação no mobile */
+  #gameFooter .flex {
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+  
+  #gameFooter .flex > div:first-child {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 0.5rem;
+    width: 100%;
+  }
+  
+  #gameFooter .flex > div:last-child {
+    flex-direction: row;
+    justify-content: space-between;
+    width: 100%;
+  }
+  
+  .action-btn {
+    padding: 6px 8px;
+    font-size: 13px;
+  }
+}
+
+@media (max-width: 480px) {
+  #gameContainer {
+    height: calc(100vh - 240px);
+    margin-top: 50px;
+    margin-bottom: 140px;
+    padding: 0.25rem;
+  }
+  
+  .board-cell {
+    padding: 4px;
+  }
+  
+  .board-cell .text-xs {
+    font-size: 10px;
+  }
+  
+  .board-cell .text-\[10px\] {
+    font-size: 9px;
+  }
+  
+  /* Ajuste do footer para telas muito pequenas */
+  #gameFooter {
+    bottom: 2px;
+    padding: 0 8px;
+  }
+  
+  #gameFooter .flex > div:last-child {
+    flex-direction: column;
+    gap: 0.25rem;
+    text-align: center;
+  }
+  
+  #phaseIndicator, #actionsLeft {
+    font-size: 11px;
+  }
+}
+
+/* ==== UTILITÁRIOS ==== */
+.gap-0\.5 { gap: 0.125rem; }
+.gap-1\.5 { gap: 0.375rem; }
+.text-\[10px\] { font-size: 10px; }
+.leading-tight { line-height: 1.25; }
+
+/* Esconder elementos quando necessário */
+.hidden {
+  display: none !important;
+}
+
+.show {
+  display: flex !important;
+}
+
+/* Scrollbar personalizada */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.03);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.15);
+}
+
+/* Melhorias de acessibilidade */
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* Suporte a modo escuro/claro do sistema */
+@media (prefers-color-scheme: light) {
+  body {
+    background-color: #f5f5f5;
+    color: #333;
+  }
+  
+  /* Player modal glass */
+.player-modal{
+background: linear-gradient(180deg, rgba(12,12,12,0.56), rgba(8,8,8,0.45));
+border:1px solid rgba(255,255,255,0.06);
+backdrop-filter: blur(12px) saturate(120%);
+box-shadow:0 12px 40px rgba(0,0,0,0.6);
+z-index: 9999;
+}
+  
+  /* Células individuais do tabuleiro */
+.board-cell {
   position: relative;
-  cursor: grab;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(30, 30, 30, 0.8);
+  backdrop-filter: blur(4px);
+  border-radius: 4px;
+  transition: all 0.2s ease;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  padding: 6px;
+  overflow: hidden;
 }
 
-#mapViewport:active {
-  cursor: grabbing;
+
+/* Tile A–Y → posição do pedaço do mapa */
+.board-cell[data-region="A"]::before { background-position:   0%   0%; }
+.board-cell[data-region="B"]::before { background-position:  25%   0%; }
+.board-cell[data-region="C"]::before { background-position:  50%   0%; }
+.board-cell[data-region="D"]::before { background-position:  75%   0%; }
+.board-cell[data-region="E"]::before { background-position: 100%   0%; }
+
+.board-cell[data-region="F"]::before { background-position:   0%  25%; }
+.board-cell[data-region="G"]::before { background-position:  25%  25%; }
+.board-cell[data-region="H"]::before { background-position:  50%  25%; }
+.board-cell[data-region="I"]::before { background-position:  75%  25%; }
+.board-cell[data-region="J"]::before { background-position: 100%  25%; }
+
+.board-cell[data-region="K"]::before { background-position:   0%  50%; }
+.board-cell[data-region="L"]::before { background-position:  25%  50%; }
+.board-cell[data-region="M"]::before { background-position:  50%  50%; }
+.board-cell[data-region="N"]::before { background-position:  75%  50%; }
+.board-cell[data-region="O"]::before { background-position: 100%  50%; }
+
+.board-cell[data-region="P"]::before { background-position:   0%  75%; }
+.board-cell[data-region="Q"]::before { background-position:  25%  75%; }
+.board-cell[data-region="R"]::before { background-position:  50%  75%; }
+.board-cell[data-region="S"]::before { background-position:  75%  75%; }
+.board-cell[data-region="T"]::before { background-position: 100%  75%; }
+
+.board-cell[data-region="U"]::before { background-position:   0% 100%; }
+.board-cell[data-region="V"]::before { background-position:  25% 100%; }
+.board-cell[data-region="W"]::before { background-position:  50% 100%; }
+.board-cell[data-region="X"]::before { background-position:  75% 100%; }
+.board-cell[data-region="Y"]::before { background-position: 100% 100%; }
+
+.board-cell:hover {
+  background: rgba(40, 40, 40, 0.8);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
 }
 
-#mapTransform {
-  transform-origin: center center;
-  transition: transform 0.15s ease-out;
+/* Destaque ao passar o mouse */
+.board-cell:hover::before {
+  opacity: 0.8;
 }
 
-/* Ajusta o board ao zoom */
-#mapTransform > #boardContainer {
-  transform-origin: top left;
+/* neutral vs controlled tint */
+.board-cell.controlled {
+  background: rgba(var(--player-rgb), 0.3) !important;
+  border-left: 6px solid var(--player-color);
 }
 
-/* Evita que o user selecione texto durante o pan */
-#mapViewport, 
-#mapViewport * {
-  user-select: none;
+.board-cell.neutral{ border-color: rgba(255,255,255,0.3) }
+
+/* Seleção visual - funciona para QUALQUER região */
+.board-cell.region-selected {
+    border: 3px solid var(--accent) !important;
+    box-shadow: 0 0 25px rgba(248,214,92,0.5), 0 8px 20px rgba(248,214,92,0.3) !important;
+    transform: translateY(-2px) scale(1.02) !important;
+    z-index: 10;
+}
+
+.board-cell.region-selected::before {
+  opacity: 0.65; /* aumenta visibilidade do tile selecionado */
+  filter: saturate(1.05) contrast(1.02);
+}
+
+/* ===== ESTILOS PARA MODAIS DE EVENTO COLORIDOS ===== */
+#eventModal .relative.event-positive {
+  background: linear-gradient(135deg, rgba(34, 197, 94, 0.15), rgba(22, 163, 74, 0.15)) !important;
+  border-color: rgba(34, 197, 94, 0.4) !important;
+  backdrop-filter: blur(12px);
+}
+
+#eventModal .relative.event-negative {
+  background: linear-gradient(135deg, rgba(239, 68, 68, 0.15), rgba(220, 38, 38, 0.15)) !important;
+  border-color: rgba(239, 68, 68, 0.4) !important;
+  backdrop-filter: blur(12px);
+}
+
+#eventModal .relative.event-mixed {
+  background: linear-gradient(135deg, rgba(168, 85, 247, 0.15), rgba(147, 51, 234, 0.15)) !important;
+  border-color: rgba(168, 85, 247, 0.4) !important;
+  backdrop-filter: blur(12px);
+}
+
+#eventModal .relative.event-neutral {
+  background: linear-gradient(135deg, rgba(251, 191, 36, 0.15), rgba(245, 158, 11, 0.15)) !important;
+  border-color: rgba(251, 191, 36, 0.4) !important;
+  backdrop-filter: blur(12px);
+}
+
+/* Melhorar visibilidade do texto nos modais coloridos */
+#eventModal .relative.event-positive h3,
+#eventModal .relative.event-positive p {
+  color: #d1fae5 !important;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
+}
+
+#eventModal .relative.event-negative h3,
+#eventModal .relative.event-negative p {
+  color: #fecaca !important;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
+}
+
+#eventModal .relative.event-mixed h3,
+#eventModal .relative.event-mixed p {
+  color: #e9d5ff !important;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
+}
+
+/* Animações para eventos */
+@keyframes eventPulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.05); }
+}
+
+.event-banner-pulse {
+  animation: eventPulse 2s ease-in-out infinite;
+}
+
 }
