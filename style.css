@@ -181,8 +181,11 @@ input[type="text"]:focus, select:focus, input[type="number"]:focus {
 /* Fundo do mapa - imagem completa visível */
 #gameMap {
   position: relative;
-  background-color: #0a0a0a; /* Cor de fundo caso a imagem não cubra tudo */
+  width: 100%;
+  height: calc(100vh - 200px);
+  min-height: 600px;
   overflow: hidden;
+  background-color: #0a0a0a;
 }
 
 /* Remove a imagem como elemento separado */
@@ -191,6 +194,16 @@ input[type="text"]:focus, select:focus, input[type="number"]:focus {
 }
 
 #mapViewport {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+}
+
+/* Container que recebe transformações de zoom */
+#mapTransform {
   position: relative;
   width: 100%;
   height: 100%;
@@ -199,23 +212,25 @@ input[type="text"]:focus, select:focus, input[type="number"]:focus {
   justify-content: center;
 }
 
-/* Container da imagem com proporções corretas */
+/* Container da imagem - ocupa 100% */
 #mapImageContainer {
   position: relative;
+  width: 100%;
+  height: 100%;
   max-width: 100%;
   max-height: 100%;
-  aspect-ratio: 1/1; /* Força proporção quadrada */
 }
 
+/* Imagem do mapa - ocupa 100% sem distorcer */
 #mapImage {
   width: 100%;
   height: 100%;
-  object-fit: contain; /* Mantém proporção sem cortar */
+  object-fit: contain;
   pointer-events: none;
   user-select: none;
 }
 
-/* Container do tabuleiro sobre a imagem */
+/* OVERLAY DAS CÉLULAS - POSIÇÃO ABSOLUTA SOBRE A IMAGEM */
 #boardOverlay {
   position: absolute;
   top: 0;
@@ -225,15 +240,13 @@ input[type="text"]:focus, select:focus, input[type="number"]:focus {
   display: grid;
   grid-template-columns: repeat(5, 1fr);
   grid-template-rows: repeat(5, 1fr);
-  gap: 2px;
-  padding: 2%;
+  gap: 0; /* Sem gap para preencher completamente */
 }
 
-/* Células do tabuleiro ajustadas */
+/* CÉLULAS - 100% da área do grid */
 .board-cell {
   position: relative;
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  border-radius: 4px;
+  border: 1px solid rgba(255, 255, 255, 0.15);
   transition: all 0.2s ease;
   display: flex;
   flex-direction: column;
@@ -242,8 +255,8 @@ input[type="text"]:focus, select:focus, input[type="number"]:focus {
   overflow: hidden;
   cursor: pointer;
   user-select: none;
-  background: rgba(0, 0, 0, 0.4); /* Fundo semitransparente */
-  backdrop-filter: blur(2px);
+  background: rgba(0, 0, 0, 0.3);
+  backdrop-filter: blur(1px);
 }
 
 /* Overlay de cor do jogador com transparência */
@@ -258,6 +271,7 @@ input[type="text"]:focus, select:focus, input[type="number"]:focus {
   opacity: 0.25;
   border-radius: 3px;
   pointer-events: none;
+  transition: opacity 0.3s ease, filter 0.3s ease;
 }
 
 /* Região controlada - aplica cor do jogador */
@@ -272,25 +286,21 @@ input[type="text"]:focus, select:focus, input[type="number"]:focus {
   border-left: 4px solid rgba(255, 255, 255, 0.15);
 }
 
-/* Conteúdo da célula (flutuante sobre o overlay) */
+/* Conteúdo das células ajustado */
 .board-cell > * {
   position: relative;
   z-index: 1;
+}
+
+/* Ajustes para texto dentro das células */
+.board-cell .text-xs {
+  font-size: 11px;
+  line-height: 1.2;
   text-shadow: 0 1px 2px rgba(0, 0, 0, 0.8);
 }
 
-/* Texto minimalista */
-/* Melhor contraste para texto sobre o mapa */
-.board-cell .text-xs {
-  background: linear-gradient(to bottom, 
-    rgba(0, 0, 0, 0.7) 0%, 
-    rgba(0, 0, 0, 0.4) 100%);
-  -webkit-background-clip: text;
-  background-clip: text;
-  color: transparent;
-  text-shadow: 
-    0 1px 1px rgba(0, 0, 0, 0.8),
-    0 0 10px rgba(255, 255, 255, 0.1);
+.board-cell .text-\[10px\] {
+  font-size: 10px;
 }
 
 /* Efeito de brilho suave nas bordas das células controladas */
@@ -300,30 +310,18 @@ input[type="text"]:focus, select:focus, input[type="number"]:focus {
     0 0 5px rgba(var(--player-rgb), 0.1);
 }
 
-/* Animações suaves para transições de estado */
-.board-cell {
-  transition: 
-    transform 0.2s ease,
-    box-shadow 0.3s ease,
-    border-color 0.3s ease,
-    opacity 0.3s ease;
-}
-
-.board-cell::before {
-  transition: opacity 0.3s ease, filter 0.3s ease;
-}
-
 /* Feedback visual para ações disponíveis */
 .board-cell.action-available {
   animation: pulse-glow 2s infinite;
 }
 
+/* Remove animações de movimento */
 @keyframes pulse-glow {
   0%, 100% { 
-    box-shadow: 0 0 5px rgba(248, 214, 92, 0.1);
+    box-shadow: 0 0 5px rgba(248, 214, 92, 0.3);
   }
   50% { 
-    box-shadow: 0 0 15px rgba(248, 214, 92, 0.3);
+    box-shadow: 0 0 15px rgba(248, 214, 92, 0.5);
   }
 }
 
@@ -370,10 +368,11 @@ input[type="text"]:focus, select:focus, input[type="number"]:focus {
 .board-cell[data-region="X"]::before { background-position:  75% 100%; }
 .board-cell[data-region="Y"]::before { background-position: 100% 100%; }
 
+/* Remove o comportamento de hover que causava movimento */
 .board-cell:hover {
-  background: rgba(0, 0, 0, 0.6);
-  transform: scale(1.02);
-  z-index: 10;
+  background: rgba(0, 0, 0, 0.5);
+  border-color: rgba(255, 255, 255, 0.3);
+  transform: none; /* Remover transformações no hover */
 }
 
 /* Destaque ao passar o mouse */
@@ -381,20 +380,24 @@ input[type="text"]:focus, select:focus, input[type="number"]:focus {
   opacity: 0.8;
 }
 
-/* neutral vs controlled tint */
+/* Cores para regiões controladas */
 .board-cell.controlled {
-  background: rgba(var(--player-rgb), 0.3) !important;
-  border-left: 6px solid var(--player-color);
+  background: rgba(var(--player-rgb), 0.2) !important;
+  border-left: 4px solid rgba(var(--player-rgb), 0.8);
 }
 
-.board-cell.neutral{ border-color: rgba(255,255,255,0.3) }
+.board-cell.neutral {
+  background: rgba(255, 255, 255, 0.05);
+  border-left: 4px solid rgba(255, 255, 255, 0.15);
+}
 
-/* Seleção visual - funciona para QUALQUER região */
+/* Destaque para região selecionada */
 .board-cell.region-selected {
-    border: 3px solid var(--accent) !important;
-    box-shadow: 0 0 25px rgba(248,214,92,0.5), 0 8px 20px rgba(248,214,92,0.3) !important;
-    transform: translateY(-2px) scale(1.02) !important;
-    z-index: 10;
+  border: 3px solid var(--accent) !important;
+  box-shadow: 
+    inset 0 0 20px rgba(248, 214, 92, 0.3),
+    0 0 15px rgba(248, 214, 92, 0.4);
+  z-index: 10;
 }
 
 .board-cell.region-selected::before {
@@ -971,7 +974,7 @@ z-index: 9999;
   cursor: grabbing;
 }
 
-/* Zoom controls */
+/* Controles de zoom fixos */
 #zoomControls {
   position: absolute;
   bottom: 20px;
@@ -1016,7 +1019,7 @@ z-index: 9999;
   margin-top: 5px;
 }
 
-/* Mini-map indicator */
+/* Indicador do mapa */
 #miniMapIndicator {
   position: absolute;
   top: 20px;
@@ -1025,15 +1028,36 @@ z-index: 9999;
   background: rgba(0, 0, 0, 0.7);
   border: 1px solid rgba(255, 255, 255, 0.2);
   border-radius: 8px;
-  padding: 10px;
-  font-size: 12px;
+  padding: 8px 12px;
+  font-size: 11px;
   color: white;
   opacity: 0.7;
   transition: opacity 0.3s;
+  backdrop-filter: blur(4px);
 }
 
 #miniMapIndicator:hover {
   opacity: 1;
+}
+
+#miniMapIndicator div {
+  margin: 2px 0;
+}
+
+/* Ajuste responsivo */
+@media (max-width: 768px) {
+  #gameMap {
+    height: calc(100vh - 250px);
+    min-height: 400px;
+  }
+  
+  .board-cell {
+    padding: 4px;
+  }
+  
+  .board-cell .text-xs {
+    font-size: 9px;
+  }
 }
 
 /* Smooth transitions for map elements */
