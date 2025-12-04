@@ -544,7 +544,7 @@ renderSidebar(playerIndex) {
     
     // Conquistas
     this.renderAchievements();
-    
+    /*
     // Adicionar botão para abrir modal de conquistas
     const achievementsSection = document.getElementById('achievementsList').parentElement;
     if (achievementsSection) {
@@ -555,7 +555,7 @@ renderSidebar(playerIndex) {
       
       achievementsSection.appendChild(viewAllBtn);
     }    
-
+    */
     // Fase do turno
     this.renderTurnPhase();
   }
