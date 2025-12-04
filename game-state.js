@@ -19,7 +19,6 @@ let gameState = {
 };
 
 let activityLogHistory = [];
-let currentPhase = 'renda'; 
 
 let achievementsState = {
   // Contadores globais
@@ -177,7 +176,6 @@ export {
   gameState,
   achievementsState,
   activityLogHistory,
-  currentPhase,
   getGameState,
   getAchievementsState,
   getCurrentPhase,
