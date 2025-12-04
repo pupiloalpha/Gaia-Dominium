@@ -14,7 +14,7 @@ let gameState = {
   currentEvent: null,
   eventTurnsLeft: 0,
   eventModifiers: {},
-  turnsUntilNextEvent: 4
+  turnsUntilNextEvent: 4,
   currentPhase: 'renda'
 };
 
