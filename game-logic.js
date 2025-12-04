@@ -23,42 +23,313 @@ import {
 
 class GameLogic {
   constructor() {
-    this.currentPhase = TURN_PHASES.RENDA;
-    this.GAME_EVENTS = this.initializeGameEvents();
-  }
+  this.currentPhase = TURN_PHASES.RENDA;
+  gameState.currentPhase = this.currentPhase; // Sincronizar com gameState
+  this.GAME_EVENTS = this.initializeGameEvents();
+}
+  // game-logic.js - LOCALIZE e SUBSTITUA a função initializeGameEvents() completa
 
-  initializeGameEvents() {
-    return [
-      // ... (manter todos os eventos da versão anterior) ...
-    ];
-  }
+initializeGameEvents() {
+  return [
+    // ==================== EVENTOS POSITIVOS (4) ====================
+    {
+      id: 'primavera_abundante',
+      name: 'Primavera Abundante',
+      icon: '🌺',
+      type: 'positive',
+      description: 'A primavera traz crescimento e fertilidade a Gaia.',
+      effect: 'Produção de Madeira aumentada em 100%',
+      duration: 2,
+      apply: (state) => { 
+        state.eventModifiers.madeiraMultiplier = 2.0;
+        state.eventModifiers.aguaMultiplier = 1.2;
+      },
+      remove: (state) => { 
+        delete state.eventModifiers.madeiraMultiplier;
+        delete state.eventModifiers.aguaMultiplier;
+      }
+    },
+    {
+      id: 'mercado_aquecido',
+      name: 'Mercado Aquecido',
+      icon: '📈',
+      type: 'positive',
+      description: 'O comércio entre as facções está em alta.',
+      effect: 'Negociações custam 0 Ouro (mas ainda dão +1 PV)',
+      duration: 2,
+      apply: (state) => { 
+        state.eventModifiers.negociacaoGratis = true;
+        state.eventModifiers.negociacaoBonusPV = 0; // Já está incluso no base
+      },
+      remove: (state) => { 
+        delete state.eventModifiers.negociacaoGratis;
+        delete state.eventModifiers.negociacaoBonusPV;
+      }
+    },
+    {
+      id: 'festival_cultural',
+      name: 'Festival Cultural',
+      icon: '🎉',
+      type: 'positive',
+      description: 'Um festival une as facções em celebração.',
+      effect: 'Todos os jogadores ganham 1 PV',
+      duration: 0,
+      apply: (state) => {
+        state.players.forEach(p => {
+          p.victoryPoints += 1;
+        });
+        // Adicionar ao log
+        window.gameLogic?.addActivityLog?.({
+          type: 'event',
+          playerName: 'GAIA',
+          action: `disparou evento: Festival Cultural`,
+          details: 'Todos ganharam +1 PV',
+          isEvent: true,
+          isMine: false
+        });
+      },
+      remove: (state) => {}
+    },
+    {
+      id: 'era_exploracao',
+      name: 'Era da Exploração',
+      icon: '🧭',
+      type: 'positive',
+      description: 'Um espírito de exploração se espalha por Gaia.',
+      effect: 'Explorar custa 1 Madeira a menos',
+      duration: 2,
+      apply: (state) => { 
+        state.eventModifiers.explorarDesconto = true;
+      },
+      remove: (state) => { 
+        delete state.eventModifiers.explorarDesconto;
+      }
+    },
+
+    // ==================== EVENTOS NEGATIVOS (5) ====================
+    {
+      id: 'seca',
+      name: 'Seca',
+      icon: '🌵',
+      type: 'negative',
+      description: 'Uma seca severa assola Gaia.',
+      effect: 'Produção de Água reduzida em 50%',
+      duration: 2,
+      apply: (state) => { 
+        state.eventModifiers.aguaMultiplier = 0.5;
+      },
+      remove: (state) => { 
+        delete state.eventModifiers.aguaMultiplier;
+      }
+    },
+    {
+      id: 'tempestade',
+      name: 'Tempestade',
+      icon: '⛈️',
+      type: 'negative',
+      description: 'Uma tempestade violenta causa estragos.',
+      effect: 'Produção de todas as regiões reduzida em 25%',
+      duration: 1,
+      apply: (state) => {
+        state.eventModifiers.madeiraMultiplier = 0.75;
+        state.eventModifiers.pedraMultiplier = 0.75;
+        state.eventModifiers.ouroMultiplier = 0.75;
+        state.eventModifiers.aguaMultiplier = 0.75;
+      },
+      remove: (state) => {
+        delete state.eventModifiers.madeiraMultiplier;
+        delete state.eventModifiers.pedraMultiplier;
+        delete state.eventModifiers.ouroMultiplier;
+        delete state.eventModifiers.aguaMultiplier;
+      }
+    },
+    {
+      id: 'inflacao',
+      name: 'Inflação',
+      icon: '💰',
+      type: 'negative',
+      description: 'Os recursos estão escassos e os preços subiram.',
+      effect: 'Custo de construir aumenta em 1 Pedra e 1 Madeira',
+      duration: 2,
+      apply: (state) => { 
+        state.eventModifiers.construirCustoExtra = true;
+      },
+      remove: (state) => { 
+        delete state.eventModifiers.construirCustoExtra;
+      }
+    },
+    {
+      id: 'inverno_rigoroso',
+      name: 'Inverno Rigoroso',
+      icon: '❄️',
+      type: 'negative',
+      description: 'O inverno é mais rigoroso que o esperado.',
+      effect: 'Produção de Madeira e Água reduzida em 30%',
+      duration: 2,
+      apply: (state) => {
+        state.eventModifiers.madeiraMultiplier = 0.7;
+        state.eventModifiers.aguaMultiplier = 0.7;
+      },
+      remove: (state) => {
+        delete state.eventModifiers.madeiraMultiplier;
+        delete state.eventModifiers.aguaMultiplier;
+      }
+    },
+    {
+      id: 'escassez',
+      name: 'Escassez',
+      icon: '🆘',
+      type: 'negative',
+      description: 'Os recursos estão cada vez mais raros.',
+      effect: 'Recolher produz 25% menos recursos',
+      duration: 2,
+      apply: (state) => { 
+        state.eventModifiers.recolherPenalidade = 0.75;
+      },
+      remove: (state) => { 
+        delete state.eventModifiers.recolherPenalidade;
+      }
+    },
+
+    // ==================== EVENTOS MISTOS (6) ====================
+    {
+      id: 'descoberta_jazida',
+      name: 'Descoberta de Jazida',
+      icon: '💎',
+      type: 'mixed',
+      description: 'Uma nova jazida de recursos é descoberta.',
+      effect: 'Todos ganham 2 Pedra, mas perdem 1 PV',
+      duration: 0,
+      apply: (state) => {
+        state.players.forEach(p => {
+          p.resources.pedra += 2;
+          p.victoryPoints = Math.max(0, p.victoryPoints - 1);
+        });
+        window.gameLogic?.addActivityLog?.({
+          type: 'event',
+          playerName: 'GAIA',
+          action: `disparou evento: Descoberta de Jazida`,
+          details: '+2 Pedra, -1 PV para todos',
+          isEvent: true,
+          isMine: false
+        });
+      },
+      remove: (state) => {}
+    },
+    {
+      id: 'boom_tecnologico',
+      name: 'Boom Tecnológico',
+      icon: '⚙️',
+      type: 'mixed',
+      description: 'Avanços tecnológicos aceleram construções, mas consomem recursos.',
+      effect: 'Construir dá +1 PV extra, mas custa +1 Ouro',
+      duration: 2,
+      apply: (state) => {
+        state.eventModifiers.construirBonus = 1;
+        state.eventModifiers.construirCustoOuroExtra = true;
+      },
+      remove: (state) => {
+        delete state.eventModifiers.construirBonus;
+        delete state.eventModifiers.construirCustoOuroExtra;
+      }
+    },
+    {
+      id: 'tempestade_areia',
+      name: 'Tempestade de Areia',
+      icon: '🌪️',
+      type: 'mixed',
+      description: 'Uma tempestade de areia cobre várias regiões.',
+      effect: 'Produção de Pedra +50%, Produção de Madeira -50%',
+      duration: 1,
+      apply: (state) => {
+        state.eventModifiers.pedraMultiplier = 1.5;
+        state.eventModifiers.madeiraMultiplier = 0.5;
+      },
+      remove: (state) => {
+        delete state.eventModifiers.pedraMultiplier;
+        delete state.eventModifiers.madeiraMultiplier;
+      }
+    },
+    {
+      id: 'enchente',
+      name: 'Enchente',
+      icon: '🌊',
+      type: 'mixed',
+      description: 'Chuvas torrenciais causam enchentes.',
+      effect: 'Produção de Água +100%, Produção de Madeira -50%',
+      duration: 2,
+      apply: (state) => {
+        state.eventModifiers.aguaMultiplier = 2.0;
+        state.eventModifiers.madeiraMultiplier = 0.5;
+      },
+      remove: (state) => {
+        delete state.eventModifiers.aguaMultiplier;
+        delete state.eventModifiers.madeiraMultiplier;
+      }
+    },
+    {
+      id: 'paz_diplomatica',
+      name: 'Paz Diplomática',
+      icon: '🕊️',
+      type: 'mixed',
+      description: 'Um período de paz favorece a diplomacia.',
+      effect: 'Negociar dá +2 PV (em vez de +1)',
+      duration: 2,
+      apply: (state) => { 
+        state.eventModifiers.negociacaoBonusPV = 2;
+      },
+      remove: (state) => { 
+        delete state.eventModifiers.negociacaoBonusPV;
+      }
+    },
+    {
+      id: 'depressao_economica',
+      name: 'Depressão Econômica',
+      icon: '📉',
+      type: 'mixed',
+      description: 'A economia desacelera drasticamente.',
+      effect: 'Todos os jogadores perdem 1 de cada recurso',
+      duration: 0,
+      apply: (state) => {
+        state.players.forEach(p => {
+          Object.keys(p.resources).forEach(resource => {
+            p.resources[resource] = Math.max(0, p.resources[resource] - 1);
+          });
+        });
+        window.gameLogic?.addActivityLog?.({
+          type: 'event',
+          playerName: 'GAIA',
+          action: `disparou evento: Depressão Econômica`,
+          details: '-1 de cada recurso para todos',
+          isEvent: true,
+          isMine: false
+        });
+      },
+      remove: (state) => {}
+    }
+  ];
+}
 
   // Inicialização do jogo
   initializeGame() {
-    this.setupRegions();
-    this.distributeInitialRegions();
-    
-    // Inicializar conquistas para cada jogador
-    gameState.players.forEach((player, index) => {
-      initializePlayerAchievements(index);
-      
-      // Contar biomas iniciais
-      const playerStats = achievementsState.playerAchievements[index];
-      player.regions.forEach(regionId => {
-        const region = gameState.regions[regionId];
-        playerStats.controlledBiomes.add(region.biome);
-      });
-    });
-    
-    gameState.gameStarted = true;
-    gameState.turn = 1;
-    gameState.actionsLeft = GAME_CONFIG.ACTIONS_PER_TURN;
-    
-    this.applyPlayerIncome(gameState.players[gameState.currentPlayerIndex]);
-    
-    window.uiManager.updateUI();
-    window.uiManager.updateEventBanner();
-  }
+  this.setupRegions();
+  this.distributeInitialRegions();
+  
+  // Inicializar conquistas
+  gameState.players.forEach((player, index) => {
+    initializePlayerAchievements(index);
+  });
+  
+  gameState.gameStarted = true;
+  gameState.turn = 1;
+  gameState.actionsLeft = GAME_CONFIG.ACTIONS_PER_TURN;
+  gameState.currentPhase = TURN_PHASES.RENDA; // Garantir fase inicial
+  
+  this.applyPlayerIncome(gameState.players[gameState.currentPlayerIndex]);
+  
+  window.uiManager.updateUI();
+  window.uiManager.updateEventBanner();
+}
 
   setupRegions() {
     gameState.regions = [];
@@ -640,89 +911,32 @@ class GameLogic {
   }
 
   async handleEndTurn() {
-    const player = gameState.players[gameState.currentPlayerIndex];
-    
-    switch (this.currentPhase) {
-      case TURN_PHASES.RENDA:
-        this.applyPlayerIncome(player);
-        this.currentPhase = TURN_PHASES.ACOES;
-        gameState.actionsLeft = GAME_CONFIG.ACTIONS_PER_TURN;
-        
-        addActivityLog({
-          type: 'phase',
-          playerName: player.name,
-          action: 'avançou para fase de Ações',
-          details: '',
-          isEvent: false,
-          isMine: true
-        });
-        
-        window.uiManager.updateUI();
-        window.utils.showFeedback(`${player.name} recebeu renda. Fase: Ações`, 'info');
-        break;
-        
-      case TURN_PHASES.ACOES:
-        if (gameState.actionsLeft > 0) {
-          const confirm = await window.utils.showConfirm(
-            'Ações Restantes',
-            `Você ainda tem ${gameState.actionsLeft} ação(ões) não utilizada(s). Deseja realmente avançar?`
-          );
-          
-          if (!confirm) return;
-        }
-        
-        this.currentPhase = TURN_PHASES.NEGOCIACAO;
-        
-        addActivityLog({
-          type: 'phase',
-          playerName: player.name,
-          action: 'avançou para fase de Negociação',
-          details: '',
-          isEvent: false,
-          isMine: true
-        });
-        
-        window.uiManager.updateUI();
-        window.utils.showFeedback('Fase: Negociação. Você pode propor trocas com outros jogadores.', 'info');
-        break;
-        
-      case TURN_PHASES.NEGOCIACAO:
-        this.currentPhase = TURN_PHASES.RENDA;
-        gameState.currentPlayerIndex = (gameState.currentPlayerIndex + 1) % gameState.players.length;
-        
-        if (gameState.currentPlayerIndex === 0) {
-          gameState.turn++;
-          gameState.turnsUntilNextEvent--;
-          achievementsState.fastestWin = Math.min(achievementsState.fastestWin, gameState.turn);
-          
-          if (gameState.turnsUntilNextEvent <= 0) {
-            this.triggerRandomEvent();
-            gameState.turnsUntilNextEvent = 4;
-          }
-        }
-        
-        gameState.actionsLeft = GAME_CONFIG.ACTIONS_PER_TURN;
-        gameState.selectedRegionId = null;
-        this.clearRegionSelection();
-        this.updateEventDuration();
-        
-        addActivityLog({
-          type: 'turn',
-          playerName: 'SISTEMA',
-          action: `Turno ${gameState.turn} iniciado`,
-          details: `Jogador atual: ${gameState.players[gameState.currentPlayerIndex]?.name}`,
-          isEvent: false,
-          isMine: false
-        });
-        
-        window.uiManager.updateUI();
-        window.utils.showFeedback(
-          `Turno do ${gameState.players[gameState.currentPlayerIndex]?.name}. Fase: Renda`,
-          'success'
-        );
-        break;
-    }
+  const player = gameState.players[gameState.currentPlayerIndex];
+  
+  switch (this.currentPhase) {
+    case TURN_PHASES.RENDA:
+      this.applyPlayerIncome(player);
+      this.currentPhase = TURN_PHASES.ACOES;
+      gameState.currentPhase = this.currentPhase; // Sincronizar
+      gameState.actionsLeft = GAME_CONFIG.ACTIONS_PER_TURN;
+      
+      window.uiManager.updateUI();
+      window.utils.showFeedback(`${player.name} recebeu renda. Fase: Ações`, 'info');
+      break;
+      
+    case TURN_PHASES.ACOES:
+      // ... código existente ...
+      this.currentPhase = TURN_PHASES.NEGOCIACAO;
+      gameState.currentPhase = this.currentPhase; // Sincronizar
+      break;
+      
+    case TURN_PHASES.NEGOCIACAO:
+      // ... código existente ...
+      this.currentPhase = TURN_PHASES.RENDA;
+      gameState.currentPhase = this.currentPhase; // Sincronizar
+      break;
   }
+}
 
   // Sistema de eventos
   triggerRandomEvent() {
