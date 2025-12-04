@@ -136,25 +136,25 @@ this.structureModal?.addEventListener('click', (e) => {
   }
 
   updatePlayerCountDisplay() {
-    const count = gameState.players.length;
-    this.playerCountDisplay.textContent = `${count}/4 Jogadores Registrados`;
-    
-    if (count === 0) {
-      this.registeredPlayersList.innerHTML = `
-        <div class="text-sm text-gray-300 p-3">Nenhum jogador cadastrado.</div>
-      `;
-    } else {
-      this.registeredPlayersList.innerHTML = gameState.players.map(p => `
-        <div class="flex items-center gap-2 p-2 bg-white/3 rounded-lg" 
-             style="border-left:4px solid ${p.color}">
-          <div class="text-2xl">${p.icon}</div>
-          <div class="text-sm font-medium">${p.name}</div>
-        </div>
-      `).join('');
-    }
-    
-    this.startGameBtn.disabled = count < 2;
+  const count = gameState.players.length;
+  this.playerCountDisplay.textContent = `${count}/4 Jogadores Registrados`;
+  
+  if (count === 0) {
+    this.registeredPlayersList.innerHTML = `
+      <div class="text-sm text-gray-300 p-3">Nenhum jogador cadastrado.</div>
+    `;
+  } else {
+    this.registeredPlayersList.innerHTML = gameState.players.map(p => `
+      <div class="flex items-center gap-2 p-2 bg-white/5 rounded-lg border border-white/10" 
+           style="border-left:4px solid ${p.color}">
+        <div class="text-2xl">${p.icon}</div>
+        <div class="text-sm font-medium text-white">${p.name}</div> <!-- Texto branco -->
+      </div>
+    `).join('');
   }
+  
+  this.startGameBtn.disabled = count < 2;
+}
 
   handleAddPlayer() {
     const name = this.playerNameInput.value.trim();
