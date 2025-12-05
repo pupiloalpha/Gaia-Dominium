@@ -3,17 +3,18 @@ import {
   gameState, 
   achievementsState,
   setGameState,
+  setAchievementsState,
   addActivityLog,
-  incrementAchievement,
   updatePlayerResources,
   updatePlayerVictoryPoints,
   updateRegionController,
   updateRegionExploration,
   addStructureToRegion,
   clearRegionSelection,
-  consumeAction,
   getCurrentPlayer,
-  canPlayerAfford
+  setCurrentPhase,
+  updateCurrentPlayerIndex,
+  resetActions
 } from './game-state.js';
 
 import { 
@@ -37,22 +38,21 @@ class GameLogic {
 
   // ==================== INICIALIZAÇÃO ====================
   initializeGame() {
-    this.setupRegions();
-    this.distributeInitialRegions();
-    gameState.gameStarted = true;
-    gameState.turn = 1;
-    gameState.actionsLeft = GAME_CONFIG.ACTIONS_PER_TURN;
-    
-    // INICIALIZAR FASE COMO "RENDA"
-    gameState.currentPhase = 'renda';
-    setCurrentPhase('renda');
-
-    addActivityLog('system', 'SISTEMA', 'Jogo iniciado', '', gameState.turn);
-
-    // Aplicar renda inicial para todos os jogadores
-  gameState.players.forEach(player => {
-    this.applyIncomeForPlayer(player);
-  });
+  this.setupRegions();
+  this.distributeInitialRegions();
+  gameState.gameStarted = true;
+  gameState.turn = 1;
+  gameState.actionsLeft = GAME_CONFIG.ACTIONS_PER_TURN;
+  
+  // INICIALIZAR FASE COMO "RENDA"
+  gameState.currentPhase = 'renda';
+  setCurrentPhase('renda');
+  
+  addActivityLog('system', 'SISTEMA', 'Jogo iniciado', '', gameState.turn);
+  
+  // Aplicar renda inicial para o jogador atual (isso vai avançar para fase de ações)
+  const currentPlayer = getCurrentPlayer();
+  this.applyIncomeForPlayer(currentPlayer);
 }
 
 // Adicione este novo método para avançar fases
@@ -73,11 +73,41 @@ advancePhase() {
   
   addActivityLog('system', 'SISTEMA', 'Fase alterada', 
     `Nova fase: ${phaseNames[gameState.currentPhase]}`, gameState.turn);
+
+ // Forçar atualização da UI
+  if (window.uiManager) {
+    window.uiManager.updateUI();
+  }
   
   return gameState.currentPhase;
 }
 
-// Modifique o método handleEndTurn() para gerenciar fases corretamente
+// ==================== CONTROLE DE FASES ====================
+isPhaseValidForAction(actionType) {
+  const currentPhase = gameState.currentPhase;
+  
+  // Mapear quais ações são permitidas em cada fase
+  const phaseActions = {
+    'renda': [], // Nenhuma ação manual na fase de renda
+    'acoes': ['explorar', 'recolher', 'construir'],
+    'negociacao': ['negociar']
+  };
+  
+  return phaseActions[currentPhase]?.includes(actionType) || false;
+}
+
+// Método auxiliar para verificar custos por ação
+getActionCost(actionType) {
+  const costs = {
+    'explorar': { madeira: 2, agua: 1 },
+    'recolher': { madeira: 1 },
+    'construir': { madeira: 3, pedra: 2, ouro: 1 },
+    'negociar': { ouro: 1 }
+  };
+  return costs[actionType] || {};
+}
+
+// Função que gerencia fases corretamente
 async handleEndTurn() {
   const currentPlayer = getCurrentPlayer();
   
@@ -85,14 +115,14 @@ async handleEndTurn() {
   if (gameState.currentPhase === 'acoes') {
     this.advancePhase();
     window.utils.showFeedback(`${currentPlayer.name} entrou na fase de negociação`, 'info');
-    window.uiManager.refreshUIAfterStateChange();
     return;
   }
   
   // Se estiver na fase de negociação, termine o turno
   if (gameState.currentPhase === 'negociacao') {
     // Avança jogador
-    gameState.currentPlayerIndex = (gameState.currentPlayerIndex + 1) % gameState.players.length;
+    const playerCount = gameState.players.length;
+    gameState.currentPlayerIndex = (gameState.currentPlayerIndex + 1) % playerCount;
     
     // Se voltou ao primeiro jogador, incrementa o turno
     if (gameState.currentPlayerIndex === 0) {
@@ -109,7 +139,7 @@ async handleEndTurn() {
     // Atualizar sidebar para o jogador atual
     gameState.selectedPlayerForSidebar = gameState.currentPlayerIndex;
     
-    // Aplicar renda para o novo jogador
+    // Aplicar renda para o novo jogador (isso automaticamente avança para fase de ações)
     const newPlayer = getCurrentPlayer();
     this.applyIncomeForPlayer(newPlayer);
     
@@ -117,12 +147,15 @@ async handleEndTurn() {
       `Agora é o turno de ${newPlayer.name}`, gameState.turn);
     
     this.checkVictory();
-    window.uiManager.refreshUIAfterStateChange();
+    
+     // Forçar atualização da UI
+    if (window.uiManager) {
+      window.uiManager.updateUI();
+    }
     
     window.utils.showFeedback(`Agora é o turno de ${newPlayer.name}`, 'info');
   }
-
-  }
+}
 
   setupRegions() {
     gameState.regions = [];
@@ -171,115 +204,136 @@ async handleEndTurn() {
   }
 
   // ==================== SISTEMA DE AÇÕES ====================
-  consumeAction() {
-    if (gameState.actionsLeft <= 0) {
-      window.utils.showFeedback('Sem ações restantes neste turno.', 'warning');
-      return false;
-    }
-    
-    gameState.actionsLeft--;
-    return true;
+  performAction(actionType = null) {
+  // Verificar se está na fase correta para esta ação
+  if (actionType && !this.isPhaseValidForAction(actionType)) {
+    window.utils.showFeedback(`Ação "${actionType}" não permitida na fase atual.`, 'warning');
+    return false;
+  }
+  
+  if (gameState.actionsLeft <= 0) {
+    window.utils.showFeedback('Sem ações restantes neste turno.', 'warning');
+    return false;
+  }
+  
+  // Atualizar UI imediatamente
+  if (window.uiManager && window.uiManager.updateFooter) {
+    setTimeout(() => window.uiManager.updateFooter(), 10);
   }
 
-  canPlayerAfford(cost) {
-    const p = gameState.players[gameState.currentPlayerIndex];
-    return Object.entries(cost).every(([resource, amount]) => {
-      const has = p.resources[resource] || 0;
-      return has >= amount;
-    });
-  }
+  gameState.actionsLeft--;
+  return true;
+}
 
   // ==================== EXPLORAR / ASSUMIR DOMÍNIO ====================
   async handleExplore() {
-    if (gameState.selectedRegionId === null) {
-      window.utils.showFeedback('Selecione uma região primeiro.', 'error');
-      return;
-    }
-    
-    const region = gameState.regions[gameState.selectedRegionId];
-    const player = gameState.players[gameState.currentPlayerIndex];
-    
-    if (region.controller === null) {
-      // ASSUMIR DOMÍNIO
-      const cost = region.resources;
-      const pvCost = 2;
-      
-      if (player.victoryPoints < pvCost) {
-        window.utils.showFeedback(`Você precisa de ${pvCost} PV para assumir domínio desta região.`, 'error');
-        return;
-      }
-      
-      const canPay = Object.entries(cost).every(([k,v]) => player.resources[k] >= v);
-      if (!canPay) {
-        const needed = Object.entries(cost).map(([k,v]) => `${k}: ${v}`).join(', ');
-        window.utils.showFeedback(`Recursos insuficientes. Necessário: ${needed}`, 'error');
-        return;
-      }
-      
-      const resourceList = Object.entries(cost).map(([k,v]) => `${RESOURCE_ICONS[k]}${v}`).join(' ');
-      const ok = await window.utils.showConfirm(
-        'Assumir Domínio', 
-        `Custo: ${pvCost} PV + ${resourceList}\n\nDeseja assumir o controle de ${region.name}?`
-      );
-      
-      if (!ok) return;
-      if (!this.consumeAction()) return;
-      
-      player.victoryPoints -= pvCost;
-      Object.entries(cost).forEach(([k,v]) => player.resources[k] -= v);
-      
-      region.controller = gameState.currentPlayerIndex;
-      player.regions.push(gameState.selectedRegionId);
-      
-      window.utils.showFeedback(`${region.name} agora está sob seu controle! -${pvCost} PV`, 'success');
-      addActivityLog('explore', player.name, 'assumiu domínio de', region.name, gameState.turn);
-      
-    } else if (region.controller === gameState.currentPlayerIndex) {
-      // EXPLORAR (região própria)
-      const cost = GAME_CONFIG.ACTION_DETAILS.explorar.cost;
-      
-      if (!this.canPlayerAfford(cost)) {
-        window.utils.showFeedback('Recursos insuficientes para explorar.', 'error');
-        return;
-      }
-      
-      if (!this.consumeAction()) return;
-      
-      Object.entries(cost).forEach(([k,v]) => player.resources[k] -= v);
-      
-      region.explorationLevel = Math.min(3, region.explorationLevel + 1);
-      player.victoryPoints += 1;
-      
-      if (Math.random() < 0.10) { 
-        player.resources.ouro += 1; 
-        window.utils.showFeedback('Descoberta Rara! +1 Ouro', 'success'); 
-      } else {
-        window.utils.showFeedback(`${region.name} explorada. Nível: ${region.explorationLevel}⭐`, 'success');
-      }
-      
-      achievementsState.totalExplored++;
-      
-      const desc = Math.random() < 0.10 ? 'explorou (Descoberta Rara!)' : `explorou (Nível ${region.explorationLevel})`;
-      addActivityLog('explore', player.name, desc, region.name, gameState.turn);
-      
-    } else {
-      window.utils.showFeedback('Você não pode explorar regiões de outros jogadores.', 'error');
-      return;
-    }
-    
-    this.clearRegionSelection();
-    this.checkVictory();
-    window.uiManager.refreshUIAfterStateChange();
+  // Verificar se está na fase correta
+  if (!this.isPhaseValidForAction('explorar')) {
+    window.utils.showFeedback('Ação não permitida nesta fase. Vá para fase de Ações.', 'warning');
+    return;
   }
+  
+  if (gameState.selectedRegionId === null) {
+    window.utils.showFeedback('Selecione uma região primeiro.', 'error');
+    return;
+  }
+  
+  const region = gameState.regions[gameState.selectedRegionId];
+  const player = gameState.players[gameState.currentPlayerIndex];
+  
+  if (region.controller === null) {
+    // ASSUMIR DOMÍNIO
+    const cost = region.resources;
+    const pvCost = 2;
+    
+    if (player.victoryPoints < pvCost) {
+      window.utils.showFeedback(`Você precisa de ${pvCost} PV para assumir domínio desta região.`, 'error');
+      return;
+    }
+    
+    const canPay = Object.entries(cost).every(([k,v]) => player.resources[k] >= v);
+    if (!canPay) {
+      const needed = Object.entries(cost).map(([k,v]) => `${k}: ${v}`).join(', ');
+      window.utils.showFeedback(`Recursos insuficientes. Necessário: ${needed}`, 'error');
+      return;
+    }
+    
+    const resourceList = Object.entries(cost).map(([k,v]) => `${RESOURCE_ICONS[k]}${v}`).join(' ');
+    const ok = await window.utils.showConfirm(
+      'Assumir Domínio', 
+      `Custo: ${pvCost} PV + ${resourceList}\n\nDeseja assumir o controle de ${region.name}?`
+    );
+    
+    if (!ok) return;
+    if (!this.performAction('explorar')) return;
+    
+    player.victoryPoints -= pvCost;
+    Object.entries(cost).forEach(([k,v]) => player.resources[k] -= v);
+    
+    region.controller = gameState.currentPlayerIndex;
+    player.regions.push(gameState.selectedRegionId);
+    
+    window.utils.showFeedback(`${region.name} agora está sob seu controle! -${pvCost} PV`, 'success');
+    addActivityLog('explore', player.name, 'assumiu domínio de', region.name, gameState.turn);
+    
+  } else if (region.controller === gameState.currentPlayerIndex) {
+    // EXPLORAR (região própria)
+    if (!this.canAffordAction('explorar')) {
+      window.utils.showFeedback('Recursos insuficientes para explorar.', 'error');
+      return;
+    }
+    
+    if (!this.performAction('explorar')) return;
+    
+    // Pagar custo da ação
+    const cost = GAME_CONFIG.ACTION_DETAILS.explorar.cost;
+    Object.entries(cost).forEach(([k,v]) => player.resources[k] -= v);
+    
+    region.explorationLevel = Math.min(3, region.explorationLevel + 1);
+    player.victoryPoints += 1;
+    
+    if (Math.random() < 0.10) { 
+      player.resources.ouro += 1; 
+      window.utils.showFeedback('Descoberta Rara! +1 Ouro', 'success'); 
+    } else {
+      window.utils.showFeedback(`${region.name} explorada. Nível: ${region.explorationLevel}⭐`, 'success');
+    }
+    
+    achievementsState.totalExplored++;
+    
+    const desc = Math.random() < 0.10 ? 'explorou (Descoberta Rara!)' : `explorou (Nível ${region.explorationLevel})`;
+    addActivityLog('explore', player.name, desc, region.name, gameState.turn);
+    
+  } else {
+    window.utils.showFeedback('Você não pode explorar regiões de outros jogadores.', 'error');
+    return;
+  }
+  
+  this.clearRegionSelection();
+  this.checkVictory();
+  window.uiManager.refreshUIAfterStateChange();
+
+// No final de cada método de ação (handleExplore, handleCollect, etc.), adicione:
+if (window.uiManager && window.uiManager.updateFooter) {
+  setTimeout(() => window.uiManager.updateFooter(), 100);
+}
+}
 
   // ==================== RECOLHER ====================
   handleCollect() {
+
+    // Verificar se está na fase correta
+    if (!this.isPhaseValidForAction('recolher')) {
+      window.utils.showFeedback('Ação não permitida nesta fase. Vá para fase de Ações.', 'warning');
+      return;
+    }
+
     if (gameState.selectedRegionId === null) {
       window.utils.showFeedback('Selecione uma região para recolher.', 'error');
       return;
     }
 
-    if (!this.consumeAction()) {
+    if (!this.performAction()) {
       window.utils.showFeedback('Sem ações restantes neste turno.', 'warning');
       return;
     }
@@ -353,11 +407,23 @@ async handleEndTurn() {
     this.clearRegionSelection();
     this.checkVictory();
     window.uiManager.refreshUIAfterStateChange();
+
+// No final de cada método de ação (handleExplore, handleCollect, etc.), adicione:
+if (window.uiManager && window.uiManager.updateFooter) {
+  setTimeout(() => window.uiManager.updateFooter(), 100);
+}
   }
 
   // ==================== CONSTRUIR ====================
 
 handleBuild(structureType = 'Abrigo') {
+
+  // Verificar se está na fase correta
+  if (!this.isPhaseValidForAction('construir')) {
+    window.utils.showFeedback('Ação não permitida nesta fase. Vá para fase de Ações.', 'warning');
+    return;
+  }
+
   if (gameState.selectedRegionId === null) {
     window.utils.showFeedback('Selecione uma região para construir.', 'error');
     return;
@@ -392,7 +458,7 @@ handleBuild(structureType = 'Abrigo') {
     return;
   }
   
-  if (!this.consumeAction()) return;
+  if (!this.performAction()) return;
   
   // Pagar custo
   Object.entries(cost).forEach(([k,v]) => { 
@@ -426,44 +492,84 @@ handleBuild(structureType = 'Abrigo') {
   this.clearRegionSelection();
   this.checkVictory();
   window.uiManager.refreshUIAfterStateChange();
+
+// No final de cada método de ação (handleExplore, handleCollect, etc.), adicione:
+if (window.uiManager && window.uiManager.updateFooter) {
+  setTimeout(() => window.uiManager.updateFooter(), 100);
+}
 }
 
   // ==================== NEGOCIAR ====================
   handleNegotiate() {
-    if (!this.consumeAction()) return;
+
+    // Verificar se está na fase correta
+    if (!this.isPhaseValidForAction('negociar')) {
+      window.utils.showFeedback('Negociação só é permitida na fase de Negociação.', 'warning');
+      return;
+    }
+
+    if (!this.performAction()) return;
     // A UI será tratada pelo ui-manager.js
     // O custo de 1 Ouro é deduzido no envio da negociação
   }
 
   // ==================== SISTEMA DE TURNOS ====================
   async handleEndTurn() {
-    // Avança jogador / turno
-    gameState.currentPlayerIndex = (gameState.currentPlayerIndex + 1) % gameState.players.length;
-
-    // Aplicar renda automática para o próximo jogador
-    const nextPlayer = gameState.players[gameState.currentPlayerIndex];
-    this.applyIncomeForPlayer(nextPlayer);
-
-    const cycled = (gameState.currentPlayerIndex === 0);
-    if (cycled) {
+  const currentPlayer = getCurrentPlayer();
+  
+  // Se estiver na fase de ações, avance para negociação
+  if (gameState.currentPhase === 'acoes') {
+    this.advancePhase();
+    window.utils.showFeedback(`${currentPlayer.name} entrou na fase de negociação`, 'info');
+    addActivityLog('phase', 'SISTEMA', 'Fase alterada', 'Ações → Negociação', gameState.turn);
+    return;
+  }
+  
+  // Se estiver na fase de negociação, termine o turno
+  if (gameState.currentPhase === 'negociacao') {
+    // Registrar término do turno
+    addActivityLog('turn', 'SISTEMA', 'Turno finalizado', 
+      `${currentPlayer.name} completou o turno`, gameState.turn);
+    
+    // Avançar jogador
+    const playerCount = gameState.players.length;
+    gameState.currentPlayerIndex = (gameState.currentPlayerIndex + 1) % playerCount;
+    
+    // Se voltou ao primeiro jogador, incrementa o turno
+    if (gameState.currentPlayerIndex === 0) {
       gameState.turn += 1;
       this.handleTurnAdvanceForEvents();
     }
-
+    
+    // Resetar estado para novo jogador
     gameState.actionsLeft = GAME_CONFIG.ACTIONS_PER_TURN;
     gameState.selectedRegionId = null;
+    gameState.currentPhase = 'renda';
+    setCurrentPhase('renda');
     
-    // Atualizar painel lateral
+    // Atualizar sidebar para o jogador atual
     gameState.selectedPlayerForSidebar = gameState.currentPlayerIndex;
-
-    addActivityLog('turn', 'SISTEMA', 'Turno avançado', 
-      `Agora é o turno de ${gameState.players[gameState.currentPlayerIndex].name}`, gameState.turn);
+    
+    // Aplicar renda para o novo jogador (isso automaticamente avança para fase de ações)
+    const newPlayer = getCurrentPlayer();
+    this.applyIncomeForPlayer(newPlayer);
+    
+    addActivityLog('turn', 'SISTEMA', 'Turno iniciado', 
+      `Turno de ${newPlayer.name} começou`, gameState.turn);
     
     this.checkVictory();
-    window.uiManager.refreshUIAfterStateChange();
     
-    window.utils.showFeedback(`Agora é o turno de ${gameState.players[gameState.currentPlayerIndex].name}`, 'info');
+    // Forçar atualização da UI
+    if (window.uiManager) {
+      window.uiManager.updateUI();
+    }
+    
+    window.utils.showFeedback(`Agora é o turno de ${newPlayer.name}`, 'info');
+  } else {
+    // Se estiver na fase de renda, avisar para aguardar
+    window.utils.showFeedback('Aguarde a fase de renda terminar...', 'info');
   }
+}
 
   handleTurnAdvanceForEvents() {
     // Atualizar duração do evento atual
@@ -614,11 +720,13 @@ canAffordAction(actionType) {
       }
     }
 
-// APÓS APLICAR RENDA, AVANÇAR PARA FASE DE AÇÕES SE FOR O JOGADOR ATUAL
-  if (player.id === gameState.currentPlayerIndex && gameState.currentPhase === 'renda') {
-    this.advancePhase();
-    addActivityLog('income', player.name, 'recebeu renda e iniciou fase de ações', '', gameState.turn);
-  }
+    // APÓS APLICAR RENDA, AVANÇAR PARA FASE DE AÇÕES SE FOR O JOGADOR ATUAL
+    if (player.id === gameState.currentPlayerIndex && gameState.currentPhase === 'renda') {
+      setTimeout(() => {
+        this.advancePhase();
+        addActivityLog('income', player.name, 'recebeu renda e iniciou fase de ações', '', gameState.turn);
+      }, 100);
+    }
   }
 
   // ==================== EVENTOS ALEATÓRIOS ====================

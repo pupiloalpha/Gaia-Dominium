@@ -54,6 +54,9 @@ document.addEventListener('DOMContentLoaded', () => {
   window.gameLogic = new GameLogic();
   window.GaiaDominium.logic = window.gameLogic;
   
+  // Expor método advancePhase globalmente
+  window.advancePhase = () => window.gameLogic.advancePhase();
+
   // 4. Expor estado do jogo globalmente
   window.gameState = gameState;
   window.GaiaDominium.state.game = gameState;
@@ -134,29 +137,55 @@ function setupGlobalEventListeners() {
       });
     }
     
-    // Atalhos numéricos para ações (1-5)
-    if (e.key >= '1' && e.key <= '5' && window.gameState?.gameStarted) {
-      const actions = [
-        window.gameLogic?.handleExplore,
-        window.gameLogic?.handleCollect,
-        () => window.uiManager?.openStructureModal(),
-        window.gameLogic?.handleNegotiate,
-        window.gameLogic?.handleEndTurn
-      ];
-      
-      const index = parseInt(e.key) - 1;
-      if (actions[index] && window.gameState.actionsLeft > 0) {
-        actions[index]();
-      }
-    }
-
-  // Tecla 'p' para avançar fase (debug/desenvolvimento)
-  if (e.key === 'p' && window.gameState?.gameStarted) {
-    if (window.gameLogic?.advancePhase) {
-      const newPhase = window.gameLogic.advancePhase();
-      window.uiManager?.showFeedback(`Fase avançada: ${newPhase}`, 'info');
-    }
+   // Atalhos numéricos para ações (1-5)
+if (e.key >= '1' && e.key <= '5' && window.gameState?.gameStarted) {
+  const index = parseInt(e.key) - 1;
+  
+  // Verificar se temos ações disponíveis
+  if (window.gameState.actionsLeft <= 0) {
+    window.utils?.showFeedback('Sem ações restantes neste turno.', 'warning');
+    return;
   }
+  
+  // Mapear teclas para ações
+  switch(index) {
+    case 0: // Tecla 1 - Explorar
+      if (window.gameLogic && typeof window.gameLogic.handleExplore === 'function') {
+        window.gameLogic.handleExplore();
+      }
+      break;
+    case 1: // Tecla 2 - Recolher
+      if (window.gameLogic && typeof window.gameLogic.handleCollect === 'function') {
+        window.gameLogic.handleCollect();
+      }
+      break;
+    case 2: // Tecla 3 - Construir
+      if (window.uiManager && typeof window.uiManager.openStructureModal === 'function') {
+        window.uiManager.openStructureModal();
+      }
+      break;
+    case 3: // Tecla 4 - Negociar
+      if (window.gameLogic && typeof window.gameLogic.handleNegotiate === 'function') {
+        window.gameLogic.handleNegotiate();
+      }
+      break;
+    case 4: // Tecla 5 - Terminar Turno
+      if (window.gameLogic && typeof window.gameLogic.handleEndTurn === 'function') {
+        window.gameLogic.handleEndTurn();
+      }
+      break;
+  }
+}
+
+  // Tecla 'P' para avançar fase (debug/desenvolvimento)
+if (e.key === 'p' || e.key === 'P') {
+  e.preventDefault();
+  if (window.gameState?.gameStarted && window.gameLogic?.advancePhase) {
+    const newPhase = window.gameLogic.advancePhase();
+    window.utils?.showFeedback(`Fase avançada para: ${newPhase}`, 'info');
+    window.uiManager?.refreshUIAfterStateChange();
+  }
+}
   });
 }
 

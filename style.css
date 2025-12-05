@@ -7,6 +7,12 @@
   --accent: #f8d65c;
   --player-rgb: 255, 255, 255;
   --player-color: #ffffff;
+  /* Novas variáveis */
+  --cell-bg: rgba(30, 30, 30, 0.7);
+  --cell-border: rgba(255, 255, 255, 0.15);
+  --text-primary: #ffffff;
+  --text-secondary: rgba(255, 255, 255, 0.8);
+  --shadow-intensity: 0.3;
 }
 
 /* Reset e base */
@@ -168,54 +174,196 @@ input[type="text"]:focus, select:focus, input[type="number"]:focus {
   z-index: 2;
 }
 
-/* Células do tabuleiro - ESTILOS BASE */
+/* ============================================
+   CÉLULAS DO TABULEIRO - TRANSPARÊNCIA AUMENTADA
+   ============================================ */
+
 .board-cell {
   position: relative;
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  background: rgba(30, 30, 30, 0.6);
-  backdrop-filter: blur(4px);
-  border-radius: 4px;
-  transition: all 0.2s ease;
+  border: 1.5px solid rgba(255, 255, 255, 0.12);
+  background: linear-gradient(
+    135deg,
+    rgba(15, 15, 15, 0.45) 0%,    /* REDUZIDO: de 0.75 para 0.45 */
+    rgba(25, 25, 25, 0.35) 100%   /* REDUZIDO: de 0.65 para 0.35 */
+  );
+  backdrop-filter: blur(4px);      /* REDUZIDO: de 6px para 4px */
+  border-radius: 6px;
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
   display: flex;
   flex-direction: column;
   justify-content: space-between;
-  padding: 8px;
+  padding: 10px;
   overflow: hidden;
   cursor: pointer;
   user-select: none;
+  box-shadow: 
+    0 4px 10px rgba(0, 0, 0, 0.2),  /* REDUZIDO: de 0.3 para 0.2 */
+    inset 0 1px 0 rgba(255, 255, 255, 0.03); /* REDUZIDO: de 0.05 para 0.03 */
+}
+
+/* Efeito de vidro fosco com mais transparência */
+.board-cell::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    135deg,
+    rgba(255, 255, 255, 0.02) 0%,   /* REDUZIDO: de 0.03 para 0.02 */
+    rgba(255, 255, 255, 0.008) 100% /* REDUZIDO: de 0.01 para 0.008 */
+  );
+  z-index: -1;
+  border-radius: 5px;
 }
 
 .board-cell:hover {
-  background: rgba(40, 40, 40, 0.8);
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  background: linear-gradient(
+    135deg,
+    rgba(30, 30, 30, 0.6) 0%,      /* REDUZIDO: de 0.85 para 0.6 */
+    rgba(40, 40, 40, 0.5) 100%     /* REDUZIDO: de 0.75 para 0.5 */
+  );
+  transform: translateY(-3px) scale(1.02);
+  box-shadow: 
+    0 8px 20px rgba(0, 0, 0, 0.3),  /* REDUZIDO: de 0.4 para 0.3 */
+    0 4px 6px rgba(0, 0, 0, 0.07),  /* REDUZIDO: de 0.1 para 0.07 */
+    inset 0 1px 0 rgba(255, 255, 255, 0.05); /* REDUZIDO: de 0.1 para 0.05 */
+  border-color: rgba(255, 255, 255, 0.2); /* REDUZIDO: de 0.25 para 0.2 */
 }
 
-/* Estados das células */
+/* Estados das células - OPACIDADE REDUZIDA */
 .board-cell.controlled {
-  border-left: 6px solid var(--player-color);
-  background: rgba(var(--player-rgb), 0.1);
+  border-left: 8px solid var(--player-color);
+  background: linear-gradient(
+    135deg,
+    rgba(var(--player-rgb), 0.08) 0%,  /* REDUZIDO: de 0.15 para 0.08 */
+    rgba(25, 25, 25, 0.5) 100%         /* REDUZIDO: de 0.7 para 0.5 */
+  );
+  box-shadow: 
+    0 4px 12px rgba(var(--player-rgb), 0.15), /* REDUZIDO: de 0.2 para 0.15 */
+    inset 0 1px 0 rgba(255, 255, 255, 0.03);  /* REDUZIDO: de 0.05 para 0.03 */
+}
+
+.board-cell.controlled::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 2px; /* REDUZIDO: de 3px para 2px */
+  background: linear-gradient(90deg, 
+    transparent 0%,
+    var(--player-color) 50%,
+    transparent 100%);
+  opacity: 0.4; /* REDUZIDO: de 0.5 para 0.4 */
 }
 
 .board-cell.neutral {
-  border-color: rgba(255, 255, 255, 0.05);
+  border: 1.5px dashed rgba(255, 255, 255, 0.08); /* REDUZIDO: de 0.1 para 0.08 */
+  background: linear-gradient(
+    135deg,
+    rgba(20, 20, 20, 0.4) 0%,     /* REDUZIDO: de 0.6 para 0.4 */
+    rgba(30, 30, 30, 0.3) 100%    /* REDUZIDO: de 0.5 para 0.3 */
+  );
 }
 
 .board-cell.region-selected {
   border: 3px solid var(--accent) !important;
-  box-shadow: 0 0 25px rgba(248, 214, 92, 0.5), 0 8px 20px rgba(248, 214, 92, 0.3) !important;
-  transform: translateY(-2px) scale(1.02) !important;
+  background: linear-gradient(
+    135deg,
+    rgba(248, 214, 92, 0.12) 0%,  /* REDUZIDO: de 0.15 para 0.12 */
+    rgba(25, 25, 25, 0.6) 100%    /* REDUZIDO: de 0.8 para 0.6 */
+  );
+  box-shadow: 
+    0 0 25px rgba(248, 214, 92, 0.4),   /* REDUZIDO: de 0.6 para 0.4 */
+    0 10px 25px rgba(248, 214, 92, 0.2), /* REDUZIDO: de 0.3 para 0.2 */
+    inset 0 1px 0 rgba(255, 255, 255, 0.05) !important; /* REDUZIDO: de 0.1 para 0.05 */
+  transform: translateY(-3px) scale(1.03) !important;
   z-index: 10;
+  animation: regionPulse 2s ease-in-out infinite;
 }
 
-/* Conteúdo das células */
+@keyframes regionPulse {
+  0%, 100% {
+    box-shadow: 
+      0 0 20px rgba(248, 214, 92, 0.35), /* REDUZIDO */
+      0 8px 15px rgba(248, 214, 92, 0.2), /* REDUZIDO */
+      inset 0 1px 0 rgba(255, 255, 255, 0.05);
+  }
+  50% {
+    box-shadow: 
+      0 0 25px rgba(248, 214, 92, 0.5),  /* REDUZIDO */
+      0 10px 20px rgba(248, 214, 92, 0.3), /* REDUZIDO */
+      inset 0 1px 0 rgba(255, 255, 255, 0.05);
+  }
+}
+
+/* Conteúdo das células - AJUSTES PARA MAIOR LEGIBILIDADE COM TRANSPARÊNCIA */
 .board-cell .text-xs {
   font-size: 11px;
-  line-height: 1.2;
+  line-height: 1.3;
+  font-weight: 700; /* AUMENTADO: de 600 para 700 para melhor contraste */
+  color: #ffffff;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.8); /* AUMENTADO: de 0.7 para 0.8 */
 }
 
 .board-cell .text-\[10px\] {
   font-size: 10px;
+  font-weight: 600; /* AUMENTADO: de 500 para 600 */
+  color: rgba(255, 255, 255, 0.95); /* AUMENTADO: de 0.9 para 0.95 */
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.7); /* AUMENTADO: de 0.5 para 0.7 */
+}
+
+/* Indicador de bioma - FUNDO MAIS ESCURO PARA CONTRASTE */
+.board-cell .biome-indicator {
+  font-size: 9px;
+  padding: 2px 6px;
+  border-radius: 10px;
+  background: rgba(0, 0, 0, 0.5); /* ESCURECIDO: de 0.4 para 0.5 */
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: rgba(255, 255, 255, 0.95); /* CLAREADO: de 0.9 para 0.95 */
+  display: inline-block;
+  margin-top: 2px;
+}
+
+/* Recursos - FUNDO MAIS ESCURO PARA CONTRASTE */
+.board-cell .resource-item {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  font-size: 12px;
+  padding: 2px 6px;
+  border-radius: 4px;
+  background: rgba(0, 0, 0, 0.45); /* ESCURECIDO: de 0.3 para 0.45 */
+  border: 1px solid rgba(255, 255, 255, 0.08); /* REDUZIDO: de 0.05 para 0.08 */
+}
+
+.board-cell .resource-value {
+  font-weight: 800; /* AUMENTADO: de 700 para 800 */
+  color: #ffffff;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.7); /* AUMENTADO: de 0.5 para 0.7 */
+}
+
+/* Footer da célula */
+.board-cell .cell-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 8px;
+  padding-top: 6px;
+  border-top: 1px solid rgba(255, 255, 255, 0.06); /* REDUZIDO: de 0.08 para 0.06 */
+}
+
+.board-cell .controller-info {
+  font-size: 10px;
+  font-weight: 700; /* AUMENTADO: de 600 para 700 */
+  color: rgba(255, 255, 255, 0.98); /* CLAREADO: de 0.95 para 0.98 */
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.8); /* AUMENTADO: de 0.5 para 0.8 */
+}
+
+.board-cell .structure-display {
+  display: flex;
+  gap: 2px;
+  font-size: 14px;
+  filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.5));
 }
 
 /* ============================================
@@ -249,6 +397,31 @@ input[type="text"]:focus, select:focus, input[type="number"]:focus {
   border-bottom: none;
 }
 
+.transparency-control {
+  padding: 8px;
+  background: rgba(0, 0, 0, 0.3);
+  border-radius: 6px;
+  margin-top: 8px;
+}
+
+.transparency-slider {
+  width: 100%;
+  height: 4px;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 2px;
+  outline: none;
+  -webkit-appearance: none;
+}
+
+.transparency-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: var(--accent);
+  cursor: pointer;
+}
+
 /* ============================================
    MODAIS
    ============================================ */
@@ -274,16 +447,93 @@ input[type="text"]:focus, select:focus, input[type="number"]:focus {
   backdrop-filter: blur(4px);
 }
 
-/* Tooltip */
+/* ============================================
+   TOOLTIP OTIMIZADO
+   ============================================ */
+
 #regionTooltip {
   pointer-events: none !important;
-  transition: opacity 0.15s ease, transform 0.15s ease;
+  transition: opacity 0.2s ease, transform 0.2s ease;
+  background: linear-gradient(
+    135deg,
+    rgba(20, 20, 20, 0.95) 0%,
+    rgba(30, 30, 30, 0.92) 100%
+  );
+  backdrop-filter: blur(10px) saturate(180%);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 10px;
+  box-shadow: 
+    0 15px 35px rgba(0, 0, 0, 0.5),
+    0 5px 15px rgba(0, 0, 0, 0.3);
 }
 
 #regionTooltip.visible {
   display: block !important;
   opacity: 1 !important;
-  transform: translateY(0) !important;
+  transform: translateY(0) scale(1) !important;
+  animation: tooltipAppear 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+@keyframes tooltipAppear {
+  from {
+    opacity: 0;
+    transform: translateY(10px) scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+#tooltipTitle {
+  font-size: 14px;
+  font-weight: 700;
+  color: #ffffff;
+  margin-bottom: 8px;
+  padding-bottom: 6px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+#tooltipBody {
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+#tooltipBody strong {
+  color: #f8d65c;
+  font-weight: 600;
+}
+
+.tooltip-section {
+  margin-bottom: 8px;
+}
+
+.tooltip-section:last-child {
+  margin-bottom: 0;
+}
+
+.tooltip-section-title {
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.7);
+  margin-bottom: 4px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.tooltip-resources {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 6px;
+}
+
+.tooltip-resource-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 8px;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 5px;
+  border: 1px solid rgba(255, 255, 255, 0.05);
 }
 
 /* ============================================
@@ -482,6 +732,26 @@ input[type="text"]:focus, select:focus, input[type="number"]:focus {
   opacity: 0.45;
   cursor: not-allowed;
   background: linear-gradient(180deg, rgba(255,255,255,0.01), rgba(0,0,0,0.1));
+}
+
+#endTurnBtn {
+  transition: all 0.3s ease;
+  font-weight: bold;
+}
+
+#endTurnBtn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+#endTurnBtn.bg-blue-600:hover {
+  background-color: #2563eb !important;
+  transform: translateY(-2px);
+}
+
+#endTurnBtn.bg-green-600:hover {
+  background-color: #16a34a !important;
+  transform: translateY(-2px);
 }
 
 /* ============================================

@@ -40,6 +40,21 @@ class UIManager {
     window.gameState = gameState;
   }
 
+  // Verifica os recursos do jogador
+  canPlayerAffordAction(actionType, player) {
+    const costs = {
+      'explorar': { madeira: 2, agua: 1 },
+      'recolher': { madeira: 1 },
+      'construir': { madeira: 3, pedra: 2, ouro: 1 },
+      'negociar': { ouro: 1 }
+    };
+  
+    const cost = costs[actionType] || {};
+    return Object.entries(cost).every(([resource, amount]) => {
+      return (player.resources[resource] || 0) >= amount;
+    });
+  }
+
   cacheElements() {
     // Elementos principais
     this.initialScreen = document.getElementById('initialScreen');
@@ -182,6 +197,27 @@ class UIManager {
         this.closeStructureModal();
       }
     });
+
+
+// Controle de transparência das regiões no mapa
+document.getElementById('cellTransparencySlider')?.addEventListener('input', (e) => {
+  const value = e.target.value;
+  document.getElementById('transparencyValue').textContent = `${value}%`;
+  
+  // Converter para alpha (0.1 a 0.9)
+  const alpha = value / 100;
+  
+  // Aplicar a todas as células
+  document.querySelectorAll('.board-cell').forEach(cell => {
+    const currentBg = getComputedStyle(cell).backgroundColor;
+    const rgb = currentBg.match(/\d+/g);
+    
+    if (rgb && rgb.length >= 3) {
+      // Preservar cor base, ajustar apenas alpha
+      cell.style.backgroundColor = `rgba(${rgb[0]}, ${rgb[1]}, ${rgb[2]}, ${alpha})`;
+    }
+  });
+});
     
     // Achievements modal
     //this.achievementsNavBtn?.addEventListener('click', () => this.renderAchievementsModal());
@@ -229,6 +265,22 @@ class UIManager {
         }
       });
     }
+
+// Adicionar listener para clique fora da região
+document.addEventListener('click', (e) => {
+  const isRegionCell = e.target.closest('.board-cell');
+  const isFooterButton = e.target.closest('.action-button, #endTurnBtn');
+  
+  if (!isRegionCell && !isFooterButton && gameState.selectedRegionId !== null) {
+    // Desselecionar região se clicar fora
+    gameState.selectedRegionId = null;
+    document.querySelectorAll('.board-cell').forEach(c => c.classList.remove('region-selected'));
+    
+    // Atualizar UI
+    this.updateFooter();
+    this.renderSidebar(gameState.selectedPlayerForSidebar);
+  }
+});
 
 // Adicionar listener para tecla ESC
 document.addEventListener('keydown', (e) => {
@@ -643,95 +695,106 @@ refreshInitialScreen() {
     });
   }
 
-  createRegionCell(region, index) {
-    const cell = document.createElement('div');
-    cell.className = 'board-cell';
-    cell.dataset.regionId = region.id;
-    cell.dataset.region = String.fromCharCode(65 + region.id);
-    
-    // Estilização baseada no controlador
-    if (region.controller !== null) {
-      cell.classList.add('controlled');
-      const player = gameState.players[region.controller];
-      const rgb = this.hexToRgb(player.color);
-      cell.style.setProperty('--player-rgb', rgb.join(', '));
-      cell.style.setProperty('--player-color', player.color);
-    } else {
-      cell.classList.add('neutral');
-    }
-    
-    // Conteúdo da célula
-    const header = document.createElement('div');
-    header.className = 'flex items-center justify-between';
-    header.innerHTML = `
-      <div>
-        <div class="text-xs font-semibold leading-tight">${region.name}</div>
-        <div class="text-[10px] text-gray-400">${region.biome}</div>
-      </div>
-      <div class="text-xs">${region.explorationLevel}⭐</div>
-    `;
-    
-    const resources = document.createElement('div');
-    resources.className = 'mt-1 flex items-center gap-1.5 text-base';
-    Object.entries(region.resources).forEach(([key, value]) => {
-      const span = document.createElement('span');
-      span.className = 'flex items-center gap-0.5';
-      span.innerHTML = `${RESOURCE_ICONS[key]}<span class="text-xs font-medium">${value}</span>`;
-      resources.appendChild(span);
-    });
-    
-    const footer = document.createElement('div');
-    footer.className = 'flex items-center justify-between mt-3 text-sm';
-    const controller = region.controller !== null 
-      ? `${gameState.players[region.controller].icon} ${gameState.players[region.controller].name}`
-      : '<span class="text-gray-400">Neutro</span>';
-
-    // Mostrar estruturas com ícones
-    const structureIcons = {
-      'Abrigo': '🛖',
-      'Torre de Vigia': '🏯',
-      'Mercado': '🏪',
-      'Laboratório': '🔬',
-      'Santuário': '🛐'
-    };
-
-    const structureDisplay = region.structures.length 
-      ? region.structures.map(s => structureIcons[s] || s).join(' ')
-      : '—';
-
-    footer.innerHTML = `
-      <div>${controller}</div>
-      <div class="text-lg">${structureDisplay}</div>
-    `;
-    
-    cell.appendChild(header);
-    cell.appendChild(resources);
-    cell.appendChild(footer);
-    
-    // Event listeners
-    cell.addEventListener('mouseenter', (e) => this.showRegionTooltip(region, e.currentTarget));
-    cell.addEventListener('mousemove', (e) => this.positionTooltip(e.currentTarget));
-    cell.addEventListener('mouseleave', () => this.hideRegionTooltip());
-    
-    cell.addEventListener('click', (e) => {
-      e.stopPropagation();
-      const regionId = Number(cell.dataset.regionId);
-      
-      if (gameState.selectedRegionId === regionId) {
-        gameState.selectedRegionId = null;
-        cell.classList.remove('region-selected');
-      } else {
-        gameState.selectedRegionId = regionId;
-        document.querySelectorAll('.board-cell').forEach(c => c.classList.remove('region-selected'));
-        cell.classList.add('region-selected');
-      }
-      
-      this.renderSidebar(gameState.selectedPlayerForSidebar);
-      this.updateFooter();
-    });
-    
-    return cell;
+  // Função que formata as células no mapa
+createRegionCell(region, index) {
+  const cell = document.createElement('div');
+  cell.className = 'board-cell';
+  cell.dataset.regionId = region.id;
+  cell.dataset.region = String.fromCharCode(65 + region.id);
+  
+  // Estilização baseada no controlador
+  if (region.controller !== null) {
+    cell.classList.add('controlled');
+    const player = gameState.players[region.controller];
+    const rgb = this.hexToRgb(player.color);
+    cell.style.setProperty('--player-rgb', rgb.join(', '));
+    cell.style.setProperty('--player-color', player.color);
+  } else {
+    cell.classList.add('neutral');
   }
+  
+  // Conteúdo da célula
+  const header = document.createElement('div');
+  header.className = 'flex items-center justify-between';
+  header.innerHTML = `
+    <div>
+      <div class="text-xs font-semibold leading-tight text-white">${region.name}</div>
+      <div class="biome-indicator">${region.biome}</div>
+    </div>
+    <div class="flex items-center gap-1">
+      <div class="text-xs text-yellow-300 font-bold">${region.explorationLevel}</div>
+      <div class="text-sm">⭐</div>
+    </div>
+  `;
+  
+  const resources = document.createElement('div');
+  resources.className = 'resource-display';
+  Object.entries(region.resources).forEach(([key, value]) => {
+    if (value > 0) {
+      const span = document.createElement('span');
+      span.className = 'resource-item';
+      span.innerHTML = `
+        <span class="resource-icon">${RESOURCE_ICONS[key]}</span>
+        <span class="resource-value">${value}</span>
+      `;
+      resources.appendChild(span);
+    }
+  });
+  
+  const footer = document.createElement('div');
+  footer.className = 'cell-footer';
+  
+  const controller = region.controller !== null 
+    ? `${gameState.players[region.controller].icon} ${gameState.players[region.controller].name}`
+    : '<span class="text-gray-300">Neutro</span>';
+
+  // Mostrar estruturas com ícones
+  const structureIcons = {
+    'Abrigo': '🛖',
+    'Torre de Vigia': '🏯',
+    'Mercado': '🏪',
+    'Laboratório': '🔬',
+    'Santuário': '🛐'
+  };
+
+  const structureDisplay = region.structures.length 
+    ? region.structures.map(s => structureIcons[s] || s).join(' ')
+    : '<span class="text-gray-400 text-xs">—</span>';
+
+  footer.innerHTML = `
+    <div class="controller-info">${controller}</div>
+    <div class="structure-display">${structureDisplay}</div>
+  `;
+  
+  cell.appendChild(header);
+  cell.appendChild(resources);
+  cell.appendChild(footer);
+  
+  // Event listeners (mantidos)
+  cell.addEventListener('mouseenter', (e) => this.showRegionTooltip(region, e.currentTarget));
+  cell.addEventListener('mousemove', (e) => this.positionTooltip(e.currentTarget));
+  cell.addEventListener('mouseleave', () => this.hideRegionTooltip());
+  
+  cell.addEventListener('click', (e) => {
+    e.stopPropagation();
+    const regionId = Number(cell.dataset.regionId);
+    
+    // Toggle selection
+    if (gameState.selectedRegionId === regionId) {
+      gameState.selectedRegionId = null;
+      cell.classList.remove('region-selected');
+    } else {
+      gameState.selectedRegionId = regionId;
+      document.querySelectorAll('.board-cell').forEach(c => c.classList.remove('region-selected'));
+      cell.classList.add('region-selected');
+    }
+
+    this.renderSidebar(gameState.selectedPlayerForSidebar);
+    this.updateFooter();
+  });
+  
+  return cell;
+}
 
   renderControlledRegions(player) {
     if (player.regions.length === 0) {
@@ -1203,27 +1266,52 @@ setupAchievementsButton() {
   }
 
   // ==================== FOOTER & ACTIONS ====================
-  // ui-manager.js - Atualize o método updateFooter()
 
 updateFooter() {
   const player = gameState.players[gameState.currentPlayerIndex];
   const regionId = gameState.selectedRegionId;
   
+  // DEFINIR VARIÁVEIS DE FASE AQUI NO INÍCIO
+  const currentPhase = gameState.currentPhase || 'renda';
+  const isActionPhase = currentPhase === 'acoes';
+  const isNegotiationPhase = currentPhase === 'negociacao';
+  
+  const phaseNames = {
+    'renda': '💰 Renda',
+    'acoes': '⚡ Ações',
+    'negociacao': '🤝 Negociação'
+  };
+  
   if (!player || !gameState.gameStarted) {
     [this.actionExploreBtn, this.actionCollectBtn, this.actionBuildBtn, this.actionNegotiateBtn]
       .forEach(b => b.disabled = true);
     this.actionsLeftEl.textContent = `Ações restantes: ${gameState.actionsLeft}`;
+    
+    // Atualizar indicador de fase mesmo quando jogo não começou
+    if (this.phaseIndicator) {
+      this.phaseIndicator.textContent = `Fase: ${phaseNames[currentPhase] || 'Renda'}`;
+    }
     return;
   }
   
-  // VERIFICAÇÃO DE FASE - RESTRINGIR AÇÕES POR FASE
-  const isActionPhase = gameState.currentPhase === 'acoes';
-  const isNegotiationPhase = gameState.currentPhase === 'negociacao';
+  // Atualizar indicador de fase
+  if (this.phaseIndicator) {
+    this.phaseIndicator.textContent = `Fase: ${phaseNames[currentPhase] || 'Renda'}`;
+  }
   
+  // Se não há região selecionada, desabilitar ações de região
   if (regionId === null || regionId === undefined) {
-    [this.actionExploreBtn, this.actionCollectBtn, this.actionBuildBtn, this.actionNegotiateBtn]
-      .forEach(b => b.disabled = true);
-    this.actionsLeftEl.textContent = `Ações restantes: ${gameState.actionsLeft}`;
+    this.actionExploreBtn.disabled = true;
+    this.actionCollectBtn.disabled = true;
+    this.actionBuildBtn.disabled = true;
+    
+    // Negociar pode estar habilitado se estiver na fase certa
+    this.actionNegotiateBtn.disabled = !isNegotiationPhase || gameState.actionsLeft <= 0;
+    
+    this.actionsLeftEl.textContent = `Ações: ${gameState.actionsLeft} | Fase: ${phaseNames[currentPhase]}`;
+    
+    // Atualizar botão de término de turno
+    this.updateEndTurnButton(currentPhase);
     return;
   }
   
@@ -1237,9 +1325,8 @@ updateFooter() {
   const baseEnabled = gameState.actionsLeft > 0;
   const isOwnRegion = region.controller === player.id;
   const isNeutral = region.controller === null;
-  const isEnemyRegion = region.controller !== null && region.controller !== player.id;
   
-  // Atualizar botão Explorar/Assumir Domínio
+  // EXPLORAR/ASSUMIR DOMÍNIO
   if (isNeutral) {
     const hasEnoughPV = player.victoryPoints >= 2;
     const canPayBiome = Object.entries(region.resources)
@@ -1247,7 +1334,7 @@ updateFooter() {
     this.actionExploreBtn.disabled = !baseEnabled || !isActionPhase || !hasEnoughPV || !canPayBiome;
     this.actionExploreBtn.textContent = 'Assumir Domínio';
   } else if (isOwnRegion) {
-    const canAfford = window.gameLogic.canAffordAction('explorar');
+    const canAfford = this.canPlayerAffordAction('explorar', player);
     this.actionExploreBtn.disabled = !baseEnabled || !isActionPhase || !canAfford;
     this.actionExploreBtn.textContent = 'Explorar';
   } else {
@@ -1255,47 +1342,48 @@ updateFooter() {
     this.actionExploreBtn.textContent = 'Explorar';
   }
   
-  // Atualizar outros botões com verificação de fase
-  this.actionBuildBtn.disabled = !baseEnabled || !isActionPhase || isNeutral || isEnemyRegion || 
-                                 !window.gameLogic.canAffordAction('construir');
-  this.actionCollectBtn.disabled = !baseEnabled || !isActionPhase || isNeutral || isEnemyRegion || 
-                                   !window.gameLogic.canAffordAction('recolher');
-  this.actionNegotiateBtn.disabled = !baseEnabled || !isNegotiationPhase || isNeutral || 
-                                     !window.gameLogic.canAffordAction('negociar');
+  // OUTRAS AÇÕES
+  this.actionBuildBtn.disabled = !baseEnabled || !isActionPhase || !isOwnRegion || 
+                                 !this.canPlayerAffordAction('construir', player);
+  this.actionCollectBtn.disabled = !baseEnabled || !isActionPhase || !isOwnRegion || 
+                                   !this.canPlayerAffordAction('recolher', player);
   
-  // Atualizar contadores
-  this.actionsLeftEl.textContent = `Ações restantes: ${gameState.actionsLeft}`;
+  // NEGOCIAR
+  this.actionNegotiateBtn.disabled = !baseEnabled || !isNegotiationPhase || 
+                                     !this.canPlayerAffordAction('negociar', player);
   
-  // Atualizar indicador de fase DINÂMICO
-  const phaseNames = {
-    'renda': '💰 Renda',
-    'acoes': '⚡ Ações',
-    'negociacao': '🤝 Negociação'
-  };
+  this.actionsLeftEl.textContent = `Ações: ${gameState.actionsLeft} | Fase: ${phaseNames[currentPhase]}`;
   
-  // Atualizar no topo
-  if (this.phaseIndicator) {
-    this.phaseIndicator.textContent = `Fase: ${phaseNames[gameState.currentPhase] || 'Renda'}`;
-  }
-  
-  // Atualizar no sidebar
-  const turnPhaseIndicator = document.getElementById('turnPhaseIndicator');
-  if (turnPhaseIndicator) {
-    turnPhaseIndicator.textContent = phaseNames[gameState.currentPhase] || 'Renda';
-  }
-  
-  // Atualizar texto do botão de término do turno baseado na fase
-  if (this.endTurnBtn) {
-    if (gameState.currentPhase === 'acoes') {
-      this.endTurnBtn.textContent = 'Ir para Negociação';
-    } else if (gameState.currentPhase === 'negociacao') {
-      this.endTurnBtn.textContent = 'Terminar Turno';
-    } else {
-      this.endTurnBtn.textContent = 'Término do Turno';
-    }
-  }
+  // Atualizar botão de término de turno
+  this.updateEndTurnButton(currentPhase);
 }
 
+// Método auxiliar para atualizar o botão de término de turno
+updateEndTurnButton(currentPhase) {
+  if (!this.endTurnBtn) return;
+  
+  // Sempre habilitar o botão, exceto na fase de renda
+  this.endTurnBtn.disabled = (currentPhase === 'renda');
+  
+  // Definir texto baseado na fase atual
+  switch(currentPhase) {
+    case 'acoes':
+      this.endTurnBtn.textContent = 'Ir para Negociação';
+      this.endTurnBtn.classList.remove('bg-red-600', 'bg-green-600');
+      this.endTurnBtn.classList.add('bg-blue-600');
+      break;
+    case 'negociacao':
+      this.endTurnBtn.textContent = 'Terminar Turno';
+      this.endTurnBtn.classList.remove('bg-blue-600', 'bg-red-600');
+      this.endTurnBtn.classList.add('bg-green-600');
+      break;
+    default:
+      this.endTurnBtn.textContent = 'Aguardando...';
+      this.endTurnBtn.classList.remove('bg-blue-600', 'bg-green-600');
+      this.endTurnBtn.classList.add('bg-red-600');
+      this.endTurnBtn.disabled = true;
+  }
+}
 
   // ==================== TOOLTIP FUNCTIONS ====================
   showRegionTooltip(region, targetEl) {
