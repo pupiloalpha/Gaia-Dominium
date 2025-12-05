@@ -14,7 +14,12 @@ const GAME_CONFIG = {
     construir: { cost:{madeira:3, pedra:2, ouro:1}, pv:2 },
     recolher: { cost:{madeira:1}, pv:1 },
     negociar: { cost:{ouro:1}, pv:1 }
-  }
+  },
+  // Novas constantes adicionadas do main-original.js
+  TURNS_UNTIL_NEXT_EVENT: 4,
+  INITIAL_EVENT_MODIFIERS: {},
+  EVENT_TURNS_LEFT: 0,
+  CONSECUTIVE_NO_ACTION_LIMIT: 3
 };
 
 const RESOURCE_ICONS = {
@@ -25,18 +30,25 @@ const RESOURCE_ICONS = {
 };
 
 const BIOME_INCOME = {
-  'Floresta Tropical': { madeira: 1, pedra: 0, ouro: 1, agua: 2 },
-  'Floresta Temperada': { madeira: 2, pedra: 1, ouro: 0, agua: 1 },
-  'Savana': { madeira: 1, pedra: 0, ouro: 2, agua: 1 },
-  'Pântano': { madeira: 0, pedra: 1, ouro: 0, agua: 2 }
+  'Floresta Tropical': { madeira: 1, pedra: 0, ouro: 0.5, agua: 1.5 },
+  'Floresta Temperada': { madeira: 1.5, pedra: 0.5, ouro: 0, agua: 1 },
+  'Savana': { madeira: 0.5, pedra: 0, ouro: 1.5, agua: 0.5 },
+  'Pântano': { madeira: 0.5, pedra: 1, ouro: 0, agua: 2 }
+};
+
+const BIOME_INITIAL_RESOURCES = {
+  'Floresta Tropical': { madeira:6, pedra:1, ouro:0, agua:3 },
+  'Floresta Temperada': { madeira:5, pedra:2, ouro:0, agua:2 },
+  'Savana': { madeira:2, pedra:1, ouro:3, agua:1 },
+  'Pântano': { madeira:1, pedra:3, ouro:0, agua:4 }
 };
 
 const STRUCTURE_INCOME = {
-  'Abrigo': { madeira: 1, agua: 1 },
+  'Abrigo': { madeira: 0.5, agua: 0.5 },
   'Torre de Vigia': { pv: 1 },
   'Mercado': { ouro: 1 },
-  'Laboratório': { ouro: 1 },
-  'Santuário': { pv: 1 }
+  'Laboratório': { ouro: 0.5 },
+  'Santuário': { pv: 0.5 }
 };
 
 const STRUCTURE_COSTS = {
@@ -68,7 +80,7 @@ const STRUCTURE_EFFECTS = {
 };
 
 const STRUCTURE_LIMITS = {
-  'Abrigo': 1, // Máximo 1 por região
+  'Abrigo': 1,
   'Torre de Vigia': 1,
   'Mercado': 1,
   'Laboratório': 1,
@@ -76,10 +88,22 @@ const STRUCTURE_LIMITS = {
 };
 
 const EXPLORATION_BONUS = {
-  0: 0,
-  1: 0,    // Reduzido para não gerar decimais
-  2: 1,    // +1 recurso extra
-  3: 2     // +2 recursos extras
+  0: 1.0,
+  1: 1.25,
+  2: 1.5,
+  3: 2.0
+};
+
+const EXPLORATION_SPECIAL_BONUS = {
+  1: { description: "+1 recurso aleatório ao recolher" },
+  2: { 
+    description: "20% chance de +1 Ouro na renda",
+    buildDiscount: { pedra: 1 }
+  },
+  3: { 
+    description: "+1 PV a cada 3 turnos",
+    collectBonus: 0.5
+  }
 };
 
 const TURN_PHASES = {
@@ -88,7 +112,269 @@ const TURN_PHASES = {
   NEGOCIACAO: 'negociacao'
 };
 
-// game-config.js - ADICIONE antes do último export
+// Sistema de Eventos Aleatórios - ADICIONADO DO main-original.js
+const GAME_EVENTS = [
+  {
+    id: 'seca',
+    name: 'Seca',
+    icon: '🌵',
+    description: 'Uma seca severa assola Gaia.',
+    effect: 'Produção de Água reduzida em 50%',
+    duration: 2,
+    apply: (state) => {
+      state.eventModifiers.aguaMultiplier = 0.5;
+    },
+    remove: (state) => {
+      delete state.eventModifiers.aguaMultiplier;
+    }
+  },
+  {
+    id: 'jazida',
+    name: 'Descoberta de Jazida',
+    icon: '⛏️',
+    description: 'Ricas jazidas de ouro foram encontradas nas savanas!',
+    effect: '+2 Ouro por turno para quem controla Savana',
+    duration: 2,
+    apply: (state) => {
+      state.eventModifiers.savanaBonus = 2;
+    },
+    remove: (state) => {
+      delete state.eventModifiers.savanaBonus;
+    }
+  },
+  {
+    id: 'tempestade',
+    name: 'Tempestade',
+    icon: '🌪️',
+    description: 'Uma tempestade violenta paralisa as construções.',
+    effect: 'Estruturas não produzem recursos',
+    duration: 2,
+    apply: (state) => {
+      state.eventModifiers.structuresDisabled = true;
+    },
+    remove: (state) => {
+      delete state.eventModifiers.structuresDisabled;
+    }
+  },
+  {
+    id: 'primavera',
+    name: 'Primavera Abundante',
+    icon: '🌱',
+    description: 'A natureza floresce com vigor renovado!',
+    effect: '+100% produção de Madeira',
+    duration: 2,
+    apply: (state) => {
+      state.eventModifiers.madeiraMultiplier = 2.0;
+    },
+    remove: (state) => {
+      delete state.eventModifiers.madeiraMultiplier;
+    }
+  },
+  {
+    id: 'mercado',
+    name: 'Mercado Aquecido',
+    icon: '💰',
+    description: 'A economia está em alta, facilitando negociações.',
+    effect: 'Negociações custam 0 Ouro',
+    duration: 2,
+    apply: (state) => {
+      state.eventModifiers.negociacaoGratis = true;
+    },
+    remove: (state) => {
+      delete state.eventModifiers.negociacaoGratis;
+    }
+  },
+  {
+    id: 'inverno',
+    name: 'Inverno Rigoroso',
+    icon: '❄️',
+    description: 'O frio intenso torna a coleta mais valiosa.',
+    effect: '+1 Madeira adicional ao Recolher',
+    duration: 2,
+    apply: (state) => {
+      state.eventModifiers.coletaBonus = { madeira: 1 };
+    },
+    remove: (state) => {
+      delete state.eventModifiers.coletaBonus;
+    }
+  },
+  {
+    id: 'arqueologia',
+    name: 'Descoberta Arqueológica',
+    icon: '🏺',
+    description: 'Artefatos antigos são encontrados!',
+    effect: '+3 PV para quem tem mais regiões',
+    duration: 1,
+    apply: (state) => {
+      let maxRegions = 0;
+      let winner = null;
+      state.players.forEach(p => {
+        if (p.regions.length > maxRegions) {
+          maxRegions = p.regions.length;
+          winner = p;
+        }
+      });
+      if (winner) {
+        winner.victoryPoints += 3;
+      }
+    },
+    remove: (state) => {}
+  },
+  {
+    id: 'inflacao',
+    name: 'Inflação',
+    icon: '📈',
+    description: 'Os preços sobem drasticamente.',
+    effect: 'Todas as ações custam +1 Ouro adicional',
+    duration: 2,
+    apply: (state) => {
+      state.eventModifiers.custoOuroExtra = 1;
+    },
+    remove: (state) => {
+      delete state.eventModifiers.custoOuroExtra;
+    }
+  },
+  {
+    id: 'tecnologia',
+    name: 'Boom Tecnológico',
+    icon: '🔬',
+    description: 'Avanços tecnológicos facilitam construções.',
+    effect: 'Construir dá +1 PV extra',
+    duration: 2,
+    apply: (state) => {
+      state.eventModifiers.construirBonus = 1;
+    },
+    remove: (state) => {
+      delete state.eventModifiers.construirBonus;
+    }
+  },
+  {
+    id: 'escassez_pedra',
+    name: 'Escassez de Pedra',
+    icon: '🪨',
+    description: 'Pedreiras estão exaustas.',
+    effect: '-50% produção de Pedra',
+    duration: 2,
+    apply: (state) => {
+      state.eventModifiers.pedraMultiplier = 0.5;
+    },
+    remove: (state) => {
+      delete state.eventModifiers.pedraMultiplier;
+    }
+  },
+  {
+    id: 'festival',
+    name: 'Festival da Colheita',
+    icon: '🎉',
+    description: 'Celebrações trazem abundância!',
+    effect: 'Recolher dá +2 recursos aleatórios bônus',
+    duration: 2,
+    apply: (state) => {
+      state.eventModifiers.festivalBonus = true;
+    },
+    remove: (state) => {
+      delete state.eventModifiers.festivalBonus;
+    }
+  },
+  {
+    id: 'areia',
+    name: 'Tempestade de Areia',
+    icon: '🏜️',
+    description: 'Areia cobre as savanas.',
+    effect: 'Savanas não produzem recursos',
+    duration: 2,
+    apply: (state) => {
+      state.eventModifiers.savanaBloqueada = true;
+    },
+    remove: (state) => {
+      delete state.eventModifiers.savanaBloqueada;
+    }
+  },
+  {
+    id: 'enchente',
+    name: 'Enchente',
+    icon: '🌊',
+    description: 'Águas sobem nos pântanos.',
+    effect: 'Pântanos produzem o dobro',
+    duration: 2,
+    apply: (state) => {
+      state.eventModifiers.pantanoBonus = 2.0;
+    },
+    remove: (state) => {
+      delete state.eventModifiers.pantanoBonus;
+    }
+  },
+  {
+    id: 'exploracao',
+    name: 'Era da Exploração',
+    icon: '🗺️',
+    description: 'Espírito aventureiro toma conta!',
+    effect: 'Explorar custa -1 Madeira',
+    duration: 2,
+    apply: (state) => {
+      state.eventModifiers.explorarDesconto = 1;
+    },
+    remove: (state) => {
+      delete state.eventModifiers.explorarDesconto;
+    }
+  },
+  {
+    id: 'depressao',
+    name: 'Depressão Econômica',
+    icon: '📉',
+    description: 'A economia entra em colapso.',
+    effect: 'Todos perdem 2 Ouro imediatamente',
+    duration: 1,
+    apply: (state) => {
+      state.players.forEach(p => {
+        p.resources.ouro = Math.max(0, p.resources.ouro - 2);
+      });
+    },
+    remove: (state) => {}
+  }
+];
+
+// Sistema de Conquistas - ADICIONADO DO main-original.js (versão funcional)
+const ACHIEVEMENTS = [
+  {
+    id: 'explorador',
+    name: 'Explorador',
+    description: 'Explore 10 regiões',
+    icon: '🗺️',
+    condition: (state) => state.totalExplored >= 10,
+    unlocked: false
+  },
+  {
+    id: 'construtor',
+    name: 'Construtor',
+    description: 'Construa 5 estruturas',
+    icon: '🏗️',
+    condition: (state) => state.totalBuilt >= 5,
+    unlocked: false
+  },
+  {
+    id: 'diplomata',
+    name: 'Diplomata',
+    description: 'Realize 10 negociações',
+    icon: '🤝',
+    condition: (state) => state.totalNegotiations >= 10,
+    unlocked: false
+  },
+  {
+    id: 'guardiao',
+    name: 'Guardião de Gaia',
+    description: 'Vencer uma partida',
+    icon: '🏆',
+    condition: (state) => state.wins > 0,
+    unlocked: false
+  }
+];
+
+const EVENT_CATEGORIES = {
+  POSITIVE: ['primavera', 'mercado', 'festival', 'exploracao', 'enchente'],
+  NEGATIVE: ['seca', 'tempestade', 'inflacao', 'escassez_pedra', 'areia', 'depressao'],
+  MIXED: ['jazida', 'inverno', 'tecnologia', 'arqueologia']
+};
 
 const ACHIEVEMENTS_CONFIG = {
   EXPLORER: {
@@ -165,15 +451,21 @@ const ACHIEVEMENTS_CONFIG = {
   }
 };
 
+// GARANTIR QUE TODAS AS CONSTANTES SÃO EXPORTADAS
 export { 
   GAME_CONFIG, 
   RESOURCE_ICONS, 
-  BIOME_INCOME, 
+  BIOME_INCOME,
+  BIOME_INITIAL_RESOURCES,
   STRUCTURE_INCOME, 
-  EXPLORATION_BONUS,
-  TURN_PHASES,
-  ACHIEVEMENTS_CONFIG,
   STRUCTURE_COSTS,
   STRUCTURE_EFFECTS,
-  STRUCTURE_LIMITS
+  STRUCTURE_LIMITS,
+  EXPLORATION_BONUS,
+  EXPLORATION_SPECIAL_BONUS,
+  TURN_PHASES,
+  ACHIEVEMENTS_CONFIG,
+  GAME_EVENTS,
+  ACHIEVEMENTS,
+  EVENT_CATEGORIES
 };

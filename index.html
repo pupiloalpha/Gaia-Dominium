@@ -90,6 +90,30 @@
     </div>
   </div>
 
+<!-- MODAL DE CONFIRMAÇÃO DE SAVE/LOAD -->
+<div id="saveLoadModal" class="hidden fixed inset-0 z-[103] flex items-center justify-center p-6">
+  <div class="absolute inset-0 bg-black/70"></div>
+  <div class="relative w-full max-w-md bg-gray-900/95 backdrop-blur-md border border-yellow-500/30 rounded-2xl shadow-xl p-6">
+    <div class="text-center mb-6">
+      <div class="text-4xl mb-3">💾</div>
+      <h3 class="text-xl font-bold text-yellow-300 mb-2">Jogo Salvo Encontrado</h3>
+      <p class="text-gray-300 mb-1">Encontramos um jogo salvo.</p>
+      <p class="text-gray-300">Deseja carregá-lo e começar de onde parou?</p>
+    </div>
+    <div class="flex flex-col gap-3">
+      <button id="saveLoadYesBtn" class="px-4 py-3 bg-green-600 hover:bg-green-700 rounded-lg text-white font-semibold transition">
+        Sim, Carregar Jogo
+      </button>
+      <button id="saveLoadNoBtn" class="px-4 py-3 bg-gray-800 hover:bg-gray-700 border border-white/6 rounded-lg text-white font-medium transition">
+        Não, Começar Novo Jogo
+      </button>
+      <button id="saveLoadDeleteBtn" class="px-4 py-2 text-sm text-gray-400 hover:text-gray-300 transition">
+        Excluir Save (Irrecuperável)
+      </button>
+    </div>
+  </div>
+</div>
+
   <!-- NEGOTIATION MODAL (offer creation) -->
   <div id="negotiationModal" class="hidden fixed inset-0 z-[98] flex items-center justify-center p-6">
     <div class="absolute inset-0 bg-black/70"></div>
@@ -190,10 +214,11 @@
             <p id="playerCountDisplay" class="text-sm text-gray-200 mt-1">0/4 Jogadores Registrados</p>
           </div>
           <div class="flex-1 flex items-center gap-3">
-            <input id="playerName" type="text" placeholder="Nome do jogador"
-              class="w-full bg-gray-800/60 text-gray-100 placeholder-gray-400 border border-white/6 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-green-400" />
-            <button id="addPlayerBtn" class="px-4 py-3 bg-green-600 rounded-lg text-white font-medium hover:bg-green-700 transition">Adicionar</button>
-          </div>
+  <input id="playerName" type="text" placeholder="Nome do jogador"
+    class="w-full bg-gray-800/60 text-gray-100 placeholder-gray-400 border border-white/6 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-green-400" />
+  <button id="addPlayerBtn" class="px-4 py-3 bg-green-600 rounded-lg text-white font-medium hover:bg-green-700 transition">Adicionar</button>
+  <button id="cancelEditBtn" class="hidden px-4 py-3 bg-gray-700 rounded-lg text-white font-medium hover:bg-gray-600 transition">Cancelar</button>
+</div>
           <button id="startGameBtn" disabled class="px-6 py-3 bg-blue-600 rounded-lg text-white font-semibold disabled:opacity-40 hover:bg-blue-700 transition">Inicializar Jogo</button>
         </div>
         <div class="px-6 pt-2 pb-4">
@@ -282,30 +307,31 @@
     </aside>
 
     <!-- MAPA -->
-    <!-- Mapa -->
-<main id="gameMap" class="hidden relative bg-cover bg-center bg-no-repeat">
-  <!-- A imagem é carregada via CSS background-image -->
-  
-  <!-- Viewport para zoom/pan -->
-  <div id="mapViewport" class="absolute inset-0 overflow-hidden">
-    <!-- Container para transformações de zoom -->
-    <div id="mapTransform" class="relative w-full h-full flex items-center justify-center">
-      <!-- Container da imagem do mapa -->
-      <div id="mapImageContainer" class="relative w-full h-full">
-        <!-- Overlay do tabuleiro (25 células) -->
-        <div id="boardOverlay" class="absolute inset-0 grid grid-cols-5 grid-rows-5 gap-0 p-1">
-          <!-- As células serão geradas aqui pelo JavaScript -->
+    <main id="gameMap" class="hidden relative">
+      <!-- Viewport para zoom/pan -->
+      <div id="mapViewport" class="absolute inset-0 overflow-hidden">
+        <!-- Container para transformações de zoom -->
+        <div id="mapTransform" class="relative w-full h-full">
+          <!-- Imagem do mapa (fundo) -->
+          <img 
+            src="gaia-mapa.png" 
+            alt="Mapa de Gaia" 
+            class="absolute inset-0 w-full h-full object-cover pointer-events-none select-none"
+          />
+          <!-- Grid de 25 quadrantes do mapa -->
+          <div id="boardContainer" class="absolute inset-0 grid grid-cols-5 gap-0">
+            <!-- As células serão geradas aqui pelo JavaScript -->
+          </div>
         </div>
       </div>
-    </div>
+      
+      <!-- Tooltip (aparece ao hover) -->
+      <div id="regionTooltip" class="hidden absolute z-50 w-64 bg-gray-900/95 border border-white/8 rounded-lg p-3 text-sm shadow-xl">
+        <div id="tooltipTitle" class="font-semibold text-white"></div>
+        <div id="tooltipBody" class="text-gray-300 mt-2"></div>
+      </div>
+    </main>
   </div>
-  
-  <!-- Tooltip (aparece ao hover) -->
-  <div id="regionTooltip" class="fixed z-[9999] w-64 bg-gray-900/95 backdrop-blur-md border border-white/10 rounded-lg p-4 text-sm shadow-2xl opacity-0 invisible transition-all duration-200">
-    <div id="tooltipTitle" class="font-semibold text-white text-base mb-2"></div>
-    <div id="tooltipBody" class="text-gray-300"></div>
-  </div>
-</main>
 
   <!-- FOOTER DE AÇÕES -->
   <footer id="gameFooter" class="hidden fixed bottom-4 left-1/2 -translate-x-1/2 z-45 w-full max-w-4xl px-4">
@@ -324,6 +350,6 @@
   </footer>
 
   <!-- SCRIPTS MODULARES -->
-  <script type="module" src="main.js"></script>
+  <script type="module" src="./main.js"></script>
 </body>
 </html>

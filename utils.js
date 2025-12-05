@@ -1,4 +1,5 @@
-// utils.js - Funções utilitárias
+// utils.js - Versão corrigida com sintaxe apropriada
+
 const Utils = {
   // Alert/Confirm system
   showAlert(title, message, type = 'info') {
@@ -94,47 +95,38 @@ const Utils = {
                   type === 'warning' ? 'Aviso' : 'Informação';
     this.showAlert(title, message, type);
   },
-
-  showFeedbackWithCallback(title, message, type = 'info', callback) {
-  return new Promise(resolve => {
-    const alertModal = document.getElementById('alertModal');
-    const alertIcon = document.getElementById('alertIcon');
-    const alertTitle = document.getElementById('alertTitle');
-    const alertMessage = document.getElementById('alertMessage');
-    const alertButtons = document.getElementById('alertButtons');
-    
-    if (!alertModal) {
-      resolve();
-      return;
+  
+  // Função para atualizar toda a UI após mudança de estado
+  refreshUIAfterStateChange(renderHeaderPlayers, renderBoard, renderSidebar, updateFooter, selectedPlayerIndex) {
+    if (typeof renderHeaderPlayers === 'function') {
+      renderHeaderPlayers();
     }
-    
-    let icon = 'ℹ️';
-    if (type === 'warning') icon = '🟡';
-    if (type === 'error') icon = '🔴';
-    if (type === 'success') icon = '🟢';
-    
-    alertIcon.textContent = icon;
-    alertTitle.textContent = title;
-    alertMessage.textContent = message;
-    
-    // Clear buttons
-    alertButtons.innerHTML = '';
-    
-    const okButton = document.createElement('button');
-    okButton.className = 'px-4 py-2 bg-yellow-600 hover:bg-yellow-500 rounded-full text-white transition';
-    okButton.textContent = 'OK';
-    okButton.addEventListener('click', () => {
-      this.hideAlert();
-      if (callback) callback();
-      resolve();
-    });
-    
-    alertButtons.appendChild(okButton);
-    alertModal.classList.remove('hidden');
-    
-    setTimeout(() => alertModal.classList.add('show'), 10);
-  });
-},
+    if (typeof renderBoard === 'function') {
+      renderBoard();
+    }
+    if (typeof renderSidebar === 'function' && typeof selectedPlayerIndex !== 'undefined') {
+      renderSidebar(selectedPlayerIndex);
+    }
+    if (typeof updateFooter === 'function') {
+      updateFooter();
+    }
+  },
+  
+  // Função para limpar seleção de região
+  clearRegionSelection(gameState) {
+    if (gameState) {
+      gameState.selectedRegionId = null;
+    }
+    document.querySelectorAll('.board-cell').forEach(c => c.classList.remove('region-selected'));
+  },
+  
+  // Função para converter hex para RGB (usada no renderSidebar)
+  hexToRgb(hex) {
+    const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+    return result ? 
+      `${parseInt(result[1], 16)}, ${parseInt(result[2], 16)}, ${parseInt(result[3], 16)}` 
+      : '255, 255, 255';
+  },
   
   // Fullscreen helper
   tryRequestFullscreenOnce() {
@@ -153,131 +145,81 @@ const Utils = {
   },
   
   // Setup map zoom
-setupMapZoom() {
-  const mapViewport = document.getElementById('mapViewport');
-  const mapTransform = document.getElementById('mapTransform');
-  const mapImageContainer = document.getElementById('mapImageContainer');
-  const boardOverlay = document.getElementById('boardOverlay');
-  
-  if (!mapViewport || !mapTransform || !mapImageContainer) return;
-  
-  let currentZoom = 1;
-  const minZoom = 0.7;
-  const maxZoom = 2.5;
-  const zoomStep = 0.1;
-  let isDragging = false;
-  let startX, startY;
-  let translateX = 0, translateY = 0;
-  
-  // Mostrar controles
-  document.getElementById('zoomControls')?.classList.remove('hidden');
-  document.getElementById('miniMapIndicator')?.classList.remove('hidden');
-  
-  // Aplicar transformação apenas no container (imagem e overlay juntos)
-  const applyTransform = () => {
-    const transform = `translate(${translateX}px, ${translateY}px) scale(${currentZoom})`;
-    mapTransform.style.transform = transform;
+  setupMapZoom() {
+    const mapViewport = document.getElementById('mapViewport');
+    const mapTransform = document.getElementById('mapTransform');
     
-    // Atualizar indicadores
-    updateIndicators();
-  };
-  
-  // Atualizar indicadores
-  const updateIndicators = () => {
-    const positionEl = document.getElementById('mapPosition');
-    const zoomLevelEl = document.getElementById('zoomLevel');
+    if (!mapViewport || !mapTransform) return;
     
-    if (positionEl) {
-      positionEl.textContent = `${Math.round(translateX)}px, ${Math.round(translateY)}px`;
-    }
+    let currentZoom = 1;
+    const minZoom = 0.5;
+    const maxZoom = 3;
+    const zoomStep = 0.1;
+    let isDragging = false;
+    let startX, startY;
+    let translateX = 0, translateY = 0;
     
-    if (zoomLevelEl) {
-      zoomLevelEl.textContent = `${Math.round(currentZoom * 100)}%`;
-    }
-  };
-  
-  // Zoom com scroll (Ctrl + scroll)
-  mapViewport.addEventListener('wheel', (e) => {
-    if (!e.ctrlKey) return;
+    // Aplicar transformações
+    const applyTransform = () => {
+      mapTransform.style.transform = `
+        translate(${translateX}px, ${translateY}px)
+        scale(${currentZoom})
+      `;
+    };
     
-    e.preventDefault();
-    
-    const delta = e.deltaY > 0 ? -zoomStep : zoomStep;
-    const oldZoom = currentZoom;
-    currentZoom = Math.max(minZoom, Math.min(maxZoom, currentZoom + delta));
-    
-    if (currentZoom !== oldZoom) {
-      // Calcular zoom centrado no cursor
-      const rect = mapViewport.getBoundingClientRect();
-      const x = e.clientX - rect.left;
-      const y = e.clientY - rect.top;
+    // Zoom com scroll
+    mapViewport.addEventListener('wheel', (e) => {
+      // Permitir scroll normal se Ctrl não estiver pressionado
+      if (!e.ctrlKey && !e.metaKey) return;
       
-      const zoomRatio = currentZoom / oldZoom;
+      e.preventDefault();
       
-      // Ajustar posição para zoom no ponto do cursor
-      translateX = x - (x - translateX) * zoomRatio;
-      translateY = y - (y - translateY) * zoomRatio;
+      const delta = e.deltaY > 0 ? -zoomStep : zoomStep;
+      const newZoom = Math.max(minZoom, Math.min(maxZoom, currentZoom + delta));
       
-      // Limitar movimento
-      const maxTranslate = 200;
-      translateX = Math.max(-maxTranslate, Math.min(maxTranslate, translateX));
-      translateY = Math.max(-maxTranslate, Math.min(maxTranslate, translateY));
+      if (newZoom !== currentZoom) {
+        // Ajustar a posição de tradução para zoom no cursor
+        const rect = mapViewport.getBoundingClientRect();
+        const x = e.clientX - rect.left;
+        const y = e.clientY - rect.top;
+        
+        const zoomRatio = newZoom / currentZoom;
+        
+        // Ajustar a posição para zoom no ponto do cursor
+        translateX = x - (x - translateX) * zoomRatio;
+        translateY = y - (y - translateY) * zoomRatio;
+        
+        currentZoom = newZoom;
+        applyTransform();
+      }
+    }, { passive: false });
+    
+    // Sistema de arrastar (pan)
+    mapViewport.addEventListener('mousedown', (e) => {
+      if (e.button !== 0) return; // Apenas botão esquerdo
       
+      isDragging = true;
+      startX = e.clientX - translateX;
+      startY = e.clientY - translateY;
+      mapViewport.style.cursor = 'grabbing';
+      e.preventDefault();
+    });
+    
+    document.addEventListener('mousemove', (e) => {
+      if (!isDragging) return;
+      
+      translateX = e.clientX - startX;
+      translateY = e.clientY - startY;
       applyTransform();
-    }
-  }, { passive: false });
-  
-  // Sistema de arrastar
-  mapViewport.addEventListener('mousedown', (e) => {
-    if (e.button !== 0) return;
+    });
     
-    isDragging = true;
-    startX = e.clientX - translateX;
-    startY = e.clientY - translateY;
-    mapViewport.style.cursor = 'grabbing';
-    e.preventDefault();
-  });
-  
-  document.addEventListener('mousemove', (e) => {
-    if (!isDragging) return;
+    document.addEventListener('mouseup', () => {
+      isDragging = false;
+      mapViewport.style.cursor = 'grab';
+    });
     
-    translateX = e.clientX - startX;
-    translateY = e.clientY - startY;
-    
-    // Limitar movimento
-    const maxTranslate = 200;
-    translateX = Math.max(-maxTranslate, Math.min(maxTranslate, translateX));
-    translateY = Math.max(-maxTranslate, Math.min(maxTranslate, translateY));
-    
-    applyTransform();
-  });
-  
-  document.addEventListener('mouseup', () => {
-    isDragging = false;
-    mapViewport.style.cursor = 'grab';
-  });
-  
-  // Controles de botão
-  document.getElementById('zoomIn')?.addEventListener('click', () => {
-    currentZoom = Math.min(maxZoom, currentZoom + zoomStep);
-    applyTransform();
-  });
-  
-  document.getElementById('zoomOut')?.addEventListener('click', () => {
-    currentZoom = Math.max(minZoom, currentZoom - zoomStep);
-    applyTransform();
-  });
-  
-  document.getElementById('resetZoom')?.addEventListener('click', () => {
-    currentZoom = 1;
-    translateX = 0;
-    translateY = 0;
-    applyTransform();
-  });
-  
-  // Atalhos de teclado
-  document.addEventListener('keydown', (e) => {
-    if (e.ctrlKey || e.metaKey) {
+    // Zoom com teclado
+    document.addEventListener('keydown', (e) => {
       if (e.key === '+' || e.key === '=') {
         e.preventDefault();
         currentZoom = Math.min(maxZoom, currentZoom + zoomStep);
@@ -288,6 +230,7 @@ setupMapZoom() {
         currentZoom = Math.max(minZoom, currentZoom - zoomStep);
         applyTransform();
       }
+      // Reset com 0
       if (e.key === '0') {
         e.preventDefault();
         currentZoom = 1;
@@ -295,22 +238,83 @@ setupMapZoom() {
         translateY = 0;
         applyTransform();
       }
-    }
+    });
     
-    // Reset com R
-    if (e.key === 'r' || e.key === 'R') {
-      currentZoom = 1;
-      translateX = 0;
-      translateY = 0;
-      applyTransform();
+    // Configurar cursor inicial
+    mapViewport.style.cursor = 'grab';
+    
+    console.log('🎮 Sistema de zoom/pan configurado');
+  },
+
+  // ==================== NOVAS FUNÇÕES ADICIONADAS ====================
+  
+  showSaveLoadModal() {
+    return new Promise(resolve => {
+      const modal = document.getElementById('saveLoadModal');
+      const yesBtn = document.getElementById('saveLoadYesBtn');
+      const noBtn = document.getElementById('saveLoadNoBtn');
+      const deleteBtn = document.getElementById('saveLoadDeleteBtn');
+      
+      if (!modal) {
+        resolve({ action: 'new' });
+        return;
+      }
+      
+      let resolved = false;
+      
+      const handleResolve = (action) => {
+        if (resolved) return;
+        resolved = true;
+        this.hideSaveLoadModal();
+        resolve({ action });
+      };
+      
+      yesBtn.onclick = () => handleResolve('load');
+      noBtn.onclick = () => handleResolve('new');
+      deleteBtn.onclick = () => {
+        if (confirm('Tem certeza? Esta ação é irreversível!')) {
+          handleResolve('delete');
+        }
+      };
+      
+      modal.classList.remove('hidden');
+      setTimeout(() => modal.classList.add('show'), 10);
+    });
+  },
+  
+  hideSaveLoadModal() {
+    const modal = document.getElementById('saveLoadModal');
+    modal?.classList.remove('show');
+    setTimeout(() => modal?.classList.add('hidden'), 180);
+  },
+  
+  // Nova função para verificar e oferecer carregamento
+  async checkAndOfferLoad() {
+    try {
+      const saved = localStorage.getItem('gaia-dominium-save');
+      if (!saved) return { hasSave: false };
+      
+      const data = JSON.parse(saved);
+      const migratedData = window.migrateSaveData ? window.migrateSaveData(data) : data;
+      
+      const response = await this.showSaveLoadModal();
+      
+      switch (response.action) {
+        case 'load':
+          return { hasSave: true, data: migratedData, load: true };
+        case 'delete':
+          localStorage.removeItem('gaia-dominium-save');
+          this.showFeedback('Save excluído com sucesso!', 'success');
+          return { hasSave: false };
+        default:
+          return { hasSave: true, data: migratedData, load: false };
+      }
+    } catch (error) {
+      console.error('Erro ao verificar save:', error);
+      return { hasSave: false };
     }
-  });
-  
-  // Inicializar
-  applyTransform();
-  mapViewport.style.cursor = 'grab';
-}
-  
+  }
+  // FIM do objeto Utils - NÃO ADICIONE VÍRGULA AQUI
 };
 
 export { Utils };

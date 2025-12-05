@@ -1,6 +1,7 @@
-// game-state.js - Gerenciamento de estado do jogo
+// game-state.js - Gerenciamento de estado do jogo completo
 import { GAME_CONFIG } from './game-config.js';
 
+// Estado do jogo
 let gameState = {
   players: [],
   regions: [],
@@ -14,114 +15,43 @@ let gameState = {
   currentEvent: null,
   eventTurnsLeft: 0,
   eventModifiers: {},
-  turnsUntilNextEvent: 4,
-  currentPhase: 'renda' 
+  turnsUntilNextEvent: 4
 };
 
-let activityLogHistory = [];
-
+// Sistema de conquistas - atualizado para refletir o original
 let achievementsState = {
-  // Contadores globais
   totalExplored: 0,
   totalBuilt: 0,
   totalNegotiations: 0,
-  totalCollected: 0,
   wins: 0,
-  fastestWin: Infinity,
-  
-  // Contadores por jogador
-  playerAchievements: {}, // Será inicializado quando os jogadores forem criados
-  
-  // Conquistas desbloqueadas por jogador
-  unlockedAchievements: {} // {playerId: ['achievementId1', 'achievementId2']}
+  unlockedAchievements: [], // Array por jogador: [[id1, id2], [id1], ...]
+  playerAchievements: []    // Array por jogador: [{explored:0, built:0, ...}, ...]
 };
 
-// Inicializar conquistas do jogador
-function initializePlayerAchievements(playerId) {
-  if (!achievementsState.playerAchievements[playerId]) {
-    achievementsState.playerAchievements[playerId] = {
-      explored: 0,
-      built: 0,
-      negotiated: 0,
-      collected: 0,
-      controlledBiomes: new Set(),
-      maxResources: { madeira: 0, pedra: 0, ouro: 0, agua: 0 }
-    };
-  }
-  
-  if (!achievementsState.unlockedAchievements[playerId]) {
-    achievementsState.unlockedAchievements[playerId] = [];
-  }
-}
+// Log de atividades
+let activityLogHistory = [];
 
-// Verificar conquistas
-function checkAchievements(playerId) {
-  const player = gameState.players[playerId];
-  const playerStats = achievementsState.playerAchievements[playerId];
-  const unlocked = achievementsState.unlockedAchievements[playerId] || [];
-  const newAchievements = [];
-  
-  // Explorador - Explore 10 regiões
-  if (playerStats.explored >= 10 && !unlocked.includes('explorador')) {
-    unlocked.push('explorador');
-    newAchievements.push('Explorador');
-  }
-  
-  // Construtor - Construa 5 estruturas
-  if (playerStats.built >= 5 && !unlocked.includes('construtor')) {
-    unlocked.push('construtor');
-    newAchievements.push('Construtor');
-  }
-  
-  // Diplomata - Realize 10 negociações
-  if (playerStats.negotiated >= 10 && !unlocked.includes('diplomata')) {
-    unlocked.push('diplomata');
-    newAchievements.push('Diplomata');
-  }
-  
-  // Colecionador - Recolha de 8 regiões diferentes
-  if (playerStats.collected >= 8 && !unlocked.includes('colecionador')) {
-    unlocked.push('colecionador');
-    newAchievements.push('Colecionador');
-  }
-  
-  // Diversificador - Controle 1 região de cada bioma
-  if (playerStats.controlledBiomes.size >= 4 && !unlocked.includes('diversificador')) {
-    unlocked.push('diversificador');
-    newAchievements.push('Diversificador');
-  }
-  
-  // Magnata - Acumule 20 de cada recurso
-  const hasAllResources = Object.values(playerStats.maxResources)
-    .every(value => value >= 20);
-  if (hasAllResources && !unlocked.includes('magnata')) {
-    unlocked.push('magnata');
-    newAchievements.push('Magnata');
-  }
-  
-  return newAchievements;
-}
-
-// Atualizar recursos máximos
-function updateMaxResources(playerId) {
-  const player = gameState.players[playerId];
-  const playerStats = achievementsState.playerAchievements[playerId];
-  
-  if (!playerStats) return;
-  
-  Object.keys(player.resources).forEach(resource => {
-    if (player.resources[resource] > playerStats.maxResources[resource]) {
-      playerStats.maxResources[resource] = player.resources[resource];
-    }
-  });
-}
+// Fase atual do jogo
+let currentPhase = 'renda';
 
 // Getters
-function getGameState() { return { ...gameState }; }
-function getAchievementsState() { return { ...achievementsState }; }
-function getCurrentPhase() { return currentPhase; }
+function getGameState() { 
+  return { ...gameState }; 
+}
 
-// Setters com validação
+function getAchievementsState() { 
+  return { ...achievementsState }; 
+}
+
+function getCurrentPhase() { 
+  return currentPhase; 
+}
+
+function getActivityLogs() {
+  return [...activityLogHistory];
+}
+
+// Setters
 function setGameState(newState) {
   Object.keys(newState).forEach(key => {
     if (gameState.hasOwnProperty(key)) {
@@ -139,9 +69,7 @@ function setAchievementsState(newState) {
 }
 
 function setCurrentPhase(phase) {
-  if (['renda', 'acoes', 'negociacao'].includes(phase)) {
-    gameState.currentPhase = phase;
-  }
+  currentPhase = phase;
 }
 
 // Funções auxiliares de estado
@@ -155,21 +83,234 @@ function getSelectedRegion() {
     : null;
 }
 
+function getPlayerById(id) {
+  return gameState.players.find(p => p.id === id);
+}
+
+// Funções de manipulação do estado
 function addActivityLog(entry) {
   activityLogHistory.unshift({
     ...entry,
     id: Date.now(),
-    timestamp: new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }),
+    timestamp: new Date().toLocaleTimeString('pt-BR', { 
+      hour: '2-digit', 
+      minute: '2-digit' 
+    }),
     turn: gameState.turn
   });
-  activityLogHistory = activityLogHistory.slice(0, 15); // Manter apenas últimas 15
+  
+  // Manter apenas últimas 15 entradas
+  if (activityLogHistory.length > 15) {
+    activityLogHistory = activityLogHistory.slice(0, 15);
+  }
 }
 
-function getActivityLogs(filter = 'all') {
-  return activityLogHistory.filter(log => {
-    if (filter === 'mine') return log.isMine;
-    if (filter === 'events') return log.isEvent;
+function incrementAchievement(achievementType, amount = 1) {
+  if (achievementsState.hasOwnProperty(achievementType)) {
+    achievementsState[achievementType] += amount;
+  }
+}
+
+function clearRegionSelection() {
+  gameState.selectedRegionId = null;
+}
+
+function updateCurrentPlayerIndex() {
+  gameState.currentPlayerIndex = (gameState.currentPlayerIndex + 1) % gameState.players.length;
+  
+  // Se voltou ao primeiro jogador, incrementa o turno
+  if (gameState.currentPlayerIndex === 0) {
+    gameState.turn += 1;
+  }
+}
+
+function resetActions() {
+  gameState.actionsLeft = GAME_CONFIG.ACTIONS_PER_TURN;
+}
+
+function consumeAction() {
+  if (gameState.actionsLeft > 0) {
+    gameState.actionsLeft--;
     return true;
+  }
+  return false;
+}
+
+function setSelectedRegion(regionId) {
+  gameState.selectedRegionId = regionId;
+}
+
+function setSelectedPlayerForSidebar(playerIndex) {
+  gameState.selectedPlayerForSidebar = playerIndex;
+}
+
+function addPlayer(player) {
+  gameState.players.push(player);
+}
+
+function updatePlayerResources(playerIndex, resources) {
+  const player = gameState.players[playerIndex];
+  if (player) {
+    Object.keys(resources).forEach(resource => {
+      if (player.resources[resource] !== undefined) {
+        player.resources[resource] += resources[resource];
+        // Garantir que não fique negativo
+        player.resources[resource] = Math.max(0, player.resources[resource]);
+      }
+    });
+  }
+}
+
+function updatePlayerVictoryPoints(playerIndex, points) {
+  const player = gameState.players[playerIndex];
+  if (player) {
+    player.victoryPoints += points;
+    // Garantir que não fique negativo
+    player.victoryPoints = Math.max(0, player.victoryPoints);
+  }
+}
+
+function updateRegionController(regionId, playerId) {
+  const region = gameState.regions[regionId];
+  if (region) {
+    // Remover da lista do jogador anterior
+    if (region.controller !== null) {
+      const oldPlayer = gameState.players[region.controller];
+      if (oldPlayer) {
+        oldPlayer.regions = oldPlayer.regions.filter(id => id !== regionId);
+      }
+    }
+    
+    // Atualizar controlador
+    region.controller = playerId;
+    
+    // Adicionar à lista do novo jogador
+    if (playerId !== null) {
+      const newPlayer = gameState.players[playerId];
+      if (newPlayer && !newPlayer.regions.includes(regionId)) {
+        newPlayer.regions.push(regionId);
+      }
+    }
+  }
+}
+
+function updateRegionExploration(regionId, level) {
+  const region = gameState.regions[regionId];
+  if (region) {
+    region.explorationLevel = Math.max(0, Math.min(3, level));
+  }
+}
+
+function addStructureToRegion(regionId, structure) {
+  const region = gameState.regions[regionId];
+  if (region && !region.structures.includes(structure)) {
+    region.structures.push(structure);
+  }
+}
+
+function setCurrentEvent(event) {
+  gameState.currentEvent = event;
+  if (event) {
+    gameState.eventTurnsLeft = event.duration;
+  } else {
+    gameState.eventTurnsLeft = 0;
+  }
+}
+
+function updateEventTurnsLeft() {
+  if (gameState.eventTurnsLeft > 0) {
+    gameState.eventTurnsLeft--;
+    
+    // Se acabou o evento, limpar
+    if (gameState.eventTurnsLeft <= 0) {
+      gameState.currentEvent = null;
+      gameState.eventModifiers = {};
+    }
+  }
+}
+
+function updateTurnsUntilNextEvent() {
+  if (gameState.turnsUntilNextEvent > 0) {
+    gameState.turnsUntilNextEvent--;
+  }
+}
+
+function resetTurnsUntilNextEvent() {
+  gameState.turnsUntilNextEvent = 4;
+}
+
+function setPendingNegotiation(negotiation) {
+  gameState.pendingNegotiation = negotiation;
+}
+
+function clearPendingNegotiation() {
+  gameState.pendingNegotiation = null;
+}
+
+// Funções para verificação de estado
+function hasPlayerWon() {
+  return gameState.players.some(p => p.victoryPoints >= GAME_CONFIG.VICTORY_POINTS);
+}
+
+function getWinner() {
+  return gameState.players.find(p => p.victoryPoints >= GAME_CONFIG.VICTORY_POINTS);
+}
+
+function canPlayerAfford(playerIndex, cost) {
+  const player = gameState.players[playerIndex];
+  if (!player) return false;
+  
+  return Object.entries(cost).every(([resource, amount]) => {
+    return (player.resources[resource] || 0) >= amount;
+  });
+}
+
+// Função para inicializar o jogo
+function initializeGame(playersData) {
+  // Resetar estado
+  gameState = {
+    players: [],
+    regions: [],
+    currentPlayerIndex: 0,
+    selectedPlayerForSidebar: 0,
+    turn: 1,
+    actionsLeft: GAME_CONFIG.ACTIONS_PER_TURN,
+    gameStarted: true,
+    selectedRegionId: null,
+    pendingNegotiation: null,
+    currentEvent: null,
+    eventTurnsLeft: 0,
+    eventModifiers: {},
+    turnsUntilNextEvent: 4
+  };
+  
+  // Adicionar jogadores
+  playersData.forEach((playerData, index) => {
+    gameState.players.push({
+      id: index,
+      name: playerData.name,
+      icon: playerData.icon,
+      color: GAME_CONFIG.PLAYER_COLORS[index % GAME_CONFIG.PLAYER_COLORS.length],
+      resources: { ...GAME_CONFIG.INITIAL_RESOURCES },
+      victoryPoints: 0,
+      regions: [],
+      consecutiveNoActionTurns: 0
+    });
+  });
+
+  // Inicializar conquistas por jogador
+  achievementsState.unlockedAchievements = [];
+  achievementsState.playerAchievements = [];
+  gameState.players.forEach(() => {
+    achievementsState.unlockedAchievements.push([]);
+    achievementsState.playerAchievements.push({
+      explored: 0,
+      built: 0,
+      negotiated: 0,
+      collected: 0,
+      controlledBiomes: new Set(),
+      maxResources: { madeira: 0, pedra: 0, ouro: 0, agua: 0 }
+    });
   });
 }
 
@@ -178,17 +319,49 @@ export {
   gameState,
   achievementsState,
   activityLogHistory,
+  currentPhase,
+  
+  // Getters
   getGameState,
   getAchievementsState,
   getCurrentPhase,
+  getActivityLogs,
+  getCurrentPlayer,
+  getSelectedRegion,
+  getPlayerById,
+  
+  // Setters
   setGameState,
   setAchievementsState,
   setCurrentPhase,
-  getCurrentPlayer,
-  getSelectedRegion,
+  
+  // Manipulação de estado
   addActivityLog,
-  getActivityLogs,
-  initializePlayerAchievements,
-  checkAchievements,
-  updateMaxResources
+  incrementAchievement,
+  clearRegionSelection,
+  updateCurrentPlayerIndex,
+  resetActions,
+  consumeAction,
+  setSelectedRegion,
+  setSelectedPlayerForSidebar,
+  addPlayer,
+  updatePlayerResources,
+  updatePlayerVictoryPoints,
+  updateRegionController,
+  updateRegionExploration,
+  addStructureToRegion,
+  setCurrentEvent,
+  updateEventTurnsLeft,
+  updateTurnsUntilNextEvent,
+  resetTurnsUntilNextEvent,
+  setPendingNegotiation,
+  clearPendingNegotiation,
+  
+  // Verificações
+  hasPlayerWon,
+  getWinner,
+  canPlayerAfford,
+  
+  // Inicialização
+  initializeGame
 };

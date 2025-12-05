@@ -1,304 +1,127 @@
-// game-logic.js - VERSÃO COMPLETA E CORRIGIDA
+// game-logic.js
 import { 
   gameState, 
-  achievementsState, 
-  setAchievementsState,
+  achievementsState,
+  setGameState,
   addActivityLog,
-  initializePlayerAchievements,
-  checkAchievements,
-  updateMaxResources
+  incrementAchievement,
+  updatePlayerResources,
+  updatePlayerVictoryPoints,
+  updateRegionController,
+  updateRegionExploration,
+  addStructureToRegion,
+  clearRegionSelection,
+  consumeAction,
+  getCurrentPlayer,
+  canPlayerAfford
 } from './game-state.js';
+
 import { 
   GAME_CONFIG, 
-  RESOURCE_ICONS, 
-  BIOME_INCOME, 
-  STRUCTURE_INCOME, 
+  RESOURCE_ICONS,
+  BIOME_INCOME,
+  BIOME_INITIAL_RESOURCES,
   EXPLORATION_BONUS,
-  TURN_PHASES,
-  ACHIEVEMENTS_CONFIG,
+  EXPLORATION_SPECIAL_BONUS,
   STRUCTURE_COSTS,
+  STRUCTURE_INCOME,
   STRUCTURE_EFFECTS,
-  STRUCTURE_LIMITS
+  GAME_EVENTS,  // Importar do game-config.js
+  ACHIEVEMENTS_CONFIG
 } from './game-config.js';
 
 class GameLogic {
   constructor() {
-    this.currentPhase = TURN_PHASES.RENDA;
-    gameState.currentPhase = this.currentPhase; // Sincronizar
-    this.GAME_EVENTS = this.initializeGameEvents();
+    this.GAME_EVENTS = GAME_EVENTS; // Usar a importação
   }
 
-  initializeGameEvents() {
-    return [
-      {
-        id: 1,
-        name: 'Primavera Abundante',
-        icon: '🌺',
-        description: 'Florestas florescem com vida nova',
-        effect: 'Produção de Madeira +100%',
-        duration: 2,
-        type: 'positive',
-        apply: (state) => {
-          state.eventModifiers.madeiraMultiplier = 2.0;
-        },
-        remove: (state) => {
-          state.eventModifiers.madeiraMultiplier = 1.0;
-        }
-      },
-      {
-        id: 2,
-        name: 'Seca',
-        icon: '🌵',
-        description: 'Escassez de água afeta todas as regiões',
-        effect: 'Produção de Água -50%',
-        duration: 2,
-        type: 'negative',
-        apply: (state) => {
-          state.eventModifiers.aguaMultiplier = 0.5;
-        },
-        remove: (state) => {
-          state.eventModifiers.aguaMultiplier = 1.0;
-        }
-      },
-      {
-        id: 3,
-        name: 'Descoberta de Jazida',
-        icon: '💎',
-        description: 'Enorme depósito de pedra é descoberto',
-        effect: '+2 Pedra para todos, mas -1 PV',
-        duration: 0,
-        type: 'mixed',
-        apply: (state) => {
-          state.players.forEach(p => {
-            p.resources.pedra += 2;
-            p.victoryPoints = Math.max(0, p.victoryPoints - 1);
-          });
-        }
-      },
-      {
-        id: 4,
-        name: 'Tempestade',
-        icon: '⛈️',
-        description: 'Tempestade violenta atinge Gaia',
-        effect: 'Produção de todos recursos -25%',
-        duration: 1,
-        type: 'negative',
-        apply: (state) => {
-          state.eventModifiers.madeiraMultiplier = 0.75;
-          state.eventModifiers.pedraMultiplier = 0.75;
-          state.eventModifiers.ouroMultiplier = 0.75;
-          state.eventModifiers.aguaMultiplier = 0.75;
-        },
-        remove: (state) => {
-          state.eventModifiers.madeiraMultiplier = 1.0;
-          state.eventModifiers.pedraMultiplier = 1.0;
-          state.eventModifiers.ouroMultiplier = 1.0;
-          state.eventModifiers.aguaMultiplier = 1.0;
-        }
-      },
-      {
-        id: 5,
-        name: 'Mercado Aquecido',
-        icon: '📈',
-        description: 'Demanda por ouro atinge pico histórico',
-        effect: 'Negociar não custa Ouro',
-        duration: 1,
-        type: 'positive',
-        apply: (state) => {
-          state.eventModifiers.negociacaoGratis = true;
-        },
-        remove: (state) => {
-          state.eventModifiers.negociacaoGratis = false;
-        }
-      },
-      {
-        id: 6,
-        name: 'Boom Tecnológico',
-        icon: '⚙️',
-        description: 'Avanços tecnológicos revolucionam construções',
-        effect: 'Construir dá +1 PV e +1 Ouro extra',
-        duration: 2,
-        type: 'mixed',
-        apply: (state) => {
-          state.eventModifiers.construirBonus = 1;
-          state.eventModifiers.construirOuroExtra = 1;
-        },
-        remove: (state) => {
-          state.eventModifiers.construirBonus = 0;
-          state.eventModifiers.construirOuroExtra = 0;
-        }
-      },
-      {
-        id: 7,
-        name: 'Inflação',
-        icon: '💰',
-        description: 'Custos de construção disparam',
-        effect: 'Construir custa +1 de cada recurso',
-        duration: 2,
-        type: 'negative',
-        apply: (state) => {
-          state.eventModifiers.construirCustoExtra = true;
-        },
-        remove: (state) => {
-          state.eventModifiers.construirCustoExtra = false;
-        }
-      },
-      {
-        id: 8,
-        name: 'Tempestade de Areia',
-        icon: '🌪️',
-        description: 'Ventos fortes afetam produção',
-        effect: '+50% Pedra, -50% Madeira',
-        duration: 1,
-        type: 'mixed',
-        apply: (state) => {
-          state.eventModifiers.pedraMultiplier = 1.5;
-          state.eventModifiers.madeiraMultiplier = 0.5;
-        },
-        remove: (state) => {
-          state.eventModifiers.pedraMultiplier = 1.0;
-          state.eventModifiers.madeiraMultiplier = 1.0;
-        }
-      },
-      {
-        id: 9,
-        name: 'Festival Cultural',
-        icon: '🎉',
-        description: 'Celebrações unem as facções',
-        effect: 'Todos ganham +1 PV',
-        duration: 0,
-        type: 'positive',
-        apply: (state) => {
-          state.players.forEach(p => {
-            p.victoryPoints += 1;
-          });
-        }
-      },
-      {
-        id: 10,
-        name: 'Enchente',
-        icon: '🌊',
-        description: 'Chuvas torrenciais inundam regiões',
-        effect: '+100% Água, -50% Madeira',
-        duration: 1,
-        type: 'mixed',
-        apply: (state) => {
-          state.eventModifiers.aguaMultiplier = 2.0;
-          state.eventModifiers.madeiraMultiplier = 0.5;
-        },
-        remove: (state) => {
-          state.eventModifiers.aguaMultiplier = 1.0;
-          state.eventModifiers.madeiraMultiplier = 1.0;
-        }
-      },
-      {
-        id: 11,
-        name: 'Inverno Rigoroso',
-        icon: '❄️',
-        description: 'Frio extremo afeta produção',
-        effect: '-30% Madeira e Água',
-        duration: 2,
-        type: 'negative',
-        apply: (state) => {
-          state.eventModifiers.madeiraMultiplier = 0.7;
-          state.eventModifiers.aguaMultiplier = 0.7;
-        },
-        remove: (state) => {
-          state.eventModifiers.madeiraMultiplier = 1.0;
-          state.eventModifiers.aguaMultiplier = 1.0;
-        }
-      },
-      {
-        id: 12,
-        name: 'Era da Exploração',
-        icon: '🧭',
-        description: 'Novas técnicas de exploração são desenvolvidas',
-        effect: 'Explorar custa -1 Madeira',
-        duration: 2,
-        type: 'positive',
-        apply: (state) => {
-          state.eventModifiers.explorarDesconto = true;
-        },
-        remove: (state) => {
-          state.eventModifiers.explorarDesconto = false;
-        }
-      },
-      {
-        id: 13,
-        name: 'Paz Diplomática',
-        icon: '🕊️',
-        description: 'Tratados de paz facilitam negociações',
-        effect: 'Negociar dá +2 PV extra',
-        duration: 1,
-        type: 'mixed',
-        apply: (state) => {
-          state.eventModifiers.negociacaoPvExtra = 2;
-        },
-        remove: (state) => {
-          state.eventModifiers.negociacaoPvExtra = 0;
-        }
-      },
-      {
-        id: 14,
-        name: 'Escassez',
-        icon: '🆘',
-        description: 'Recursos naturais estão escassos',
-        effect: 'Recolher dá -25% recursos',
-        duration: 2,
-        type: 'negative',
-        apply: (state) => {
-          state.eventModifiers.recolherPenalidade = 0.75;
-        },
-        remove: (state) => {
-          state.eventModifiers.recolherPenalidade = 1.0;
-        }
-      },
-      {
-        id: 15,
-        name: 'Depressão Econômica',
-        icon: '📉',
-        description: 'Crise econômica afeta todas as facções',
-        effect: '-1 de todos os recursos por turno',
-        duration: 1,
-        type: 'mixed',
-        apply: (state) => {
-          state.players.forEach(p => {
-            p.resources.madeira = Math.max(0, p.resources.madeira - 1);
-            p.resources.pedra = Math.max(0, p.resources.pedra - 1);
-            p.resources.ouro = Math.max(0, p.resources.ouro - 1);
-            p.resources.agua = Math.max(0, p.resources.agua - 1);
-          });
-        }
-      }
-    ];
-  }
-
-  // Inicialização do jogo
+  // ==================== INICIALIZAÇÃO ====================
   initializeGame() {
     this.setupRegions();
     this.distributeInitialRegions();
-    
-    // Inicializar conquistas para cada jogador
-    gameState.players.forEach((player, index) => {
-      initializePlayerAchievements(index);
-      
-      // Contar biomas iniciais
-      const playerStats = achievementsState.playerAchievements[index];
-      player.regions.forEach(regionId => {
-        const region = gameState.regions[regionId];
-        playerStats.controlledBiomes.add(region.biome);
-      });
-    });
-    
     gameState.gameStarted = true;
     gameState.turn = 1;
     gameState.actionsLeft = GAME_CONFIG.ACTIONS_PER_TURN;
-    gameState.currentPhase = TURN_PHASES.RENDA;
     
-    this.applyPlayerIncome(gameState.players[gameState.currentPlayerIndex]);
+    // INICIALIZAR FASE COMO "RENDA"
+    gameState.currentPhase = 'renda';
+    setCurrentPhase('renda');
+
+    addActivityLog('system', 'SISTEMA', 'Jogo iniciado', '', gameState.turn);
+
+    // Aplicar renda inicial para todos os jogadores
+  gameState.players.forEach(player => {
+    this.applyIncomeForPlayer(player);
+  });
+}
+
+// Adicione este novo método para avançar fases
+advancePhase() {
+  const phases = ['renda', 'acoes', 'negociacao'];
+  const currentIndex = phases.indexOf(gameState.currentPhase);
+  const nextIndex = (currentIndex + 1) % phases.length;
+  
+  gameState.currentPhase = phases[nextIndex];
+  setCurrentPhase(gameState.currentPhase);
+  
+  // Log da mudança de fase
+  const phaseNames = {
+    'renda': '💰 Renda',
+    'acoes': '⚡ Ações', 
+    'negociacao': '🤝 Negociação'
+  };
+  
+  addActivityLog('system', 'SISTEMA', 'Fase alterada', 
+    `Nova fase: ${phaseNames[gameState.currentPhase]}`, gameState.turn);
+  
+  return gameState.currentPhase;
+}
+
+// Modifique o método handleEndTurn() para gerenciar fases corretamente
+async handleEndTurn() {
+  const currentPlayer = getCurrentPlayer();
+  
+  // Se estiver na fase de ações, avance para negociação
+  if (gameState.currentPhase === 'acoes') {
+    this.advancePhase();
+    window.utils.showFeedback(`${currentPlayer.name} entrou na fase de negociação`, 'info');
+    window.uiManager.refreshUIAfterStateChange();
+    return;
+  }
+  
+  // Se estiver na fase de negociação, termine o turno
+  if (gameState.currentPhase === 'negociacao') {
+    // Avança jogador
+    gameState.currentPlayerIndex = (gameState.currentPlayerIndex + 1) % gameState.players.length;
     
-    window.uiManager.updateUI();
-    window.uiManager.updateEventBanner();
+    // Se voltou ao primeiro jogador, incrementa o turno
+    if (gameState.currentPlayerIndex === 0) {
+      gameState.turn += 1;
+      this.handleTurnAdvanceForEvents();
+    }
+    
+    // Resetar ações e voltar para fase de renda
+    gameState.actionsLeft = GAME_CONFIG.ACTIONS_PER_TURN;
+    gameState.selectedRegionId = null;
+    gameState.currentPhase = 'renda';
+    setCurrentPhase('renda');
+    
+    // Atualizar sidebar para o jogador atual
+    gameState.selectedPlayerForSidebar = gameState.currentPlayerIndex;
+    
+    // Aplicar renda para o novo jogador
+    const newPlayer = getCurrentPlayer();
+    this.applyIncomeForPlayer(newPlayer);
+    
+    addActivityLog('turn', 'SISTEMA', 'Turno avançado', 
+      `Agora é o turno de ${newPlayer.name}`, gameState.turn);
+    
+    this.checkVictory();
+    window.uiManager.refreshUIAfterStateChange();
+    
+    window.utils.showFeedback(`Agora é o turno de ${newPlayer.name}`, 'info');
+  }
+
   }
 
   setupRegions() {
@@ -336,10 +159,8 @@ class GameLogic {
     const indices = [...Array(total).keys()].sort(() => Math.random() - 0.5);
     let idx = 0;
     
-    // Limpar regiões dos jogadores
     gameState.players.forEach(p => p.regions = []);
     
-    // Distribuir 4 regiões para cada jogador
     for (let p = 0; p < gameState.players.length; p++) {
       for (let r = 0; r < 4 && idx < indices.length; r++) {
         const regionId = indices[idx++];
@@ -349,110 +170,7 @@ class GameLogic {
     }
   }
 
-  // Sistema de renda
-  calculatePlayerIncome(player) {
-  let income = { madeira: 0, pedra: 0, ouro: 0, agua: 0 };
-  let pvIncome = 0;
-  
-  player.regions.forEach(regionId => {
-    const region = gameState.regions[regionId];
-    
-    // Renda base do bioma (valores inteiros)
-    const biomeIncome = BIOME_INCOME[region.biome] || {};
-    Object.keys(biomeIncome).forEach(resource => {
-      income[resource] += biomeIncome[resource];
-    });
-    
-    // Bônus de exploração (soma inteira)
-    const explorationBonus = EXPLORATION_BONUS[region.explorationLevel] || 0;
-    if (explorationBonus > 0) {
-      Object.keys(income).forEach(resource => {
-        income[resource] += explorationBonus;
-      });
-    }
-    
-    // Renda das estruturas (valores inteiros)
-    region.structures.forEach(structure => {
-      if (STRUCTURE_INCOME[structure]) {
-        Object.keys(STRUCTURE_INCOME[structure]).forEach(resource => {
-          if (resource === 'pv') {
-            pvIncome += STRUCTURE_INCOME[structure][resource];
-          } else {
-            income[resource] += STRUCTURE_INCOME[structure][resource];
-          }
-        });
-      }
-    });
-  });
-  
-  // Aplicar modificadores de eventos (arredondando para inteiros)
-  if (gameState.eventModifiers.madeiraMultiplier) {
-    income.madeira = Math.round(income.madeira * gameState.eventModifiers.madeiraMultiplier);
-  }
-  if (gameState.eventModifiers.aguaMultiplier) {
-    income.agua = Math.round(income.agua * gameState.eventModifiers.aguaMultiplier);
-  }
-  if (gameState.eventModifiers.pedraMultiplier) {
-    income.pedra = Math.round(income.pedra * gameState.eventModifiers.pedraMultiplier);
-  }
-  if (gameState.eventModifiers.ouroMultiplier) {
-    income.ouro = Math.round(income.ouro * gameState.eventModifiers.ouroMultiplier);
-  }
-  
-  // Garantir que não há negativos
-  Object.keys(income).forEach(resource => {
-    income[resource] = Math.max(0, income[resource]);
-  });
-  
-  return { resources: income, pv: pvIncome };
-}
-
-  // Sistema de ações
-  canAffordAction(actionType) {
-    const player = gameState.players[gameState.currentPlayerIndex];
-    let cost = { ...GAME_CONFIG.ACTION_DETAILS[actionType]?.cost } || {};
-    
-    // Aplicar modificadores de evento
-    if (actionType === 'negociar' && gameState.eventModifiers.negociacaoGratis) {
-      cost.ouro = 0;
-    }
-    
-    if (actionType === 'construir') {
-      if (gameState.eventModifiers.construirCustoExtra) {
-        cost.madeira = (cost.madeira || 0) + 1;
-        cost.pedra = (cost.pedra || 0) + 1;
-      }
-      if (gameState.eventModifiers.construirCustoOuroExtra) {
-        cost.ouro = (cost.ouro || 0) + 1;
-      }
-    }
-    
-    if (actionType === 'explorar' && gameState.eventModifiers.explorarDesconto) {
-      cost.madeira = Math.max(0, (cost.madeira || 0) - 1);
-    }
-    
-    return Object.entries(cost).every(([resource, amount]) => {
-      return (player.resources[resource] || 0) >= amount;
-    });
-  }
-
-  checkPhaseRestriction(actionType) {
-    if (gameState.currentPhase !== TURN_PHASES.ACOES) {
-      const phaseNames = {
-        [TURN_PHASES.RENDA]: 'Renda (recursos automáticos)',
-        [TURN_PHASES.ACOES]: 'Ações',
-        [TURN_PHASES.NEGOCIACAO]: 'Negociação'
-      };
-      
-      window.utils.showFeedback(
-        `Ação "${actionType}" só pode ser realizada na fase de Ações. Fase atual: ${phaseNames[gameState.currentPhase]}`,
-        'warning'
-      );
-      return false;
-    }
-    return true;
-  }
-
+  // ==================== SISTEMA DE AÇÕES ====================
   consumeAction() {
     if (gameState.actionsLeft <= 0) {
       window.utils.showFeedback('Sem ações restantes neste turno.', 'warning');
@@ -460,13 +178,19 @@ class GameLogic {
     }
     
     gameState.actionsLeft--;
-    window.uiManager.updateFooter();
     return true;
   }
 
-  handleExplore() {
-    if (!this.checkPhaseRestriction('Explorar/Assumir Domínio')) return;
-    
+  canPlayerAfford(cost) {
+    const p = gameState.players[gameState.currentPlayerIndex];
+    return Object.entries(cost).every(([resource, amount]) => {
+      const has = p.resources[resource] || 0;
+      return has >= amount;
+    });
+  }
+
+  // ==================== EXPLORAR / ASSUMIR DOMÍNIO ====================
+  async handleExplore() {
     if (gameState.selectedRegionId === null) {
       window.utils.showFeedback('Selecione uma região primeiro.', 'error');
       return;
@@ -476,171 +200,111 @@ class GameLogic {
     const player = gameState.players[gameState.currentPlayerIndex];
     
     if (region.controller === null) {
-      this.handleAssumeDomain(region, player);
-    } else if (region.controller === player.id) {
-      this.handleExploreOwnRegion(region, player);
+      // ASSUMIR DOMÍNIO
+      const cost = region.resources;
+      const pvCost = 2;
+      
+      if (player.victoryPoints < pvCost) {
+        window.utils.showFeedback(`Você precisa de ${pvCost} PV para assumir domínio desta região.`, 'error');
+        return;
+      }
+      
+      const canPay = Object.entries(cost).every(([k,v]) => player.resources[k] >= v);
+      if (!canPay) {
+        const needed = Object.entries(cost).map(([k,v]) => `${k}: ${v}`).join(', ');
+        window.utils.showFeedback(`Recursos insuficientes. Necessário: ${needed}`, 'error');
+        return;
+      }
+      
+      const resourceList = Object.entries(cost).map(([k,v]) => `${RESOURCE_ICONS[k]}${v}`).join(' ');
+      const ok = await window.utils.showConfirm(
+        'Assumir Domínio', 
+        `Custo: ${pvCost} PV + ${resourceList}\n\nDeseja assumir o controle de ${region.name}?`
+      );
+      
+      if (!ok) return;
+      if (!this.consumeAction()) return;
+      
+      player.victoryPoints -= pvCost;
+      Object.entries(cost).forEach(([k,v]) => player.resources[k] -= v);
+      
+      region.controller = gameState.currentPlayerIndex;
+      player.regions.push(gameState.selectedRegionId);
+      
+      window.utils.showFeedback(`${region.name} agora está sob seu controle! -${pvCost} PV`, 'success');
+      addActivityLog('explore', player.name, 'assumiu domínio de', region.name, gameState.turn);
+      
+    } else if (region.controller === gameState.currentPlayerIndex) {
+      // EXPLORAR (região própria)
+      const cost = GAME_CONFIG.ACTION_DETAILS.explorar.cost;
+      
+      if (!this.canPlayerAfford(cost)) {
+        window.utils.showFeedback('Recursos insuficientes para explorar.', 'error');
+        return;
+      }
+      
+      if (!this.consumeAction()) return;
+      
+      Object.entries(cost).forEach(([k,v]) => player.resources[k] -= v);
+      
+      region.explorationLevel = Math.min(3, region.explorationLevel + 1);
+      player.victoryPoints += 1;
+      
+      if (Math.random() < 0.10) { 
+        player.resources.ouro += 1; 
+        window.utils.showFeedback('Descoberta Rara! +1 Ouro', 'success'); 
+      } else {
+        window.utils.showFeedback(`${region.name} explorada. Nível: ${region.explorationLevel}⭐`, 'success');
+      }
+      
+      achievementsState.totalExplored++;
+      
+      const desc = Math.random() < 0.10 ? 'explorou (Descoberta Rara!)' : `explorou (Nível ${region.explorationLevel})`;
+      addActivityLog('explore', player.name, desc, region.name, gameState.turn);
+      
     } else {
       window.utils.showFeedback('Você não pode explorar regiões de outros jogadores.', 'error');
-    }
-  }
-
-  handleAssumeDomain(region, player) {
-    const cost = region.resources;
-    const pvCost = 2;
-    
-    if (player.victoryPoints < pvCost) {
-      window.utils.showFeedback(`Você precisa de ${pvCost} PV para assumir domínio desta região.`, 'error');
       return;
-    }
-    
-    const canPay = Object.entries(cost).every(([key, value]) => player.resources[key] >= value);
-    if (!canPay) {
-      const needed = Object.entries(cost).map(([k, v]) => `${k}: ${v}`).join(', ');
-      window.utils.showFeedback(`Recursos insuficientes. Necessário: ${needed}`, 'error');
-      return;
-    }
-    
-    if (!this.consumeAction()) return;
-    
-    player.victoryPoints -= pvCost;
-    Object.entries(cost).forEach(([key, value]) => {
-      player.resources[key] -= value;
-    });
-    
-    region.controller = player.id;
-    player.regions.push(region.id);
-    
-    // Atualizar biomas controlados
-    const playerStats = achievementsState.playerAchievements[player.id];
-    if (playerStats) {
-      playerStats.controlledBiomes.add(region.biome);
-      checkAchievements(player.id);
-    }
-    
-    window.utils.showFeedback(`${region.name} agora está sob seu controle! -${pvCost} PV`, 'success');
-    addActivityLog({
-      type: 'explore',
-      playerName: player.name,
-      action: 'assumiu domínio de',
-      details: region.name,
-      isEvent: false,
-      isMine: true
-    });
-    
-    this.clearRegionSelection();
-    this.checkVictory();
-    window.uiManager.updateUI();
-  }
-
-  handleExploreOwnRegion(region, player) {
-    if (!this.checkPhaseRestriction('Explorar')) return;
-    
-    const cost = GAME_CONFIG.ACTION_DETAILS.explorar.cost;
-    
-    if (!this.canAffordAction('explorar')) {
-      window.utils.showFeedback('Recursos insuficientes para explorar.', 'error');
-      return;
-    }
-    
-    if (!this.consumeAction()) return;
-    
-    Object.entries(cost).forEach(([key, value]) => {
-      player.resources[key] -= value;
-    });
-    
-    region.explorationLevel = Math.min(3, region.explorationLevel + 1);
-    player.victoryPoints += 1;
-    
-    if (Math.random() < 0.10) {
-      player.resources.ouro += 1;
-      window.utils.showFeedback('Descoberta Rara! +1 Ouro', 'success');
-      addActivityLog({
-        type: 'explore',
-        playerName: player.name,
-        action: 'explorou (Descoberta Rara!)',
-        details: region.name,
-        isEvent: false,
-        isMine: true
-      });
-    } else {
-      window.utils.showFeedback(`${region.name} explorada. Nível: ${region.explorationLevel}⭐`, 'success');
-      addActivityLog({
-        type: 'explore',
-        playerName: player.name,
-        action: `explorou (Nível ${region.explorationLevel})`,
-        details: region.name,
-        isEvent: false,
-        isMine: true
-      });
-    }
-    
-    achievementsState.totalExplored++;
-    setAchievementsState(achievementsState);
-    
-    const playerId = player.id;
-    const playerStats = achievementsState.playerAchievements[playerId];
-    if (playerStats) {
-      playerStats.explored++;
-    }
-    
-    const newAchievements = checkAchievements(playerId);
-    if (newAchievements.length > 0) {
-      newAchievements.forEach(achievementName => {
-        window.utils.showFeedback(`🎉 Conquista Desbloqueada: ${achievementName}!`, 'success');
-        
-        addActivityLog({
-          type: 'achievement',
-          playerName: player.name,
-          action: 'desbloqueou conquista',
-          details: achievementName,
-          isEvent: false,
-          isMine: true
-        });
-      });
     }
     
     this.clearRegionSelection();
     this.checkVictory();
-    window.uiManager.updateUI();
+    window.uiManager.refreshUIAfterStateChange();
   }
 
+  // ==================== RECOLHER ====================
   handleCollect() {
-    if (!this.checkPhaseRestriction('Recolher')) return;
-    
     if (gameState.selectedRegionId === null) {
       window.utils.showFeedback('Selecione uma região para recolher.', 'error');
       return;
     }
-    
+
     if (!this.consumeAction()) {
       window.utils.showFeedback('Sem ações restantes neste turno.', 'warning');
       return;
     }
-    
+
     const region = gameState.regions[gameState.selectedRegionId];
     const player = gameState.players[gameState.currentPlayerIndex];
-    
+
     if (region.controller !== player.id) {
       window.utils.showFeedback('Você não controla essa região.', 'error');
       return;
     }
-    
+
     if (region.explorationLevel === 0) {
       window.utils.showFeedback('Você deve explorar a região antes de recolher.', 'warning');
       return;
     }
-    
+
+    // Custo da ação
     const cost = GAME_CONFIG.ACTION_DETAILS.recolher.cost;
-    Object.entries(cost).forEach(([key, value]) => {
-      player.resources[key] -= value;
-    });
-    
+    Object.entries(cost).forEach(([k,v]) => player.resources[k] -= v);
+
+    // Lógica de recolha
     let harvestPercent = 0.5;
-    
-    if (gameState.eventModifiers.recolherPenalidade) {
-      harvestPercent *= gameState.eventModifiers.recolherPenalidade;
-    }
-    
+
+    // Bônus de exploração nível 1
     if (region.explorationLevel >= 1) {
       const resourceTypes = Object.keys(region.resources).filter(k => region.resources[k] > 0);
       if (resourceTypes.length > 0) {
@@ -649,357 +313,162 @@ class GameLogic {
         window.utils.showFeedback(`Bônus de exploração: +1 ${randomRes}!`, 'info');
       }
     }
-    
+
+    // Bônus de exploração nível 3
     if (region.explorationLevel === 3) {
       harvestPercent = 0.75;
       window.utils.showFeedback('Recolha potencializada! +50% recursos.', 'info');
     }
-    
-    Object.keys(region.resources).forEach(key => {
-      const amount = Math.max(0, Math.floor(region.resources[key] * harvestPercent));
-      player.resources[key] += amount;
-      region.resources[key] = Math.max(0, region.resources[key] - amount);
+
+    // Bônus de evento: Festival da Colheita
+    if (gameState.eventModifiers.festivalBonus) {
+      const resourceTypes = ['madeira', 'pedra', 'ouro', 'agua'];
+      const bonus1 = resourceTypes[Math.floor(Math.random() * resourceTypes.length)];
+      const bonus2 = resourceTypes[Math.floor(Math.random() * resourceTypes.length)];
+      player.resources[bonus1] += 2;
+      player.resources[bonus2] += 2;
+      window.utils.showFeedback(`Festival! +2 ${bonus1} e +2 ${bonus2}!`, 'success');
+    }
+
+    // Bônus de evento: Inverno Rigoroso
+    if (gameState.eventModifiers.coletaBonus) {
+      Object.keys(gameState.eventModifiers.coletaBonus).forEach(res => {
+        player.resources[res] += gameState.eventModifiers.coletaBonus[res];
+      });
+      window.utils.showFeedback('Inverno rigoroso torna a coleta mais valiosa!', 'info');
+    }
+
+    // Coleta normal
+    Object.keys(region.resources).forEach(k => {
+      const amount = Math.max(0, Math.floor(region.resources[k] * harvestPercent));
+      player.resources[k] += amount;
+      region.resources[k] = Math.max(0, region.resources[k] - amount);
     });
-    
+
     player.victoryPoints += 1;
     window.utils.showFeedback(`Recursos recolhidos de ${region.name}. +1 PV`, 'success');
     
-    const playerId = player.id;
-    const playerStats = achievementsState.playerAchievements[playerId];
-    if (playerStats) {
-      playerStats.collected++;
-    }
-    
-    const newAchievements = checkAchievements(playerId);
-    if (newAchievements.length > 0) {
-      newAchievements.forEach(achievementName => {
-        window.utils.showFeedback(`🎉 Conquista Desbloqueada: ${achievementName}!`, 'success');
-        
-        addActivityLog({
-          type: 'achievement',
-          playerName: player.name,
-          action: 'desbloqueou conquista',
-          details: achievementName,
-          isEvent: false,
-          isMine: true
-        });
-      });
-    }
-    
-    addActivityLog({
-      type: 'collect',
-      playerName: player.name,
-      action: 'recolheu recursos',
-      details: region.name,
-      isEvent: false,
-      isMine: true
-    });
-    
+    addActivityLog('collect', player.name, 'recolheu recursos', region.name, gameState.turn);
+
     this.clearRegionSelection();
     this.checkVictory();
-    window.uiManager.updateUI();
+    window.uiManager.refreshUIAfterStateChange();
   }
 
-  handleBuild() {
-    if (!this.checkPhaseRestriction('Construir')) return;
-    window.uiManager.openStructureModal();
-  }
+  // ==================== CONSTRUIR ====================
 
-  handleBuildStructure(structureType) {
-    if (gameState.selectedRegionId === null) {
-      window.utils.showFeedback('Selecione uma região primeiro.', 'error');
-      return;
-    }
-    
-    if (!this.consumeAction()) return;
-    
-    const region = gameState.regions[gameState.selectedRegionId];
-    const player = gameState.players[gameState.currentPlayerIndex];
-    
-    if (region.controller === null) {
-      region.controller = player.id;
-      player.regions.push(region.id);
-      window.utils.showFeedback(`Assumiu controle de ${region.name}.`, 'info');
-    } else if (region.controller !== player.id) {
-      window.utils.showFeedback('Você não controla essa região.', 'error');
-      return;
-    }
-    
-    if (region.structures.includes(structureType)) {
-      window.utils.showFeedback(`Esta região já tem uma ${structureType}.`, 'error');
-      return;
-    }
-    
-    const limit = STRUCTURE_LIMITS[structureType];
-    const currentCount = region.structures.filter(s => s === structureType).length;
-    if (currentCount >= limit) {
-      window.utils.showFeedback(`Limite de ${structureType}s atingido nesta região.`, 'error');
-      return;
-    }
-    
-    let cost = { ...STRUCTURE_COSTS[structureType] };
-    
-    if (region.explorationLevel >= 2 && cost.pedra) {
-      cost.pedra = Math.max(0, cost.pedra - 1);
-      window.utils.showFeedback('Desconto de exploração: -1 Pedra!', 'info');
-    }
-    
-    const canPay = Object.entries(cost).every(([key, value]) => player.resources[key] >= value);
-    if (!canPay) {
-      const needed = Object.entries(cost)
-        .map(([k, v]) => `${v}${RESOURCE_ICONS[k] || k}`)
-        .join(', ');
-      window.utils.showFeedback(`Recursos insuficientes para ${structureType}. Necessário: ${needed}`, 'error');
-      return;
-    }
-    
-    Object.entries(cost).forEach(([key, value]) => {
-      player.resources[key] -= value;
-    });
-    
-    region.structures.push(structureType);
-    
-    let pvGain = STRUCTURE_EFFECTS[structureType]?.pv || 0;
-    
-    if (gameState.eventModifiers.construirBonus) {
-      pvGain += gameState.eventModifiers.construirBonus;
-    }
-    
-    player.victoryPoints += pvGain;
-    
-    let specialEffect = '';
-    switch(structureType) {
-      case 'Laboratório':
-        specialEffect = 'Chance de descoberta rara aumentada em 15%';
-        break;
-      case 'Mercado':
-        specialEffect = 'Negociações futuras custam 1 Ouro a menos';
-        break;
-      case 'Torre de Vigia':
-        specialEffect = 'Defesa aumentada contra negociações hostis';
-        break;
-      case 'Santuário':
-        specialEffect = 'Bônus de lealdade para regiões adjacentes';
-        break;
-    }
-    
-    window.utils.showFeedback(
-      `Construído ${structureType} em ${region.name}. +${pvGain} PV. ${specialEffect}`,
-      'success'
-    );
-    
-    achievementsState.totalBuilt++;
-    setAchievementsState(achievementsState);
-    
-    const playerId = player.id;
-    const playerStats = achievementsState.playerAchievements[playerId];
-    if (playerStats) {
-      playerStats.built++;
-    }
-    
-    const newAchievements = checkAchievements(playerId);
-    if (newAchievements.length > 0) {
-      newAchievements.forEach(achievementName => {
-        window.utils.showFeedback(`🎉 Conquista Desbloqueada: ${achievementName}!`, 'success');
-        addActivityLog({
-          type: 'achievement',
-          playerName: player.name,
-          action: 'desbloqueou conquista',
-          details: achievementName,
-          isEvent: false,
-          isMine: true
-        });
-      });
-    }
-    
-    addActivityLog({
-      type: 'build',
-      playerName: player.name,
-      action: `construiu ${structureType}`,
-      details: region.name,
-      isEvent: false,
-      isMine: true
-    });
-    
-    this.clearRegionSelection();
-    this.checkVictory();
-    window.uiManager.updateUI();
+handleBuild(structureType = 'Abrigo') {
+  if (gameState.selectedRegionId === null) {
+    window.utils.showFeedback('Selecione uma região para construir.', 'error');
+    return;
   }
-
-  handleNegotiate() {
-    if (!this.checkPhaseRestriction('Negociar')) return;
-    if (!this.consumeAction()) return;
-    document.getElementById('negotiationModal')?.classList.remove('hidden');
-    window.uiManager.updateFooter();
-  }
-
-  async handleEndTurn() {
+  
+  const region = gameState.regions[gameState.selectedRegionId];
   const player = gameState.players[gameState.currentPlayerIndex];
   
-  // Log para debug
-  console.log(`Fase atual: ${gameState.currentPhase}, Jogador: ${player.name}`);
-  
-  switch (gameState.currentPhase) {
-    case TURN_PHASES.RENDA:
-      console.log("Processando fase de renda...");
-      
-      // Aplicar renda
-      const income = this.applyPlayerIncome(player);
-      
-      // Preparar mensagem de feedback
-      const incomeText = Object.entries(income.resources)
-        .filter(([_, amount]) => amount > 0)
-        .map(([resource, amount]) => `+${amount} ${resource}`)
-        .join(', ');
-      
-      const feedbackMessages = [];
-      if (incomeText) {
-        feedbackMessages.push(`Recursos: ${incomeText}`);
-      }
-      if (income.pv > 0) {
-        feedbackMessages.push(`+${income.pv} PV`);
-      }
-      
-      // Mostrar modal e mudar fase quando fechar
-      if (feedbackMessages.length > 0) {
-        await window.utils.showConfirm(
-          'Renda Recebida',
-          `${player.name} recebeu: ${feedbackMessages.join(' | ')}`
-        );
-      }
-      
-      // Mudar para fase de ações
-      gameState.currentPhase = TURN_PHASES.ACOES;
-      gameState.actionsLeft = GAME_CONFIG.ACTIONS_PER_TURN;
-      
-      addActivityLog({
-        type: 'phase',
-        playerName: player.name,
-        action: 'avançou para fase de Ações',
-        details: '',
-        isEvent: false,
-        isMine: true
-      });
-      
-      console.log(`Mudou para fase: ${gameState.currentPhase}`);
-      window.uiManager.updateUI();
-      window.utils.showFeedback(`${player.name} agora está na fase de Ações. Você tem ${gameState.actionsLeft} ações.`, 'info');
-      break;
-      
-    case TURN_PHASES.ACOES:
-      console.log("Processando fase de ações...");
-      
-      if (gameState.actionsLeft > 0) {
-        const confirm = await window.utils.showConfirm(
-          'Ações Restantes',
-          `Você ainda tem ${gameState.actionsLeft} ação(ões) não utilizada(s). Deseja realmente avançar?`
-        );
-        
-        if (!confirm) return;
-      }
-      
-      // Mudar para fase de negociação
-      gameState.currentPhase = TURN_PHASES.NEGOCIACAO;
-      
-      addActivityLog({
-        type: 'phase',
-        playerName: player.name,
-        action: 'avançou para fase de Negociação',
-        details: '',
-        isEvent: false,
-        isMine: true
-      });
-      
-      console.log(`Mudou para fase: ${gameState.currentPhase}`);
-      window.uiManager.updateUI();
-      window.utils.showFeedback('Fase: Negociação. Você pode propor trocas com outros jogadores.', 'info');
-      break;
-      
-    case TURN_PHASES.NEGOCIACAO:
-      console.log("Processando fase de negociação...");
-      
-      // Mudar para fase de renda do próximo jogador
-      gameState.currentPhase = TURN_PHASES.RENDA;
-      gameState.currentPlayerIndex = (gameState.currentPlayerIndex + 1) % gameState.players.length;
-      
-      // Se voltou ao primeiro jogador, incrementar turno
-      if (gameState.currentPlayerIndex === 0) {
-        gameState.turn++;
-        console.log(`Novo turno: ${gameState.turn}`);
-        
-        // Verificar eventos
-        gameState.turnsUntilNextEvent--;
-        achievementsState.fastestWin = Math.min(achievementsState.fastestWin, gameState.turn);
-        
-        if (gameState.turnsUntilNextEvent <= 0) {
-          this.triggerRandomEvent();
-          gameState.turnsUntilNextEvent = 4;
-        }
-      }
-      
-      // Resetar ações
-      gameState.actionsLeft = GAME_CONFIG.ACTIONS_PER_TURN;
-      gameState.selectedRegionId = null;
-      this.clearRegionSelection();
-      this.updateEventDuration();
-      
-      addActivityLog({
-        type: 'turn',
-        playerName: 'SISTEMA',
-        action: `Turno ${gameState.turn} iniciado`,
-        details: `Jogador atual: ${gameState.players[gameState.currentPlayerIndex]?.name}`,
-        isEvent: false,
-        isMine: false
-      });
-      
-      console.log(`Mudou para jogador: ${gameState.currentPlayerIndex}, Fase: ${gameState.currentPhase}`);
-      window.uiManager.updateUI();
-      window.utils.showFeedback(
-        `Turno do ${gameState.players[gameState.currentPlayerIndex]?.name}. Fase: Renda`,
-        'success'
-      );
-      break;
+  // Verificar se o jogador controla a região
+  if (region.controller !== player.id) {
+    window.utils.showFeedback('Você só pode construir em regiões que controla.', 'error');
+    return;
   }
+  
+  // Obter custo da estrutura
+  const cost = STRUCTURE_COSTS[structureType];
+  if (!cost) {
+    window.utils.showFeedback('Estrutura não encontrada.', 'error');
+    return;
+  }
+  
+  // Verificar se já existe essa estrutura na região
+  if (region.structures.includes(structureType)) {
+    window.utils.showFeedback(`Esta região já possui um ${structureType}.`, 'error');
+    return;
+  }
+  
+  // Verificar se o jogador pode pagar
+  const canPay = Object.entries(cost).every(([k,v]) => player.resources[k] >= v);
+  if (!canPay) {
+    window.utils.showFeedback('Recursos insuficientes para construir.', 'error');
+    return;
+  }
+  
+  if (!this.consumeAction()) return;
+  
+  // Pagar custo
+  Object.entries(cost).forEach(([k,v]) => { 
+    player.resources[k] -= v; 
+  });
+
+  // Adicionar estrutura à região
+  region.structures.push(structureType);
+  
+  // Obter benefícios da estrutura
+  const effect = STRUCTURE_EFFECTS[structureType] || {};
+  const income = STRUCTURE_INCOME[structureType] || {};
+  
+  // Aplicar benefícios imediatos (PV)
+  let pvGain = effect.pv || 0;
+  
+  // Bônus de evento (Boom Tecnológico)
+  if (gameState.eventModifiers.construirBonus) {
+    pvGain += gameState.eventModifiers.construirBonus;
+  }
+  
+  player.victoryPoints += pvGain;
+  
+  window.utils.showFeedback(`Construído ${structureType} em ${region.name}. +${pvGain} PV.`, 'success');
+
+  // Atualizar conquistas
+  achievementsState.totalBuilt++;
+  
+  addActivityLog('build', player.name, `construiu ${structureType}`, region.name, gameState.turn);
+  
+  this.clearRegionSelection();
+  this.checkVictory();
+  window.uiManager.refreshUIAfterStateChange();
 }
 
-  // Sistema de eventos
-  triggerRandomEvent() {
-    if (this.GAME_EVENTS.length === 0) return;
-    
-    const ev = this.GAME_EVENTS[Math.floor(Math.random() * this.GAME_EVENTS.length)];
-    
-    if (gameState.currentEvent && typeof gameState.currentEvent.remove === 'function') {
-      gameState.currentEvent.remove(gameState);
-    }
-    
-    gameState.currentEvent = ev;
-    gameState.eventTurnsLeft = ev.duration;
-    gameState.eventModifiers = {};
-    
-    if (typeof ev.apply === 'function') {
-      ev.apply(gameState);
-    }
-    
-    addActivityLog({
-      type: 'event',
-      playerName: 'GAIA',
-      action: `disparou evento: ${ev.name}`,
-      details: ev.description,
-      isEvent: true,
-      isMine: false
-    });
-    
-    document.getElementById('eventModal')?.classList.remove('hidden');
-    
-    setTimeout(() => {
-      window.uiManager.updateEventBanner();
-    }, 100);
+  // ==================== NEGOCIAR ====================
+  handleNegotiate() {
+    if (!this.consumeAction()) return;
+    // A UI será tratada pelo ui-manager.js
+    // O custo de 1 Ouro é deduzido no envio da negociação
   }
 
-  updateEventDuration() {
+  // ==================== SISTEMA DE TURNOS ====================
+  async handleEndTurn() {
+    // Avança jogador / turno
+    gameState.currentPlayerIndex = (gameState.currentPlayerIndex + 1) % gameState.players.length;
+
+    // Aplicar renda automática para o próximo jogador
+    const nextPlayer = gameState.players[gameState.currentPlayerIndex];
+    this.applyIncomeForPlayer(nextPlayer);
+
+    const cycled = (gameState.currentPlayerIndex === 0);
+    if (cycled) {
+      gameState.turn += 1;
+      this.handleTurnAdvanceForEvents();
+    }
+
+    gameState.actionsLeft = GAME_CONFIG.ACTIONS_PER_TURN;
+    gameState.selectedRegionId = null;
+    
+    // Atualizar painel lateral
+    gameState.selectedPlayerForSidebar = gameState.currentPlayerIndex;
+
+    addActivityLog('turn', 'SISTEMA', 'Turno avançado', 
+      `Agora é o turno de ${gameState.players[gameState.currentPlayerIndex].name}`, gameState.turn);
+    
+    this.checkVictory();
+    window.uiManager.refreshUIAfterStateChange();
+    
+    window.utils.showFeedback(`Agora é o turno de ${gameState.players[gameState.currentPlayerIndex].name}`, 'info');
+  }
+
+  handleTurnAdvanceForEvents() {
+    // Atualizar duração do evento atual
     if (gameState.currentEvent && gameState.eventTurnsLeft > 0) {
       gameState.eventTurnsLeft -= 1;
-      
       if (gameState.eventTurnsLeft <= 0) {
         if (typeof gameState.currentEvent.remove === 'function') {
           gameState.currentEvent.remove(gameState);
@@ -1008,15 +477,184 @@ class GameLogic {
         gameState.eventModifiers = {};
         window.utils.showFeedback('O evento global terminou.', 'info');
       }
-      
-      window.uiManager.updateEventBanner();
+    }
+
+    // Contar até o próximo evento
+    if (!gameState.currentEvent) {
+      gameState.turnsUntilNextEvent -= 1;
+      if (gameState.turnsUntilNextEvent <= 0) {
+        this.triggerRandomEvent();
+        gameState.turnsUntilNextEvent = 4;
+      }
     }
   }
 
-  // Utilitários
+canAffordAction(actionType) {
+    const player = gameState.players[gameState.currentPlayerIndex];
+    const cost = GAME_CONFIG.ACTION_DETAILS[actionType]?.cost || {};
+    
+    return Object.entries(cost).every(([resource, amount]) => {
+      return (player.resources[resource] || 0) >= amount;
+    });
+  }
+
+  // ==================== RENDA AUTOMÁTICA ====================
+  applyIncomeForPlayer(player) {
+    const bonuses = { madeira: 0, pedra: 0, ouro: 0, agua: 0 };
+    
+    player.regions.forEach(regionId => {
+      const region = gameState.regions[regionId];
+      if (!region) return;
+      
+      // Produção base por bioma
+      let biomeProd = { madeira: 0, pedra: 0, ouro: 0, agua: 0 };
+      
+      switch(region.biome) {
+        case 'Floresta Tropical':
+          biomeProd.madeira = 1;
+          biomeProd.ouro = 0.5;
+          break;
+        case 'Floresta Temperada':
+          biomeProd.madeira = 1.5;
+          break;
+        case 'Savana':
+          biomeProd.madeira = 1.5;
+          biomeProd.agua = 1;
+          break;
+        case 'Pântano':
+          biomeProd.agua = 1;
+          biomeProd.pedra = 0.5;
+          break;
+      }
+      
+      // Aplicar multiplicadores de eventos globais
+      if (gameState.eventModifiers.madeiraMultiplier) {
+        biomeProd.madeira *= gameState.eventModifiers.madeiraMultiplier;
+      }
+      if (gameState.eventModifiers.aguaMultiplier) {
+        biomeProd.agua *= gameState.eventModifiers.aguaMultiplier;
+      }
+      if (gameState.eventModifiers.pedraMultiplier) {
+        biomeProd.pedra *= gameState.eventModifiers.pedraMultiplier;
+      }
+      
+      // Bloquear savanas se evento ativo
+      if (gameState.eventModifiers.savanaBloqueada && region.biome === 'Savana') {
+        biomeProd.madeira = 0;
+        biomeProd.agua = 0;
+      }
+      
+      // Bônus de pântano em enchente
+      if (gameState.eventModifiers.pantanoBonus && region.biome === 'Pântano') {
+        biomeProd.agua *= gameState.eventModifiers.pantanoBonus;
+        biomeProd.pedra *= gameState.eventModifiers.pantanoBonus;
+      }
+      
+      // Bônus de savana (descoberta de jazida)
+      if (gameState.eventModifiers.savanaBonus && region.biome === 'Savana') {
+        biomeProd.ouro += gameState.eventModifiers.savanaBonus;
+      }
+      
+      // Bônus de exploração
+      const explLevel = region.explorationLevel || 0;
+      let explMultiplier = 1.0;
+      
+      switch(explLevel) {
+        case 1:
+          explMultiplier = 1.25;
+          break;
+        case 2:
+          explMultiplier = 1.50;
+          // 20% chance de +1 Ouro
+          if (Math.random() < 0.20) {
+            bonuses.ouro += 1;
+          }
+          break;
+        case 3:
+          explMultiplier = 2.00;
+          break;
+      }
+      
+      // Aplicar multiplicador de exploração
+      Object.keys(biomeProd).forEach(k => {
+        biomeProd[k] *= explMultiplier;
+      });
+      
+      // Acumular bônus
+      Object.keys(biomeProd).forEach(k => {
+        bonuses[k] += biomeProd[k];
+      });
+      
+      // Produção de estruturas
+      if (!gameState.eventModifiers.structuresDisabled && region.structures && region.structures.length > 0) {
+        region.structures.forEach(struct => {
+          if (struct === 'Abrigo') {
+            bonuses.madeira += 0.5;
+            bonuses.agua += 0.5;
+          }
+        });
+      }
+    });
+    
+    // Aplicar bônus ao jogador
+    Object.keys(bonuses).forEach(k => {
+      player.resources[k] = Math.floor(player.resources[k] + bonuses[k]);
+    });
+    
+    // Bônus de PV para regiões nível 3 (a cada 3 turnos)
+    if (gameState.turn % 3 === 0) {
+      const level3Regions = player.regions.filter(rid => {
+        const r = gameState.regions[rid];
+        return r && r.explorationLevel === 3;
+      });
+      
+      if (level3Regions.length > 0) {
+        player.victoryPoints += level3Regions.length;
+        window.utils.showFeedback(`${player.name} ganhou +${level3Regions.length} PV de regiões nível 3!`, 'success');
+      }
+    }
+
+// APÓS APLICAR RENDA, AVANÇAR PARA FASE DE AÇÕES SE FOR O JOGADOR ATUAL
+  if (player.id === gameState.currentPlayerIndex && gameState.currentPhase === 'renda') {
+    this.advancePhase();
+    addActivityLog('income', player.name, 'recebeu renda e iniciou fase de ações', '', gameState.turn);
+  }
+  }
+
+  // ==================== EVENTOS ALEATÓRIOS ====================
+  triggerRandomEvent() {
+    if (!this.GAME_EVENTS || this.GAME_EVENTS.length === 0) return;
+    
+    const ev = this.GAME_EVENTS[Math.floor(Math.random() * this.GAME_EVENTS.length)];
+    
+    // Se o evento for instantâneo
+    if (ev.duration === 1) {
+      ev.apply(gameState);
+      gameState.currentEvent = null;
+      gameState.eventTurnsLeft = 0;
+      return;
+    }
+
+    // Reset modifiers anteriores
+    if (gameState.currentEvent && typeof gameState.currentEvent.remove === 'function') {
+      gameState.currentEvent.remove(gameState);
+    }
+
+    gameState.currentEvent = ev;
+    gameState.eventTurnsLeft = ev.duration;
+    gameState.eventModifiers = {};
+    
+    // Aplica modificadores
+    if (typeof ev.apply === 'function') {
+      ev.apply(gameState);
+    }
+
+    addActivityLog('event', 'GAIA', `disparou evento: ${ev.name}`, ev.description, gameState.turn);
+  }
+
+  // ==================== UTILITÁRIOS ====================
   clearRegionSelection() {
     gameState.selectedRegionId = null;
-    document.querySelectorAll('.board-cell').forEach(c => c.classList.remove('region-selected'));
   }
 
   checkVictory() {
@@ -1024,59 +662,65 @@ class GameLogic {
     if (winner) {
       window.utils.showFeedback(`${winner.name} venceu o jogo!`, 'success');
       
-      document.getElementById('actionExplore')?.setAttribute('disabled', 'true');
-      document.getElementById('actionCollect')?.setAttribute('disabled', 'true');
-      document.getElementById('actionBuild')?.setAttribute('disabled', 'true');
-      document.getElementById('actionNegotiate')?.setAttribute('disabled', 'true');
-      document.getElementById('endTurnBtn')?.setAttribute('disabled', 'true');
-      
-      document.getElementById('victoryModal')?.classList.remove('hidden');
-      document.getElementById('victoryModalTitle').textContent = 'Vitória!';
-      document.getElementById('victoryModalMessage').textContent = 
-        `Parabéns, ${winner.name}! Você venceu Gaia!`;
-      
+      // Atualizar conquistas
       achievementsState.wins++;
       setAchievementsState(achievementsState);
       
-      addActivityLog({
-        type: 'victory',
-        playerName: winner.name,
-        action: 'venceu o jogo!',
-        details: `${winner.victoryPoints} PV`,
-        isEvent: false,
-        isMine: winner.id === gameState.currentPlayerIndex
-      });
+      addActivityLog('victory', winner.name, 'venceu o jogo!', `${winner.victoryPoints} PV`, gameState.turn);
     }
   }
 
-  updatePlayerBiomes(playerId) {
-    const player = gameState.players[playerId];
-    const playerStats = achievementsState.playerAchievements[playerId];
+  // ==================== MÉTODOS PARA NEGOCIAÇÃO ====================
+  validateNegotiationOffer(offer, player) {
+    const sufficientResources = ['madeira','pedra','ouro','agua'].every(k => offer[k] <= player.resources[k]);
+    const ownsAllRegions = offer.regions.every(rid => player.regions.includes(rid));
     
-    if (!playerStats) return;
+    if (!sufficientResources) return 'Você não possui os recursos que está oferecendo.';
+    if (!ownsAllRegions) return 'Você não controla todas as regiões que está oferecendo.';
+    return null;
+  }
+
+  executeNegotiation(negotiation) {
+    const initiator = gameState.players.find(p => p.id === negotiation.initiatorId);
+    const target = gameState.players.find(p => p.id === negotiation.targetId);
     
-    playerStats.controlledBiomes.clear();
+    if (!initiator || !target) return false;
     
-    player.regions.forEach(regionId => {
-      const region = gameState.regions[regionId];
-      playerStats.controlledBiomes.add(region.biome);
+    // Transferir recursos
+    ['madeira','pedra','ouro','agua'].forEach(k => {
+      const offerAmt = negotiation.offer[k] || 0;
+      const reqAmt = negotiation.request[k] || 0;
+      
+      initiator.resources[k] -= offerAmt;
+      target.resources[k] += offerAmt;
+      
+      target.resources[k] -= reqAmt;
+      initiator.resources[k] += reqAmt;
     });
     
-    const newAchievements = checkAchievements(playerId);
-    if (newAchievements.length > 0) {
-      newAchievements.forEach(achievementName => {
-        window.utils.showFeedback(`🎉 Conquista Desbloqueada: ${achievementName}!`, 'success');
-        
-        addActivityLog({
-          type: 'achievement',
-          playerName: player.name,
-          action: 'desbloqueou conquista',
-          details: achievementName,
-          isEvent: false,
-          isMine: true
-        });
-      });
-    }
+    // Transferir regiões
+    negotiation.offer.regions.forEach(rid => {
+      initiator.regions = initiator.regions.filter(x => x !== rid);
+      target.regions.push(rid);
+      gameState.regions[rid].controller = target.id;
+    });
+    
+    negotiation.request.regions.forEach(rid => {
+      target.regions = target.regions.filter(x => x !== rid);
+      initiator.regions.push(rid);
+      gameState.regions[rid].controller = initiator.id;
+    });
+    
+    // Pontos de vitória
+    initiator.victoryPoints += 1;
+    target.victoryPoints += 1;
+    
+    // Atualizar conquistas
+    achievementsState.totalNegotiations++;
+
+    window.uiManager.refreshUIAfterStateChange();
+    
+    return true;
   }
 }
 
