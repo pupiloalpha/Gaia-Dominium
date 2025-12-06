@@ -34,6 +34,7 @@ class UIManager {
   constructor() {
     this.activityLogHistory = [];
     this.hasLoadedGameBeenProcessed = false;
+    this.isBuilding = false;
     this.cacheElements();
     this.setupEventListeners();
     this.incomeModal = document.getElementById('incomeModal');
@@ -320,13 +321,70 @@ if (resetBtn) {
       });
     }
 
-// Adicionar listener para tecla ESC
-document.addEventListener('keydown', (e) => {
-  if (e.key === 'Escape' && this.editingIndex !== null) {
-    e.preventDefault();
-    this.cancelEdit();
+    // Adicionar listener para tecla ESC
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && this.editingIndex !== null) {
+        e.preventDefault();
+        this.cancelEdit();
+      }
+    });
+
+    document.addEventListener('click', (e) => {
+
+      // Se estamos no meio de uma construção, NÃO desselecionar
+  if (this.isBuilding) {
+    return;
+  }
+  // Lista de elementos que NÃO devem desselecionar região
+  const noDeselectSelectors = [
+    '.board-cell',                    // Células do mapa
+    '.action-button',                 // Botões de ação
+    '#endTurnBtn',                    // Botão de término de turno
+    '.modal',                         // Qualquer modal
+    '.modal-content',                 // Conteúdo de modal
+    '#structureModal',                // Modal de estruturas
+    '#structureModal *',              // Qualquer coisa dentro do modal de estruturas
+    '#structureOptions',              // Opções de estrutura
+    '#structureOptions *',            // Qualquer coisa dentro das opções
+    '.structure-option',              // Opções de estrutura (se houver classe)
+    '#regionTooltip',                 // Tooltip de região
+    '#regionTooltip *',               // Qualquer coisa dentro do tooltip
+    '#sidebar',                       // Sidebar
+    '#sidebar *',                     // Qualquer coisa na sidebar
+    '#gameFooter',                    // Footer do jogo
+    '#gameFooter *',                  // Qualquer coisa no footer
+    '#manualIcon',                    // Ícone do manual
+    '#achievementsNavBtn',            // Botão de conquistas
+    '.icon-option',                   // Opções de ícone
+    '#playerName',                    // Campo de nome do jogador
+    '#addPlayerBtn',                  // Botão adicionar jogador
+    '#startGameBtn'                   // Botão iniciar jogo
+  ];
+  
+  // Verificar se o clique foi em um elemento que NÃO desseleciona
+  let shouldNotDeselect = false;
+  
+  for (const selector of noDeselectSelectors) {
+    if (e.target.closest(selector)) {
+      shouldNotDeselect = true;
+      break;
+    }
+  }
+  
+  // Se clicou fora de elementos protegidos E há uma região selecionada
+  if (!shouldNotDeselect && gameState.selectedRegionId !== null) {
+    // Desselecionar região
+    gameState.selectedRegionId = null;
+    document.querySelectorAll('.board-cell').forEach(c => c.classList.remove('region-selected'));
+    
+    // Atualizar UI
+    this.updateFooter();
+    this.renderSidebar(gameState.selectedPlayerForSidebar);
+    
+    console.log('🗺️ Região desselecionada (clique fora)');
   }
 });
+    
   }
 
   // ==================== PLAYER REGISTRATION ====================
@@ -918,6 +976,37 @@ createRegionCell(region, index) {
         `;
       }).join('');
   }
+
+  // Adicione este método para garantir seleção durante construção:
+forceSelectionDuringBuild(regionId) {
+  // Salvar o ID original
+  const originalRegionId = gameState.selectedRegionId;
+  
+  // Forçar seleção
+  gameState.selectedRegionId = regionId;
+  
+  // Garantir visualmente
+  document.querySelectorAll('.board-cell').forEach(cell => {
+    const cellRegionId = Number(cell.dataset.regionId);
+    if (cellRegionId === regionId) {
+      cell.classList.add('region-selected');
+    } else {
+      cell.classList.remove('region-selected');
+    }
+  });
+  
+  // Restaurar após construção (com timeout)
+  setTimeout(() => {
+    if (this.isBuilding) {
+      // Ainda construindo, manter seleção
+      return;
+    }
+    // Se não estiver mais construindo, restaurar seleção original
+    if (originalRegionId !== regionId) {
+      gameState.selectedRegionId = originalRegionId;
+    }
+  }, 100);
+}
 
 // Atualiza fase do jogador no turno
 updatePhaseIndicator() {
@@ -2013,28 +2102,33 @@ resetTransparency() {
 
   // ==================== STRUCTURE MODAL ====================
   openStructureModal() {
-    if (gameState.selectedRegionId === null) {
-      window.utils.showFeedback('Selecione uma região primeiro.', 'error');
-      return;
-    }
-    
-    const region = gameState.regions[gameState.selectedRegionId];
-    const player = gameState.players[gameState.currentPlayerIndex];
-    
-    // Verificar se o jogador controla a região
-    if (region.controller !== player.id) {
-      window.utils.showFeedback('Você só pode construir em regiões que controla.', 'error');
-      return;
-    }
-    
-    this.structureModalRegion.textContent = `${region.name} (${region.biome})`;
-    this.renderStructureOptions(region);
-    this.structureModal.classList.remove('hidden');
+  if (gameState.selectedRegionId === null || gameState.selectedRegionId === undefined) {
+    window.utils.showFeedback('Selecione uma região primeiro.', 'error');
+    return;
   }
-
+  
+  const region = gameState.regions[gameState.selectedRegionId];
+  const player = gameState.players[gameState.currentPlayerIndex];
+  
+  // Verificar se o jogador controla a região
+  if (region.controller !== player.id) {
+    window.utils.showFeedback('Você só pode construir em regiões que controla.', 'error');
+    return;
+  }
+  
+  // ATIVAR FLAG - estamos em processo de construção
+  this.isBuilding = true;
+  
+  this.structureModalRegion.textContent = `${region.name} (${region.biome})`;
+  this.renderStructureOptions(region);
+  this.structureModal.classList.remove('hidden');
+  
+  console.log('🏗️ Modal de construção aberto. Flag isBuilding:', this.isBuilding);
+}
   closeStructureModal() {
-    this.structureModal.classList.add('hidden');
-  }
+  this.isBuilding = false; // <-- RESETAR FLAG
+  this.structureModal.classList.add('hidden');
+}
 
   renderStructureOptions(region) {
     this.structureOptions.innerHTML = '';
@@ -2111,7 +2205,14 @@ resetTransparency() {
       `;
       
       if (canAfford) {
-  option.addEventListener('click', () => {
+  option.addEventListener('click', (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    
+    console.log(`🏗️ Clicou para construir ${structure.name}`);
+    
+    // Forçar seleção antes de fechar modal
+    this.forceSelectionDuringBuild(region.id);
     this.closeStructureModal();
     
     // Verificar se a função existe (PASSO 4)
