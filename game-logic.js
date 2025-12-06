@@ -37,22 +37,28 @@ class GameLogic {
   }
 
   // ==================== INICIALIZAÇÃO ====================
-  initializeGame() {
+
+initializeGame() {
   this.setupRegions();
   this.distributeInitialRegions();
+  
+  // Inicializar estado do jogo
   gameState.gameStarted = true;
   gameState.turn = 1;
   gameState.actionsLeft = GAME_CONFIG.ACTIONS_PER_TURN;
   
-  // INICIALIZAR FASE COMO "RENDA"
+  // Começar na fase de renda
   gameState.currentPhase = 'renda';
-  setCurrentPhase('renda');
   
   addActivityLog('system', 'SISTEMA', 'Jogo iniciado', '', gameState.turn);
   
-  // Aplicar renda inicial para o jogador atual (isso vai avançar para fase de ações)
+  // Aplicar renda inicial (irá mostrar a modal)
   const currentPlayer = getCurrentPlayer();
-  this.applyIncomeForPlayer(currentPlayer);
+  
+  // Delay para garantir que a UI esteja completamente carregada
+  setTimeout(() => {
+    this.applyIncomeForPlayer(currentPlayer);
+  }, 800);
 }
 
 // Adicione este novo método para avançar fases
@@ -62,22 +68,24 @@ advancePhase() {
   const nextIndex = (currentIndex + 1) % phases.length;
   
   gameState.currentPhase = phases[nextIndex];
-  setCurrentPhase(gameState.currentPhase);
   
   // Log da mudança de fase
   const phaseNames = {
     'renda': '💰 Renda',
-    'acoes': '⚡ Ações', 
+    'acoes': '⚡ Ações',
     'negociacao': '🤝 Negociação'
   };
   
   addActivityLog('system', 'SISTEMA', 'Fase alterada', 
     `Nova fase: ${phaseNames[gameState.currentPhase]}`, gameState.turn);
 
- // Forçar atualização da UI
-  if (window.uiManager) {
-    window.uiManager.updateUI();
-  }
+  // Forçar atualização da UI
+  setTimeout(() => {
+    if (window.uiManager) {
+      window.uiManager.updateUI();
+      window.uiManager.updateFooter();
+    }
+  }, 100);
   
   return gameState.currentPhase;
 }
@@ -107,56 +115,70 @@ getActionCost(actionType) {
   return costs[actionType] || {};
 }
 
+// Avaliação de recursos do jogador
+applyIncomeForCurrentPlayer() {
+  const currentPlayer = getCurrentPlayer();
+  if (currentPlayer && gameState.currentPhase === 'renda') {
+    this.applyIncomeForPlayer(currentPlayer);
+  }
+}
+
 // Função que gerencia fases corretamente
 async handleEndTurn() {
   const currentPlayer = getCurrentPlayer();
   
-  // Se estiver na fase de ações, avance para negociação
+  // Verificar fase atual
   if (gameState.currentPhase === 'acoes') {
-    this.advancePhase();
-    window.utils.showFeedback(`${currentPlayer.name} entrou na fase de negociação`, 'info');
-    return;
-  }
-  
-  // Se estiver na fase de negociação, termine o turno
-  if (gameState.currentPhase === 'negociacao') {
-    // Avança jogador
+    // Avançar para negociação
+    gameState.currentPhase = 'negociacao';
+    addActivityLog('phase', 'SISTEMA', 'Fase alterada', 'Ações → Negociação', gameState.turn);
+    
+  } else if (gameState.currentPhase === 'negociacao') {
+    // Finalizar turno e passar para próximo jogador
     const playerCount = gameState.players.length;
     gameState.currentPlayerIndex = (gameState.currentPlayerIndex + 1) % playerCount;
     
-    // Se voltou ao primeiro jogador, incrementa o turno
+    // Se voltou ao primeiro jogador, incrementar turno
     if (gameState.currentPlayerIndex === 0) {
       gameState.turn += 1;
       this.handleTurnAdvanceForEvents();
     }
     
-    // Resetar ações e voltar para fase de renda
+    // Resetar estado
     gameState.actionsLeft = GAME_CONFIG.ACTIONS_PER_TURN;
     gameState.selectedRegionId = null;
-    gameState.currentPhase = 'renda';
-    setCurrentPhase('renda');
     
-    // Atualizar sidebar para o jogador atual
+    // Iniciar fase de renda para o novo jogador
+    gameState.currentPhase = 'renda';
+    
+    // Atualizar sidebar para jogador atual
     gameState.selectedPlayerForSidebar = gameState.currentPlayerIndex;
     
-    // Aplicar renda para o novo jogador (isso automaticamente avança para fase de ações)
+    // Aplicar renda para novo jogador (irá mostrar a modal)
     const newPlayer = getCurrentPlayer();
-    this.applyIncomeForPlayer(newPlayer);
     
-    addActivityLog('turn', 'SISTEMA', 'Turno avançado', 
-      `Agora é o turno de ${newPlayer.name}`, gameState.turn);
+    // Pequeno delay para garantir que a UI esteja atualizada
+    setTimeout(() => {
+      this.applyIncomeForPlayer(newPlayer);
+    }, 100);
+    
+    // REMOVIDO: window.utils.showFeedback(`Agora é o turno de ${newPlayer.name}`, 'info');
+    addActivityLog('turn', 'SISTEMA', 'Turno iniciado', 
+      `Início do turno de ${newPlayer.name}`, gameState.turn);
     
     this.checkVictory();
-    
-     // Forçar atualização da UI
+  }
+  
+  // Atualizar UI
+  setTimeout(() => {
     if (window.uiManager) {
       window.uiManager.updateUI();
+      window.uiManager.updateFooter();
     }
-    
-    window.utils.showFeedback(`Agora é o turno de ${newPlayer.name}`, 'info');
-  }
+  }, 50);
 }
 
+ // Configura as regiões no mapa
   setupRegions() {
     gameState.regions = [];
     const total = GAME_CONFIG.GRID_SIZE * GAME_CONFIG.GRID_SIZE;
@@ -605,129 +627,156 @@ canAffordAction(actionType) {
   }
 
   // ==================== RENDA AUTOMÁTICA ====================
-  applyIncomeForPlayer(player) {
-    const bonuses = { madeira: 0, pedra: 0, ouro: 0, agua: 0 };
-    
-    player.regions.forEach(regionId => {
-      const region = gameState.regions[regionId];
-      if (!region) return;
-      
-      // Produção base por bioma
-      let biomeProd = { madeira: 0, pedra: 0, ouro: 0, agua: 0 };
-      
-      switch(region.biome) {
-        case 'Floresta Tropical':
-          biomeProd.madeira = 1;
-          biomeProd.ouro = 0.5;
-          break;
-        case 'Floresta Temperada':
-          biomeProd.madeira = 1.5;
-          break;
-        case 'Savana':
-          biomeProd.madeira = 1.5;
-          biomeProd.agua = 1;
-          break;
-        case 'Pântano':
-          biomeProd.agua = 1;
-          biomeProd.pedra = 0.5;
-          break;
-      }
-      
-      // Aplicar multiplicadores de eventos globais
-      if (gameState.eventModifiers.madeiraMultiplier) {
-        biomeProd.madeira *= gameState.eventModifiers.madeiraMultiplier;
-      }
-      if (gameState.eventModifiers.aguaMultiplier) {
-        biomeProd.agua *= gameState.eventModifiers.aguaMultiplier;
-      }
-      if (gameState.eventModifiers.pedraMultiplier) {
-        biomeProd.pedra *= gameState.eventModifiers.pedraMultiplier;
-      }
-      
-      // Bloquear savanas se evento ativo
-      if (gameState.eventModifiers.savanaBloqueada && region.biome === 'Savana') {
-        biomeProd.madeira = 0;
-        biomeProd.agua = 0;
-      }
-      
-      // Bônus de pântano em enchente
-      if (gameState.eventModifiers.pantanoBonus && region.biome === 'Pântano') {
-        biomeProd.agua *= gameState.eventModifiers.pantanoBonus;
-        biomeProd.pedra *= gameState.eventModifiers.pantanoBonus;
-      }
-      
-      // Bônus de savana (descoberta de jazida)
-      if (gameState.eventModifiers.savanaBonus && region.biome === 'Savana') {
-        biomeProd.ouro += gameState.eventModifiers.savanaBonus;
-      }
-      
-      // Bônus de exploração
-      const explLevel = region.explorationLevel || 0;
-      let explMultiplier = 1.0;
-      
-      switch(explLevel) {
-        case 1:
-          explMultiplier = 1.25;
-          break;
-        case 2:
-          explMultiplier = 1.50;
-          // 20% chance de +1 Ouro
-          if (Math.random() < 0.20) {
-            bonuses.ouro += 1;
-          }
-          break;
-        case 3:
-          explMultiplier = 2.00;
-          break;
-      }
-      
-      // Aplicar multiplicador de exploração
-      Object.keys(biomeProd).forEach(k => {
-        biomeProd[k] *= explMultiplier;
-      });
-      
-      // Acumular bônus
-      Object.keys(biomeProd).forEach(k => {
-        bonuses[k] += biomeProd[k];
-      });
-      
-      // Produção de estruturas
-      if (!gameState.eventModifiers.structuresDisabled && region.structures && region.structures.length > 0) {
-        region.structures.forEach(struct => {
-          if (struct === 'Abrigo') {
-            bonuses.madeira += 0.5;
-            bonuses.agua += 0.5;
-          }
-        });
-      }
-    });
-    
-    // Aplicar bônus ao jogador
-    Object.keys(bonuses).forEach(k => {
-      player.resources[k] = Math.floor(player.resources[k] + bonuses[k]);
-    });
-    
-    // Bônus de PV para regiões nível 3 (a cada 3 turnos)
-    if (gameState.turn % 3 === 0) {
-      const level3Regions = player.regions.filter(rid => {
-        const r = gameState.regions[rid];
-        return r && r.explorationLevel === 3;
-      });
-      
-      if (level3Regions.length > 0) {
-        player.victoryPoints += level3Regions.length;
-        window.utils.showFeedback(`${player.name} ganhou +${level3Regions.length} PV de regiões nível 3!`, 'success');
-      }
-    }
 
-    // APÓS APLICAR RENDA, AVANÇAR PARA FASE DE AÇÕES SE FOR O JOGADOR ATUAL
-    if (player.id === gameState.currentPlayerIndex && gameState.currentPhase === 'renda') {
-      setTimeout(() => {
-        this.advancePhase();
-        addActivityLog('income', player.name, 'recebeu renda e iniciou fase de ações', '', gameState.turn);
-      }, 100);
+  applyIncomeForPlayer(player) {
+  const bonuses = { madeira: 0, pedra: 0, ouro: 0, agua: 0, pv: 0 };
+  
+  player.regions.forEach(regionId => {
+    const region = gameState.regions[regionId];
+    if (!region) return;
+    
+    // Produção base por bioma
+    let biomeProd = { madeira: 0, pedra: 0, ouro: 0, agua: 0 };
+    
+    switch(region.biome) {
+      case 'Floresta Tropical':
+        biomeProd.madeira = 1;
+        biomeProd.agua = 1.5;
+        break;
+      case 'Floresta Temperada':
+        biomeProd.madeira = 1.5;
+        biomeProd.pedra = 0.5;
+        break;
+      case 'Savana':
+        biomeProd.ouro = 1.5;
+        biomeProd.agua = 0.5;
+        break;
+      case 'Pântano':
+        biomeProd.agua = 2;
+        biomeProd.pedra = 1;
+        break;
     }
+    
+    // Multiplicadores de eventos
+    if (gameState.eventModifiers.madeiraMultiplier) {
+      biomeProd.madeira *= gameState.eventModifiers.madeiraMultiplier;
+    }
+    if (gameState.eventModifiers.aguaMultiplier) {
+      biomeProd.agua *= gameState.eventModifiers.aguaMultiplier;
+    }
+    if (gameState.eventModifiers.pedraMultiplier) {
+      biomeProd.pedra *= gameState.eventModifiers.pedraMultiplier;
+    }
+    
+    // Bloquear savanas se evento ativo
+    if (gameState.eventModifiers.savanaBloqueada && region.biome === 'Savana') {
+      biomeProd = { madeira: 0, pedra: 0, ouro: 0, agua: 0 };
+    }
+    
+    // Bônus de pântano em enchente
+    if (gameState.eventModifiers.pantanoBonus && region.biome === 'Pântano') {
+      biomeProd.agua *= gameState.eventModifiers.pantanoBonus;
+      biomeProd.pedra *= gameState.eventModifiers.pantanoBonus;
+    }
+    
+    // Bônus de savana (descoberta de jazida)
+    if (gameState.eventModifiers.savanaBonus && region.biome === 'Savana') {
+      biomeProd.ouro += gameState.eventModifiers.savanaBonus;
+    }
+    
+    // Bônus de exploração
+    const explLevel = region.explorationLevel || 0;
+    let explMultiplier = 1.0;
+    
+    switch(explLevel) {
+      case 1:
+        explMultiplier = 1.25;
+        break;
+      case 2:
+        explMultiplier = 1.50;
+        // 20% chance de +1 Ouro
+        if (Math.random() < 0.20) {
+          bonuses.ouro += 1;
+        }
+        break;
+      case 3:
+        explMultiplier = 2.00;
+        break;
+    }
+    
+    // Aplicar multiplicador de exploração
+    Object.keys(biomeProd).forEach(k => {
+      biomeProd[k] *= explMultiplier;
+    });
+    
+    // Acumular bônus
+    Object.keys(biomeProd).forEach(k => {
+      bonuses[k] += biomeProd[k];
+    });
+    
+    // Produção de estruturas
+    if (!gameState.eventModifiers.structuresDisabled && region.structures && region.structures.length > 0) {
+      region.structures.forEach(struct => {
+        if (struct === 'Abrigo') {
+          bonuses.madeira += 0.5;
+          bonuses.agua += 0.5;
+        } else if (struct === 'Mercado') {
+          bonuses.ouro += 1;
+        } else if (struct === 'Laboratório') {
+          bonuses.ouro += 0.5;
+        } else if (struct === 'Torre de Vigia') {
+          bonuses.pv += 1;
+        } else if (struct === 'Santuário') {
+          bonuses.pv += 0.5;
+        }
+      });
+    }
+  });
+  
+  // Arredondar valores para inteiros
+  Object.keys(bonuses).forEach(k => {
+    bonuses[k] = Math.floor(bonuses[k]);
+  });
+  
+  // Aplicar bônus ao jogador ANTES de mostrar a modal
+  Object.keys(bonuses).forEach(k => {
+    if (k !== 'pv') {
+      player.resources[k] = (player.resources[k] || 0) + bonuses[k];
+    } else {
+      player.victoryPoints += bonuses[k];
+    }
+  });
+  
+  // IMPORTANTE: Mostrar modal de renda apenas se for o jogador atual E estiver na fase de renda
+  if (player.id === gameState.currentPlayerIndex && gameState.currentPhase === 'renda') {
+    console.log('Mostrando modal de renda para:', player.name);
+    
+    // Pequeno delay para garantir que a UI esteja pronta
+    setTimeout(() => {
+      if (window.uiManager && window.uiManager.showIncomeModal) {
+        window.uiManager.showIncomeModal(player, bonuses);
+      } else {
+        console.error('uiManager ou showIncomeModal não disponível');
+      }
+    }, 300);
   }
+  
+  return bonuses;
+}
+
+// Inicia a fase de renda  
+startIncomePhase() {
+  const currentPlayer = getCurrentPlayer();
+  if (!currentPlayer) return;
+  
+  console.log('Iniciando fase de renda para:', currentPlayer.name);
+  
+  // Garantir que estamos na fase de renda
+  gameState.currentPhase = 'renda';
+  
+  // Aplicar renda (que mostrará a modal)
+  this.applyIncomeForPlayer(currentPlayer);
+}
 
   // ==================== EVENTOS ALEATÓRIOS ====================
   triggerRandomEvent() {

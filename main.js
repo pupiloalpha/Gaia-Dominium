@@ -38,6 +38,9 @@ window.GaiaDominium = {
   logic: null
 };
 
+// Tornar a função loadGame global
+window.loadGame = loadGame;
+
 // ==================== FUNÇÃO PRINCIPAL DE INICIALIZAÇÃO ====================
 document.addEventListener('DOMContentLoaded', () => {
   console.log('🚀 Gaia Dominium - Inicializando...');
@@ -234,7 +237,6 @@ function loadGame(data) {
     
     // Atualizar conquistas
     if (data.achievementsState) {
-      // Buscar a função setAchievementsState do módulo
       import('./game-state.js').then(module => {
         if (module.setAchievementsState) {
           module.setAchievementsState(data.achievementsState);
@@ -244,7 +246,7 @@ function loadGame(data) {
       });
     }
     
-    // ATUALIZAÇÃO CRÍTICA: Atualizar a tela inicial
+    // Atualizar a tela inicial
     if (window.uiManager) {
       // Forçar atualização da tela inicial
       window.uiManager.refreshInitialScreen();
@@ -259,8 +261,31 @@ function loadGame(data) {
         document.getElementById('gameFooter').classList.remove('hidden');
         document.getElementById('manualIcon')?.classList.add('hidden');
         
+        // Restaurar o estado correto da fase
+        if (data.gameState.currentPhase) {
+          // Garantir que o estado da fase seja restaurado
+          window.gameState.currentPhase = data.gameState.currentPhase;
+          
+          // Se estiver na fase de renda, aplicar renda para o jogador atual
+          if (data.gameState.currentPhase === 'renda') {
+            setTimeout(() => {
+              if (window.gameLogic) {
+                window.gameLogic.applyIncomeForCurrentPlayer();
+              }
+            }, 100);
+          }
+        }
+        
         // Atualizar UI completa do jogo
-        window.uiManager.updateUI();
+        setTimeout(() => {
+          if (window.uiManager) {
+            window.uiManager.updateUI();
+            window.uiManager.updateFooter();
+            window.uiManager.renderBoard();
+            window.uiManager.renderHeaderPlayers();
+            window.uiManager.renderSidebar(gameState.selectedPlayerForSidebar);
+          }
+        }, 150);
       }
       
       window.uiManager.showFeedback('Jogo carregado com sucesso!', 'success');

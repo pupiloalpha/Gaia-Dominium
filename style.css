@@ -7,12 +7,14 @@
   --accent: #f8d65c;
   --player-rgb: 255, 255, 255;
   --player-color: #ffffff;
-  /* Novas variáveis */
   --cell-bg: rgba(30, 30, 30, 0.7);
   --cell-border: rgba(255, 255, 255, 0.15);
   --text-primary: #ffffff;
   --text-secondary: rgba(255, 255, 255, 0.8);
   --shadow-intensity: 0.3;
+  --cell-opacity: 0.15;     /* Padrão: 15% */
+  --cell-blur: 1px;         /* Padrão: 1px */
+  --cell-bg-opacity: 0.15;  /* Padrão: 15% */
 }
 
 /* Reset e base */
@@ -180,25 +182,18 @@ input[type="text"]:focus, select:focus, input[type="number"]:focus {
 
 .board-cell {
   position: relative;
-  border: 1.5px solid rgba(255, 255, 255, 0.12);
-  background: linear-gradient(
-    135deg,
-    rgba(15, 15, 15, 0.45) 0%,    /* REDUZIDO: de 0.75 para 0.45 */
-    rgba(25, 25, 25, 0.35) 100%   /* REDUZIDO: de 0.65 para 0.35 */
-  );
-  backdrop-filter: blur(4px);      /* REDUZIDO: de 6px para 4px */
-  border-radius: 6px;
-  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(15, 15, 15, var(--cell-bg-opacity));
+  backdrop-filter: blur(var(--cell-blur));
+  border-radius: 4px;
+  transition: all 0.2s ease;
   display: flex;
   flex-direction: column;
   justify-content: space-between;
-  padding: 10px;
+  padding: 6px;
   overflow: hidden;
   cursor: pointer;
   user-select: none;
-  box-shadow: 
-    0 4px 10px rgba(0, 0, 0, 0.2),  /* REDUZIDO: de 0.3 para 0.2 */
-    inset 0 1px 0 rgba(255, 255, 255, 0.03); /* REDUZIDO: de 0.05 para 0.03 */
 }
 
 /* Efeito de vidro fosco com mais transparência */
@@ -216,30 +211,15 @@ input[type="text"]:focus, select:focus, input[type="number"]:focus {
 }
 
 .board-cell:hover {
-  background: linear-gradient(
-    135deg,
-    rgba(30, 30, 30, 0.6) 0%,      /* REDUZIDO: de 0.85 para 0.6 */
-    rgba(40, 40, 40, 0.5) 100%     /* REDUZIDO: de 0.75 para 0.5 */
-  );
-  transform: translateY(-3px) scale(1.02);
-  box-shadow: 
-    0 8px 20px rgba(0, 0, 0, 0.3),  /* REDUZIDO: de 0.4 para 0.3 */
-    0 4px 6px rgba(0, 0, 0, 0.07),  /* REDUZIDO: de 0.1 para 0.07 */
-    inset 0 1px 0 rgba(255, 255, 255, 0.05); /* REDUZIDO: de 0.1 para 0.05 */
-  border-color: rgba(255, 255, 255, 0.2); /* REDUZIDO: de 0.25 para 0.2 */
+  background: rgba(25, 25, 25, calc(var(--cell-bg-opacity) + 0.1));
+  border-color: rgba(255, 255, 255, 0.15);
+  transform: translateY(-1px);
 }
 
 /* Estados das células - OPACIDADE REDUZIDA */
 .board-cell.controlled {
-  border-left: 8px solid var(--player-color);
-  background: linear-gradient(
-    135deg,
-    rgba(var(--player-rgb), 0.08) 0%,  /* REDUZIDO: de 0.15 para 0.08 */
-    rgba(25, 25, 25, 0.5) 100%         /* REDUZIDO: de 0.7 para 0.5 */
-  );
-  box-shadow: 
-    0 4px 12px rgba(var(--player-rgb), 0.15), /* REDUZIDO: de 0.2 para 0.15 */
-    inset 0 1px 0 rgba(255, 255, 255, 0.03);  /* REDUZIDO: de 0.05 para 0.03 */
+  border-left: 4px solid var(--player-color);
+  background: rgba(var(--player-rgb), calc(var(--cell-bg-opacity) * 2));
 }
 
 .board-cell.controlled::after {
@@ -257,28 +237,16 @@ input[type="text"]:focus, select:focus, input[type="number"]:focus {
 }
 
 .board-cell.neutral {
-  border: 1.5px dashed rgba(255, 255, 255, 0.08); /* REDUZIDO: de 0.1 para 0.08 */
-  background: linear-gradient(
-    135deg,
-    rgba(20, 20, 20, 0.4) 0%,     /* REDUZIDO: de 0.6 para 0.4 */
-    rgba(30, 30, 30, 0.3) 100%    /* REDUZIDO: de 0.5 para 0.3 */
-  );
+  border: 1px dashed rgba(255, 255, 255, 0.05);
+  background: rgba(15, 15, 15, calc(var(--cell-bg-opacity) * 0.8));
 }
 
 .board-cell.region-selected {
-  border: 3px solid var(--accent) !important;
-  background: linear-gradient(
-    135deg,
-    rgba(248, 214, 92, 0.12) 0%,  /* REDUZIDO: de 0.15 para 0.12 */
-    rgba(25, 25, 25, 0.6) 100%    /* REDUZIDO: de 0.8 para 0.6 */
-  );
-  box-shadow: 
-    0 0 25px rgba(248, 214, 92, 0.4),   /* REDUZIDO: de 0.6 para 0.4 */
-    0 10px 25px rgba(248, 214, 92, 0.2), /* REDUZIDO: de 0.3 para 0.2 */
-    inset 0 1px 0 rgba(255, 255, 255, 0.05) !important; /* REDUZIDO: de 0.1 para 0.05 */
-  transform: translateY(-3px) scale(1.03) !important;
+  border: 2px solid var(--accent) !important;
+  background: rgba(248, 214, 92, calc(var(--cell-bg-opacity) * 3)) !important;
+  box-shadow: 0 0 10px rgba(248, 214, 92, 0.3) !important;
+  transform: translateY(-1px) !important;
   z-index: 10;
-  animation: regionPulse 2s ease-in-out infinite;
 }
 
 @keyframes regionPulse {
@@ -294,6 +262,59 @@ input[type="text"]:focus, select:focus, input[type="number"]:focus {
       0 10px 20px rgba(248, 214, 92, 0.3), /* REDUZIDO */
       inset 0 1px 0 rgba(255, 255, 255, 0.05);
   }
+}
+
+/* Responsividade para o controle de transparência */
+@media (max-width: 768px) {
+  .transparency-control {
+    padding: 6px;
+  }
+  
+  .transparency-slider {
+    height: 4px;
+  }
+  
+  .transparency-slider::-webkit-slider-thumb {
+    width: 16px;
+    height: 16px;
+  }
+  
+  .transparency-slider::-moz-range-thumb {
+    width: 16px;
+    height: 16px;
+  }
+}
+
+/* Efeito de foco no slider */
+.transparency-slider:focus {
+  outline: none;
+  box-shadow: 0 0 0 2px rgba(248, 214, 92, 0.3);
+}
+
+/* Animação suave para mudanças de opacidade */
+.board-cell {
+  transition: 
+    background 0.4s ease,
+    backdrop-filter 0.4s ease,
+    transform 0.2s ease,
+    border-color 0.2s ease;
+}
+
+/* Indicador visual da opacidade atual */
+.transparency-control::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: linear-gradient(90deg, 
+    transparent 5%, 
+    var(--accent) 15%, 
+    var(--accent) 85%, 
+    transparent 95%
+  );
+  opacity: 0.3;
 }
 
 /* Conteúdo das células - AJUSTES PARA MAIOR LEGIBILIDADE COM TRANSPARÊNCIA */
@@ -397,31 +418,86 @@ input[type="text"]:focus, select:focus, input[type="number"]:focus {
   border-bottom: none;
 }
 
+/* ============================================
+   CONTROLE DE TRANSPARÊNCIA
+   ============================================ */
+
 .transparency-control {
-  padding: 8px;
-  background: rgba(0, 0, 0, 0.3);
-  border-radius: 6px;
-  margin-top: 8px;
+  transition: all 0.3s ease;
+}
+
+.transparency-control:hover {
+  background: rgba(55, 65, 81, 0.5) !important;
+  border-color: rgba(255, 255, 255, 0.1) !important;
 }
 
 .transparency-slider {
-  width: 100%;
-  height: 4px;
-  background: rgba(255, 255, 255, 0.1);
-  border-radius: 2px;
-  outline: none;
   -webkit-appearance: none;
+  width: 100%;
+  height: 6px;
+  border-radius: 3px;
+  background: linear-gradient(90deg, 
+    rgba(255, 255, 255, 0.05) 0%, 
+    rgba(255, 255, 255, 0.2) 50%, 
+    rgba(255, 255, 255, 0.05) 100%
+  );
+  outline: none;
+  transition: all 0.2s ease;
 }
 
+.transparency-slider:hover {
+  background: linear-gradient(90deg, 
+    rgba(255, 255, 255, 0.1) 0%, 
+    rgba(255, 255, 255, 0.3) 50%, 
+    rgba(255, 255, 255, 0.1) 100%
+  );
+}
+
+/* Estilo do "thumb" (botão deslizante) */
 .transparency-slider::-webkit-slider-thumb {
   -webkit-appearance: none;
-  width: 16px;
-  height: 16px;
+  appearance: none;
+  width: 20px;
+  height: 20px;
   border-radius: 50%;
   background: var(--accent);
   cursor: pointer;
+  border: 2px solid rgba(0, 0, 0, 0.3);
+  box-shadow: 0 2px 8px rgba(248, 214, 92, 0.3);
+  transition: all 0.2s ease;
 }
 
+.transparency-slider::-webkit-slider-thumb:hover {
+  transform: scale(1.1);
+  box-shadow: 0 3px 12px rgba(248, 214, 92, 0.5);
+}
+
+.transparency-slider::-moz-range-thumb {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: var(--accent);
+  cursor: pointer;
+  border: 2px solid rgba(0, 0, 0, 0.3);
+  box-shadow: 0 2px 8px rgba(248, 214, 92, 0.3);
+  transition: all 0.2s ease;
+}
+
+.transparency-slider::-moz-range-thumb:hover {
+  transform: scale(1.1);
+  box-shadow: 0 3px 12px rgba(248, 214, 92, 0.5);
+}
+
+/* Indicador de valor */
+#transparencyValue {
+  transition: all 0.3s ease;
+  min-width: 32px;
+  text-align: center;
+  background: rgba(0, 0, 0, 0.2);
+  padding: 2px 6px;
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
 /* ============================================
    MODAIS
    ============================================ */
@@ -447,37 +523,15 @@ input[type="text"]:focus, select:focus, input[type="number"]:focus {
   backdrop-filter: blur(4px);
 }
 
-/* ============================================
-   TOOLTIP OTIMIZADO
-   ============================================ */
-
-#regionTooltip {
-  pointer-events: none !important;
-  transition: opacity 0.2s ease, transform 0.2s ease;
-  background: linear-gradient(
-    135deg,
-    rgba(20, 20, 20, 0.95) 0%,
-    rgba(30, 30, 30, 0.92) 100%
-  );
-  backdrop-filter: blur(10px) saturate(180%);
-  border: 1px solid rgba(255, 255, 255, 0.15);
-  border-radius: 10px;
-  box-shadow: 
-    0 15px 35px rgba(0, 0, 0, 0.5),
-    0 5px 15px rgba(0, 0, 0, 0.3);
+/* Estilos para o Modal de Renda */
+#incomeModal .relative {
+  animation: incomeModalAppear 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
-#regionTooltip.visible {
-  display: block !important;
-  opacity: 1 !important;
-  transform: translateY(0) scale(1) !important;
-  animation: tooltipAppear 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
-}
-
-@keyframes tooltipAppear {
+@keyframes incomeModalAppear {
   from {
     opacity: 0;
-    transform: translateY(10px) scale(0.95);
+    transform: translateY(-20px) scale(0.95);
   }
   to {
     opacity: 1;
@@ -485,27 +539,69 @@ input[type="text"]:focus, select:focus, input[type="number"]:focus {
   }
 }
 
-#tooltipTitle {
-  font-size: 14px;
-  font-weight: 700;
-  color: #ffffff;
-  margin-bottom: 8px;
-  padding-bottom: 6px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+#incomeModal #incomePlayerName {
+  line-height: 1.4;
 }
 
-#tooltipBody {
-  font-size: 12px;
-  line-height: 1.5;
+#incomeModal #incomePlayerName .text-yellow-300 {
+  font-size: 1.1em;
+  display: block;
+  margin-bottom: 2px;
 }
 
-#tooltipBody strong {
-  color: #f8d65c;
-  font-weight: 600;
+#incomeModal #incomePlayerName .text-gray-300 {
+  font-size: 0.85em;
+  opacity: 0.8;
+}
+
+#incomeModal #incomeOkBtn {
+  transition: all 0.2s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+#incomeModal #incomeOkBtn::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(135deg, transparent 30%, rgba(255,255,255,0.1) 50%, transparent 70%);
+  background-size: 200% 100%;
+  animation: shine 3s infinite;
+}
+
+@keyframes shine {
+  0%, 100% {
+    background-position: -200% 0;
+  }
+  50% {
+    background-position: 200% 0;
+  }
+}
+
+#incomeModal #incomeOkBtn:hover::after {
+  animation: shine 1.5s infinite;
+}
+
+/* ============================================
+   TOOLTIP OTIMIZADO
+   ============================================ */
+
+/* Tooltip melhorado */
+#regionTooltip {
+  pointer-events: none !important;
+  transition: opacity 0.2s ease, transform 0.2s ease;
+  background: rgba(15, 15, 15, 0.95);
+  backdrop-filter: blur(8px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
 }
 
 .tooltip-section {
-  margin-bottom: 8px;
+  margin-bottom: 12px;
 }
 
 .tooltip-section:last-child {
@@ -513,27 +609,12 @@ input[type="text"]:focus, select:focus, input[type="number"]:focus {
 }
 
 .tooltip-section-title {
-  font-size: 11px;
-  color: rgba(255, 255, 255, 0.7);
+  font-size: 10px;
+  color: rgba(255, 255, 255, 0.6);
   margin-bottom: 4px;
   text-transform: uppercase;
   letter-spacing: 0.5px;
-}
-
-.tooltip-resources {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 6px;
-}
-
-.tooltip-resource-item {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  padding: 4px 8px;
-  background: rgba(255, 255, 255, 0.05);
-  border-radius: 5px;
-  border: 1px solid rgba(255, 255, 255, 0.05);
+  font-weight: 600;
 }
 
 /* ============================================

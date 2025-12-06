@@ -33,8 +33,13 @@ import { getAllManualContent } from './game-manual.js';
 class UIManager {
   constructor() {
     this.activityLogHistory = [];
+    this.hasLoadedGameBeenProcessed = false;
     this.cacheElements();
     this.setupEventListeners();
+    this.incomeModal = document.getElementById('incomeModal');
+    this.incomeOkBtn = document.getElementById('incomeOkBtn');
+    this.incomePlayerName = document.getElementById('incomePlayerName');
+    this.incomeResources = document.getElementById('incomeResources');
 
     // Garantir que o gameState seja acessível globalmente para compatibilidade
     window.gameState = gameState;
@@ -188,6 +193,9 @@ class UIManager {
     // Manual tabs
     this.manualTabs.forEach(t => t.addEventListener('click', (e) => this.handleManualTabClick(e)));
     
+    // Modal de Renda
+    this.incomeOkBtn?.addEventListener('click', () => this.closeIncomeModal());
+
     // Structure modal
     this.structureModalClose?.addEventListener('click', () => this.closeStructureModal());
     
@@ -200,25 +208,71 @@ class UIManager {
 
 
 // Controle de transparência das regiões no mapa
-document.getElementById('cellTransparencySlider')?.addEventListener('input', (e) => {
-  const value = e.target.value;
-  document.getElementById('transparencyValue').textContent = `${value}%`;
-  
-  // Converter para alpha (0.1 a 0.9)
-  const alpha = value / 100;
-  
-  // Aplicar a todas as células
-  document.querySelectorAll('.board-cell').forEach(cell => {
-    const currentBg = getComputedStyle(cell).backgroundColor;
-    const rgb = currentBg.match(/\d+/g);
+// Controle de transparência
+const transparencySlider = document.getElementById('cellTransparencySlider');
+const transparencyValue = document.getElementById('transparencyValue');
+
+if (transparencySlider && transparencyValue) {
+  // Função para atualizar transparência
+  const updateTransparency = (value) => {
+    // Converter para decimal (5% -> 0.05, 50% -> 0.5)
+    const opacity = value / 100;
     
-    if (rgb && rgb.length >= 3) {
-      // Preservar cor base, ajustar apenas alpha
-      cell.style.backgroundColor = `rgba(${rgb[0]}, ${rgb[1]}, ${rgb[2]}, ${alpha})`;
-    }
+    // Calcular blur proporcional (mais opaco = menos blur)
+    const blur = Math.max(0.5, 2 - (opacity * 3)) + 'px';
+    
+    // Atualizar variáveis CSS
+    document.documentElement.style.setProperty('--cell-bg-opacity', opacity);
+    document.documentElement.style.setProperty('--cell-blur', blur);
+    
+    // Atualizar valor exibido
+    transparencyValue.textContent = `${value}%`;
+    
+    // Adicionar efeito visual ao valor
+    transparencyValue.style.transform = 'scale(1.1)';
+    setTimeout(() => {
+      transparencyValue.style.transform = 'scale(1)';
+    }, 150);
+  };
+  
+  // Event listener para mudanças no slider
+  transparencySlider.addEventListener('input', (e) => {
+    const value = parseInt(e.target.value);
+    updateTransparency(value);
   });
-});
+  
+  // Event listener para mudanças por clique/arrasto
+  transparencySlider.addEventListener('change', (e) => {
+    const value = parseInt(e.target.value);
     
+    // Salvar preferência do usuário
+    localStorage.setItem('gaia-cell-transparency', value);
+    
+    // Feedback visual
+    window.utils.showFeedback(`Transparência ajustada para ${value}%`, 'info');
+  });
+  
+  // Carregar preferência salva ao iniciar
+  setTimeout(() => {
+    const savedTransparency = localStorage.getItem('gaia-cell-transparency');
+    if (savedTransparency) {
+      const value = parseInt(savedTransparency);
+      if (value >= 5 && value <= 50) {
+        transparencySlider.value = value;
+        updateTransparency(value);
+      }
+    }
+  }, 1000);
+}    
+
+// Botão de reset
+const resetBtn = document.getElementById('resetTransparencyBtn');
+if (resetBtn) {
+  resetBtn.addEventListener('click', () => {
+    this.resetTransparency();
+  });
+}
+
     // Achievements modal
     //this.achievementsNavBtn?.addEventListener('click', () => this.renderAchievementsModal());
     // Adicione ESTE listener com log de depuração:
@@ -634,8 +688,15 @@ async deletePlayer(index) {
 
   // ==================== REFRESH UI ====================
   refreshUIAfterStateChange() {
-    this.updateUI();
+  // Verificar se é um jogo carregado
+  if (gameState.gameStarted && !this.hasLoadedGameBeenProcessed) {
+    this.checkAndFixLoadedState();
+    this.restoreUIFromLoadedGame();
+    this.hasLoadedGameBeenProcessed = true;
   }
+  
+  this.updateUI();
+}
 
 resetInitialScreen() {
   this.playerNameInput.value = '';
@@ -666,6 +727,7 @@ refreshInitialScreen() {
     this.updateTurnInfo();
     this.updateEventBanner();
     this.renderActivityLog();
+    this.updatePhaseIndicator();
   }
 
   renderHeaderPlayers() {
@@ -713,42 +775,66 @@ createRegionCell(region, index) {
     cell.classList.add('neutral');
   }
   
-  // Conteúdo da célula
+  // CABEÇALHO COMPACTO
   const header = document.createElement('div');
-  header.className = 'flex items-center justify-between';
+  header.className = 'flex items-start justify-between mb-1';
   header.innerHTML = `
     <div>
-      <div class="text-xs font-semibold leading-tight text-white">${region.name}</div>
-      <div class="biome-indicator">${region.biome}</div>
+      <div class="text-xs font-bold text-white leading-tight">${region.name}</div>
+      <div class="text-[9px] text-gray-300 mt-0.5">${region.biome}</div>
     </div>
-    <div class="flex items-center gap-1">
-      <div class="text-xs text-yellow-300 font-bold">${region.explorationLevel}</div>
-      <div class="text-sm">⭐</div>
+    <div class="text-xs text-yellow-300 font-bold flex items-center gap-0.5">
+      ${region.explorationLevel}<span class="text-[10px]">⭐</span>
     </div>
   `;
   
-  const resources = document.createElement('div');
-  resources.className = 'resource-display';
-  Object.entries(region.resources).forEach(([key, value]) => {
+  // LINHA ÚNICA DE RECURSOS
+  const resourcesLine = document.createElement('div');
+  resourcesLine.className = 'flex items-center justify-between gap-1 mt-1';
+  
+  // Ordenar recursos para consistência
+  const resourceOrder = ['madeira', 'pedra', 'ouro', 'agua'];
+  const resourcePairs = [];
+  
+  resourceOrder.forEach(key => {
+    const value = region.resources[key] || 0;
     if (value > 0) {
-      const span = document.createElement('span');
-      span.className = 'resource-item';
-      span.innerHTML = `
-        <span class="resource-icon">${RESOURCE_ICONS[key]}</span>
-        <span class="resource-value">${value}</span>
-      `;
-      resources.appendChild(span);
+      resourcePairs.push({
+        icon: RESOURCE_ICONS[key],
+        value: value,
+        key: key
+      });
     }
   });
   
+  // Distribuir em linha única com espaçamento igual
+  resourcePairs.forEach((resource, idx) => {
+    const pair = document.createElement('div');
+    pair.className = 'flex items-center gap-0.5 flex-1 justify-center';
+    pair.innerHTML = `
+      <span class="text-xs">${resource.icon}</span>
+      <span class="text-xs font-bold text-white">${resource.value}</span>
+    `;
+    resourcesLine.appendChild(pair);
+  });
+  
+  // Se não houver recursos, mostrar placeholder
+  if (resourcePairs.length === 0) {
+    const placeholder = document.createElement('div');
+    placeholder.className = 'text-[9px] text-gray-400 italic flex-1 text-center';
+    placeholder.textContent = 'Sem recursos';
+    resourcesLine.appendChild(placeholder);
+  }
+  
+  // FOOTER COMPACTO
   const footer = document.createElement('div');
-  footer.className = 'cell-footer';
+  footer.className = 'flex items-center justify-between mt-2 pt-1 border-t border-white/5';
   
   const controller = region.controller !== null 
-    ? `${gameState.players[region.controller].icon} ${gameState.players[region.controller].name}`
-    : '<span class="text-gray-300">Neutro</span>';
+    ? gameState.players[region.controller].icon
+    : '<span class="text-gray-400 text-xs">🏳️</span>';
 
-  // Mostrar estruturas com ícones
+  // Estruturas compactas
   const structureIcons = {
     'Abrigo': '🛖',
     'Torre de Vigia': '🏯',
@@ -757,20 +843,26 @@ createRegionCell(region, index) {
     'Santuário': '🛐'
   };
 
-  const structureDisplay = region.structures.length 
-    ? region.structures.map(s => structureIcons[s] || s).join(' ')
-    : '<span class="text-gray-400 text-xs">—</span>';
+  let structureDisplay = '—';
+  if (region.structures.length > 0) {
+    // Mostrar apenas primeira estrutura
+    structureDisplay = structureIcons[region.structures[0]] || '🏗️';
+    if (region.structures.length > 1) {
+      structureDisplay += `+${region.structures.length - 1}`;
+    }
+  }
 
   footer.innerHTML = `
-    <div class="controller-info">${controller}</div>
-    <div class="structure-display">${structureDisplay}</div>
+    <div class="text-xs font-medium text-white">${controller}</div>
+    <div class="text-xs">${structureDisplay}</div>
   `;
   
+  // Montar célula
   cell.appendChild(header);
-  cell.appendChild(resources);
+  cell.appendChild(resourcesLine);
   cell.appendChild(footer);
   
-  // Event listeners (mantidos)
+  // Event listeners
   cell.addEventListener('mouseenter', (e) => this.showRegionTooltip(region, e.currentTarget));
   cell.addEventListener('mousemove', (e) => this.positionTooltip(e.currentTarget));
   cell.addEventListener('mouseleave', () => this.hideRegionTooltip());
@@ -843,90 +935,139 @@ createRegionCell(region, index) {
       }).join('');
   }
 
-  renderAchievements() {
-    const achievementsList = document.getElementById('achievementsList');
-    if (!achievementsList) return;
-    
-    achievementsList.innerHTML = '';
-    
-    // Obter jogador atual
-    const playerIndex = gameState.selectedPlayerForSidebar;
-    const player = gameState.players[playerIndex];
-    if (!player) return;
-    
-    const unlockedAchievements = achievementsState.unlockedAchievements[playerIndex] || [];
-    const playerStats = achievementsState.playerAchievements[playerIndex];
-    
-    // Converter ACHIEVEMENTS_CONFIG para array
-    const achievementsArray = Object.values(ACHIEVEMENTS_CONFIG);
-    
-    // Renderizar todas as conquistas
-    achievementsArray.forEach(achievement => {
-      const isUnlocked = unlockedAchievements.includes(achievement.id);
-      
-      const item = document.createElement('div');
-      item.className = `achievement ${isUnlocked ? 'achievement-unlocked' : 'achievement-locked'}`;
-      
-      // Determinar progresso
-      let progress = 0;
-      let progressText = '';
-      
-      switch (achievement.type) {
-        case 'explored':
-          progress = playerStats?.explored || 0;
-          progressText = `${progress}/${achievement.requirement} regiões exploradas`;
-          break;
-        case 'built':
-          progress = playerStats?.built || 0;
-          progressText = `${progress}/${achievement.requirement} estruturas construídas`;
-          break;
-        case 'negotiated':
-          progress = playerStats?.negotiated || 0;
-          progressText = `${progress}/${achievement.requirement} negociações`;
-          break;
-        case 'collected':
-          progress = playerStats?.collected || 0;
-          progressText = `${progress}/${achievement.requirement} regiões coletadas`;
-          break;
-        case 'biomes':
-          progress = playerStats?.controlledBiomes?.size || 0;
-          progressText = `${progress}/${achievement.requirement} biomas diferentes`;
-          break;
-        case 'resources':
-          const resourceCount = Object.values(playerStats?.maxResources || {})
-            .filter(value => value >= achievement.requirement).length;
-          progress = resourceCount;
-          progressText = `${progress}/4 recursos com ${achievement.requirement}+`;
-          break;
-        default:
-          progressText = isUnlocked ? 'Desbloqueado' : 'Bloqueado';
-      }
-      
-      const progressPercent = Math.min(100, (progress / achievement.requirement) * 100);
-      
-      item.innerHTML = `
-        <span class="achievement-icon text-xl">${achievement.icon}</span>
-        <div class="achievement-info flex-1">
-          <div class="achievement-name ${isUnlocked ? 'text-yellow-300' : 'text-gray-400'} font-semibold">
-            ${achievement.name}
-            ${isUnlocked ? ' ✓' : ''}
-          </div>
-          <div class="achievement-desc text-xs ${isUnlocked ? 'text-green-300' : 'text-gray-500'}">
-            ${achievement.description}
-          </div>
-          <div class="achievement-progress mt-1">
-            <div class="w-full bg-gray-700 rounded-full h-1.5">
-              <div class="bg-green-500 h-1.5 rounded-full" style="width: ${progressPercent}%"></div>
-            </div>
-            <div class="text-xs text-gray-400 mt-0.5">${progressText}</div>
-          </div>
-        </div>
-      `;
-      
-      achievementsList.appendChild(item);
-    });
-  }
+// Atualiza fase do jogador no turno
+updatePhaseIndicator() {
+  const phaseIndicator = document.getElementById('phaseIndicator');
+  if (!phaseIndicator) return;
+  
+  const phaseNames = {
+    'renda': '💰 Renda',
+    'acoes': '⚡ Ações',
+    'negociacao': '🤝 Negociação'
+  };
+  
+  phaseIndicator.textContent = `Fase: ${phaseNames[gameState.currentPhase] || 'Renda'}`;
+}
 
+// Carrega as conquistas do jogador
+  renderAchievements() {
+  const achievementsList = document.getElementById('achievementsList');
+  if (!achievementsList) return;
+  
+  achievementsList.innerHTML = '';
+  
+  const playerIndex = gameState.selectedPlayerForSidebar;
+  const player = gameState.players[playerIndex];
+  if (!player) return;
+  
+  const unlockedAchievements = achievementsState.unlockedAchievements[playerIndex] || [];
+  const playerStats = achievementsState.playerAchievements[playerIndex];
+  
+  const achievementsArray = Object.values(ACHIEVEMENTS_CONFIG);
+  
+  // Filtrar conquistas com progresso > 0
+  const achievementsWithProgress = achievementsArray.filter(achievement => {
+    let progress = 0;
+    
+    switch (achievement.type) {
+      case 'explored':
+        progress = playerStats?.explored || 0;
+        break;
+      case 'built':
+        progress = playerStats?.built || 0;
+        break;
+      case 'negotiated':
+        progress = playerStats?.negotiated || 0;
+        break;
+      case 'collected':
+        progress = playerStats?.collected || 0;
+        break;
+      case 'biomes':
+        progress = playerStats?.controlledBiomes?.size || 0;
+        break;
+      case 'resources':
+        const resources = playerStats?.maxResources || {};
+        progress = Object.values(resources).filter(value => value >= achievement.requirement).length;
+        break;
+      default:
+        progress = 0;
+    }
+    
+    return progress > 0;
+  });
+  
+  // Se não houver conquistas com progresso, mostrar mensagem
+  if (achievementsWithProgress.length === 0) {
+    achievementsList.innerHTML = `
+      <div class="text-xs text-gray-400 italic p-2 text-center">
+        Nenhuma conquista em progresso ainda
+      </div>
+    `;
+    return;
+  }
+  
+  // Renderizar apenas conquistas com progresso
+  achievementsWithProgress.forEach(achievement => {
+    const isUnlocked = unlockedAchievements.includes(achievement.id);
+    
+    const item = document.createElement('div');
+    item.className = `achievement ${isUnlocked ? 'achievement-unlocked' : ''}`;
+    
+    // Determinar progresso
+    let progress = 0;
+    let progressText = '';
+    
+    switch (achievement.type) {
+      case 'explored':
+        progress = playerStats?.explored || 0;
+        progressText = `${progress}/${achievement.requirement}`;
+        break;
+      case 'built':
+        progress = playerStats?.built || 0;
+        progressText = `${progress}/${achievement.requirement}`;
+        break;
+      case 'negotiated':
+        progress = playerStats?.negotiated || 0;
+        progressText = `${progress}/${achievement.requirement}`;
+        break;
+      case 'collected':
+        progress = playerStats?.collected || 0;
+        progressText = `${progress}/${achievement.requirement}`;
+        break;
+      case 'biomes':
+        progress = playerStats?.controlledBiomes?.size || 0;
+        progressText = `${progress}/${achievement.requirement}`;
+        break;
+      case 'resources':
+        const resources = playerStats?.maxResources || {};
+        progress = Object.values(resources).filter(value => value >= achievement.requirement).length;
+        progressText = `${progress}/4 recursos`;
+        break;
+    }
+    
+    const progressPercent = Math.min(100, (progress / achievement.requirement) * 100);
+    
+    item.innerHTML = `
+      <span class="achievement-icon text-xl">${achievement.icon}</span>
+      <div class="achievement-info flex-1">
+        <div class="achievement-name ${isUnlocked ? 'text-yellow-300' : 'text-gray-300'} font-semibold text-xs">
+          ${achievement.name}
+          ${isUnlocked ? ' ✓' : ''}
+        </div>
+        <div class="achievement-progress mt-1">
+          <div class="w-full bg-gray-700 rounded-full h-1.5">
+            <div class="bg-green-500 h-1.5 rounded-full" style="width: ${progressPercent}%"></div>
+          </div>
+          <div class="text-xs text-gray-400 mt-0.5">${progressText}</div>
+        </div>
+      </div>
+    `;
+    
+    achievementsList.appendChild(item);
+  });
+}
+
+// Carrega os dados do jogador no painel lateral
   renderSidebar(playerIndex) {
     const player = gameState.players[playerIndex];
     if (!player) return;
@@ -1094,126 +1235,284 @@ createRegionCell(region, index) {
     }
   }
 
-  // ==================== ACHIEVEMENTS MODAL ====================
-  renderAchievementsModal() {
-    console.log('renderAchievementsModal() chamada');
-
-    // Criar modal se não existir
-    let modal = document.getElementById('achievementsModal');
+ // ==================== INCOME MODAL ====================
+showIncomeModal(player, income) {
+  console.log('showIncomeModal executado para:', player.name);
+  
+  if (!this.incomeModal) {
+    console.error('Elemento incomeModal não encontrado!');
+    return;
+  }
+  
+  // Configurar texto melhorado
+  const turnText = gameState.turn > 1 ? `Turno ${gameState.turn}` : 'Início do Jogo';
+  this.incomePlayerName.innerHTML = `
+    <span class="text-yellow-300 font-bold">${player.name}</span><br>
+    <span class="text-sm text-gray-300">${turnText} • Fase de Renda</span>
+  `;
+  
+  // Limpar recursos anteriores
+  this.incomeResources.innerHTML = '';
+  
+  // Verificar se há recursos para mostrar
+  const hasResources = Object.values(income).some(value => value > 0);
+  
+  if (!hasResources) {
+    const noResources = document.createElement('div');
+    noResources.className = 'text-center py-4 text-gray-400';
+    noResources.textContent = 'Nenhum recurso recebido neste turno';
+    this.incomeResources.appendChild(noResources);
+  } else {
+    // Adicionar cada recurso recebido
+    const resourcesToShow = [
+      { key: 'madeira', label: 'Madeira', icon: '🪵' },
+      { key: 'pedra', label: 'Pedra', icon: '🪨' },
+      { key: 'ouro', label: 'Ouro', icon: '🪙' },
+      { key: 'agua', label: 'Água', icon: '💧' },
+      { key: 'pv', label: 'Pontos de Vitória', icon: '⭐' }
+    ];
     
-    if (!modal) {
-      console.log('Criando modal de conquistas...');
-      modal = document.createElement('div');
-      modal.id = 'achievementsModal';
-      modal.className = 'hidden fixed inset-0 z-[110] flex items-center justify-center p-6';
-      modal.innerHTML = `
-        <div class="absolute inset-0 bg-black/70"></div>
-        <div class="relative w-full max-w-4xl bg-gray-900/95 backdrop-blur-md border border-yellow-500/30 rounded-2xl shadow-xl p-6">
-          <div class="flex justify-between items-center mb-6">
-            <h2 class="text-2xl text-yellow-300 font-semibold">🏆 Conquistas</h2>
-            <button id="achievementsModalClose" class="text-gray-300 hover:text-white text-xl">✖</button>
+    resourcesToShow.forEach(({ key, label, icon }) => {
+      const amount = income[key] || 0;
+      if (amount > 0) {
+        const resourceEl = document.createElement('div');
+        resourceEl.className = 'flex items-center justify-between py-2 border-b border-gray-700/50';
+        resourceEl.innerHTML = `
+          <div class="flex items-center gap-2">
+            <span class="text-xl">${icon}</span>
+            <span class="text-gray-200">${label}</span>
           </div>
-          <div id="achievementsModalContent" class="grid grid-cols-1 md:grid-cols-2 gap-4 max-h-[60vh] overflow-y-auto"></div>
-        </div>
-      `;
-      document.body.appendChild(modal);
+          <span class="text-lg font-bold ${key === 'pv' ? 'text-yellow-400' : 'text-green-400'}">+${amount}</span>
+        `;
+        this.incomeResources.appendChild(resourceEl);
+      }
+    });
+  }
+  
+  // Adicionar mensagem de rodapé
+  const footerMsg = document.createElement('div');
+  footerMsg.className = 'mt-4 text-center text-xs text-gray-400';
+  footerMsg.textContent = 'Clique em OK para iniciar suas ações';
+  this.incomeResources.appendChild(footerMsg);
+  
+  // Remover hidden e mostrar modal
+  this.incomeModal.classList.remove('hidden');
+  console.log('Modal de renda exibida para', player.name);
+}
 
-      // Adicionar event listener
-      document.getElementById('achievementsModalClose')?.addEventListener('click', () => {
-        modal.classList.add('hidden');
-      });
+setupIncomeModalListeners() {
+  // Encontrar botão novamente (pode ter sido recriado)
+  const incomeOkBtn = document.getElementById('incomeOkBtn');
+  
+  if (!incomeOkBtn) {
+    console.error('Botão incomeOkBtn não encontrado após recriação');
+    return;
+  }
+  
+  // Remover todos os event listeners existentes
+  const newIncomeOkBtn = incomeOkBtn.cloneNode(true);
+  incomeOkBtn.parentNode.replaceChild(newIncomeOkBtn, incomeOkBtn);
+  
+  // Adicionar novo listener
+  newIncomeOkBtn.addEventListener('click', (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    console.log('Botão OK do modal de renda clicado via setupIncomeModalListeners');
+    
+    if (this.closeIncomeModal) {
+      this.closeIncomeModal();
+    } else {
+      console.error('Método closeIncomeModal não disponível');
+      
+      // Fallback: fechar modal e avançar fase manualmente
+      const modal = document.getElementById('incomeModal');
+      if (modal) modal.classList.add('hidden');
+      
+      if (window.gameState) {
+        window.gameState.currentPhase = 'acoes';
+        if (window.uiManager) {
+          window.uiManager.updateUI();
+          window.uiManager.updateFooter();
+        }
+      }
+    }
+  });
+  
+  // Atualizar referência
+  this.incomeOkBtn = newIncomeOkBtn;
+  
+  console.log('Event listeners do modal de renda configurados com sucesso');
+}
+
+closeIncomeModal() {
+  console.log('Método closeIncomeModal chamado');
+  
+  if (!this.incomeModal) {
+    console.error('Elemento incomeModal não encontrado!');
+    return;
+  }
+  
+  // Fechar modal
+  this.incomeModal.classList.add('hidden');
+  console.log('Modal de renda fechado');
+  
+  // Garantir que estamos mudando para fase de ações
+  if (gameState.gameStarted) {
+    gameState.currentPhase = 'acoes';
+    gameState.actionsLeft = GAME_CONFIG.ACTIONS_PER_TURN;
+    
+    console.log('Fase alterada para: ações, ações restantes:', gameState.actionsLeft);
+    
+    // Atualizar interface
+    setTimeout(() => {
+      if (window.uiManager) {
+        window.uiManager.updateUI();
+        window.uiManager.updateFooter();
+      }
+    }, 50);
+    
+    // Registrar no log de atividades
+    const currentPlayer = getCurrentPlayer();
+    if (currentPlayer) {
+      addActivityLog('phase', currentPlayer.name, 'iniciou fase de ações', '', gameState.turn);
     }
     
-    // Preencher conteúdo
-    const content = document.getElementById('achievementsModalContent');
-    if (!content) return;
-    
-    content.innerHTML = '';
-    
-    // Obter jogador atual
-    const playerIndex = gameState.selectedPlayerForSidebar;
-    const unlockedAchievements = achievementsState.unlockedAchievements[playerIndex] || [];
-    const playerStats = achievementsState.playerAchievements[playerIndex];
-    
-    Object.values(ACHIEVEMENTS_CONFIG).forEach(achievement => {
-      const isUnlocked = unlockedAchievements.includes(achievement.id);
-      
-      const card = document.createElement('div');
-      card.className = `p-4 rounded-lg border ${isUnlocked ? 'border-yellow-500/50 bg-yellow-900/10' : 'border-gray-700/50 bg-gray-800/30'}`;
-      
-      // Determinar progresso
-      let progress = 0;
-      let progressText = '';
-      
-      switch (achievement.type) {
-        case 'explored':
-          progress = playerStats?.explored || 0;
-          progressText = `Exploradas: ${progress}/${achievement.requirement}`;
-          break;
-        case 'built':
-          progress = playerStats?.built || 0;
-          progressText = `Construídas: ${progress}/${achievement.requirement}`;
-          break;
-        case 'negotiated':
-          progress = playerStats?.negotiated || 0;
-          progressText = `Negociações: ${progress}/${achievement.requirement}`;
-          break;
-        case 'collected':
-          progress = playerStats?.collected || 0;
-          progressText = `Regiões coletadas: ${progress}/${achievement.requirement}`;
-          break;
-        case 'biomes':
-          progress = playerStats?.controlledBiomes?.size || 0;
-          const biomesList = playerStats?.controlledBiomes ? Array.from(playerStats.controlledBiomes).join(', ') : 'Nenhum';
-          progressText = `Biomas: ${progress}/${achievement.requirement} (${biomesList})`;
-          break;
-        case 'resources':
-          const resources = playerStats?.maxResources || {};
-          progressText = `
-            Madeira: ${resources.madeira || 0}/${achievement.requirement}<br>
-            Pedra: ${resources.pedra || 0}/${achievement.requirement}<br>
-            Ouro: ${resources.ouro || 0}/${achievement.requirement}<br>
-            Água: ${resources.agua || 0}/${achievement.requirement}
-          `;
-          break;
-        default:
-          progressText = isUnlocked ? '✅ Desbloqueado' : '🔒 Bloqueado';
-      }
-      
-      card.innerHTML = `
-        <div class="flex items-start gap-3">
-          <span class="text-2xl">${achievement.icon}</span>
-          <div class="flex-1">
-            <h3 class="font-bold ${isUnlocked ? 'text-yellow-300' : 'text-gray-300'}">
-              ${achievement.name}
-              ${isUnlocked ? '<span class="text-green-400 ml-2">✓</span>' : ''}
-            </h3>
-            <p class="text-sm text-gray-300 mt-1">${achievement.description}</p>
-            <div class="mt-2 text-xs text-gray-400">${progressText.replace('<br>', '<br>')}</div>
-            ${isUnlocked ? `
-              <div class="mt-2 text-xs text-green-300">
-                <strong>Recompensa:</strong> ${this.getAchievementRewardText(achievement)}
-              </div>
-            ` : ''}
-          </div>
-        </div>
-      `;
-      
-      content.appendChild(card);
-    });
-
-   // MOSTRAR O MODAL
-      modal.classList.remove('hidden');
-
-      // Configurar botão de fechar (se não configurado)
-      const closeBtn = document.getElementById('achievementsModalClose');
-     if (closeBtn && !closeBtn.hasListener) {
-       closeBtn.addEventListener('click', () => {
-         modal.classList.add('hidden');
-       });
-       closeBtn.hasListener = true;
-     }
   }
+}
+
+  // ==================== ACHIEVEMENTS MODAL ====================
+  renderAchievementsModal() {
+  console.log('renderAchievementsModal() chamada');
+
+  let modal = document.getElementById('achievementsModal');
+  
+  if (!modal) {
+    modal = document.createElement('div');
+    modal.id = 'achievementsModal';
+    modal.className = 'hidden fixed inset-0 z-[110] flex items-center justify-center p-6';
+    modal.innerHTML = `
+      <div class="absolute inset-0 bg-black/70"></div>
+      <div class="relative w-full max-w-4xl bg-gray-900/95 backdrop-blur-md border border-yellow-500/30 rounded-2xl shadow-xl p-6">
+        <div class="flex justify-between items-center mb-6">
+          <div>
+            <h2 class="text-2xl text-yellow-300 font-semibold">🏆 Conquistas</h2>
+            <p id="achievementsPlayerName" class="text-gray-300 text-sm"></p>
+          </div>
+          <button id="achievementsModalClose" class="text-gray-300 hover:text-white text-xl">✖</button>
+        </div>
+        <div id="achievementsModalContent" class="grid grid-cols-1 md:grid-cols-2 gap-4 max-h-[60vh] overflow-y-auto"></div>
+      </div>
+    `;
+    document.body.appendChild(modal);
+  }
+  
+  // Preencher conteúdo
+  const content = document.getElementById('achievementsModalContent');
+  const playerNameEl = document.getElementById('achievementsPlayerName');
+  if (!content || !playerNameEl) return;
+  
+  content.innerHTML = '';
+  
+  // Usar o jogador ATUAL (do turno), não o selecionado no sidebar
+  const playerIndex = gameState.currentPlayerIndex;
+  const player = gameState.players[playerIndex];
+  const unlockedAchievements = achievementsState.unlockedAchievements[playerIndex] || [];
+  const playerStats = achievementsState.playerAchievements[playerIndex];
+  
+  // Mostrar nome do jogador
+  playerNameEl.textContent = `Jogador atual: ${player.name}`;
+  
+  // Renderizar TODAS as conquistas
+  Object.values(ACHIEVEMENTS_CONFIG).forEach(achievement => {
+    const isUnlocked = unlockedAchievements.includes(achievement.id);
+    
+    const card = document.createElement('div');
+    card.className = `p-4 rounded-lg border ${isUnlocked ? 'border-yellow-500/50 bg-yellow-900/10' : 'border-gray-700/50 bg-gray-800/30'}`;
+    
+    // Determinar progresso
+    let progress = 0;
+    let progressText = '';
+    
+    switch (achievement.type) {
+      case 'explored':
+        progress = playerStats?.explored || 0;
+        progressText = `Exploradas: ${progress}/${achievement.requirement}`;
+        break;
+      case 'built':
+        progress = playerStats?.built || 0;
+        progressText = `Construídas: ${progress}/${achievement.requirement}`;
+        break;
+      case 'negotiated':
+        progress = playerStats?.negotiated || 0;
+        progressText = `Negociações: ${progress}/${achievement.requirement}`;
+        break;
+      case 'collected':
+        progress = playerStats?.collected || 0;
+        progressText = `Regiões coletadas: ${progress}/${achievement.requirement}`;
+        break;
+      case 'biomes':
+        progress = playerStats?.controlledBiomes?.size || 0;
+        const biomesList = playerStats?.controlledBiomes ? 
+          Array.from(playerStats.controlledBiomes).join(', ') || 'Nenhum' : 'Nenhum';
+        progressText = `Biomas: ${progress}/${achievement.requirement}`;
+        break;
+      case 'resources':
+        const resources = playerStats?.maxResources || {};
+        const resourceCount = Object.values(resources).filter(value => value >= achievement.requirement).length;
+        progress = resourceCount;
+        progressText = `Recursos: ${progress}/4 com ${achievement.requirement}+`;
+        break;
+      default:
+        progressText = isUnlocked ? '✅ Desbloqueado' : '🔒 Bloqueado';
+    }
+    
+    const progressPercent = Math.min(100, (progress / achievement.requirement) * 100);
+    
+    card.innerHTML = `
+      <div class="flex items-start gap-3">
+        <span class="text-2xl">${achievement.icon}</span>
+        <div class="flex-1">
+          <h3 class="font-bold ${isUnlocked ? 'text-yellow-300' : 'text-gray-300'}">
+            ${achievement.name}
+            ${isUnlocked ? '<span class="text-green-400 ml-2">✓</span>' : ''}
+          </h3>
+          <p class="text-sm text-gray-300 mt-1">${achievement.description}</p>
+          
+          <div class="mt-3">
+            <div class="flex justify-between text-xs text-gray-400 mb-1">
+              <span>Progresso</span>
+              <span>${progressPercent.toFixed(0)}%</span>
+            </div>
+            <div class="w-full bg-gray-700 rounded-full h-2">
+              <div class="bg-green-500 h-2 rounded-full" style="width: ${progressPercent}%"></div>
+            </div>
+            <div class="text-xs text-gray-400 mt-1">${progressText}</div>
+          </div>
+          
+          ${isUnlocked ? `
+            <div class="mt-2 text-xs text-green-300">
+              <strong>Recompensa:</strong> ${this.getAchievementRewardText(achievement)}
+            </div>
+          ` : ''}
+        </div>
+      </div>
+    `;
+    
+    content.appendChild(card);
+  });
+
+  // MOSTRAR O MODAL
+  modal.classList.remove('hidden');
+
+  // Configurar botão de fechar
+  const closeBtn = document.getElementById('achievementsModalClose');
+  if (closeBtn && !closeBtn.hasListener) {
+    closeBtn.addEventListener('click', () => {
+      modal.classList.add('hidden');
+    });
+    closeBtn.hasListener = true;
+  }
+}
 
   getAchievementRewardText(achievement) {
     const rewards = {
@@ -1265,97 +1564,185 @@ setupAchievementsButton() {
     }
   }
 
+checkAndFixLoadedState() {
+  // Verificar se há inconsistências no estado carregado
+  if (gameState.gameStarted) {
+    // Garantir que há um jogador atual
+    if (gameState.currentPlayerIndex === undefined || gameState.currentPlayerIndex === null) {
+      gameState.currentPlayerIndex = 0;
+    }
+    
+    // Garantir que há fase definida
+    if (!gameState.currentPhase) {
+      gameState.currentPhase = 'renda';
+    }
+    
+    // Garantir que há ações definidas
+    if (gameState.actionsLeft === undefined) {
+      gameState.actionsLeft = GAME_CONFIG.ACTIONS_PER_TURN;
+    }
+    
+    console.log('Estado verificado e corrigido:', {
+      playerIndex: gameState.currentPlayerIndex,
+      phase: gameState.currentPhase,
+      actions: gameState.actionsLeft
+    });
+  }
+}
+
+restoreUIFromLoadedGame() {
+  // Garantir que todos os elementos estejam visíveis
+  if (gameState.gameStarted) {
+    // Mostrar elementos do jogo
+    const elementsToShow = [
+      'gameNavbar', 'gameContainer', 'sidebar', 'gameMap', 'gameFooter'
+    ];
+    
+    elementsToShow.forEach(id => {
+      const el = document.getElementById(id);
+      if (el) el.classList.remove('hidden');
+    });
+    
+    // Esconder tela inicial e ícone do manual
+    const initialScreen = document.getElementById('initialScreen');
+    if (initialScreen) initialScreen.style.display = 'none';
+    
+    const manualIcon = document.getElementById('manualIcon');
+    if (manualIcon) manualIcon.classList.add('hidden');
+    
+    // Atualizar UI completamente
+    this.updateUI();
+    this.updateFooter();
+    this.renderBoard();
+    this.renderHeaderPlayers();
+    this.renderSidebar(gameState.selectedPlayerForSidebar);
+    
+    console.log('UI restaurada do jogo salvo');
+  }
+}
+
   // ==================== FOOTER & ACTIONS ====================
 
 updateFooter() {
+  // Verificar se o jogo está ativo
+  if (!gameState.gameStarted) {
+    [this.actionExploreBtn, this.actionCollectBtn, this.actionBuildBtn, this.actionNegotiateBtn]
+      .forEach(b => {
+        if (b) b.disabled = true;
+      });
+    
+    if (this.endTurnBtn) {
+      this.endTurnBtn.disabled = true;
+      this.endTurnBtn.textContent = 'Jogo não iniciado';
+    }
+    return;
+  }
+  
   const player = gameState.players[gameState.currentPlayerIndex];
   const regionId = gameState.selectedRegionId;
   
-  // DEFINIR VARIÁVEIS DE FASE AQUI NO INÍCIO
+  // Usar a fase atual corretamente
   const currentPhase = gameState.currentPhase || 'renda';
   const isActionPhase = currentPhase === 'acoes';
   const isNegotiationPhase = currentPhase === 'negociacao';
   
+  // DEFINIR phaseNames AQUI NO INÍCIO DO MÉTODO
   const phaseNames = {
     'renda': '💰 Renda',
     'acoes': '⚡ Ações',
     'negociacao': '🤝 Negociação'
   };
   
-  if (!player || !gameState.gameStarted) {
-    [this.actionExploreBtn, this.actionCollectBtn, this.actionBuildBtn, this.actionNegotiateBtn]
-      .forEach(b => b.disabled = true);
-    this.actionsLeftEl.textContent = `Ações restantes: ${gameState.actionsLeft}`;
-    
-    // Atualizar indicador de fase mesmo quando jogo não começou
-    if (this.phaseIndicator) {
-      this.phaseIndicator.textContent = `Fase: ${phaseNames[currentPhase] || 'Renda'}`;
-    }
-    return;
-  }
+  // Atualizar indicador de fase na navbar
+  this.updatePhaseIndicator();
   
-  // Atualizar indicador de fase
-  if (this.phaseIndicator) {
-    this.phaseIndicator.textContent = `Fase: ${phaseNames[currentPhase] || 'Renda'}`;
-  }
-  
-  // Se não há região selecionada, desabilitar ações de região
-  if (regionId === null || regionId === undefined) {
-    this.actionExploreBtn.disabled = true;
-    this.actionCollectBtn.disabled = true;
-    this.actionBuildBtn.disabled = true;
-    
-    // Negociar pode estar habilitado se estiver na fase certa
-    this.actionNegotiateBtn.disabled = !isNegotiationPhase || gameState.actionsLeft <= 0;
-    
-    this.actionsLeftEl.textContent = `Ações: ${gameState.actionsLeft} | Fase: ${phaseNames[currentPhase]}`;
-    
-    // Atualizar botão de término de turno
-    this.updateEndTurnButton(currentPhase);
-    return;
-  }
-  
-  const region = gameState.regions[regionId];
-  if (!region) {
-    [this.actionExploreBtn, this.actionCollectBtn, this.actionBuildBtn, this.actionNegotiateBtn]
-      .forEach(b => b.disabled = true);
-    return;
-  }
+  // Se não houver jogador atual, sair
+  if (!player) return;
   
   const baseEnabled = gameState.actionsLeft > 0;
-  const isOwnRegion = region.controller === player.id;
-  const isNeutral = region.controller === null;
   
-  // EXPLORAR/ASSUMIR DOMÍNIO
-  if (isNeutral) {
-    const hasEnoughPV = player.victoryPoints >= 2;
-    const canPayBiome = Object.entries(region.resources)
-      .every(([key, value]) => player.resources[key] >= value);
-    this.actionExploreBtn.disabled = !baseEnabled || !isActionPhase || !hasEnoughPV || !canPayBiome;
-    this.actionExploreBtn.textContent = 'Assumir Domínio';
-  } else if (isOwnRegion) {
-    const canAfford = this.canPlayerAffordAction('explorar', player);
-    this.actionExploreBtn.disabled = !baseEnabled || !isActionPhase || !canAfford;
-    this.actionExploreBtn.textContent = 'Explorar';
+  // Configurar botões baseado na fase
+  if (regionId === null || regionId === undefined) {
+    // Sem região selecionada
+    if (this.actionExploreBtn) this.actionExploreBtn.disabled = true;
+    if (this.actionCollectBtn) this.actionCollectBtn.disabled = true;
+    if (this.actionBuildBtn) this.actionBuildBtn.disabled = true;
+    if (this.actionNegotiateBtn) this.actionNegotiateBtn.disabled = !isNegotiationPhase || !baseEnabled;
   } else {
-    this.actionExploreBtn.disabled = true;
-    this.actionExploreBtn.textContent = 'Explorar';
+    const region = gameState.regions[regionId];
+    if (!region) return;
+    
+    const isOwnRegion = region.controller === player.id;
+    const isNeutral = region.controller === null;
+    
+    // Botão Explorar/Assumir Domínio
+    if (isNeutral) {
+      const hasEnoughPV = player.victoryPoints >= 2;
+      const canPayBiome = Object.entries(region.resources)
+        .every(([key, value]) => player.resources[key] >= value);
+      if (this.actionExploreBtn) {
+        this.actionExploreBtn.disabled = !baseEnabled || !isActionPhase || !hasEnoughPV || !canPayBiome;
+        this.actionExploreBtn.textContent = 'Assumir Domínio';
+      }
+    } else if (isOwnRegion) {
+      const canAfford = this.canPlayerAffordAction('explorar', player);
+      if (this.actionExploreBtn) {
+        this.actionExploreBtn.disabled = !baseEnabled || !isActionPhase || !canAfford;
+        this.actionExploreBtn.textContent = 'Explorar';
+      }
+    } else {
+      if (this.actionExploreBtn) {
+        this.actionExploreBtn.disabled = true;
+        this.actionExploreBtn.textContent = 'Explorar';
+      }
+    }
+    
+    // Outros botões
+    if (this.actionBuildBtn) {
+      this.actionBuildBtn.disabled = !baseEnabled || !isActionPhase || !isOwnRegion || 
+                                     !this.canPlayerAffordAction('construir', player);
+    }
+    
+    if (this.actionCollectBtn) {
+      this.actionCollectBtn.disabled = !baseEnabled || !isActionPhase || !isOwnRegion || 
+                                       !this.canPlayerAffordAction('recolher', player);
+    }
+    
+    if (this.actionNegotiateBtn) {
+      this.actionNegotiateBtn.disabled = !baseEnabled || !isNegotiationPhase || 
+                                         !this.canPlayerAffordAction('negociar', player);
+    }
   }
   
-  // OUTRAS AÇÕES
-  this.actionBuildBtn.disabled = !baseEnabled || !isActionPhase || !isOwnRegion || 
-                                 !this.canPlayerAffordAction('construir', player);
-  this.actionCollectBtn.disabled = !baseEnabled || !isActionPhase || !isOwnRegion || 
-                                   !this.canPlayerAffordAction('recolher', player);
-  
-  // NEGOCIAR
-  this.actionNegotiateBtn.disabled = !baseEnabled || !isNegotiationPhase || 
-                                     !this.canPlayerAffordAction('negociar', player);
-  
-  this.actionsLeftEl.textContent = `Ações: ${gameState.actionsLeft} | Fase: ${phaseNames[currentPhase]}`;
+  // Atualizar contador de ações (SOMENTE ações, sem fase)
+  if (this.actionsLeftEl) {
+    this.actionsLeftEl.textContent = `Ações restantes: ${gameState.actionsLeft}`;
+  }
   
   // Atualizar botão de término de turno
-  this.updateEndTurnButton(currentPhase);
+  if (this.endTurnBtn) {
+    switch(currentPhase) {
+      case 'acoes':
+        this.endTurnBtn.disabled = false;
+        this.endTurnBtn.textContent = 'Ir para Negociação';
+        this.endTurnBtn.className = 'px-4 py-2 bg-blue-600 hover:bg-blue-700 rounded-md text-white font-semibold transition';
+        break;
+      case 'negociacao':
+        this.endTurnBtn.disabled = false;
+        this.endTurnBtn.textContent = 'Terminar Turno';
+        this.endTurnBtn.className = 'px-4 py-2 bg-green-600 hover:bg-green-700 rounded-md text-white font-semibold transition';
+        break;
+      case 'renda':
+        this.endTurnBtn.disabled = true;
+        this.endTurnBtn.textContent = 'Aguardando...';
+        this.endTurnBtn.className = 'px-4 py-2 bg-gray-600 rounded-md text-white font-semibold';
+        break;
+      default:
+        this.endTurnBtn.disabled = false;
+        this.endTurnBtn.textContent = 'Terminar Turno';
+        this.endTurnBtn.className = 'px-4 py-2 bg-blue-600 hover:bg-blue-700 rounded-md text-white font-semibold transition';
+    }
+  }
 }
 
 // Método auxiliar para atualizar o botão de término de turno
@@ -1387,32 +1774,52 @@ updateEndTurnButton(currentPhase) {
 
   // ==================== TOOLTIP FUNCTIONS ====================
   showRegionTooltip(region, targetEl) {
-    const owner = region.controller !== null 
-      ? `${gameState.players[region.controller].icon} ${gameState.players[region.controller].name}`
-      : 'Neutro';
-    const structures = region.structures.length ? region.structures.join(', ') : 'Nenhuma';
+  const owner = region.controller !== null 
+    ? `${gameState.players[region.controller].icon} ${gameState.players[region.controller].name}`
+    : 'Neutro';
+  const structures = region.structures.length ? region.structures.join(', ') : 'Nenhuma';
+  
+  this.tooltipTitle.textContent = `${region.name} — ${region.biome}`;
+  this.tooltipBody.innerHTML = `
+    <div class="tooltip-section">
+      <div class="tooltip-section-title">Informações</div>
+      <div class="text-xs text-gray-300">
+        <div class="flex justify-between">
+          <span>Exploração:</span>
+          <span class="font-bold">${region.explorationLevel}⭐</span>
+        </div>
+        <div class="flex justify-between mt-1">
+          <span>Controlado por:</span>
+          <span class="font-bold">${owner}</span>
+        </div>
+        <div class="flex justify-between mt-1">
+          <span>Estruturas:</span>
+          <span class="font-bold">${structures}</span>
+        </div>
+      </div>
+    </div>
     
-    this.tooltipTitle.textContent = `${region.name} — ${region.biome}`;
-    this.tooltipBody.innerHTML = `
-      <div class="text-xs text-gray-300">Exploração <strong>${region.explorationLevel}⭐</strong></div>
-      <div class="text-xs text-gray-300 mt-1">Controlado por <strong>${owner}</strong></div>
-      <div class="text-xs text-gray-300 mt-1">Estruturas <strong>${structures}</strong></div>
-      <div class="text-xs text-gray-300 mt-2">Recursos</div>
-      <div class="mt-1 flex flex-col gap-1">
+    <div class="tooltip-section mt-3">
+      <div class="tooltip-section-title">Recursos</div>
+      <div class="flex items-center justify-between gap-3 mt-1">
         ${Object.entries(region.resources)
+          .filter(([key, value]) => value > 0)
           .map(([key, value]) => `
-            <div class="flex items-center gap-1.5">
+            <div class="flex items-center gap-1">
               <span class="text-base">${RESOURCE_ICONS[key]}</span>
-              <span class="text-xs font-medium">${value}</span>
+              <span class="text-xs font-bold text-white">${value}</span>
             </div>
           `).join('')}
+        ${Object.values(region.resources).filter(v => v > 0).length === 0 ? 
+          '<span class="text-xs text-gray-400">Sem recursos</span>' : ''}
       </div>
-    `;
-    
-    this.regionTooltip.classList.remove('hidden');
-    this.regionTooltip.classList.add('visible');
-    this.positionTooltip(targetEl);
-  }
+    </div>
+  `;
+  
+  this.regionTooltip.classList.remove('hidden');
+  this.regionTooltip.classList.add('visible');
+  this.positionTooltip(targetEl);
+}
 
   positionTooltip(targetEl) {
     const rect = targetEl.getBoundingClientRect();
@@ -1448,6 +1855,28 @@ updateEndTurnButton(currentPhase) {
       parseInt(result[3], 16)
     ] : [255, 255, 255];
   }
+
+// Função para resetar transparência ao padrão
+resetTransparency() {
+  const transparencySlider = document.getElementById('cellTransparencySlider');
+  const transparencyValue = document.getElementById('transparencyValue');
+  
+  if (transparencySlider && transparencyValue) {
+    transparencySlider.value = 15;
+    
+    // Atualizar variáveis CSS
+    document.documentElement.style.setProperty('--cell-bg-opacity', '0.15');
+    document.documentElement.style.setProperty('--cell-blur', '1px');
+    
+    // Atualizar valor exibido
+    transparencyValue.textContent = '15%';
+    
+    // Remover preferência salva
+    localStorage.removeItem('gaia-cell-transparency');
+    
+    window.utils.showFeedback('Transparência resetada para o padrão (15%)', 'info');
+  }
+}
 
   clearRegionSelection() {
     gameState.selectedRegionId = null;

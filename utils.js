@@ -290,30 +290,31 @@ const Utils = {
   
   // Nova função para verificar e oferecer carregamento
   async checkAndOfferLoad() {
-    try {
-      const saved = localStorage.getItem('gaia-dominium-save');
-      if (!saved) return { hasSave: false };
-      
-      const data = JSON.parse(saved);
-      const migratedData = window.migrateSaveData ? window.migrateSaveData(data) : data;
-      
-      const response = await this.showSaveLoadModal();
-      
-      switch (response.action) {
-        case 'load':
-          return { hasSave: true, data: migratedData, load: true };
-        case 'delete':
-          localStorage.removeItem('gaia-dominium-save');
-          this.showFeedback('Save excluído com sucesso!', 'success');
-          return { hasSave: false };
-        default:
-          return { hasSave: true, data: migratedData, load: false };
-      }
-    } catch (error) {
-      console.error('Erro ao verificar save:', error);
-      return { hasSave: false };
+  try {
+    const saved = localStorage.getItem('gaia-dominium-save');
+    if (!saved) return { hasSave: false };
+    
+    const data = JSON.parse(saved);
+    
+    const response = await this.showSaveLoadModal();
+    
+    switch (response.action) {
+      case 'load':
+        // Carregar o jogo
+        window.loadGame(data);
+        return { hasSave: true, data: data, load: true };
+      case 'delete':
+        localStorage.removeItem('gaia-dominium-save');
+        this.showFeedback('Save excluído com sucesso!', 'success');
+        return { hasSave: false };
+      default:
+        return { hasSave: true, data: data, load: false };
     }
+  } catch (error) {
+    console.error('Erro ao verificar save:', error);
+    return { hasSave: false };
   }
+}
   // FIM do objeto Utils - NÃO ADICIONE VÍRGULA AQUI
 };
 
