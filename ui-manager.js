@@ -320,22 +320,6 @@ if (resetBtn) {
       });
     }
 
-// Adicionar listener para clique fora da região
-document.addEventListener('click', (e) => {
-  const isRegionCell = e.target.closest('.board-cell');
-  const isFooterButton = e.target.closest('.action-button, #endTurnBtn');
-  
-  if (!isRegionCell && !isFooterButton && gameState.selectedRegionId !== null) {
-    // Desselecionar região se clicar fora
-    gameState.selectedRegionId = null;
-    document.querySelectorAll('.board-cell').forEach(c => c.classList.remove('region-selected'));
-    
-    // Atualizar UI
-    this.updateFooter();
-    this.renderSidebar(gameState.selectedPlayerForSidebar);
-  }
-});
-
 // Adicionar listener para tecla ESC
 document.addEventListener('keydown', (e) => {
   if (e.key === 'Escape' && this.editingIndex !== null) {
