@@ -114,10 +114,7 @@ const Utils = {
   
   // Função para limpar seleção de região
   clearRegionSelection(gameState) {
-    if (gameState) {
-      gameState.selectedRegionId = null;
-    }
-    document.querySelectorAll('.board-cell').forEach(c => c.classList.remove('region-selected'));
+    // Não será tratado aqui agora
   },
   
   // Função para converter hex para RGB (usada no renderSidebar)
