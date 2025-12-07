@@ -152,29 +152,23 @@
         <div>
           <label class="text-sm text-gray-300">Selecionar alvo</label>
           <select id="negTarget" class="w-full mt-2 bg-gray-800 text-white p-2 rounded-md"></select>
-          <label class="text-sm text-gray-300 mt-4 block">Recursos oferecidos</label>
-          <div class="grid grid-cols-2 gap-2 mt-2">
-            <input type="number" id="offer_madeira" min="0" placeholder="Madeira" class="p-2 bg-gray-800 text-white rounded-md" />
-            <input type="number" id="offer_pedra" min="0" placeholder="Pedra" class="p-2 bg-gray-800 text-white rounded-md" />
-            <input type="number" id="offer_ouro" min="0" placeholder="Ouro" class="p-2 bg-gray-800 text-white rounded-md" />
-            <input type="number" id="offer_agua" min="0" placeholder="Água" class="p-2 bg-gray-800 text-white rounded-md" />
+          <label class="text-sm text-gray-300 mt-4 block">Recursos oferecidos (você possui: <span id="offerResourcesInfo" class="text-yellow-300">0🪵 0🪨 0🪙 0💧</span>)</label>
+          <div id="offerResourcesContainer" class="mt-2 grid grid-cols-2 gap-2">
+            <!-- Os controles serão gerados dinamicamente pelo JavaScript -->
           </div>
           <label class="text-sm text-gray-300 mt-4 block">Regiões oferecidas (selecione)</label>
           <div id="offerRegions" class="mt-2 grid grid-cols-2 gap-2"></div>
         </div>
         <div>
-          <label class="text-sm text-gray-300">Recursos solicitados</label>
-          <div class="grid grid-cols-2 gap-2 mt-2">
-            <input type="number" id="req_madeira" min="0" placeholder="Madeira" class="p-2 bg-gray-800 text-white rounded-md" />
-            <input type="number" id="req_pedra" min="0" placeholder="Pedra" class="p-2 bg-gray-800 text-white rounded-md" />
-            <input type="number" id="req_ouro" min="0" placeholder="Ouro" class="p-2 bg-gray-800 text-white rounded-md" />
-            <input type="number" id="req_agua" min="0" placeholder="Água" class="p-2 bg-gray-800 text-white rounded-md" />
+          <label class="text-sm text-gray-300 mt-4 block">Recursos solicitados (<span id="targetPlayerName" class="text-yellow-300">Ninguém</span> possui: <span id="requestResourcesInfo" class="text-yellow-300">—</span>)</label>
+          <div id="requestResourcesContainer" class="mt-2 grid grid-cols-2 gap-2">
+            <!-- Os controles serão gerados dinamicamente pelo JavaScript -->
           </div>
           <label class="text-sm text-gray-300 mt-4 block">Regiões solicitadas</label>
           <div id="reqRegions" class="mt-2 grid grid-cols-2 gap-2"></div>
           <div class="mt-4 text-right">
             <button id="negCancelBtn" class="px-4 py-2 bg-gray-800 border border-white/6 rounded-md text-white mr-2">Cancelar</button>
-            <button id="negSendBtn" class="px-4 py-2 bg-green-600 rounded-md text-white">Enviar Proposta (custa 1 Ouro)</button>
+            <button id="negSendBtn" class="px-4 py-2 bg-gray-600 rounded-md text-white" disabled>Enviar Proposta (custa 1 Ouro)</button>
           </div>
         </div>
       </div>

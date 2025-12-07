@@ -23,7 +23,14 @@ import {
   clearActiveNegotiation,
   updateNegotiationStatus,
   getPlayerById,
-  setSelectedRegion
+  setSelectedRegion,
+  getNegotiationState,
+  validateNegotiationState,
+  getNegotiationValidationErrors,
+  resetNegotiationState,
+  setNegotiationTarget,
+  updateNegotiationResource,
+  updateNegotiationRegions
 } from './game-state.js';
 
 import { 
@@ -44,6 +51,26 @@ class GameLogic {
   constructor() {
     this.GAME_EVENTS = GAME_EVENTS; // Usar a importação
   }
+
+getNegotiationState() {
+  return getNegotiationState();
+}
+
+updateNegotiationResource(type, resourceKey, value) {
+  updateNegotiationResource(type, resourceKey, value);
+}
+
+updateNegotiationRegions(type, regionIds) {
+  updateNegotiationRegions(type, regionIds);
+}
+
+setNegotiationTarget(targetId) {
+  setNegotiationTarget(targetId);
+}
+
+validateCurrentNegotiation() {
+  return validateNegotiationState();
+}
 
   // ==================== INICIALIZAÇÃO ====================
 
@@ -520,38 +547,54 @@ class GameLogic {
 
   // ==================== NEGOCIAR ====================
 
-  handleNegotiate() {
-    console.log('Fase atual ao tentar negociar:', gameState.currentPhase); // Para debug
-    // Verificar se está na fase correta
-    if (gameState.currentPhase !== 'negociacao') {
-      window.utils.showFeedback('Negociação só é permitida na fase de Negociação.', 'warning');
-      return;
-    }
-    
-    const player = getCurrentPlayer();
-    
-    // Verificar se tem ouro suficiente
-    if (player.resources.ouro < 1) {
-      window.utils.showFeedback('Você precisa de 1 Ouro para negociar.', 'error');
-      return;
-    }
-    
-    // VERIFICAR ações restantes SEM CONSUMIR
-    if (gameState.actionsLeft <= 0) {
-      window.utils.showFeedback('Sem ações restantes para negociar.', 'warning');
-      return;
-    }
-    
-    // NÃO CONSUMIR AÇÃO AQUI - Só abrir o modal
-    // O ouro será consumido apenas ao enviar a proposta
-    
-    // Abrir modal de negociação
-    if (window.uiManager && window.uiManager.openNegotiationModal) {
-      window.uiManager.openNegotiationModal();
-    } else {
-      console.error('UI Manager não disponível para abrir modal de negociação');
-    }
+handleNegotiate() {
+  console.log('Fase atual ao tentar negociar:', gameState.currentPhase);
+  
+  if (gameState.currentPhase !== 'negociacao') {
+    window.utils.showFeedback('Negociação só é permitida na fase de Negociação.', 'warning');
+    return;
   }
+  
+  const player = getCurrentPlayer();
+  
+  if (player.resources.ouro < 1) {
+    window.utils.showFeedback('Você precisa de 1 Ouro para negociar.', 'error');
+    return;
+  }
+  
+  if (gameState.actionsLeft <= 0) {
+    window.utils.showFeedback('Sem ações restantes para negociar.', 'warning');
+    return;
+  }
+  
+  // CHAMAR O NOVO MÓDULO DIRETAMENTE
+  console.log('Chamando novo modal de negociação');
+  
+  if (window.uiManager) {
+    // Vamos garantir que estamos chamando o método correto
+    if (typeof window.uiManager.openNegotiationModal === 'function') {
+      // Primeiro, vamos substituir o método antigo pelo novo
+      console.log('Substituindo método openNegotiationModal');
+      
+      // Salvar o método antigo se necessário
+      const oldMethod = window.uiManager.openNegotiationModal;
+      
+      // Definir novo método
+      window.uiManager.openNegotiationModal = function() {
+        console.log('Executando NOVO openNegotiationModal');
+        this.openNegotiationModalNew();
+      }.bind(window.uiManager);
+      
+      // Chamar o método (que agora é o novo)
+      window.uiManager.openNegotiationModal();
+    } else if (window.uiManager.openNegotiationModalNew) {
+      // Se o novo método existir, usar diretamente
+      window.uiManager.openNegotiationModalNew();
+    }
+  } else {
+    console.error('UI Manager não disponível');
+  }
+}
 
   // Garantir funções para negociação
   setupNegotiationPhase() {
@@ -587,175 +630,162 @@ class GameLogic {
   }
 
   // Enviar porposta de negociação
-  async handleSendNegotiation() {
-    const player = getCurrentPlayer();
-    
-    // Verificar se ainda tem ações
-    if (gameState.actionsLeft <= 0) {
-      window.utils.showFeedback('Sem ações restantes para negociar.', 'warning');
-      return;
-    }
-    
-    // Verificar se tem ouro suficiente
-    if (player.resources.ouro < 1) {
-      window.utils.showFeedback('Você precisa de 1 Ouro para negociar.', 'error');
-      return;
-    }
-    
-    // Coletar dados do formulário
-    const targetId = parseInt(document.getElementById('negTarget').value);
-    const targetPlayer = gameState.players[targetId];
-    
-    if (!targetPlayer) {
-      window.utils.showFeedback('Jogador alvo inválido.', 'error');
-      return;
-    }
-    
-    // Coletar recursos oferecidos
-    const offer = {
-      madeira: parseInt(document.getElementById('offer_madeira').value) || 0,
-      pedra: parseInt(document.getElementById('offer_pedra').value) || 0,
-      ouro: parseInt(document.getElementById('offer_ouro').value) || 0,
-      agua: parseInt(document.getElementById('offer_agua').value) || 0,
-      regions: []
-    };
-    
-    // Coletar recursos solicitados
-    const request = {
-      madeira: parseInt(document.getElementById('req_madeira').value) || 0,
-      pedra: parseInt(document.getElementById('req_pedra').value) || 0,
-      ouro: parseInt(document.getElementById('req_ouro').value) || 0,
-      agua: parseInt(document.getElementById('req_agua').value) || 0,
-      regions: []
-    };
-    
-    // Coletar regiões oferecidas
-    document.querySelectorAll('#offerRegions input[type="checkbox"]:checked').forEach(chk => {
-      offer.regions.push(parseInt(chk.value));
-    });
-    
-    // Coletar regiões solicitadas
-    document.querySelectorAll('#reqRegions input[type="checkbox"]:checked').forEach(chk => {
-      request.regions.push(parseInt(chk.value));
-    });
-    
-    // Validar que há algo para negociar
-    const totalOffer = Object.values(offer).reduce((a, b) => a + (Array.isArray(b) ? b.length : b), 0);
-    const totalRequest = Object.values(request).reduce((a, b) => a + (Array.isArray(b) ? b.length : b), 0);
-    
-    if (totalOffer === 0 && totalRequest === 0) {
-      window.utils.showFeedback('A proposta deve incluir oferta ou solicitação.', 'error');
-      return;
-    }
-    
-    // Validar proposta
-    const error = this.validateNegotiationOffer(offer, player);
-    if (error) {
-      window.utils.showFeedback(error, 'error');
-      return;
-    }
-    
-    // Validar que o alvo tem os recursos solicitados
-    const targetResourcesValid = ['madeira', 'pedra', 'ouro', 'agua'].every(k => 
-      (request[k] || 0) <= targetPlayer.resources[k]
-    );
-    
-    if (!targetResourcesValid) {
-      window.utils.showFeedback('O jogador alvo não possui os recursos solicitados.', 'error');
-      return;
-    }
-    
-    // Validar que o alvo controla as regiões solicitadas
-    const targetRegionsValid = request.regions.every(rid => 
-      targetPlayer.regions.includes(rid)
-    );
-    
-    if (!targetRegionsValid) {
-      window.utils.showFeedback('O jogador alvo não controla todas as regiões solicitadas.', 'error');
-      return;
-    }
-    
-    // Confirmar envio da proposta
-    const confirm = await window.utils.showConfirm(
-      'Enviar Proposta',
-      `Enviar proposta para ${targetPlayer.name}?\n\nA proposta será enviada e aguardará resposta.`
-    );
-    
-    if (!confirm) return;
-    
-    // Consumir ação e ouro APENAS AQUI
-    if (!this.performAction('negociar')) return;
-    player.resources.ouro -= 1;
-    
-    // Criar objeto de negociação com ID único
-    const negotiation = {
-      id: 'neg_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9),
-      initiatorId: player.id,
-      targetId: targetPlayer.id,
-      offer: {
-        madeira: parseInt(document.getElementById('offer_madeira').value) || 0,
-        pedra: parseInt(document.getElementById('offer_pedra').value) || 0,
-        ouro: parseInt(document.getElementById('offer_ouro').value) || 0,
-        agua: parseInt(document.getElementById('offer_agua').value) || 0,
-        regions: []
-      },
-      request: {
-        madeira: parseInt(document.getElementById('req_madeira').value) || 0,
-        pedra: parseInt(document.getElementById('req_pedra').value) || 0,
-        ouro: parseInt(document.getElementById('req_ouro').value) || 0,
-        agua: parseInt(document.getElementById('req_agua').value) || 0,
-        regions: []
-      },
-      timestamp: Date.now(),
-      turn: gameState.turn,
-      status: 'pending'
-    };
-    
-    // Coletar regiões oferecidas
-    document.querySelectorAll('#offerRegions input[type="checkbox"]:checked').forEach(chk => {
-      negotiation.offer.regions.push(parseInt(chk.value));
-    });
-    
-    // Coletar regiões solicitadas
-    document.querySelectorAll('#reqRegions input[type="checkbox"]:checked').forEach(chk => {
-      negotiation.request.regions.push(parseInt(chk.value));
-    });
-    
-    // Adicionar à lista de propostas pendentes
-    addPendingNegotiation(negotiation);
-    
-    // Fechar modal de criação
-    if (window.uiManager && window.uiManager.closeNegotiationModal) {
-      window.uiManager.closeNegotiationModal();
-    }
-    
-    // Mostrar notificação para o destinatário
-    if (window.uiManager && window.uiManager.showNegotiationNotification) {
-      setTimeout(() => {
-        window.uiManager.showNegotiationNotification(negotiation);
-      }, 500);
-    }
-    
-    // Registrar envio no log
-    addActivityLog({
-      type: 'negotiate',
-      playerName: player.name,
-      action: 'enviou proposta para',
-      details: `${targetPlayer.name}`,
-      turn: gameState.turn
-    });
-    
-    // Mostrar feedback para o remetente
-    window.utils.showFeedback(`Proposta enviada para ${targetPlayer.name}! Aguardando resposta.`, 'success');
-    
-    // Atualizar UI
-    if (window.uiManager) {
-      window.uiManager.updateUI();
-      window.uiManager.updateFooter();
-    }
-    
-    return true;
+async handleSendNegotiation() {
+  console.log('🔄 Iniciando envio de proposta de negociação');
+  
+  const player = getCurrentPlayer();
+  const negotiationState = getNegotiationState();
+  console.log('Estado da negociação:', negotiationState);
+  
+  // Verificações básicas
+  if (gameState.currentPhase !== 'negociacao') {
+    console.log('❌ Fase incorreta:', gameState.currentPhase);
+    window.utils.showFeedback('Negociação só é permitida na fase de Negociação.', 'warning');
+    return false;
   }
+  
+  if (gameState.actionsLeft <= 0) {
+    console.log('❌ Sem ações restantes');
+    window.utils.showFeedback('Sem ações restantes para negociar.', 'warning');
+    return false;
+  }
+  
+  if (player.resources.ouro < 1) {
+    console.log('❌ Sem ouro suficiente');
+    window.utils.showFeedback('Você precisa de 1 Ouro para negociar.', 'error');
+    return false;
+  }
+  
+  if (!negotiationState.targetPlayerId) {
+     console.log('❌ Alvo não definido');
+    window.utils.showFeedback('Selecione um jogador alvo.', 'error');
+    return false;
+  }
+  
+  const targetPlayer = gameState.players.find(p => p.id === negotiationState.targetPlayerId);
+  if (!targetPlayer) {
+    window.utils.showFeedback('Jogador alvo inválido.', 'error');
+    return false;
+  }
+  
+  // Validar proposta usando o estado atual
+  console.log('Validando estado de negociação:', negotiationState);
+  const isValid = validateNegotiationState();
+  
+  if (!isValid) {
+    const errors = getNegotiationValidationErrors();
+    const errorMessage = errors.length > 0 ? errors[0] : 'Proposta inválida';
+    window.utils.showFeedback(errorMessage, 'error');
+    return false;
+  }
+  
+  // Confirmar envio
+  const confirm = await window.utils.showConfirm(
+    'Enviar Proposta',
+    `Enviar proposta para ${targetPlayer.name}?\n\nA proposta será enviada e aguardará resposta.`
+  );
+  
+  if (!confirm) {
+    console.log('Usuário cancelou envio');
+    return false;
+  }
+  
+  // CONSUMIR AÇÃO E OURO APENAS AQUI
+  console.log('Consumindo ação e ouro para negociação');
+  
+  // Consumir ação
+  if (!this.performAction('negociar')) {
+    window.utils.showFeedback('Erro ao consumir ação.', 'error');
+    return false;
+  }
+  
+  // Consumir ouro
+  player.resources.ouro -= 1;
+  
+  // Criar objeto de negociação com ID único
+  const negotiation = {
+    id: 'neg_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9),
+    initiatorId: player.id,
+    targetId: targetPlayer.id,
+    offer: {
+      madeira: negotiationState.offer.madeira || 0,
+      pedra: negotiationState.offer.pedra || 0,
+      ouro: negotiationState.offer.ouro || 0,
+      agua: negotiationState.offer.agua || 0,
+      regions: negotiationState.offerRegions || []
+    },
+    request: {
+      madeira: negotiationState.request.madeira || 0,
+      pedra: negotiationState.request.pedra || 0,
+      ouro: negotiationState.request.ouro || 0,
+      agua: negotiationState.request.agua || 0,
+      regions: negotiationState.requestRegions || []
+    },
+    timestamp: Date.now(),
+    turn: gameState.turn,
+    status: 'pending'
+  };
+  
+  console.log('Proposta criada:', negotiation);
+  
+  // Adicionar à lista de propostas pendentes
+  try {
+    addPendingNegotiation(negotiation);
+    console.log('Proposta adicionada às pendentes');
+  } catch (error) {
+    console.error('Erro ao adicionar proposta pendente:', error);
+    window.utils.showFeedback('Erro ao enviar proposta.', 'error');
+    return false;
+  }
+  
+  // Fechar modal de criação
+  if (window.uiManager && window.uiManager.closeNegotiationModal) {
+    window.uiManager.closeNegotiationModal();
+  } else {
+    // Fallback
+    const modal = document.getElementById('negotiationModal');
+    if (modal) modal.classList.add('hidden');
+    document.body.classList.remove('modal-active');
+  }
+  
+  // Resetar estado da negociação
+  resetNegotiationState();
+  
+  // Mostrar notificação para o destinatário
+  if (window.uiManager && window.uiManager.showNegotiationNotification) {
+    setTimeout(() => {
+      window.uiManager.showNegotiationNotification(negotiation);
+    }, 500);
+  }
+  
+  // Registrar envio no log
+  addActivityLog({
+    type: 'negotiate',
+    playerName: player.name,
+    action: 'enviou proposta para',
+    details: `${targetPlayer.name}`,
+    turn: gameState.turn
+  });
+  
+  // Mostrar feedback para o remetente
+  window.utils.showFeedback(`✅ Proposta enviada para ${targetPlayer.name}! Aguardando resposta.`, 'success');
+  
+  // Atualizar UI
+  if (window.uiManager) {
+    window.uiManager.updateUI();
+    window.uiManager.updateFooter();
+  }
+  
+  // Atualizar conquistas
+  achievementsState.totalNegotiations++;
+  if (achievementsState.playerAchievements[player.id]) {
+    achievementsState.playerAchievements[player.id].negotiated = 
+      (achievementsState.playerAchievements[player.id].negotiated || 0) + 1;
+  }
+  
+  console.log('✅ Proposta enviada com sucesso!');
+  return true;
+}
 
   // MÉTODOS DE RESPOSTA NEGOCIAÇÃO
 

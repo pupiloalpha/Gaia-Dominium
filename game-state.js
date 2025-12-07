@@ -31,11 +31,23 @@ const INITIAL_ACHIEVEMENTS_STATE = {
 
 const LOG_HISTORY_LIMIT = 15;
 
+// ==================== CONSTANTES DE NEGOCIAÇÃO ====================
+const NEGOTIATION_INITIAL_STATE = {
+  offer: { madeira: 0, pedra: 0, ouro: 0, agua: 0 },
+  request: { madeira: 0, pedra: 0, ouro: 0, agua: 0 },
+  offerRegions: [],
+  requestRegions: [],
+  targetPlayerId: null,
+  isValid: false,
+  validationErrors: []
+};
+
 // ==================== VARIÁVEIS DE ESTADO ====================
 let gameState = { ...INITIAL_STATE };
 let achievementsState = { ...INITIAL_ACHIEVEMENTS_STATE };
 let activityLogHistory = [];
 let currentPhase = 'renda'; // Fase atual: 'renda', 'acoes', 'negociacao'
+let negotiationState = { ...NEGOTIATION_INITIAL_STATE };
 
 // ==================== GETTERS ====================
 function getGameState() { 
@@ -72,6 +84,28 @@ function getPlayerById(id) {
   return gameState.players.find(p => p.id === id);
 }
 
+// Getter para estado de negociação
+function getNegotiationState() {
+  return { ...negotiationState };
+}
+
+// Getter para validar se o jogador pode negociar
+function canPlayerNegotiate(playerId) {
+  const player = getPlayerById(playerId);
+  if (!player) return false;
+  
+  // Verifica se tem ouro para negociar (custo base)
+  if (player.resources.ouro < 1) return false;
+  
+  // Verifica se está na fase de negociação
+  if (currentPhase !== 'negociacao') return false;
+  
+  // Verifica se tem ações restantes
+  if (gameState.actionsLeft <= 0) return false;
+  
+  return true;
+}
+
 // ==================== SETTERS ====================
 function setGameState(newState) {
   Object.keys(newState).forEach(key => {
@@ -95,6 +129,43 @@ function setCurrentPhase(phase) {
 
 function setActivityLogHistory(logs) {
   activityLogHistory = Array.isArray(logs) ? [...logs] : [];
+}
+
+function setNegotiationState(newState) {
+  // Garantir que não substituímos completamente, apenas atualizamos
+  Object.keys(newState).forEach(key => {
+    if (negotiationState.hasOwnProperty(key)) {
+      // Para objetos aninhados, mesclar em vez de substituir
+      if (typeof negotiationState[key] === 'object' && !Array.isArray(negotiationState[key])) {
+        negotiationState[key] = { ...negotiationState[key], ...newState[key] };
+      } else {
+        negotiationState[key] = newState[key];
+      }
+    }
+  });
+}
+
+function resetNegotiationState() {
+  negotiationState = { ...NEGOTIATION_INITIAL_STATE };
+}
+
+function updateNegotiationResource(type, resource, amount) {
+  // type: 'offer' ou 'request'
+  // resource: 'madeira', 'pedra', 'ouro', 'agua'
+  if (negotiationState[type] && negotiationState[type][resource] !== undefined) {
+    negotiationState[type][resource] = Math.max(0, amount);
+  }
+}
+
+function updateNegotiationRegions(type, regionIds) {
+  // type: 'offerRegions' ou 'requestRegions'
+  if (negotiationState[type] !== undefined) {
+    negotiationState[type] = Array.isArray(regionIds) ? [...regionIds] : regionIds;
+  }
+}
+
+function setNegotiationTarget(targetPlayerId) {
+  negotiationState.targetPlayerId = targetPlayerId;
 }
 
 // ==================== MANIPULAÇÃO DE ESTADO ====================
@@ -256,6 +327,80 @@ function clearPendingNegotiation() {
   gameState.pendingNegotiation = null;
 }
 
+function validateNegotiationState() {
+  const errors = [];
+  const initiator = getCurrentPlayer();
+  const target = negotiationState.targetPlayerId !== null 
+    ? getPlayerById(negotiationState.targetPlayerId)
+    : null;
+  
+  if (!initiator || !target) {
+    errors.push('Jogadores não identificados');
+    negotiationState.isValid = false;
+    negotiationState.validationErrors = errors;
+    return false;
+  }
+  
+  // Validar recursos oferecidos
+  Object.entries(negotiationState.offer).forEach(([resource, amount]) => {
+    if (amount > 0 && amount > (initiator.resources[resource] || 0)) {
+      errors.push(`Você não tem ${amount} ${resource} para oferecer`);
+    }
+  });
+  
+  // Validar recursos solicitados
+  Object.entries(negotiationState.request).forEach(([resource, amount]) => {
+    if (amount > 0 && amount > (target.resources[resource] || 0)) {
+      errors.push(`${target.name} não tem ${amount} ${resource} para trocar`);
+    }
+  });
+  
+  // Validar regiões oferecidas
+  negotiationState.offerRegions.forEach(regionId => {
+    if (!initiator.regions.includes(regionId)) {
+      const regionName = gameState.regions[regionId]?.name || `Região ${regionId}`;
+      errors.push(`Você não controla a região oferecida: ${regionName}`);
+    }
+  });
+  
+  // Validar regiões solicitadas
+  negotiationState.requestRegions.forEach(regionId => {
+    if (!target.regions.includes(regionId)) {
+      const regionName = gameState.regions[regionId]?.name || `Região ${regionId}`;
+      errors.push(`${target.name} não controla a região solicitada: ${regionName}`);
+    }
+  });
+  
+  // Validar que há algo para negociar
+  const totalOffer = Object.values(negotiationState.offer).reduce((a, b) => a + b, 0) + 
+                     negotiationState.offerRegions.length;
+  const totalRequest = Object.values(negotiationState.request).reduce((a, b) => a + b, 0) + 
+                       negotiationState.requestRegions.length;
+  
+  if (totalOffer === 0 && totalRequest === 0) {
+    errors.push('A proposta deve incluir oferta ou solicitação');
+  }
+  
+  // Validar que o jogador tem ouro para negociar
+  if (initiator.resources.ouro < 1) {
+    errors.push('Você precisa de 1 Ouro para negociar');
+  }
+  
+  // Validar ações restantes
+  if (gameState.actionsLeft <= 0) {
+    errors.push('Sem ações restantes para negociar');
+  }
+  
+  negotiationState.validationErrors = errors;
+  negotiationState.isValid = errors.length === 0;
+  
+  return negotiationState.isValid;
+}
+
+function getNegotiationValidationErrors() {
+  return [...negotiationState.validationErrors];
+}
+
 // ==================== VERIFICAÇÕES DE ESTADO ====================
 function hasPlayerWon() {
   return gameState.players.some(p => p.victoryPoints >= GAME_CONFIG.VICTORY_POINTS);
@@ -369,6 +514,7 @@ export {
   achievementsState,
   activityLogHistory,
   currentPhase,
+  negotiationState,
   
   // Getters
   getGameState,
@@ -379,12 +525,21 @@ export {
   getCurrentPlayer,
   getSelectedRegion,
   getPlayerById,
+  getNegotiationState,
+  canPlayerNegotiate,
+  getNegotiationValidationErrors,
   
   // Setters
   setGameState,
   setAchievementsState,
   setCurrentPhase,
   setActivityLogHistory,
+  setNegotiationState,
+  resetNegotiationState,
+  updateNegotiationResource,
+  updateNegotiationRegions,
+  setNegotiationTarget,
+  validateNegotiationState,
   
   // Manipulação de estado
   addActivityLog,

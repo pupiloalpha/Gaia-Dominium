@@ -22,7 +22,15 @@ import {
   removePendingNegotiation,
   setActiveNegotiation,
   clearActiveNegotiation,
-  updateNegotiationStatus
+  updateNegotiationStatus,
+  getNegotiationState,
+  setNegotiationState,
+  resetNegotiationState,
+  updateNegotiationResource,
+  updateNegotiationRegions,
+  setNegotiationTarget,
+  validateNegotiationState,
+  getNegotiationValidationErrors
 } from './game-state.js';
 
 import { 
@@ -92,6 +100,23 @@ class UIManager {
     
     // Garantir que o gameState seja acessível globalmente para compatibilidade
     window.gameState = gameState;
+
+// Debug global para negociação
+window.debugNegotiation = () => {
+  console.log('=== DEBUG NEGOCIAÇÃO ===');
+  console.log('gameState.currentPhase:', gameState.currentPhase);
+  console.log('gameState.actionsLeft:', gameState.actionsLeft);
+  console.log('Negotiation State:', getNegotiationState());
+  console.log('Current Player:', getCurrentPlayer());
+  console.log('UI Manager:', this);
+  console.log('gameLogic disponível:', !!window.gameLogic);
+  console.log('handleSendNegotiation:', window.gameLogic?.handleSendNegotiation);
+  
+  // Testar validação
+  const isValid = validateNegotiationState();
+  console.log('Validação:', isValid);
+  console.log('Erros:', getNegotiationValidationErrors());
+};
   }
 
   // ==================== INICIALIZAÇÃO ====================
@@ -213,125 +238,469 @@ class UIManager {
   }
 
   setupEventListeners() {
-  // Player registration
-  this.addPlayerBtn?.addEventListener('click', () => this.handleAddPlayer());
-  this.cancelEditBtn?.addEventListener('click', () => this.cancelEdit());
-  this.startGameBtn?.addEventListener('click', () => this.handleStartGame());
-  
-  // Action buttons
-  this.actionExploreBtn?.addEventListener('click', () => window.gameLogic.handleExplore());
-  this.actionCollectBtn?.addEventListener('click', () => window.gameLogic.handleCollect());
-  this.actionBuildBtn?.addEventListener('click', () => this.openStructureModal());
-  this.actionNegotiateBtn?.addEventListener('click', () => window.gameLogic.handleNegotiate());
-  this.endTurnBtn?.addEventListener('click', () => window.gameLogic.handleEndTurn());
-  
-  // Manual
-  document.getElementById('manualIcon')?.addEventListener('click', () => this.openManual());
-  document.getElementById('manualIconNavbar')?.addEventListener('click', () => this.openManual());
-  document.getElementById('manualCloseBtn')?.addEventListener('click', () => this.closeManual());
-  
-  // Manual tabs
-  this.manualTabs.forEach(t => t.addEventListener('click', (e) => this.handleManualTabClick(e)));
-  
-  // Structure modal
-  this.structureModalClose?.addEventListener('click', () => this.closeStructureModal());
-  
-  // Fechar modal ao clicar fora
-  this.structureModal?.addEventListener('click', (e) => {
-    if (e.target === this.structureModal) {
-      this.closeStructureModal();
-    }
-  });
-
-  // Controle de transparência
-  this.setupTransparencyControls();
-  
-  // Achievements modal
-  console.log('Configurando achievementsNavBtn:', this.achievementsNavBtn);
-  if (this.achievementsNavBtn) {
-    this.achievementsNavBtn.addEventListener('click', () => {
-      console.log('Botão de conquistas clicado!');
-      this.renderAchievementsModal();
+    // Player registration
+    this.addPlayerBtn?.addEventListener('click', () => this.handleAddPlayer());
+    this.cancelEditBtn?.addEventListener('click', () => this.cancelEdit());
+    this.startGameBtn?.addEventListener('click', () => this.handleStartGame());
+    
+    // Action buttons
+    this.actionExploreBtn?.addEventListener('click', () => window.gameLogic.handleExplore());
+    this.actionCollectBtn?.addEventListener('click', () => window.gameLogic.handleCollect());
+    this.actionBuildBtn?.addEventListener('click', () => this.openStructureModal());
+    this.actionNegotiateBtn?.addEventListener('click', () => window.gameLogic.handleNegotiate());
+    this.endTurnBtn?.addEventListener('click', () => window.gameLogic.handleEndTurn());
+    
+    // Manual
+    document.getElementById('manualIcon')?.addEventListener('click', () => this.openManual());
+    document.getElementById('manualIconNavbar')?.addEventListener('click', () => this.openManual());
+    document.getElementById('manualCloseBtn')?.addEventListener('click', () => this.closeManual());
+    
+    // Manual tabs
+    this.manualTabs.forEach(t => t.addEventListener('click', (e) => this.handleManualTabClick(e)));
+    
+    // Structure modal
+    this.structureModalClose?.addEventListener('click', () => this.closeStructureModal());
+    
+    // Fechar modal ao clicar fora
+    this.structureModal?.addEventListener('click', (e) => {
+      if (e.target === this.structureModal) {
+        this.closeStructureModal();
+      }
     });
-  } else {
-    console.error('achievementsNavBtn não encontrado!');
-  }
 
-  // Event modal
-  this.eventOkBtn?.addEventListener('click', () => this.closeEventModal());
-  this.eventBannerClose?.addEventListener('click', () => this.hideEventBanner());
-  
-  // Victory modal
-  this.victoryModalClose?.addEventListener('click', () => this.closeVictoryModal());
-  
-  // Negotiation modals
-  this.negSendBtn?.addEventListener('click', (e) => {
-    e.stopPropagation();
-    window.gameLogic.handleSendNegotiation();
-  });
+    // Controle de transparência
+    this.setupTransparencyControls();
+    
+    // Achievements modal
+    console.log('Configurando achievementsNavBtn:', this.achievementsNavBtn);
+    if (this.achievementsNavBtn) {
+      this.achievementsNavBtn.addEventListener('click', () => {
+        console.log('Botão de conquistas clicado!');
+        this.renderAchievementsModal();
+      });
+    } else {
+      console.error('achievementsNavBtn não encontrado!');
+    }
 
-  this.negCancelBtn?.addEventListener('click', (e) => {
-    e.stopPropagation();
-    this.closeNegotiationModal();
-  });
+    // Event modal
+    this.eventOkBtn?.addEventListener('click', () => this.closeEventModal());
+    this.eventBannerClose?.addEventListener('click', () => this.hideEventBanner());
+    
+    // Victory modal
+    this.victoryModalClose?.addEventListener('click', () => this.closeVictoryModal());
+    
+    // Negotiation modals
+    this.negSendBtn?.addEventListener('click', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      console.log('Botão de envio de proposta clicado (listener básico)');
+  
+      // Chamar diretamente o método do gameLogic
+      if (window.gameLogic && typeof window.gameLogic.handleSendNegotiation === 'function') {
+        window.gameLogic.handleSendNegotiation();
+      } else {
+        console.error('gameLogic ou handleSendNegotiation não disponível');
+        window.utils.showFeedback('Erro ao enviar proposta. Tente novamente.', 'error');
+      }
+    });
 
-  this.negTargetSelect?.addEventListener('change', () => this.populateReqRegions());
-  
-  // Activity Log filters
-  this.logFilterAll?.addEventListener('click', () => this.renderActivityLog('all'));
-  this.logFilterMine?.addEventListener('click', () => this.renderActivityLog('mine'));
-  this.logFilterEvents?.addEventListener('click', () => this.renderActivityLog('events'));
-  this.logFilterAllSidebar?.addEventListener('click', () => this.renderActivityLog('all'));
-  this.logFilterMineSidebar?.addEventListener('click', () => this.renderActivityLog('mine'));
-  this.logFilterEventsSidebar?.addEventListener('click', () => this.renderActivityLog('events'));
-  
-  // Header player buttons
-  if (this.playerHeaderList) {
-    this.playerHeaderList.addEventListener('click', (e) => {
-      const button = e.target.closest('button[data-index]');
-      if (button) {
-        const idx = Number(button.dataset.index);
-        gameState.selectedPlayerForSidebar = idx;
-        this.renderSidebar(idx);
+    this.negCancelBtn?.addEventListener('click', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      this.closeNegotiationModal();
+    });
+
+    this.negTargetSelect?.addEventListener('change', () => {
+      // Atualizar estado com novo alvo
+      const targetId = parseInt(this.negTargetSelect.value);
+      if (setNegotiationTarget) {
+        setNegotiationTarget(targetId);
+      }
+      
+      // Atualizar UI
+      this.populateReqRegions();
+      this.updateNegotiationUI();
+      this.validateNegotiation();
+    });
+    
+    // Activity Log filters
+    this.logFilterAll?.addEventListener('click', () => this.renderActivityLog('all'));
+    this.logFilterMine?.addEventListener('click', () => this.renderActivityLog('mine'));
+    this.logFilterEvents?.addEventListener('click', () => this.renderActivityLog('events'));
+    this.logFilterAllSidebar?.addEventListener('click', () => this.renderActivityLog('all'));
+    this.logFilterMineSidebar?.addEventListener('click', () => this.renderActivityLog('mine'));
+    this.logFilterEventsSidebar?.addEventListener('click', () => this.renderActivityLog('events'));
+    
+    // Header player buttons
+    if (this.playerHeaderList) {
+      this.playerHeaderList.addEventListener('click', (e) => {
+        const button = e.target.closest('button[data-index]');
+        if (button) {
+          const idx = Number(button.dataset.index);
+          gameState.selectedPlayerForSidebar = idx;
+          this.renderSidebar(idx);
+        }
+      });
+    }
+
+    // Listener global para desselecionar regiões - VERSÃO CORRIGIDA
+    document.addEventListener('click', (e) => {
+      // Verificar se clique NÃO é em célula, botão de ação ou footer
+      const isRegionCell = e.target.closest('.board-cell');
+      const isActionButton = e.target.closest('.action-btn, #endTurnBtn');
+      const isGameFooter = e.target.closest('#gameFooter');
+      const isModal = e.target.closest('[id$="Modal"]');
+      const isStructureOption = e.target.closest('.structure-option');
+      
+      // Se clicou fora de todos esses elementos E há uma região selecionada
+      if (!isRegionCell && !isActionButton && !isGameFooter && !isModal && 
+          !isStructureOption && gameState.selectedRegionId !== null) {
+        
+        console.log('Clique fora - desselecionando região:', gameState.selectedRegionId);
+        
+        // Desselecionar região
+        document.querySelectorAll('.board-cell').forEach(c => {
+          c.classList.remove('region-selected');
+        });
+        gameState.selectedRegionId = null;
+        
+        // Atualizar UI
+        this.updateFooter();
+        this.renderSidebar(gameState.selectedPlayerForSidebar);
+      }
+    });
+
+    // Adicionar listener para tecla ESC
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && this.editingIndex !== null) {
+        e.preventDefault();
+        this.cancelEdit();
       }
     });
   }
 
-  // Listener global para desselecionar regiões - VERSÃO CORRIGIDA
-  document.addEventListener('click', (e) => {
-    // Verificar se clique NÃO é em célula, botão de ação ou footer
-    const isRegionCell = e.target.closest('.board-cell');
-    const isActionButton = e.target.closest('.action-btn, #endTurnBtn');
-    const isGameFooter = e.target.closest('#gameFooter');
-    const isModal = e.target.closest('[id$="Modal"]');
-    const isStructureOption = e.target.closest('.structure-option');
+  // ==================== MÉTODOS DE NEGOCIAÇÃO VISUAL ====================
+  createResourceControl(resourceKey, resourceName, maxAmount, currentAmount, type) {
+    const control = document.createElement('div');
+    control.className = 'flex items-center justify-between p-2 bg-gray-800/60 rounded';
     
-    // Se clicou fora de todos esses elementos E há uma região selecionada
-    if (!isRegionCell && !isActionButton && !isGameFooter && !isModal && 
-        !isStructureOption && gameState.selectedRegionId !== null) {
-      
-      console.log('Clique fora - desselecionando região:', gameState.selectedRegionId);
-      
-      // Desselecionar região
-      document.querySelectorAll('.board-cell').forEach(c => {
-        c.classList.remove('region-selected');
-      });
-      gameState.selectedRegionId = null;
-      
-      // Atualizar UI
-      this.updateFooter();
-      this.renderSidebar(gameState.selectedPlayerForSidebar);
-    }
-  });
+    const label = document.createElement('span');
+    label.className = 'text-sm text-gray-300';
+    label.innerHTML = `${RESOURCE_ICONS[resourceKey]} ${resourceName}`;
+    
+    const controls = document.createElement('div');
+    controls.className = 'flex items-center gap-2';
+    
+    // Botão diminuir
+    const decreaseBtn = document.createElement('button');
+    decreaseBtn.className = 'w-8 h-8 rounded-full bg-gray-700 text-white flex items-center justify-center hover:bg-gray-600 disabled:opacity-30';
+    decreaseBtn.innerHTML = '−';
+    decreaseBtn.disabled = currentAmount <= 0;
+    decreaseBtn.addEventListener('click', () => {
+      this.adjustNegotiationResource(resourceKey, type, -1);
+    });
+    
+    // Valor atual
+    const valueSpan = document.createElement('span');
+    valueSpan.className = 'text-white font-bold min-w-8 text-center';
+    valueSpan.id = `${type}_${resourceKey}_value`;
+    valueSpan.textContent = currentAmount;
+    
+    // Botão aumentar
+    const increaseBtn = document.createElement('button');
+    increaseBtn.className = 'w-8 h-8 rounded-full bg-gray-700 text-white flex items-center justify-center hover:bg-gray-600 disabled:opacity-30';
+    increaseBtn.innerHTML = '+';
+    increaseBtn.disabled = currentAmount >= maxAmount;
+    increaseBtn.addEventListener('click', () => {
+      this.adjustNegotiationResource(resourceKey, type, 1);
+    });
+    
+    // Indicador de máximo
+    const maxSpan = document.createElement('span');
+    maxSpan.className = 'text-xs text-gray-400 ml-2';
+    maxSpan.textContent = `(max: ${maxAmount})`;
+    
+    controls.appendChild(decreaseBtn);
+    controls.appendChild(valueSpan);
+    controls.appendChild(increaseBtn);
+    controls.appendChild(maxSpan);
+    
+    control.appendChild(label);
+    control.appendChild(controls);
+    
+    return control;
+  }
 
-  // Adicionar listener para tecla ESC
-  document.addEventListener('keydown', (e) => {
-    if (e.key === 'Escape' && this.editingIndex !== null) {
-      e.preventDefault();
-      this.cancelEdit();
+  adjustNegotiationResource(resourceKey, type, delta) {
+    // Obtém estado atual
+    const negotiationState = getNegotiationState();
+    const current = negotiationState[type][resourceKey] || 0;
+    
+    // Calcula máximo disponível
+    let max = 0;
+    if (type === 'offer') {
+      const currentPlayer = getCurrentPlayer();
+      max = currentPlayer.resources[resourceKey] || 0;
+    } else {
+      // Para request, precisa do jogador alvo
+      const targetSelect = document.getElementById('negTarget');
+      const targetId = targetSelect ? parseInt(targetSelect.value) : null;
+      if (targetId !== null) {
+        const targetPlayer = gameState.players.find(p => p.id === targetId);
+        if (targetPlayer) {
+          max = targetPlayer.resources[resourceKey] || 0;
+        }
+      }
     }
-  });
-}
+    
+    // Calcula novo valor (limitado entre 0 e max)
+    const newValue = Math.max(0, Math.min(max, current + delta));
+    
+    // Atualiza estado
+    updateNegotiationResource(type, resourceKey, newValue);
+    
+    // Atualiza UI
+    this.updateNegotiationUI();
+    this.validateNegotiation();
+    
+    console.log(`Negociação ${type}.${resourceKey}: ${current} → ${newValue} (max: ${max})`);
+  }
+
+  updateNegotiationUI() {
+    const negotiationState = getNegotiationState();
+    const currentPlayer = getCurrentPlayer();
+    const targetSelect = document.getElementById('negTarget');
+    const targetId = targetSelect ? parseInt(targetSelect.value) : null;
+    const targetPlayer = targetId !== null ? gameState.players.find(p => p.id === targetId) : null;
+    
+    // Atualiza todos os controles visuais
+    ['madeira', 'pedra', 'ouro', 'agua'].forEach(resource => {
+      // Para oferta
+      const offerValue = negotiationState.offer[resource] || 0;
+      const offerMax = currentPlayer ? currentPlayer.resources[resource] || 0 : 0;
+      const offerValueEl = document.getElementById(`offer_${resource}_value`);
+      if (offerValueEl) {
+        offerValueEl.textContent = offerValue;
+        // Atualiza botões
+        const offerDecreaseBtn = offerValueEl.previousElementSibling;
+        const offerIncreaseBtn = offerValueEl.nextElementSibling;
+        if (offerDecreaseBtn) offerDecreaseBtn.disabled = offerValue <= 0;
+        if (offerIncreaseBtn) offerIncreaseBtn.disabled = offerValue >= offerMax;
+      }
+      
+      // Para solicitação
+      const requestValue = negotiationState.request[resource] || 0;
+      const requestMax = targetPlayer ? targetPlayer.resources[resource] || 0 : 0;
+      const requestValueEl = document.getElementById(`request_${resource}_value`);
+      if (requestValueEl) {
+        requestValueEl.textContent = requestValue;
+        // Atualiza botões
+        const requestDecreaseBtn = requestValueEl.previousElementSibling;
+        const requestIncreaseBtn = requestValueEl.nextElementSibling;
+        if (requestDecreaseBtn) requestDecreaseBtn.disabled = requestValue <= 0;
+        if (requestIncreaseBtn) requestIncreaseBtn.disabled = requestValue >= requestMax;
+      }
+    });
+    
+    // Atualiza informações dos jogadores
+    this.updateNegotiationInfo();
+  }
+
+  updateNegotiationInfo() {
+    const currentPlayer = getCurrentPlayer();
+    const targetSelect = document.getElementById('negTarget');
+    const targetId = targetSelect ? parseInt(targetSelect.value) : null;
+    const targetPlayer = targetId !== null ? gameState.players.find(p => p.id === targetId) : null;
+    
+    // Atualiza informações do jogador atual (oferta)
+    if (currentPlayer) {
+      const offerInfo = Object.entries(currentPlayer.resources)
+        .map(([key, value]) => `${value}${RESOURCE_ICONS[key]}`)
+        .join(' ');
+      const offerInfoEl = document.getElementById('offerResourcesInfo');
+      if (offerInfoEl) offerInfoEl.textContent = offerInfo;
+    }
+    
+    // Atualiza informações do jogador alvo (solicitação)
+    if (targetPlayer) {
+      const targetNameEl = document.getElementById('targetPlayerName');
+      if (targetNameEl) targetNameEl.textContent = targetPlayer.name;
+      
+      const requestInfo = Object.entries(targetPlayer.resources)
+        .map(([key, value]) => `${value}${RESOURCE_ICONS[key]}`)
+        .join(' ');
+      const requestInfoEl = document.getElementById('requestResourcesInfo');
+      if (requestInfoEl) requestInfoEl.textContent = requestInfo;
+    } else {
+      const targetNameEl = document.getElementById('targetPlayerName');
+      if (targetNameEl) targetNameEl.textContent = 'Ninguém';
+      const requestInfoEl = document.getElementById('requestResourcesInfo');
+      if (requestInfoEl) requestInfoEl.textContent = '—';
+    }
+  }
+
+  validateNegotiation() {
+    const currentPlayer = getCurrentPlayer();
+    const targetSelect = document.getElementById('negTarget');
+    const targetId = targetSelect ? parseInt(targetSelect.value) : null;
+    
+    if (!targetId || targetId === currentPlayer.id) {
+      this.updateSendButton(false, 'Selecione um jogador diferente de você');
+      return false;
+    }
+    
+    const isValid = validateNegotiationState();
+    const errors = getNegotiationValidationErrors();
+    
+    if (isValid) {
+      this.updateSendButton(true, 'Enviar proposta (custa 1 Ouro)');
+    } else {
+      const errorMessage = errors.length > 0 ? errors[0] : 'Proposta inválida';
+      this.updateSendButton(false, errorMessage);
+    }
+    
+    return isValid;
+  }
+
+  updateSendButton(enabled, tooltip = '') {
+    const sendBtn = document.getElementById('negSendBtn');
+    if (!sendBtn) return;
+    
+    sendBtn.disabled = !enabled;
+    sendBtn.title = tooltip;
+    
+    if (enabled) {
+      sendBtn.classList.remove('bg-gray-600');
+      sendBtn.classList.add('bg-green-600', 'hover:bg-green-700');
+    } else {
+      sendBtn.classList.remove('bg-green-600', 'hover:bg-green-700');
+      sendBtn.classList.add('bg-gray-600');
+    }
+  }
+
+  populateNegotiationControls() {
+    const offerContainer = document.getElementById('offerResourcesContainer');
+    const requestContainer = document.getElementById('requestResourcesContainer');
+    
+    if (!offerContainer || !requestContainer) return;
+    
+    // Limpa containers
+    offerContainer.innerHTML = '';
+    requestContainer.innerHTML = '';
+    
+    const resourceNames = {
+      madeira: 'Madeira',
+      pedra: 'Pedra',
+      ouro: 'Ouro',
+      agua: 'Água'
+    };
+    
+    // Cria controles para oferta
+    Object.entries(resourceNames).forEach(([key, name]) => {
+      const currentPlayer = getCurrentPlayer();
+      const max = currentPlayer ? currentPlayer.resources[key] || 0 : 0;
+      const current = 0; // Inicia com 0
+      
+      const control = this.createResourceControl(key, name, max, current, 'offer');
+      offerContainer.appendChild(control);
+    });
+    
+    // Cria controles para solicitação (inicialmente com máximo 0)
+    Object.entries(resourceNames).forEach(([key, name]) => {
+      const control = this.createResourceControl(key, name, 0, 0, 'request');
+      requestContainer.appendChild(control);
+    });
+  }
+
+  // Novo Modal de Negociação
+  openNegotiationModalNew() {
+    console.log('Abrindo modal de negociação com controles visuais');
+    
+    // Resetar estado
+    resetNegotiationState();
+    
+    // Configurar modal
+    document.body.classList.add('modal-active');
+    gameState.selectedRegionId = null;
+    document.querySelectorAll('.board-cell').forEach(c => c.classList.remove('region-selected'));
+    
+    const initiator = getCurrentPlayer();
+    
+    // Preencher seleção de alvo
+    this.negTargetSelect.innerHTML = '';
+    gameState.players.forEach(p => {
+      if (p.id !== initiator.id) {
+        const opt = document.createElement('option');
+        opt.value = p.id;
+        opt.textContent = `${p.icon} ${p.name}`;
+        this.negTargetSelect.appendChild(opt);
+      }
+    });
+    
+    if (this.negTargetSelect.options.length === 0) {
+      window.utils.showFeedback('Nenhum outro jogador disponível para negociar.', 'warning');
+      document.body.classList.remove('modal-active');
+      return;
+    }
+    
+    // Selecionar primeiro jogador por padrão
+    if (this.negTargetSelect.options.length > 0) {
+      this.negTargetSelect.value = this.negTargetSelect.options[0].value;
+      setNegotiationTarget(parseInt(this.negTargetSelect.value));
+    }
+    
+    // Preencher controles visuais
+    this.populateNegotiationControls();
+    
+    // Configurar regiões oferecidas
+    this.offerRegionsDiv.innerHTML = '';
+    initiator.regions.forEach(rid => {
+      const region = gameState.regions[rid];
+      const chkWrap = document.createElement('label');
+      chkWrap.className = 'flex items-center gap-2 p-2 bg-gray-800/60 rounded cursor-pointer hover:bg-gray-700/60';
+      
+      const chk = document.createElement('input');
+      chk.type = 'checkbox';
+      chk.value = rid;
+      chk.className = 'rounded negotiation-checkbox';
+      chk.dataset.type = 'offer';
+      chk.dataset.region = rid;
+      chk.addEventListener('change', (e) => {
+        const regionId = parseInt(e.target.value);
+        const currentRegions = [...getNegotiationState().offerRegions];
+        let newRegions;
+        
+        if (e.target.checked) {
+          newRegions = [...currentRegions, regionId];
+        } else {
+          newRegions = currentRegions.filter(id => id !== regionId);
+        }
+        
+        updateNegotiationRegions('offerRegions', newRegions);
+        this.validateNegotiation();
+      });
+      
+      const span = document.createElement('span');
+      span.className = 'text-sm text-white';
+      span.textContent = `${region.name} (${region.biome})`;
+      
+      chkWrap.appendChild(chk);
+      chkWrap.appendChild(span);
+      this.offerRegionsDiv.appendChild(chkWrap);
+    });
+    
+    // Preencher regiões solicitadas (será atualizado quando mudar alvo)
+    this.populateReqRegions();
+    
+    // Atualizar UI inicial
+    this.updateNegotiationUI();
+    this.validateNegotiation();
+        // Configurar listeners aprimorados APÓS criar todos os elementos
+        this.setupEnhancedNegotiationListeners();
+    
+    // Mostrar modal
+    this.negotiationModal.classList.remove('hidden');
+  }
 
   setupTransparencyControls() {
     const transparencySlider = document.getElementById('cellTransparencySlider');
@@ -838,63 +1207,57 @@ class UIManager {
     cell.appendChild(resourcesLine);
     cell.appendChild(footer);
     
+    cell.addEventListener('click', (e) => {
+      e.stopPropagation();
+      
+      const regionId = Number(cell.dataset.regionId);
+      
+      // Verificar se não está clicando em um modal
+      const clickedInModal = e.target.closest('[id$="Modal"]') || 
+                            e.target.closest('#negotiationModal') || 
+                            e.target.closest('#negResponseModal');
+      
+      if (clickedInModal) {
+        console.log('Clique bloqueado - está em modal');
+        return;
+      }
+      
+      console.log('Clique na região:', regionId, 'Seleção atual:', gameState.selectedRegionId);
+      
+      // Alternar seleção SIMPLES
+      if (gameState.selectedRegionId === regionId) {
+        // Desselecionar
+        gameState.selectedRegionId = null;
+        cell.classList.remove('region-selected');
+        console.log('Região desselecionada:', regionId);
+      } else {
+        // Selecionar nova região
+        const previousSelected = gameState.selectedRegionId;
+        gameState.selectedRegionId = regionId;
+        
+        // Remover seleção anterior
+        if (previousSelected !== null) {
+          const prevCell = document.querySelector(`.board-cell[data-region-id="${previousSelected}"]`);
+          if (prevCell) prevCell.classList.remove('region-selected');
+        }
+        
+        // Adicionar seleção atual
+        cell.classList.add('region-selected');
+        console.log('Região selecionada:', regionId);
+      }
+      
+      // Atualizar sidebar e footer
+      this.renderSidebar(gameState.selectedPlayerForSidebar);
+      this.updateFooter();
+    });
+    
+    // Tooltip events
     cell.addEventListener('mouseenter', (e) => this.showRegionTooltip(region, e.currentTarget));
     cell.addEventListener('mousemove', (e) => this.positionTooltip(e.currentTarget));
     cell.addEventListener('mouseleave', () => this.hideRegionTooltip());
     
-    cell.addEventListener('click', (e) => {
-    // Prevenir propagação mas SEM bloqueios complexos
-    e.stopPropagation();
-    
-    const regionId = Number(cell.dataset.regionId);
-    
-    // Verificar se não está clicando em um modal
-    const clickedInModal = e.target.closest('[id$="Modal"]') || 
-                          e.target.closest('#negotiationModal') || 
-                          e.target.closest('#negResponseModal');
-    
-    if (clickedInModal) {
-      console.log('Clique bloqueado - está em modal');
-      return;
-    }
-    
-    // Log para debug
-    console.log('Clique na região:', regionId, 'Seleção atual:', gameState.selectedRegionId);
-    
-    // Alternar seleção SIMPLES
-    if (gameState.selectedRegionId === regionId) {
-      // Desselecionar
-      gameState.selectedRegionId = null;
-      cell.classList.remove('region-selected');
-      console.log('Região desselecionada:', regionId);
-    } else {
-      // Selecionar nova região
-      const previousSelected = gameState.selectedRegionId;
-      gameState.selectedRegionId = regionId;
-      
-      // Remover seleção anterior
-      if (previousSelected !== null) {
-        const prevCell = document.querySelector(`.board-cell[data-region-id="${previousSelected}"]`);
-        if (prevCell) prevCell.classList.remove('region-selected');
-      }
-      
-      // Adicionar seleção atual
-      cell.classList.add('region-selected');
-      console.log('Região selecionada:', regionId);
-    }
-    
-    // Atualizar sidebar e footer
-    this.renderSidebar(gameState.selectedPlayerForSidebar);
-    this.updateFooter();
-  });
-  
-  // Tooltip events (mantido)
-  cell.addEventListener('mouseenter', (e) => this.showRegionTooltip(region, e.currentTarget));
-  cell.addEventListener('mousemove', (e) => this.positionTooltip(e.currentTarget));
-  cell.addEventListener('mouseleave', () => this.hideRegionTooltip());
-  
-  return cell;
-}
+    return cell;
+  }
 
   renderControlledRegions(player) {
     if (player.regions.length === 0) {
@@ -2100,140 +2463,249 @@ class UIManager {
 
   // ==================== MODAIS DE NEGOCIAÇÃO ====================
   openNegotiationModal() {
-  // Usar GameCore para controlar estado do modal
-  window.GaiaDominium.gameCore?.startNegotiation();
-  
-  document.body.classList.add('modal-active');
-  gameState.selectedRegionId = null;
-  document.querySelectorAll('.board-cell').forEach(c => c.classList.remove('region-selected'));
-  
-  const initiator = gameState.players[gameState.currentPlayerIndex];
-  
-  this.negTargetSelect.innerHTML = '';
-  gameState.players.forEach(p => {
-    if (p.id !== initiator.id) {
-      const opt = document.createElement('option');
-      opt.value = p.id;
-      opt.textContent = `${p.icon} ${p.name}`;
-      this.negTargetSelect.appendChild(opt);
+    console.log('🔧 Abrindo NOVO modal de negociação com controles visuais');
+    
+    // Resetar estado
+    if (resetNegotiationState) {
+      resetNegotiationState();
+    } else {
+      console.warn('resetNegotiationState não disponível');
     }
-  });
-  
-  if (this.negTargetSelect.options.length === 0) {
-    window.utils.showFeedback('Nenhum outro jogador disponível para negociar.', 'warning');
-    document.body.classList.remove('modal-active');
-    window.GaiaDominium.gameCore?.endNegotiation();
-    return;
-  }
-
-  // Configurar regiões oferecidas
-  this.offerRegionsDiv.innerHTML = '';
-  initiator.regions.forEach(rid => {
-    const chkWrap = document.createElement('label');
-    chkWrap.className = 'flex items-center gap-2 p-2 bg-gray-800/60 rounded cursor-pointer hover:bg-gray-700/60';
     
-    const chk = document.createElement('input');
-    chk.type = 'checkbox';
-    chk.value = rid;
-    chk.className = 'rounded negotiation-checkbox';
-    chk.dataset.type = 'offer';
-    chk.dataset.region = rid;
+    // Configurar modal
+    document.body.classList.add('modal-active');
+    gameState.selectedRegionId = null;
+    document.querySelectorAll('.board-cell').forEach(c => c.classList.remove('region-selected'));
     
-    const span = document.createElement('span');
-    span.className = 'text-sm text-white';
-    span.textContent = `${gameState.regions[rid].name} (${gameState.regions[rid].biome})`;
+    const initiator = getCurrentPlayer();
     
-    chkWrap.appendChild(chk);
-    chkWrap.appendChild(span);
-    this.offerRegionsDiv.appendChild(chkWrap);
-  });
-
-  this.populateReqRegions();
-
-  // Event listeners mínimos para inputs
-  const resourceIds = [
-    'offer_madeira', 'offer_pedra', 'offer_ouro', 'offer_agua',
-    'req_madeira', 'req_pedra', 'req_ouro', 'req_agua'
-  ];
-  
-  resourceIds.forEach(id => {
-    const input = document.getElementById(id);
-    if (input) {
-      // Remover listeners antigos
-      const newInput = input.cloneNode(true);
-      input.parentNode.replaceChild(newInput, input);
-      
-      // Adicionar listener simples
-      document.getElementById(id).addEventListener('input', (e) => {
-        const value = parseInt(e.target.value) || 0;
-        const [type, resource] = id.split('_');
+    // Preencher seleção de alvo
+    if (!this.negTargetSelect) {
+      console.error('Elemento negTargetSelect não encontrado');
+      return;
+    }
+    
+    this.negTargetSelect.innerHTML = '';
+    gameState.players.forEach(p => {
+      if (p.id !== initiator.id) {
+        const opt = document.createElement('option');
+        opt.value = p.id;
+        opt.textContent = `${p.icon} ${p.name}`;
+        this.negTargetSelect.appendChild(opt);
+      }
+    });
+    
+    if (this.negTargetSelect.options.length === 0) {
+      window.utils.showFeedback('Nenhum outro jogador disponível para negociar.', 'warning');
+      document.body.classList.remove('modal-active');
+      return;
+    }
+    
+    // Selecionar primeiro jogador por padrão
+    if (this.negTargetSelect.options.length > 0) {
+      this.negTargetSelect.value = this.negTargetSelect.options[0].value;
+      if (setNegotiationTarget) {
+        setNegotiationTarget(parseInt(this.negTargetSelect.value));
+      }
+    }
+    
+    // Preencher controles visuais - CRÍTICO
+    console.log('Criando controles visuais...');
+    this.populateNegotiationControls();
+    
+    // Configurar regiões oferecidas
+    if (this.offerRegionsDiv) {
+      this.offerRegionsDiv.innerHTML = '';
+      initiator.regions.forEach(rid => {
+        const region = gameState.regions[rid];
+        if (!region) return;
         
-        if (type === 'offer') {
-          window.GaiaDominium.gameCore?.turnBuffer.updateNegotiationOffer(resource, value);
-        } else if (type === 'req') {
-          window.GaiaDominium.gameCore?.turnBuffer.updateNegotiationRequest(resource, value);
-        }
+        const chkWrap = document.createElement('label');
+        chkWrap.className = 'flex items-center gap-2 p-2 bg-gray-800/60 rounded cursor-pointer hover:bg-gray-700/60';
+        
+        const chk = document.createElement('input');
+        chk.type = 'checkbox';
+        chk.value = rid;
+        chk.className = 'rounded negotiation-checkbox';
+        chk.dataset.type = 'offer';
+        chk.dataset.region = rid;
+        
+        chk.addEventListener('change', (e) => {
+          const regionId = parseInt(e.target.value);
+          let currentRegions = [];
+          if (getNegotiationState) {
+            currentRegions = [...getNegotiationState().offerRegions];
+          }
+          
+          let newRegions;
+          if (e.target.checked) {
+            newRegions = [...currentRegions, regionId];
+          } else {
+            newRegions = currentRegions.filter(id => id !== regionId);
+          }
+          
+          if (updateNegotiationRegions) {
+            updateNegotiationRegions('offerRegions', newRegions);
+          }
+          
+          if (this.validateNegotiation) {
+            this.validateNegotiation();
+          }
+        });
+        
+        const span = document.createElement('span');
+        span.className = 'text-sm text-white';
+        span.textContent = `${region.name} (${region.biome})`;
+        
+        chkWrap.appendChild(chk);
+        chkWrap.appendChild(span);
+        this.offerRegionsDiv.appendChild(chkWrap);
       });
     }
-  });
-
-  // Listener simples para checkboxes
-  const updateRegionSelections = () => {
-    const offerRegions = [];
-    const requestRegions = [];
     
-    document.querySelectorAll('#offerRegions input[type="checkbox"]:checked').forEach(chk => {
-      offerRegions.push(parseInt(chk.value));
+    // Preencher regiões solicitadas
+    if (this.populateReqRegions && typeof this.populateReqRegions === 'function') {
+      this.populateReqRegions();
+    }
+    
+    // Atualizar UI inicial
+    if (this.updateNegotiationUI && typeof this.updateNegotiationUI === 'function') {
+      this.updateNegotiationUI();
+    }
+    
+    if (this.validateNegotiation && typeof this.validateNegotiation === 'function') {
+      this.validateNegotiation();
+    }
+    
+    this.setupEnhancedNegotiationListeners();
+
+    // Mostrar modal
+    if (this.negotiationModal) {
+      this.negotiationModal.classList.remove('hidden');
+      console.log('✅ Modal de negociação aberto com controles visuais');
+    } else {
+      console.error('Elemento negotiationModal não encontrado');
+    }
+  }
+
+  setupEnhancedNegotiationListeners() {
+      console.log('🔧 Configurando listeners aprimorados para negociação');
+  
+      // Configurar botão de envio com verificação robusta
+      const sendBtn = document.getElementById('negSendBtn');
+      if (sendBtn) {
+        // Remover todos os listeners anteriores
+        const newSendBtn = sendBtn.cloneNode(true);
+        sendBtn.parentNode.replaceChild(newSendBtn, sendBtn);
+    
+        // Adicionar novo listener direto
+        document.getElementById('negSendBtn').addEventListener('click', async (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          
+          console.log('🎯 Botão de envio aprimorado clicado');
+      
+          // Verificar se o modal ainda está aberto
+          const modal = document.getElementById('negotiationModal');
+          if (!modal || modal.classList.contains('hidden')) {
+             console.log('Modal fechado, ignorando clique');
+            return;
+          }
+      
+      // Verificar validação usando o método local
+      if (!this.validateNegotiation()) {
+        const errorMessage = document.getElementById('negSendBtn')?.title || 'Proposta inválida';
+        console.log('Validação falhou:', errorMessage);
+        window.utils.showFeedback(errorMessage, 'error');
+        return;
+      }
+      
+      // Verificar gameLogic
+      if (!window.gameLogic) {
+        console.error('window.gameLogic não disponível');
+        window.utils.showFeedback('Sistema de jogo não carregado', 'error');
+        return;
+      }
+      
+      if (typeof window.gameLogic.handleSendNegotiation !== 'function') {
+        console.error('handleSendNegotiation não é uma função');
+        window.utils.showFeedback('Função de envio não disponível', 'error');
+        return;
+      }
+      
+      try {
+        console.log('📤 Chamando handleSendNegotiation...');
+        // Chamar diretamente com o contexto correto
+        const result = await window.gameLogic.handleSendNegotiation();
+        console.log('Resultado do envio:', result);
+        
+        // Se retornou false, não fechar o modal automaticamente
+        if (result === false) {
+          console.log('Envio falhou, mantendo modal aberto');
+        }
+      } catch (error) {
+        console.error('❌ Erro ao enviar proposta:', error);
+        window.utils.showFeedback(`Erro: ${error.message}`, 'error');
+      }
     });
     
-    document.querySelectorAll('#reqRegions input[type="checkbox"]:checked').forEach(chk => {
-      requestRegions.push(parseInt(chk.value));
-    });
-    
-    window.GaiaDominium.gameCore?.turnBuffer.setNegotiationRegions(offerRegions, requestRegions);
-  };
-  
-  // Adicionar listeners aos checkboxes
-  document.querySelectorAll('#offerRegions input[type="checkbox"]').forEach(chk => {
-    chk.addEventListener('change', updateRegionSelections);
-  });
-  
-  document.querySelectorAll('#reqRegions input[type="checkbox"]').forEach(chk => {
-    chk.addEventListener('change', updateRegionSelections);
-  });
-
-  this.negotiationModal.classList.remove('hidden');
+    console.log('✅ Listener aprimorado configurado para negSendBtn');
+  } else {
+    console.error('❌ Botão negSendBtn não encontrado para configurar listener');
+  }
 }
 
   populateReqRegions() {
-  const targetId = parseInt(this.negTargetSelect.value);
-  this.reqRegionsDiv.innerHTML = '';
-  const target = gameState.players.find(p => p.id === targetId);
-  if (!target) return;
-  
-  target.regions.forEach(rid => {
-    const chkWrap = document.createElement('label');
-    chkWrap.className = 'flex items-center gap-2 p-2 bg-gray-800/60 rounded cursor-pointer hover:bg-gray-700/60';
+    const targetId = parseInt(this.negTargetSelect.value);
+    this.reqRegionsDiv.innerHTML = '';
     
-    const chk = document.createElement('input');
-    chk.type = 'checkbox';
-    chk.value = rid;
-    chk.className = 'rounded negotiation-checkbox';
-    chk.dataset.type = 'request';
-    chk.dataset.region = rid;
+    if (isNaN(targetId)) return;
     
-    const span = document.createElement('span');
-    span.className = 'text-sm text-white';
-    span.textContent = `${gameState.regions[rid].name} (${gameState.regions[rid].biome})`;
+    const target = gameState.players.find(p => p.id === targetId);
+    if (!target) return;
     
-    chkWrap.appendChild(chk);
-    chkWrap.appendChild(span);
-    this.reqRegionsDiv.appendChild(chkWrap);
-  });
-  
-  // Atualizar buffer com target selecionado
-  window.GaiaDominium.gameCore?.turnBuffer.setNegotiationTarget(targetId);
-}
+    // Atualizar estado com o alvo selecionado
+    setNegotiationTarget(targetId);
+    
+    target.regions.forEach(rid => {
+      const region = gameState.regions[rid];
+      const chkWrap = document.createElement('label');
+      chkWrap.className = 'flex items-center gap-2 p-2 bg-gray-800/60 rounded cursor-pointer hover:bg-gray-700/60';
+      
+      const chk = document.createElement('input');
+      chk.type = 'checkbox';
+      chk.value = rid;
+      chk.className = 'rounded negotiation-checkbox';
+      chk.dataset.type = 'request';
+      chk.dataset.region = rid;
+      chk.addEventListener('change', (e) => {
+        const regionId = parseInt(e.target.value);
+        const currentRegions = [...getNegotiationState().requestRegions];
+        let newRegions;
+        
+        if (e.target.checked) {
+          newRegions = [...currentRegions, regionId];
+        } else {
+          newRegions = currentRegions.filter(id => id !== regionId);
+        }
+        
+        updateNegotiationRegions('requestRegions', newRegions);
+        this.validateNegotiation();
+      });
+      
+      const span = document.createElement('span');
+      span.className = 'text-sm text-white';
+      span.textContent = `${region.name} (${region.biome})`;
+      
+      chkWrap.appendChild(chk);
+      chkWrap.appendChild(span);
+      this.reqRegionsDiv.appendChild(chkWrap);
+    });
+    
+    // Atualizar UI dos controles de recursos (para atualizar máximos)
+    this.updateNegotiationUI();
+    this.validateNegotiation();
+  }
 
   closeNegotiationModal() {
     this.negotiationModal.classList.add('hidden');
