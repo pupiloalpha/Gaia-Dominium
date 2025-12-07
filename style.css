@@ -177,7 +177,7 @@ input[type="text"]:focus, select:focus, input[type="number"]:focus {
 }
 
 /* ============================================
-   CÉLULAS DO TABULEIRO - TRANSPARÊNCIA AUMENTADA
+   CÉLULAS DO TABULEIRO
    ============================================ */
 
 .board-cell {
@@ -203,8 +203,8 @@ input[type="text"]:focus, select:focus, input[type="number"]:focus {
   inset: 0;
   background: linear-gradient(
     135deg,
-    rgba(255, 255, 255, 0.02) 0%,   /* REDUZIDO: de 0.03 para 0.02 */
-    rgba(255, 255, 255, 0.008) 100% /* REDUZIDO: de 0.01 para 0.008 */
+    rgba(255, 255, 255, 0.02) 0%,
+    rgba(255, 255, 255, 0.008) 100%
   );
   z-index: -1;
   border-radius: 5px;
@@ -216,7 +216,7 @@ input[type="text"]:focus, select:focus, input[type="number"]:focus {
   transform: translateY(-1px);
 }
 
-/* Estados das células - OPACIDADE REDUZIDA */
+/* Estados das células */
 .board-cell.controlled {
   border-left: 4px solid var(--player-color);
   background: rgba(var(--player-rgb), calc(var(--cell-bg-opacity) * 2));
@@ -228,7 +228,7 @@ input[type="text"]:focus, select:focus, input[type="number"]:focus {
   top: 0;
   left: 0;
   right: 0;
-  height: 2px; /* REDUZIDO: de 3px para 2px */
+  height: 2px;
   background: linear-gradient(90deg, 
     transparent 0%,
     var(--player-color) 50%,
@@ -239,6 +239,24 @@ input[type="text"]:focus, select:focus, input[type="number"]:focus {
 .board-cell.neutral {
   border: 1px dashed rgba(255, 255, 255, 0.05);
   background: rgba(15, 15, 15, calc(var(--cell-bg-opacity) * 0.8));
+}
+
+/* Adicionar regra específica para células neutras selecionadas */
+.board-cell.neutral.region-selected {
+  border: 2px solid var(--accent) !important;
+  background: rgba(15, 15, 15, var(--cell-bg-opacity)) !important; /* Fundo normal */
+  box-shadow: 0 0 10px rgba(248, 214, 92, 0.3) !important;
+  transform: translateY(-1px) !important;
+  z-index: 10;
+}
+
+/* Manter o estilo atual para células controladas selecionadas */
+.board-cell.controlled.region-selected {
+  border: 2px solid var(--accent) !important;
+  background: rgba(var(--player-rgb), calc(var(--cell-bg-opacity) * 2)) !important;
+  box-shadow: 0 0 10px rgba(248, 214, 92, 0.3) !important;
+  transform: translateY(-1px) !important;
+  z-index: 10;
 }
 
 .board-cell.region-selected {
@@ -317,7 +335,7 @@ input[type="text"]:focus, select:focus, input[type="number"]:focus {
   opacity: 0.3;
 }
 
-/* Conteúdo das células - AJUSTES PARA MAIOR LEGIBILIDADE COM TRANSPARÊNCIA */
+/* Conteúdo das células */
 .board-cell .text-xs {
   font-size: 11px;
   line-height: 1.3;
@@ -333,19 +351,19 @@ input[type="text"]:focus, select:focus, input[type="number"]:focus {
   text-shadow: 0 1px 2px rgba(0, 0, 0, 0.7); /* AUMENTADO: de 0.5 para 0.7 */
 }
 
-/* Indicador de bioma - FUNDO MAIS ESCURO PARA CONTRASTE */
+/* Indicador de bioma */
 .board-cell .biome-indicator {
   font-size: 9px;
   padding: 2px 6px;
   border-radius: 10px;
-  background: rgba(0, 0, 0, 0.5); /* ESCURECIDO: de 0.4 para 0.5 */
+  background: rgba(0, 0, 0, 0.5);
   border: 1px solid rgba(255, 255, 255, 0.1);
-  color: rgba(255, 255, 255, 0.95); /* CLAREADO: de 0.9 para 0.95 */
+  color: rgba(255, 255, 255, 0.95);
   display: inline-block;
   margin-top: 2px;
 }
 
-/* Recursos - FUNDO MAIS ESCURO PARA CONTRASTE */
+/* Recursos */
 .board-cell .resource-item {
   display: flex;
   align-items: center;
@@ -353,14 +371,14 @@ input[type="text"]:focus, select:focus, input[type="number"]:focus {
   font-size: 12px;
   padding: 2px 6px;
   border-radius: 4px;
-  background: rgba(0, 0, 0, 0.45); /* ESCURECIDO: de 0.3 para 0.45 */
-  border: 1px solid rgba(255, 255, 255, 0.08); /* REDUZIDO: de 0.05 para 0.08 */
+  background: rgba(0, 0, 0, 0.45);
+  border: 1px solid rgba(255, 255, 255, 0.08);
 }
 
 .board-cell .resource-value {
-  font-weight: 800; /* AUMENTADO: de 700 para 800 */
+  font-weight: 800;
   color: #ffffff;
-  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.7); /* AUMENTADO: de 0.5 para 0.7 */
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.7);
 }
 
 /* Footer da célula */
@@ -370,14 +388,14 @@ input[type="text"]:focus, select:focus, input[type="number"]:focus {
   justify-content: space-between;
   margin-top: 8px;
   padding-top: 6px;
-  border-top: 1px solid rgba(255, 255, 255, 0.06); /* REDUZIDO: de 0.08 para 0.06 */
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
 }
 
 .board-cell .controller-info {
   font-size: 10px;
-  font-weight: 700; /* AUMENTADO: de 600 para 700 */
-  color: rgba(255, 255, 255, 0.98); /* CLAREADO: de 0.95 para 0.98 */
-  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.8); /* AUMENTADO: de 0.5 para 0.8 */
+  font-weight: 700;
+  color: rgba(255, 255, 255, 0.98);
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.8);
 }
 
 .board-cell .structure-display {

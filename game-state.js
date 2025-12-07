@@ -51,6 +51,26 @@ function getActivityLogs() {
   return [...activityLogHistory];
 }
 
+// Função para obter cópia do histórico de atividades
+function getActivityLogHistory() {
+  return [...activityLogHistory];
+}
+
+// Funções auxiliares de estado
+function getCurrentPlayer() {
+  return gameState.players[gameState.currentPlayerIndex];
+}
+
+function getSelectedRegion() {
+  return gameState.selectedRegionId !== null 
+    ? gameState.regions[gameState.selectedRegionId] 
+    : null;
+}
+
+function getPlayerById(id) {
+  return gameState.players.find(p => p.id === id);
+}
+
 // Setters
 function setGameState(newState) {
   Object.keys(newState).forEach(key => {
@@ -72,37 +92,36 @@ function setCurrentPhase(phase) {
   currentPhase = phase;
 }
 
-// Funções auxiliares de estado
-function getCurrentPlayer() {
-  return gameState.players[gameState.currentPlayerIndex];
-}
-
-function getSelectedRegion() {
-  return gameState.selectedRegionId !== null 
-    ? gameState.regions[gameState.selectedRegionId] 
-    : null;
-}
-
-function getPlayerById(id) {
-  return gameState.players.find(p => p.id === id);
+// Setter para activityLogHistory
+function setActivityLogHistory(logs) {
+  activityLogHistory = Array.isArray(logs) ? [...logs] : [];
 }
 
 // Funções de manipulação do estado
+// Função para adicionar log com estrutura consistente
 function addActivityLog(entry) {
-  activityLogHistory.unshift({
+  const logEntry = {
     ...entry,
     id: Date.now(),
     timestamp: new Date().toLocaleTimeString('pt-BR', { 
       hour: '2-digit', 
       minute: '2-digit' 
     }),
-    turn: gameState.turn
-  });
+    turn: entry.turn || gameState.turn,
+    // Calcular automaticamente isEvent e isMine se não fornecidos
+    isEvent: entry.isEvent !== undefined ? entry.isEvent : entry.type === 'event',
+    isMine: entry.isMine !== undefined ? entry.isMine : 
+            (entry.playerName === gameState.players[gameState.currentPlayerIndex]?.name)
+  };
+  
+  activityLogHistory.unshift(logEntry);
   
   // Manter apenas últimas 15 entradas
   if (activityLogHistory.length > 15) {
     activityLogHistory = activityLogHistory.slice(0, 15);
   }
+  
+  return logEntry;
 }
 
 function incrementAchievement(achievementType, amount = 1) {
@@ -326,6 +345,7 @@ export {
   getAchievementsState,
   getCurrentPhase,
   getActivityLogs,
+  getActivityLogHistory,
   getCurrentPlayer,
   getSelectedRegion,
   getPlayerById,
@@ -334,6 +354,7 @@ export {
   setGameState,
   setAchievementsState,
   setCurrentPhase,
+  setActivityLogHistory,
   
   // Manipulação de estado
   addActivityLog,

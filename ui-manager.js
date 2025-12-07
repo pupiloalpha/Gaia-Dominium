@@ -6,6 +6,7 @@ import {
   getGameState,
   setGameState,
   addActivityLog,
+  activityLogHistory,
   incrementAchievement,
   updatePlayerResources,
   updatePlayerVictoryPoints,
@@ -32,9 +33,7 @@ import { getAllManualContent } from './game-manual.js';
 
 class UIManager {
   constructor() {
-    this.activityLogHistory = [];
     this.hasLoadedGameBeenProcessed = false;
-    this.isBuilding = false;
     this.cacheElements();
     this.setupEventListeners();
     this.incomeModal = document.getElementById('incomeModal');
@@ -207,24 +206,23 @@ class UIManager {
       }
     });
 
+   // Controle de transparência das regiões no mapa
+   // Controle de transparência
+   const transparencySlider = document.getElementById('cellTransparencySlider');
+   const transparencyValue = document.getElementById('transparencyValue');
 
-// Controle de transparência das regiões no mapa
-// Controle de transparência
-const transparencySlider = document.getElementById('cellTransparencySlider');
-const transparencyValue = document.getElementById('transparencyValue');
-
-if (transparencySlider && transparencyValue) {
-  // Função para atualizar transparência
-  const updateTransparency = (value) => {
-    // Converter para decimal (5% -> 0.05, 50% -> 0.5)
-    const opacity = value / 100;
+   if (transparencySlider && transparencyValue) {
+      // Função para atualizar transparência
+     const updateTransparency = (value) => {
+       // Converter para decimal (5% -> 0.05, 50% -> 0.5)
+       const opacity = value / 100;
     
-    // Calcular blur proporcional (mais opaco = menos blur)
-    const blur = Math.max(0.5, 2 - (opacity * 3)) + 'px';
-    
-    // Atualizar variáveis CSS
-    document.documentElement.style.setProperty('--cell-bg-opacity', opacity);
-    document.documentElement.style.setProperty('--cell-blur', blur);
+       // Calcular blur proporcional (mais opaco = menos blur)
+       const blur = Math.max(0.5, 2 - (opacity * 3)) + 'px';
+       
+      // Atualizar variáveis CSS
+      document.documentElement.style.setProperty('--cell-bg-opacity', opacity);
+      document.documentElement.style.setProperty('--cell-blur', blur);
     
     // Atualizar valor exibido
     transparencyValue.textContent = `${value}%`;
@@ -261,7 +259,7 @@ if (transparencySlider && transparencyValue) {
       if (value >= 5 && value <= 50) {
         transparencySlider.value = value;
         updateTransparency(value);
-      }
+	      }
     }
   }, 1000);
 }    
@@ -321,70 +319,37 @@ if (resetBtn) {
       });
     }
 
-    // Adicionar listener para tecla ESC
-    document.addEventListener('keydown', (e) => {
-      if (e.key === 'Escape' && this.editingIndex !== null) {
-        e.preventDefault();
-        this.cancelEdit();
-      }
-    });
-
-    document.addEventListener('click', (e) => {
-
-      // Se estamos no meio de uma construção, NÃO desselecionar
-  if (this.isBuilding) {
-    return;
-  }
-  // Lista de elementos que NÃO devem desselecionar região
-  const noDeselectSelectors = [
-    '.board-cell',                    // Células do mapa
-    '.action-button',                 // Botões de ação
-    '#endTurnBtn',                    // Botão de término de turno
-    '.modal',                         // Qualquer modal
-    '.modal-content',                 // Conteúdo de modal
-    '#structureModal',                // Modal de estruturas
-    '#structureModal *',              // Qualquer coisa dentro do modal de estruturas
-    '#structureOptions',              // Opções de estrutura
-    '#structureOptions *',            // Qualquer coisa dentro das opções
-    '.structure-option',              // Opções de estrutura (se houver classe)
-    '#regionTooltip',                 // Tooltip de região
-    '#regionTooltip *',               // Qualquer coisa dentro do tooltip
-    '#sidebar',                       // Sidebar
-    '#sidebar *',                     // Qualquer coisa na sidebar
-    '#gameFooter',                    // Footer do jogo
-    '#gameFooter *',                  // Qualquer coisa no footer
-    '#manualIcon',                    // Ícone do manual
-    '#achievementsNavBtn',            // Botão de conquistas
-    '.icon-option',                   // Opções de ícone
-    '#playerName',                    // Campo de nome do jogador
-    '#addPlayerBtn',                  // Botão adicionar jogador
-    '#startGameBtn'                   // Botão iniciar jogo
-  ];
+// Adicionar listener para clique fora da região
+document.addEventListener('click', (e) => {
+  const isRegionCell = e.target.closest('.board-cell');
+  const isFooterButton = e.target.closest('.action-btn, #endTurnBtn');
+  const isModal = e.target.closest('[id$="Modal"]');
+  const isStructureOption = e.target.closest('.structure-option');
   
-  // Verificar se o clique foi em um elemento que NÃO desseleciona
-  let shouldNotDeselect = false;
-  
-  for (const selector of noDeselectSelectors) {
-    if (e.target.closest(selector)) {
-      shouldNotDeselect = true;
-      break;
-    }
-  }
-  
-  // Se clicou fora de elementos protegidos E há uma região selecionada
-  if (!shouldNotDeselect && gameState.selectedRegionId !== null) {
-    // Desselecionar região
+  // Não desselecionar se clicar em:
+  // 1. Botões de ação
+  // 2. Footer
+  // 3. Qualquer modal
+  // 4. Opções de estrutura no modal
+  if (!isRegionCell && !isFooterButton && !e.target.closest('#gameFooter') && 
+      !isModal && !isStructureOption && gameState.selectedRegionId !== null) {
+    // Desselecionar região se clicar fora
     gameState.selectedRegionId = null;
     document.querySelectorAll('.board-cell').forEach(c => c.classList.remove('region-selected'));
     
     // Atualizar UI
     this.updateFooter();
     this.renderSidebar(gameState.selectedPlayerForSidebar);
-    
-    console.log('🗺️ Região desselecionada (clique fora)');
   }
 });
-    
+
+// Adicionar listener para tecla ESC
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape' && this.editingIndex !== null) {
+    e.preventDefault();
+    this.cancelEdit();
+  }
+});
   }
 
   // ==================== PLAYER REGISTRATION ====================
@@ -930,6 +895,7 @@ createRegionCell(region, index) {
   return cell;
 }
 
+// Função que faz a gestão das regiões controladas
   renderControlledRegions(player) {
     if (player.regions.length === 0) {
       this.controlledRegions.innerHTML = `
@@ -976,37 +942,6 @@ createRegionCell(region, index) {
         `;
       }).join('');
   }
-
-  // Adicione este método para garantir seleção durante construção:
-forceSelectionDuringBuild(regionId) {
-  // Salvar o ID original
-  const originalRegionId = gameState.selectedRegionId;
-  
-  // Forçar seleção
-  gameState.selectedRegionId = regionId;
-  
-  // Garantir visualmente
-  document.querySelectorAll('.board-cell').forEach(cell => {
-    const cellRegionId = Number(cell.dataset.regionId);
-    if (cellRegionId === regionId) {
-      cell.classList.add('region-selected');
-    } else {
-      cell.classList.remove('region-selected');
-    }
-  });
-  
-  // Restaurar após construção (com timeout)
-  setTimeout(() => {
-    if (this.isBuilding) {
-      // Ainda construindo, manter seleção
-      return;
-    }
-    // Se não estiver mais construindo, restaurar seleção original
-    if (originalRegionId !== regionId) {
-      gameState.selectedRegionId = originalRegionId;
-    }
-  }, 100);
-}
 
 // Atualiza fase do jogador no turno
 updatePhaseIndicator() {
@@ -1196,110 +1131,122 @@ updatePhaseIndicator() {
   }
 
   // ==================== ACTIVITY LOG ====================
-  addActivityLog(type, playerName, action, details = '', turn = gameState.turn) {
-    const timestamp = new Date().toLocaleTimeString('pt-BR', { 
-      hour: '2-digit', 
-      minute: '2-digit' 
-    });
-    
-    const logEntry = {
-      id: Date.now(),
-      timestamp,
-      turn,
-      type,
-      playerName,
-      action,
-      details,
-      isEvent: type === 'event',
-      isMine: playerName === gameState.players[gameState.currentPlayerIndex]?.name
-    };
-    
-    this.activityLogHistory.unshift(logEntry);
-    this.activityLogHistory = this.activityLogHistory.slice(0, 15); // Manter apenas últimas 15 entradas
-    
-    this.renderActivityLog();
-    this.scrollLogToTop();
-  }
 
-  renderActivityLog(filter = 'all') {
-    // Renderizar no painel principal (se existir)
-    if (this.logEntries) {
-      this.logEntries.innerHTML = '';
-      const filteredLogs = this.activityLogHistory.filter(log => {
-        if (filter === 'mine') return log.isMine;
-        if (filter === 'events') return log.isEvent;
-        return true;
-      });
-      
-      filteredLogs.forEach(log => {
-        const entry = document.createElement('div');
-        entry.className = `log-entry ${log.type}`;
-        
-        let icon = '';
-        switch(log.type) {
-          case 'action': icon = '⚡'; break;
-          case 'build': icon = '🏗️'; break;
-          case 'explore': icon = '⛏️'; break;
-          case 'collect': icon = '🌾'; break;
-          case 'negotiate': icon = '🤝'; break;
-          case 'event': icon = '🎴'; break;
-          case 'victory': icon = '🏆'; break;
-          default: icon = '📝';
-        }
-        
-        entry.innerHTML = `
-          <span class="log-entry-icon">${icon}</span>
-          <div class="log-entry-text">
-            <span class="log-entry-player">${log.playerName}</span> ${log.action} 
-            <span class="text-gray-400">${log.details}</span>
-          </div>
-          <span class="log-entry-turn">T${log.turn}</span>
-        `;
-        
-        this.logEntries.appendChild(entry);
-      });
-    }
+// SUBSTITUA TODO O MÉTODO renderActivityLog POR ESTA VERSÃO CORRIGIDA:
+renderActivityLog(filter = 'all') {
+  // Usar activityLogHistory importado (array global)
+  const logs = activityLogHistory;
+  
+  // Renderizar no painel principal (se existir)
+  if (this.logEntries) {
+    this.logEntries.innerHTML = '';
     
-    // Renderizar no sidebar
-    if (this.logEntriesSidebar) {
-      this.logEntriesSidebar.innerHTML = '';
-      const filteredLogs = this.activityLogHistory.filter(log => {
-        if (filter === 'mine') return log.isMine;
-        if (filter === 'events') return log.isEvent;
-        return true;
-      });
+    const filteredLogs = logs.filter(log => {
+      const currentPlayer = getCurrentPlayer();
+      if (!currentPlayer) return true;
       
-      filteredLogs.forEach(log => {
-        const entry = document.createElement('div');
-        entry.className = 'flex items-center gap-1';
-        
-        let icon = '';
-        switch(log.type) {
-          case 'action': icon = '⚡'; break;
-          case 'build': icon = '🏗️'; break;
-          case 'explore': icon = '⛏️'; break;
-          case 'collect': icon = '🌾'; break;
-          case 'negotiate': icon = '🤝'; break;
-          case 'event': icon = '🎴'; break;
-          case 'victory': icon = '🏆'; break;
-          default: icon = '📝';
-        }
-        
-        entry.innerHTML = `
-          <span class="text-xs">${icon}</span>
-          <span class="truncate">${log.playerName} ${log.action} ${log.details}</span>
-          <span class="ml-auto text-[9px] text-gray-500">T${log.turn}</span>
-        `;
-        
-        this.logEntriesSidebar.appendChild(entry);
-      });
-    }
+      const isCurrentPlayer = log.playerName === currentPlayer.name;
+      
+      if (filter === 'mine') return isCurrentPlayer;
+      if (filter === 'events') return log.type === 'event';
+      return true;
+    });
     
-    // Atualizar filtros visuais
-    document.querySelectorAll('.log-filter-sidebar').forEach(btn => {
-      btn.classList.toggle('active', btn.dataset.filter === filter);
+    filteredLogs.forEach(log => {
+      const entry = document.createElement('div');
+      entry.className = 'log-entry ' + (log.type || '');
+      
+      let icon = '';
+      switch(log.type) {
+        case 'action': icon = '⚡'; break;
+        case 'build': icon = '🏗️'; break;
+        case 'explore': icon = '⛏️'; break;
+        case 'collect': icon = '🌾'; break;
+        case 'negotiate': icon = '🤝'; break;
+        case 'event': icon = '🎴'; break;
+        case 'victory': icon = '🏆'; break;
+        case 'phase': icon = '🔄'; break;
+        case 'turn': icon = '📅'; break;
+        case 'system': icon = '⚙️'; break;
+        case 'income': icon = '💰'; break;
+        default: icon = '📝';
+      }
+      
+      const currentPlayer = getCurrentPlayer();
+      const isCurrentPlayer = currentPlayer && log.playerName === currentPlayer.name;
+      
+      entry.innerHTML = `
+        <span class="log-entry-icon">${icon}</span>
+        <div class="log-entry-text">
+          <span class="log-entry-player ${isCurrentPlayer ? 'text-yellow-300' : ''}">${log.playerName || ''}</span> ${log.action || ''} 
+          <span class="text-gray-400">${log.details || ''}</span>
+        </div>
+        <span class="log-entry-turn">T${log.turn || 0}</span>
+      `;
+      
+      this.logEntries.appendChild(entry);
     });
   }
+  
+  // Renderizar no sidebar
+  if (this.logEntriesSidebar) {
+    this.logEntriesSidebar.innerHTML = '';
+    
+    const filteredLogs = logs.filter(log => {
+      const currentPlayer = getCurrentPlayer();
+      if (!currentPlayer) return true;
+      
+      const isCurrentPlayer = log.playerName === currentPlayer.name;
+      
+      if (filter === 'mine') return isCurrentPlayer;
+      if (filter === 'events') return log.type === 'event';
+      return true;
+    });
+    
+    filteredLogs.forEach(log => {
+      const entry = document.createElement('div');
+      entry.className = 'flex items-center gap-1 text-xs';
+      
+      let icon = '';
+      switch(log.type) {
+        case 'action': icon = '⚡'; break;
+        case 'build': icon = '🏗️'; break;
+        case 'explore': icon = '⛏️'; break;
+        case 'collect': icon = '🌾'; break;
+        case 'negotiate': icon = '🤝'; break;
+        case 'event': icon = '🎴'; break;
+        case 'victory': icon = '🏆'; break;
+        case 'phase': icon = '🔄'; break;
+        case 'turn': icon = '📅'; break;
+        case 'system': icon = '⚙️'; break;
+        case 'income': icon = '💰'; break;
+        default: icon = '📝';
+      }
+      
+      const currentPlayer = getCurrentPlayer();
+      const isCurrentPlayer = currentPlayer && log.playerName === currentPlayer.name;
+      
+      entry.innerHTML = `
+        <span class="text-xs">${icon}</span>
+        <span class="truncate ${isCurrentPlayer ? 'text-yellow-300 font-semibold' : 'text-gray-300'}">
+          ${log.playerName || ''} ${log.action || ''} ${log.details || ''}
+        </span>
+        <span class="ml-auto text-[9px] text-gray-500">T${log.turn || 0}</span>
+      `;
+      
+      this.logEntriesSidebar.appendChild(entry);
+    });
+  }
+  
+  // Atualizar filtros visuais
+  document.querySelectorAll('.log-filter-sidebar').forEach(btn => {
+    if (btn.dataset.filter === filter) {
+      btn.classList.add('active');
+    } else {
+      btn.classList.remove('active');
+    }
+  });
+}
 
   scrollLogToTop() {
     const logContainer = this.logEntries?.parentElement;
@@ -1447,7 +1394,13 @@ closeIncomeModal() {
     // Registrar no log de atividades
     const currentPlayer = getCurrentPlayer();
     if (currentPlayer) {
-      addActivityLog('phase', currentPlayer.name, 'iniciou fase de ações', '', gameState.turn);
+      addActivityLog({
+        type: 'phase',
+        playerName: currentPlayer.name,
+        action: 'iniciou fase de ações',
+        details: '',
+        turn: gameState.turn
+      });
     }
     
   }
@@ -1747,6 +1700,7 @@ updateFooter() {
     
     const isOwnRegion = region.controller === player.id;
     const isNeutral = region.controller === null;
+    const canCollect = isOwnRegion && region.explorationLevel > 0;
     
     // Botão Explorar/Assumir Domínio
     if (isNeutral) {
@@ -1777,13 +1731,26 @@ updateFooter() {
     }
     
     if (this.actionCollectBtn) {
-      this.actionCollectBtn.disabled = !baseEnabled || !isActionPhase || !isOwnRegion || 
-                                       !this.canPlayerAffordAction('recolher', player);
+      this.actionCollectBtn.disabled = !baseEnabled || !isActionPhase || !canCollect || 
+                                   !this.canPlayerAffordAction('recolher', player);
     }
     
     if (this.actionNegotiateBtn) {
-      this.actionNegotiateBtn.disabled = !baseEnabled || !isNegotiationPhase || 
-                                         !this.canPlayerAffordAction('negociar', player);
+      // Botão de negociação - habilitado apenas na fase de negociação
+      if (currentPhase === 'negociacao') {
+        // Habilitar independente de região selecionada
+        const canAffordNegotiate = (player.resources.ouro >= 1);
+        this.actionNegotiateBtn.disabled = !canAffordNegotiate;
+    
+        // Feedback visual
+        this.actionNegotiateBtn.classList.remove('bg-gray-600', 'opacity-50');
+        this.actionNegotiateBtn.classList.add('bg-green-600');
+      } else {
+        // Desabilitar em outras fases
+        this.actionNegotiateBtn.disabled = true;
+        this.actionNegotiateBtn.classList.remove('bg-green-600');
+        this.actionNegotiateBtn.classList.add('bg-gray-600', 'opacity-50');
+      }
     }
   }
   
@@ -1815,6 +1782,29 @@ updateFooter() {
         this.endTurnBtn.textContent = 'Terminar Turno';
         this.endTurnBtn.className = 'px-4 py-2 bg-blue-600 hover:bg-blue-700 rounded-md text-white font-semibold transition';
     }
+  }
+}
+
+// Função auxiliar da fase de Negociação
+prepareNegotiationPhase() {
+  
+  // Habilitar apenas botão de negociação
+  if (this.actionExploreBtn) this.actionExploreBtn.disabled = true;
+  if (this.actionCollectBtn) this.actionCollectBtn.disabled = true;
+  if (this.actionBuildBtn) this.actionBuildBtn.disabled = true;
+  
+  // Habilitar negociação se tiver ouro
+  if (this.actionNegotiateBtn) {
+    const player = getCurrentPlayer();
+    this.actionNegotiateBtn.disabled = (player.resources.ouro < 1);
+    this.actionNegotiateBtn.classList.remove('bg-gray-600', 'opacity-50');
+    this.actionNegotiateBtn.classList.add('bg-green-600');
+  }
+  
+  // Atualizar mensagem no footer
+  const actionsLeftEl = document.getElementById('actionsLeft');
+  if (actionsLeftEl) {
+    actionsLeftEl.textContent = 'Ação de negociação disponível';
   }
 }
 
@@ -2102,33 +2092,28 @@ resetTransparency() {
 
   // ==================== STRUCTURE MODAL ====================
   openStructureModal() {
-  if (gameState.selectedRegionId === null || gameState.selectedRegionId === undefined) {
-    window.utils.showFeedback('Selecione uma região primeiro.', 'error');
-    return;
+    if (gameState.selectedRegionId === null) {
+      window.utils.showFeedback('Selecione uma região primeiro.', 'error');
+      return;
+    }
+    
+    const region = gameState.regions[gameState.selectedRegionId];
+    const player = gameState.players[gameState.currentPlayerIndex];
+    
+    // Verificar se o jogador controla a região
+    if (region.controller !== player.id) {
+      window.utils.showFeedback('Você só pode construir em regiões que controla.', 'error');
+      return;
+    }
+    
+    this.structureModalRegion.textContent = `${region.name} (${region.biome})`;
+    this.renderStructureOptions(region);
+    this.structureModal.classList.remove('hidden');
   }
-  
-  const region = gameState.regions[gameState.selectedRegionId];
-  const player = gameState.players[gameState.currentPlayerIndex];
-  
-  // Verificar se o jogador controla a região
-  if (region.controller !== player.id) {
-    window.utils.showFeedback('Você só pode construir em regiões que controla.', 'error');
-    return;
-  }
-  
-  // ATIVAR FLAG - estamos em processo de construção
-  this.isBuilding = true;
-  
-  this.structureModalRegion.textContent = `${region.name} (${region.biome})`;
-  this.renderStructureOptions(region);
-  this.structureModal.classList.remove('hidden');
-  
-  console.log('🏗️ Modal de construção aberto. Flag isBuilding:', this.isBuilding);
-}
+
   closeStructureModal() {
-  this.isBuilding = false; // <-- RESETAR FLAG
-  this.structureModal.classList.add('hidden');
-}
+    this.structureModal.classList.add('hidden');
+  }
 
   renderStructureOptions(region) {
     this.structureOptions.innerHTML = '';
@@ -2205,14 +2190,7 @@ resetTransparency() {
       `;
       
       if (canAfford) {
-  option.addEventListener('click', (e) => {
-    e.preventDefault();
-    e.stopPropagation();
-    
-    console.log(`🏗️ Clicou para construir ${structure.name}`);
-    
-    // Forçar seleção antes de fechar modal
-    this.forceSelectionDuringBuild(region.id);
+  option.addEventListener('click', () => {
     this.closeStructureModal();
     
     // Verificar se a função existe (PASSO 4)
@@ -2244,6 +2222,19 @@ resetTransparency() {
   }
 
   // ==================== NEGOTIATION MODAL ====================
+
+enableNegotiationOnly() {
+  if (this.actionExploreBtn) this.actionExploreBtn.disabled = true;
+  if (this.actionCollectBtn) this.actionCollectBtn.disabled = true;
+  if (this.actionBuildBtn) this.actionBuildBtn.disabled = true;
+  
+  // Negociação habilitada se tiver ouro
+  if (this.actionNegotiateBtn && gameState.actionsLeft > 0) {
+    const player = getCurrentPlayer();
+    this.actionNegotiateBtn.disabled = player.resources.ouro < 1;
+  }
+}
+
   openNegotiationModal() {
     const initiator = gameState.players[gameState.currentPlayerIndex];
     

@@ -24,7 +24,9 @@ import {
   addActivityLog,
   incrementAchievement,
   getCurrentPlayer,
-  initializeGame
+  initializeGame,
+  getActivityLogHistory,
+  setActivityLogHistory
 } from './game-state.js';
 import { getAllManualContent } from './game-manual.js';
 
@@ -78,8 +80,13 @@ document.addEventListener('DOMContentLoaded', () => {
   // 7. Configurar eventos globais
   setupGlobalEventListeners();
   
-  // 8. Configurar sistemas auxiliares
+  // 8. Configurar sistemas auxiliares (INCLUINDO VERIFICAÇÃO DE SAVE)
   setupAuxiliarySystems();
+  
+  // 9. Verificar save após um curto delay
+  setTimeout(() => {
+    checkForSavedGame();
+  }, 1500);
   
   console.log('✅ Gaia Dominium - Inicialização completa!');
 });
@@ -203,33 +210,44 @@ function setupAuxiliarySystems() {
     Utils.setupMapZoom();
   }, 1000);
   
-  // Verificar se há estado salvo
-  checkForSavedGame();
+  // Verificar se há estado salvo (com delay maior)
+  setTimeout(() => {
+    checkForSavedGame();
+  }, 2000); // Aumentado para 2 segundos
 }
 
 async function checkForSavedGame() {
-  // Esperar um pouco para garantir que a UI está carregada
-  await new Promise(resolve => setTimeout(resolve, 800));
+  // Esperar mais tempo para garantir que tudo está carregado
+  await new Promise(resolve => setTimeout(resolve, 1500));
   
-  if (!window.utils) {
-    console.warn('Utils não disponível ainda');
+  if (!window.utils || !window.utils.checkAndOfferLoad) {
+    console.warn('Utils não disponível ainda, tentando novamente...');
+    setTimeout(checkForSavedGame, 500);
     return;
   }
   
-  const result = await window.utils.checkAndOfferLoad();
-  
-  if (result.hasSave && result.load && result.data) {
-    console.log('🎮 Carregando jogo salvo...');
-    loadGame(result.data);
-  } else if (result.hasSave && !result.load) {
-    console.log('🎮 Usuário optou por novo jogo');
-    // Mostrar feedback apenas se houve save
-    setTimeout(() => {
-      window.uiManager?.showFeedback('Novo jogo iniciado!', 'info');
-    }, 500);
+  try {
+    const result = await window.utils.checkAndOfferLoad();
+    
+    if (result.hasSave && result.load && result.data) {
+      console.log('🎮 Carregando jogo salvo...');
+      loadGame(result.data);
+    } else if (result.hasSave && !result.load) {
+      console.log('🎮 Usuário optou por novo jogo');
+      // Limpar save se optou por novo jogo
+      localStorage.removeItem('gaia-dominium-save');
+      setTimeout(() => {
+        window.uiManager?.showFeedback('Novo jogo iniciado!', 'info');
+      }, 500);
+    } else if (!result.hasSave) {
+      console.log('🎮 Nenhum jogo salvo encontrado');
+    }
+  } catch (error) {
+    console.error('Erro ao verificar save:', error);
   }
 }
 
+// ==================== CARREGAR JOGO SALVO ====================
 function loadGame(data) {
   try {
     // Atualizar estado do jogo
@@ -243,6 +261,19 @@ function loadGame(data) {
         }
       }).catch(err => {
         console.error('Erro ao importar módulo:', err);
+      });
+    }
+    
+    // Atualizar logs de atividade
+    if (data.activityLogHistory) {
+      import('./game-state.js').then(module => {
+        if (module.setActivityLogHistory) {
+          module.setActivityLogHistory(data.activityLogHistory);
+        } else {
+          console.warn('setActivityLogHistory não disponível no módulo');
+        }
+      }).catch(err => {
+        console.error('Erro ao importar módulo para logs:', err);
       });
     }
     
@@ -263,11 +294,18 @@ function loadGame(data) {
         
         // Restaurar o estado correto da fase
         if (data.gameState.currentPhase) {
-          // Garantir que o estado da fase seja restaurado
           window.gameState.currentPhase = data.gameState.currentPhase;
           
-          // Se estiver na fase de renda, aplicar renda para o jogador atual
-          if (data.gameState.currentPhase === 'renda') {
+          // Se estiver na fase de negociação, configurar botões apropriadamente
+          if (data.gameState.currentPhase === 'negociacao') {
+            setTimeout(() => {
+              if (window.gameLogic && window.gameLogic.setupNegotiationPhase) {
+                window.gameLogic.setupNegotiationPhase();
+              }
+            }, 100);
+          }
+          // Se estiver na fase de renda, aplicar renda
+          else if (data.gameState.currentPhase === 'renda') {
             setTimeout(() => {
               if (window.gameLogic) {
                 window.gameLogic.applyIncomeForCurrentPlayer();
@@ -284,6 +322,9 @@ function loadGame(data) {
             window.uiManager.renderBoard();
             window.uiManager.renderHeaderPlayers();
             window.uiManager.renderSidebar(gameState.selectedPlayerForSidebar);
+            
+            // Renderizar logs carregados
+            window.uiManager.renderActivityLog('all');
           }
         }, 150);
       }
@@ -338,15 +379,22 @@ function setupManualTabs() {
 // ==================== FUNÇÕES DE SALVAMENTO ====================
 function saveGame() {
   try {
-    const saveData = {
-      gameState: getGameState(),
-      achievementsState: window.GaiaDominium.state.achievements,
-      timestamp: new Date().toISOString(),
-      version: '1.0.0'
-    };
+    // Importar dinamicamente para garantir acesso às funções
+    import('./game-state.js').then(module => {
+      const saveData = {
+        gameState: getGameState(),
+        achievementsState: { ...window.GaiaDominium.state.achievements },
+        activityLogHistory: module.getActivityLogHistory ? module.getActivityLogHistory() : [],
+        timestamp: new Date().toISOString(),
+        version: '1.0.0'
+      };
+      
+      localStorage.setItem('gaia-dominium-save', JSON.stringify(saveData));
+      console.log('💾 Jogo salvo:', saveData);
+    }).catch(error => {
+      console.error('Erro ao importar módulo para salvar:', error);
+    });
     
-    localStorage.setItem('gaia-dominium-save', JSON.stringify(saveData));
-    console.log('💾 Jogo salvo:', saveData);
     return true;
   } catch (error) {
     console.error('Erro ao salvar jogo:', error);

@@ -114,7 +114,10 @@ const Utils = {
   
   // Função para limpar seleção de região
   clearRegionSelection(gameState) {
-    // Não será tratado aqui agora
+    if (gameState) {
+      gameState.selectedRegionId = null;
+    }
+    document.querySelectorAll('.board-cell').forEach(c => c.classList.remove('region-selected'));
   },
   
   // Função para converter hex para RGB (usada no renderSidebar)
@@ -288,23 +291,31 @@ const Utils = {
   // Nova função para verificar e oferecer carregamento
   async checkAndOfferLoad() {
   try {
+    // Pequeno delay para garantir que a UI está carregada
+    await new Promise(resolve => setTimeout(resolve, 300));
+    
     const saved = localStorage.getItem('gaia-dominium-save');
-    if (!saved) return { hasSave: false };
+    if (!saved) {
+      console.log('Nenhum save encontrado');
+      return { hasSave: false };
+    }
     
     const data = JSON.parse(saved);
+    console.log('Save encontrado:', data);
     
+    // Mostrar modal de save/load
     const response = await this.showSaveLoadModal();
     
     switch (response.action) {
       case 'load':
-        // Carregar o jogo
-        window.loadGame(data);
+        console.log('Usuário escolheu carregar');
         return { hasSave: true, data: data, load: true };
       case 'delete':
         localStorage.removeItem('gaia-dominium-save');
         this.showFeedback('Save excluído com sucesso!', 'success');
         return { hasSave: false };
       default:
+        console.log('Usuário escolheu novo jogo');
         return { hasSave: true, data: data, load: false };
     }
   } catch (error) {
