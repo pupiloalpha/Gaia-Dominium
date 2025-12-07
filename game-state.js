@@ -1,8 +1,8 @@
 // game-state.js - Gerenciamento de estado do jogo completo
 import { GAME_CONFIG } from './game-config.js';
 
-// Estado do jogo
-let gameState = {
+// ==================== CONSTANTES DE CONFIGURAÇÃO ====================
+const INITIAL_STATE = {
   players: [],
   regions: [],
   currentPlayerIndex: 0,
@@ -15,11 +15,12 @@ let gameState = {
   currentEvent: null,
   eventTurnsLeft: 0,
   eventModifiers: {},
-  turnsUntilNextEvent: 4
+  turnsUntilNextEvent: 4,
+  pendingNegotiations: [],
+  activeNegotiation: null
 };
 
-// Sistema de conquistas - atualizado para refletir o original
-let achievementsState = {
+const INITIAL_ACHIEVEMENTS_STATE = {
   totalExplored: 0,
   totalBuilt: 0,
   totalNegotiations: 0,
@@ -28,13 +29,15 @@ let achievementsState = {
   playerAchievements: []    // Array por jogador: [{explored:0, built:0, ...}, ...]
 };
 
-// Log de atividades
+const LOG_HISTORY_LIMIT = 15;
+
+// ==================== VARIÁVEIS DE ESTADO ====================
+let gameState = { ...INITIAL_STATE };
+let achievementsState = { ...INITIAL_ACHIEVEMENTS_STATE };
 let activityLogHistory = [];
+let currentPhase = 'renda'; // Fase atual: 'renda', 'acoes', 'negociacao'
 
-// Fase atual do jogo
-let currentPhase = 'renda';
-
-// Getters
+// ==================== GETTERS ====================
 function getGameState() { 
   return { ...gameState }; 
 }
@@ -51,12 +54,10 @@ function getActivityLogs() {
   return [...activityLogHistory];
 }
 
-// Função para obter cópia do histórico de atividades
 function getActivityLogHistory() {
   return [...activityLogHistory];
 }
 
-// Funções auxiliares de estado
 function getCurrentPlayer() {
   return gameState.players[gameState.currentPlayerIndex];
 }
@@ -71,7 +72,7 @@ function getPlayerById(id) {
   return gameState.players.find(p => p.id === id);
 }
 
-// Setters
+// ==================== SETTERS ====================
 function setGameState(newState) {
   Object.keys(newState).forEach(key => {
     if (gameState.hasOwnProperty(key)) {
@@ -92,13 +93,11 @@ function setCurrentPhase(phase) {
   currentPhase = phase;
 }
 
-// Setter para activityLogHistory
 function setActivityLogHistory(logs) {
   activityLogHistory = Array.isArray(logs) ? [...logs] : [];
 }
 
-// Funções de manipulação do estado
-// Função para adicionar log com estrutura consistente
+// ==================== MANIPULAÇÃO DE ESTADO ====================
 function addActivityLog(entry) {
   const logEntry = {
     ...entry,
@@ -108,7 +107,6 @@ function addActivityLog(entry) {
       minute: '2-digit' 
     }),
     turn: entry.turn || gameState.turn,
-    // Calcular automaticamente isEvent e isMine se não fornecidos
     isEvent: entry.isEvent !== undefined ? entry.isEvent : entry.type === 'event',
     isMine: entry.isMine !== undefined ? entry.isMine : 
             (entry.playerName === gameState.players[gameState.currentPlayerIndex]?.name)
@@ -116,9 +114,8 @@ function addActivityLog(entry) {
   
   activityLogHistory.unshift(logEntry);
   
-  // Manter apenas últimas 15 entradas
-  if (activityLogHistory.length > 15) {
-    activityLogHistory = activityLogHistory.slice(0, 15);
+  if (activityLogHistory.length > LOG_HISTORY_LIMIT) {
+    activityLogHistory = activityLogHistory.slice(0, LOG_HISTORY_LIMIT);
   }
   
   return logEntry;
@@ -137,7 +134,6 @@ function clearRegionSelection() {
 function updateCurrentPlayerIndex() {
   gameState.currentPlayerIndex = (gameState.currentPlayerIndex + 1) % gameState.players.length;
   
-  // Se voltou ao primeiro jogador, incrementa o turno
   if (gameState.currentPlayerIndex === 0) {
     gameState.turn += 1;
   }
@@ -173,7 +169,6 @@ function updatePlayerResources(playerIndex, resources) {
     Object.keys(resources).forEach(resource => {
       if (player.resources[resource] !== undefined) {
         player.resources[resource] += resources[resource];
-        // Garantir que não fique negativo
         player.resources[resource] = Math.max(0, player.resources[resource]);
       }
     });
@@ -184,7 +179,6 @@ function updatePlayerVictoryPoints(playerIndex, points) {
   const player = gameState.players[playerIndex];
   if (player) {
     player.victoryPoints += points;
-    // Garantir que não fique negativo
     player.victoryPoints = Math.max(0, player.victoryPoints);
   }
 }
@@ -192,7 +186,6 @@ function updatePlayerVictoryPoints(playerIndex, points) {
 function updateRegionController(regionId, playerId) {
   const region = gameState.regions[regionId];
   if (region) {
-    // Remover da lista do jogador anterior
     if (region.controller !== null) {
       const oldPlayer = gameState.players[region.controller];
       if (oldPlayer) {
@@ -200,10 +193,8 @@ function updateRegionController(regionId, playerId) {
       }
     }
     
-    // Atualizar controlador
     region.controller = playerId;
     
-    // Adicionar à lista do novo jogador
     if (playerId !== null) {
       const newPlayer = gameState.players[playerId];
       if (newPlayer && !newPlayer.regions.includes(regionId)) {
@@ -240,7 +231,6 @@ function updateEventTurnsLeft() {
   if (gameState.eventTurnsLeft > 0) {
     gameState.eventTurnsLeft--;
     
-    // Se acabou o evento, limpar
     if (gameState.eventTurnsLeft <= 0) {
       gameState.currentEvent = null;
       gameState.eventModifiers = {};
@@ -266,7 +256,7 @@ function clearPendingNegotiation() {
   gameState.pendingNegotiation = null;
 }
 
-// Funções para verificação de estado
+// ==================== VERIFICAÇÕES DE ESTADO ====================
 function hasPlayerWon() {
   return gameState.players.some(p => p.victoryPoints >= GAME_CONFIG.VICTORY_POINTS);
 }
@@ -284,26 +274,58 @@ function canPlayerAfford(playerIndex, cost) {
   });
 }
 
-// Função para inicializar o jogo
-function initializeGame(playersData) {
-  // Resetar estado
-  gameState = {
-    players: [],
-    regions: [],
-    currentPlayerIndex: 0,
-    selectedPlayerForSidebar: 0,
-    turn: 1,
-    actionsLeft: GAME_CONFIG.ACTIONS_PER_TURN,
-    gameStarted: true,
-    selectedRegionId: null,
-    pendingNegotiation: null,
-    currentEvent: null,
-    eventTurnsLeft: 0,
-    eventModifiers: {},
-    turnsUntilNextEvent: 4
-  };
+// ==================== GESTÃO DE NEGOCIAÇÕES ====================
+function addPendingNegotiation(negotiation) {
+  if (!gameState.pendingNegotiations) {
+    gameState.pendingNegotiations = [];
+  }
+  gameState.pendingNegotiations.push(negotiation);
+  return negotiation;
+}
+
+function getPendingNegotiationsForPlayer(playerId) {
+  if (!gameState.pendingNegotiations) {
+    gameState.pendingNegotiations = [];
+  }
+  return gameState.pendingNegotiations.filter(
+    negotiation => negotiation.targetId === playerId && negotiation.status === 'pending'
+  );
+}
+
+function removePendingNegotiation(negotiationId) {
+  if (!gameState.pendingNegotiations) {
+    gameState.pendingNegotiations = [];
+  }
+  gameState.pendingNegotiations = gameState.pendingNegotiations.filter(
+    n => n.id !== negotiationId
+  );
+}
+
+function setActiveNegotiation(negotiation) {
+  gameState.activeNegotiation = negotiation;
+}
+
+function clearActiveNegotiation() {
+  gameState.activeNegotiation = null;
+}
+
+function updateNegotiationStatus(negotiationId, status) {
+  if (!gameState.pendingNegotiations) {
+    gameState.pendingNegotiations = [];
+  }
   
-  // Adicionar jogadores
+  const negotiation = gameState.pendingNegotiations.find(n => n.id === negotiationId);
+  if (negotiation) {
+    negotiation.status = status;
+    return negotiation;
+  }
+  return null;
+}
+
+// ==================== INICIALIZAÇÃO DO JOGO ====================
+function initializeGame(playersData) {
+  gameState = { ...INITIAL_STATE };
+  
   playersData.forEach((playerData, index) => {
     gameState.players.push({
       id: index,
@@ -317,9 +339,9 @@ function initializeGame(playersData) {
     });
   });
 
-  // Inicializar conquistas por jogador
   achievementsState.unlockedAchievements = [];
   achievementsState.playerAchievements = [];
+  
   gameState.players.forEach(() => {
     achievementsState.unlockedAchievements.push([]);
     achievementsState.playerAchievements.push({
@@ -331,9 +353,17 @@ function initializeGame(playersData) {
       maxResources: { madeira: 0, pedra: 0, ouro: 0, agua: 0 }
     });
   });
+
+  gameState.gameStarted = true;
+  gameState.turn = 1;
+  gameState.actionsLeft = GAME_CONFIG.ACTIONS_PER_TURN;
+  gameState.currentPlayerIndex = 0;
+  gameState.selectedPlayerForSidebar = 0;
+  gameState.turnsUntilNextEvent = 4;
+  currentPhase = 'renda';
 }
 
-// Exportações
+// ==================== EXPORTAÇÕES ====================
 export {
   gameState,
   achievementsState,
@@ -377,6 +407,14 @@ export {
   resetTurnsUntilNextEvent,
   setPendingNegotiation,
   clearPendingNegotiation,
+  
+  // Funções de negociação
+  addPendingNegotiation,
+  getPendingNegotiationsForPlayer,
+  removePendingNegotiation,
+  setActiveNegotiation,
+  clearActiveNegotiation,
+  updateNegotiationStatus,
   
   // Verificações
   hasPlayerWon,
