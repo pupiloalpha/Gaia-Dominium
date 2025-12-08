@@ -1,7 +1,6 @@
-// utils.js - Versão corrigida com sintaxe apropriada
-
+// utils.js - Funções utilitárias + helpers de UI
 const Utils = {
-  // Alert/Confirm system
+  // ==================== SISTEMA DE ALERT/CONFIRM ====================
   showAlert(title, message, type = 'info') {
     const alertModal = document.getElementById('alertModal');
     const alertIcon = document.getElementById('alertIcon');
@@ -9,7 +8,11 @@ const Utils = {
     const alertMessage = document.getElementById('alertMessage');
     const alertButtons = document.getElementById('alertButtons');
     
-    if (!alertModal) return;
+    if (!alertModal) {
+      console.warn('Modal de alerta não encontrado');
+      alert(`${title}: ${message}`);
+      return;
+    }
     
     let icon = 'ℹ️';
     if (type === 'warning') icon = '🟡';
@@ -20,7 +23,6 @@ const Utils = {
     alertTitle.textContent = title;
     alertMessage.textContent = message;
     
-    // Clear buttons
     alertButtons.innerHTML = '';
     
     const okButton = document.createElement('button');
@@ -49,7 +51,7 @@ const Utils = {
       const alertButtons = document.getElementById('alertButtons');
       
       if (!alertModal) {
-        resolve(false);
+        resolve(confirm(`${title}\n\n${message}`));
         return;
       }
       
@@ -95,8 +97,8 @@ const Utils = {
                   type === 'warning' ? 'Aviso' : 'Informação';
     this.showAlert(title, message, type);
   },
-  
-  // Função para atualizar toda a UI após mudança de estado
+
+  // ==================== HELPERS DE UI ====================
   refreshUIAfterStateChange(renderHeaderPlayers, renderBoard, renderSidebar, updateFooter, selectedPlayerIndex) {
     if (typeof renderHeaderPlayers === 'function') {
       renderHeaderPlayers();
@@ -112,39 +114,42 @@ const Utils = {
     }
   },
   
-  // Função para limpar seleção de região
-  clearRegionSelection(gameState) {
-    if (gameState) {
-      gameState.selectedRegionId = null;
+  clearRegionSelection() {
+    if (window.gameState) {
+      window.gameState.selectedRegionId = null;
     }
     document.querySelectorAll('.board-cell').forEach(c => c.classList.remove('region-selected'));
   },
   
-  // Função para converter hex para RGB (usada no renderSidebar)
   hexToRgb(hex) {
     const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
     return result ? 
-      `${parseInt(result[1], 16)}, ${parseInt(result[2], 16)}, ${parseInt(result[3], 16)}` 
-      : '255, 255, 255';
+      [parseInt(result[1], 16), parseInt(result[2], 16), parseInt(result[3], 16)] 
+      : [255, 255, 255];
   },
   
-  // Fullscreen helper
-  tryRequestFullscreenOnce() {
+  hexToRgbString(hex) {
+    const rgb = this.hexToRgb(hex);
+    return rgb.join(', ');
+  },
+
+  // ==================== SISTEMA DE FULLSCREEN ====================
+tryRequestFullscreenOnce() {
+  // Só tentar fullscreen se houver interação do usuário
+  const requestFullscreen = () => {
     const el = document.documentElement;
-    if (el.requestFullscreen) {
+    if (el.requestFullscreen && !document.fullscreenElement) {
       el.requestFullscreen().catch(() => {});
-    } else if (el.webkitRequestFullscreen) {
+    } else if (el.webkitRequestFullscreen && !document.webkitFullscreenElement) {
       el.webkitRequestFullscreen();
     }
-    
-    document.body.addEventListener('click', () => {
-      if (!document.fullscreenElement) {
-        this.tryRequestFullscreenOnce();
-      }
-    }, { once: true });
-  },
+  };
   
-  // Setup map zoom
+  // Aguardar interação do usuário
+  document.body.addEventListener('click', requestFullscreen, { once: true });
+},
+
+  // ==================== SISTEMA DE ZOOM DO MAPA ====================
   setupMapZoom() {
     const mapViewport = document.getElementById('mapViewport');
     const mapTransform = document.getElementById('mapTransform');
@@ -159,7 +164,6 @@ const Utils = {
     let startX, startY;
     let translateX = 0, translateY = 0;
     
-    // Aplicar transformações
     const applyTransform = () => {
       mapTransform.style.transform = `
         translate(${translateX}px, ${translateY}px)
@@ -167,9 +171,7 @@ const Utils = {
       `;
     };
     
-    // Zoom com scroll
     mapViewport.addEventListener('wheel', (e) => {
-      // Permitir scroll normal se Ctrl não estiver pressionado
       if (!e.ctrlKey && !e.metaKey) return;
       
       e.preventDefault();
@@ -178,14 +180,12 @@ const Utils = {
       const newZoom = Math.max(minZoom, Math.min(maxZoom, currentZoom + delta));
       
       if (newZoom !== currentZoom) {
-        // Ajustar a posição de tradução para zoom no cursor
         const rect = mapViewport.getBoundingClientRect();
         const x = e.clientX - rect.left;
         const y = e.clientY - rect.top;
         
         const zoomRatio = newZoom / currentZoom;
         
-        // Ajustar a posição para zoom no ponto do cursor
         translateX = x - (x - translateX) * zoomRatio;
         translateY = y - (y - translateY) * zoomRatio;
         
@@ -194,9 +194,8 @@ const Utils = {
       }
     }, { passive: false });
     
-    // Sistema de arrastar (pan)
     mapViewport.addEventListener('mousedown', (e) => {
-      if (e.button !== 0) return; // Apenas botão esquerdo
+      if (e.button !== 0) return;
       
       isDragging = true;
       startX = e.clientX - translateX;
@@ -218,7 +217,6 @@ const Utils = {
       mapViewport.style.cursor = 'grab';
     });
     
-    // Zoom com teclado
     document.addEventListener('keydown', (e) => {
       if (e.key === '+' || e.key === '=') {
         e.preventDefault();
@@ -230,7 +228,6 @@ const Utils = {
         currentZoom = Math.max(minZoom, currentZoom - zoomStep);
         applyTransform();
       }
-      // Reset com 0
       if (e.key === '0') {
         e.preventDefault();
         currentZoom = 1;
@@ -240,13 +237,38 @@ const Utils = {
       }
     });
     
-    // Configurar cursor inicial
     mapViewport.style.cursor = 'grab';
-    
-    console.log('🎮 Sistema de zoom/pan configurado');
   },
 
-  // ==================== NOVAS FUNÇÕES ADICIONADAS ====================
+  // ==================== SISTEMA DE SAVE/LOAD ====================
+  async checkAndOfferLoad() {
+    try {
+      await new Promise(resolve => setTimeout(resolve, 300));
+      
+      const saved = localStorage.getItem('gaia-dominium-save');
+      if (!saved) {
+        return { hasSave: false };
+      }
+      
+      const data = JSON.parse(saved);
+      
+      const response = await this.showSaveLoadModal();
+      
+      switch (response.action) {
+        case 'load':
+          return { hasSave: true, data: data, load: true };
+        case 'delete':
+          localStorage.removeItem('gaia-dominium-save');
+          this.showFeedback('Save excluído com sucesso!', 'success');
+          return { hasSave: false };
+        default:
+          return { hasSave: true, data: data, load: false };
+      }
+    } catch (error) {
+      console.error('Erro ao verificar save:', error);
+      return { hasSave: false };
+    }
+  },
   
   showSaveLoadModal() {
     return new Promise(resolve => {
@@ -287,43 +309,40 @@ const Utils = {
     modal?.classList.remove('show');
     setTimeout(() => modal?.classList.add('hidden'), 180);
   },
+
+  // ==================== UTILITÁRIOS GERAIS ====================
+  formatNumber(num) {
+    return num.toLocaleString('pt-BR');
+  },
   
-  // Nova função para verificar e oferecer carregamento
-  async checkAndOfferLoad() {
-  try {
-    // Pequeno delay para garantir que a UI está carregada
-    await new Promise(resolve => setTimeout(resolve, 300));
-    
-    const saved = localStorage.getItem('gaia-dominium-save');
-    if (!saved) {
-      console.log('Nenhum save encontrado');
-      return { hasSave: false };
+  capitalize(text) {
+    return text.charAt(0).toUpperCase() + text.slice(1).toLowerCase();
+  },
+  
+  randomInt(min, max) {
+    return Math.floor(Math.random() * (max - min + 1)) + min;
+  },
+  
+  shuffleArray(array) {
+    const shuffled = [...array];
+    for (let i = shuffled.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
     }
-    
-    const data = JSON.parse(saved);
-    console.log('Save encontrado:', data);
-    
-    // Mostrar modal de save/load
-    const response = await this.showSaveLoadModal();
-    
-    switch (response.action) {
-      case 'load':
-        console.log('Usuário escolheu carregar');
-        return { hasSave: true, data: data, load: true };
-      case 'delete':
-        localStorage.removeItem('gaia-dominium-save');
-        this.showFeedback('Save excluído com sucesso!', 'success');
-        return { hasSave: false };
-      default:
-        console.log('Usuário escolheu novo jogo');
-        return { hasSave: true, data: data, load: false };
-    }
-  } catch (error) {
-    console.error('Erro ao verificar save:', error);
-    return { hasSave: false };
+    return shuffled;
+  },
+  
+  debounce(func, wait) {
+    let timeout;
+    return function executedFunction(...args) {
+      const later = () => {
+        clearTimeout(timeout);
+        func(...args);
+      };
+      clearTimeout(timeout);
+      timeout = setTimeout(later, wait);
+    };
   }
-}
-  // FIM do objeto Utils - NÃO ADICIONE VÍRGULA AQUI
 };
 
 export { Utils };

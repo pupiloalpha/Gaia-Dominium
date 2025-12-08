@@ -520,6 +520,82 @@ input[type="text"]:focus, select:focus, input[type="number"]:focus {
    MODAIS
    ============================================ */
 
+/* Modal de Negociação */
+#negotiationModal .negotiation-section {
+  transition: all 0.2s ease;
+  backdrop-filter: blur(4px);
+}
+
+#negotiationModal .negotiation-section:hover {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  transform: translateY(-2px);
+}
+
+#negotiationModal .negotiation-section:first-child { /* Oferta */
+  background: linear-gradient(135deg, rgba(34, 197, 94, 0.1), rgba(22, 163, 74, 0.1)); /* Verde suave */
+}
+
+#negotiationModal .negotiation-section:last-child { /* Solicitação */
+  background: linear-gradient(135deg, rgba(239, 68, 68, 0.1), rgba(220, 38, 38, 0.1)); /* Vermelho suave */
+}
+
+/* Controles de Recursos (dinâmicos) */
+#negotiationModal .resource-control {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  padding: 8px;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  transition: all 0.2s ease;
+}
+
+#negotiationModal .resource-control:hover {
+  background: rgba(255, 255, 255, 0.05);
+  border-color: var(--accent);
+}
+
+/* Slider para Recursos (adicionado via JS na Etapa 3) */
+#negotiationModal input[type="range"] {
+  -webkit-appearance: none;
+  width: 100%;
+  height: 4px;
+  background: linear-gradient(90deg, var(--accent) 0%, var(--accent) 50%, transparent 100%);
+  border-radius: 2px;
+}
+
+#negotiationModal input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: var(--accent);
+  cursor: pointer;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+/* Resumo da Proposta */
+#negotiationModal #negotiationSummary {
+  animation: fadeIn 0.3s ease;
+  min-height: 40px;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+/* Responsividade */
+@media (max-width: 768px) {
+  #negotiationModal .grid-cols-2 {
+    grid-template-columns: 1fr;
+  }
+  #negotiationModal .negotiation-section {
+    margin-bottom: 16px;
+  }
+}
+
 /* Controle de visibilidade dos modais */
 .modal-container {
   display: none !important;

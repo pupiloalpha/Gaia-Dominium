@@ -30,7 +30,8 @@ import {
   resetNegotiationState,
   setNegotiationTarget,
   updateNegotiationResource,
-  updateNegotiationRegions
+  updateNegotiationRegions,
+  saveGame // Adicionado para auto-save
 } from './game-state.js';
 
 import { 
@@ -43,34 +44,35 @@ import {
   STRUCTURE_COSTS,
   STRUCTURE_INCOME,
   STRUCTURE_EFFECTS,
-  GAME_EVENTS,  // Importar do game-config.js
+  GAME_EVENTS,
   ACHIEVEMENTS_CONFIG
 } from './game-config.js';
 
 class GameLogic {
   constructor() {
-    this.GAME_EVENTS = GAME_EVENTS; // Usar a importação
+    this.GAME_EVENTS = GAME_EVENTS;
+    this.incomeModalAttempts = 0;
   }
 
-getNegotiationState() {
-  return getNegotiationState();
-}
+  getNegotiationState() {
+    return getNegotiationState();
+  }
 
-updateNegotiationResource(type, resourceKey, value) {
-  updateNegotiationResource(type, resourceKey, value);
-}
+  updateNegotiationResource(type, resourceKey, value) {
+    updateNegotiationResource(type, resourceKey, value);
+  }
 
-updateNegotiationRegions(type, regionIds) {
-  updateNegotiationRegions(type, regionIds);
-}
+  updateNegotiationRegions(type, regionIds) {
+    updateNegotiationRegions(type, regionIds);
+  }
 
-setNegotiationTarget(targetId) {
-  setNegotiationTarget(targetId);
-}
+  setNegotiationTarget(targetId) {
+    setNegotiationTarget(targetId);
+  }
 
-validateCurrentNegotiation() {
-  return validateNegotiationState();
-}
+  validateCurrentNegotiation() {
+    return validateNegotiationState();
+  }
 
   // ==================== INICIALIZAÇÃO ====================
 
@@ -97,10 +99,10 @@ validateCurrentNegotiation() {
     // Aplicar renda inicial (irá mostrar a modal)
     const currentPlayer = getCurrentPlayer();
     
-    // Delay para garantir que a UI esteja completamente carregada
+    // Delay maior para garantir que a UI esteja completamente carregada
     setTimeout(() => {
       this.applyIncomeForPlayer(currentPlayer);
-    }, 800);
+    }, 1200);
   }
 
   // Adicione este novo método para avançar fases
@@ -216,12 +218,12 @@ validateCurrentNegotiation() {
   performAction(actionType = null) {
     // Verificar se está na fase correta para esta ação
     if (actionType && !this.isPhaseValidForAction(actionType)) {
-      window.utils.showFeedback(`Ação "${actionType}" não permitida na fase atual.`, 'warning');
+      this.showFeedback(`Ação "${actionType}" não permitida na fase atual.`, 'warning');
       return false;
     }
     
     if (gameState.actionsLeft <= 0) {
-      window.utils.showFeedback('Sem ações restantes neste turno.', 'warning');
+      this.showFeedback('Sem ações restantes neste turno.', 'warning');
       return false;
     }
     
@@ -244,12 +246,12 @@ validateCurrentNegotiation() {
 
     // Verificar se está na fase correta
     if (!this.isPhaseValidForAction('explorar')) {
-      window.utils.showFeedback('Ação não permitida nesta fase. Vá para fase de Ações.', 'warning');
+      this.showFeedback('Ação não permitida nesta fase. Vá para fase de Ações.', 'warning');
       return;
     }
     
     if (gameState.selectedRegionId === null) {
-      window.utils.showFeedback('Selecione uma região primeiro.', 'error');
+      this.showFeedback('Selecione uma região primeiro.', 'error');
       return;
     }
     
@@ -262,19 +264,19 @@ validateCurrentNegotiation() {
       const pvCost = 2;
       
       if (player.victoryPoints < pvCost) {
-        window.utils.showFeedback(`Você precisa de ${pvCost} PV para assumir domínio desta região.`, 'error');
+        this.showFeedback(`Você precisa de ${pvCost} PV para assumir domínio desta região.`, 'error');
         return;
       }
       
       const canPay = Object.entries(cost).every(([k,v]) => player.resources[k] >= v);
       if (!canPay) {
         const needed = Object.entries(cost).map(([k,v]) => `${k}: ${v}`).join(', ');
-        window.utils.showFeedback(`Recursos insuficientes. Necessário: ${needed}`, 'error');
+        this.showFeedback(`Recursos insuficientes. Necessário: ${needed}`, 'error');
         return;
       }
       
       const resourceList = Object.entries(cost).map(([k,v]) => `${RESOURCE_ICONS[k]}${v}`).join(' ');
-      const ok = await window.utils.showConfirm(
+      const ok = await this.showConfirm(
         'Assumir Domínio', 
         `Custo: ${pvCost} PV + ${resourceList}\n\nDeseja assumir o controle de ${region.name}?`
       );
@@ -288,7 +290,7 @@ validateCurrentNegotiation() {
       region.controller = gameState.currentPlayerIndex;
       player.regions.push(gameState.selectedRegionId);
       
-      window.utils.showFeedback(`${region.name} agora está sob seu controle! -${pvCost} PV`, 'success');
+      this.showFeedback(`${region.name} agora está sob seu controle! -${pvCost} PV`, 'success');
       
       addActivityLog({
         type: 'explore',
@@ -302,7 +304,7 @@ validateCurrentNegotiation() {
     } else if (region.controller === gameState.currentPlayerIndex) {
       // EXPLORAR (região própria)
       if (!this.canAffordAction('explorar')) {
-        window.utils.showFeedback('Recursos insuficientes para explorar.', 'error');
+        this.showFeedback('Recursos insuficientes para explorar.', 'error');
         return;
       }
       
@@ -317,9 +319,9 @@ validateCurrentNegotiation() {
       
       if (Math.random() < 0.10) { 
         player.resources.ouro += 1; 
-        window.utils.showFeedback('Descoberta Rara! +1 Ouro', 'success'); 
+        this.showFeedback('Descoberta Rara! +1 Ouro', 'success'); 
       } else {
-        window.utils.showFeedback(`${region.name} explorada. Nível: ${region.explorationLevel}⭐`, 'success');
+        this.showFeedback(`${region.name} explorada. Nível: ${region.explorationLevel}⭐`, 'success');
       }
       
       achievementsState.totalExplored++;
@@ -335,13 +337,18 @@ validateCurrentNegotiation() {
       });
       
     } else {
-      window.utils.showFeedback('Você não pode explorar regiões de outros jogadores.', 'error');
+      this.showFeedback('Você não pode explorar regiões de outros jogadores.', 'error');
       return;
     }
     
     this.clearRegionSelection();
     this.checkVictory();
-    window.uiManager.refreshUIAfterStateChange();
+    
+    // Atualizar UI
+    if (window.uiManager) {
+      window.uiManager.updateUI();
+      window.uiManager.updateFooter();
+    }
 
     // No final de cada método de ação (handleExplore, handleCollect, etc.), adicione:
     if (window.uiManager && window.uiManager.updateFooter) {
@@ -359,17 +366,17 @@ validateCurrentNegotiation() {
 
     // Verificar se está na fase correta
     if (!this.isPhaseValidForAction('recolher')) {
-      window.utils.showFeedback('Ação não permitida nesta fase. Vá para fase de Ações.', 'warning');
+      this.showFeedback('Ação não permitida nesta fase. Vá para fase de Ações.', 'warning');
       return;
     }
 
     if (gameState.selectedRegionId === null) {
-      window.utils.showFeedback('Selecione uma região para recolher.', 'error');
+      this.showFeedback('Selecione uma região para recolher.', 'error');
       return;
     }
 
     if (!this.performAction('recolher')) {
-      window.utils.showFeedback('Sem ações restantes neste turno.', 'warning');
+      this.showFeedback('Sem ações restantes neste turno.', 'warning');
       return;
     }
 
@@ -377,12 +384,12 @@ validateCurrentNegotiation() {
     const player = gameState.players[gameState.currentPlayerIndex];
 
     if (region.controller !== gameState.currentPlayerIndex) {
-      window.utils.showFeedback('Você não controla essa região.', 'error');
+      this.showFeedback('Você não controla essa região.', 'error');
       return;
     }
 
     if (region.explorationLevel === 0) {
-      window.utils.showFeedback('Você deve explorar a região antes de recolher.', 'warning');
+      this.showFeedback('Você deve explorar a região antes de recolher.', 'warning');
       return;
     }
 
@@ -399,14 +406,14 @@ validateCurrentNegotiation() {
       if (resourceTypes.length > 0) {
         const randomRes = resourceTypes[Math.floor(Math.random() * resourceTypes.length)];
         player.resources[randomRes] += 1;
-        window.utils.showFeedback(`Bônus de exploração: +1 ${randomRes}!`, 'info');
+        this.showFeedback(`Bônus de exploração: +1 ${randomRes}!`, 'info');
       }
     }
 
     // Bônus de exploração nível 3
     if (region.explorationLevel === 3) {
       harvestPercent = 0.75;
-      window.utils.showFeedback('Recolha potencializada! +50% recursos.', 'info');
+      this.showFeedback('Recolha potencializada! +50% recursos.', 'info');
     }
 
     // Bônus de evento: Festival da Colheita
@@ -416,7 +423,7 @@ validateCurrentNegotiation() {
       const bonus2 = resourceTypes[Math.floor(Math.random() * resourceTypes.length)];
       player.resources[bonus1] += 2;
       player.resources[bonus2] += 2;
-      window.utils.showFeedback(`Festival! +2 ${bonus1} e +2 ${bonus2}!`, 'success');
+      this.showFeedback(`Festival! +2 ${bonus1} e +2 ${bonus2}!`, 'success');
     }
 
     // Bônus de evento: Inverno Rigoroso
@@ -424,7 +431,7 @@ validateCurrentNegotiation() {
       Object.keys(gameState.eventModifiers.coletaBonus).forEach(res => {
         player.resources[res] += gameState.eventModifiers.coletaBonus[res];
       });
-      window.utils.showFeedback('Inverno rigoroso torna a coleta mais valiosa!', 'info');
+      this.showFeedback('Inverno rigoroso torna a coleta mais valiosa!', 'info');
     }
 
     // Coleta normal
@@ -435,7 +442,7 @@ validateCurrentNegotiation() {
     });
 
     player.victoryPoints += 1;
-    window.utils.showFeedback(`Recursos recolhidos de ${region.name}. +1 PV`, 'success');
+    this.showFeedback(`Recursos recolhidos de ${region.name}. +1 PV`, 'success');
     
     addActivityLog({
       type: 'collect',
@@ -447,7 +454,12 @@ validateCurrentNegotiation() {
 
     this.clearRegionSelection();
     this.checkVictory();
-    window.uiManager.refreshUIAfterStateChange();
+    
+    // Atualizar UI
+    if (window.uiManager) {
+      window.uiManager.updateUI();
+      window.uiManager.updateFooter();
+    }
 
     // No final de cada método de ação (handleExplore, handleCollect, etc.), adicione:
     if (window.uiManager && window.uiManager.updateFooter) {
@@ -460,12 +472,12 @@ validateCurrentNegotiation() {
   handleBuild(structureType = 'Abrigo') {
     // Verificar se está na fase correta
     if (!this.isPhaseValidForAction('construir')) {
-      window.utils.showFeedback('Ação não permitida nesta fase. Vá para fase de Ações.', 'warning');
+      this.showFeedback('Ação não permitida nesta fase. Vá para fase de Ações.', 'warning');
       return;
     }
 
     if (gameState.selectedRegionId === null) {
-      window.utils.showFeedback('Selecione uma região para construir.', 'error');
+      this.showFeedback('Selecione uma região para construir.', 'error');
       return;
     }
     
@@ -474,27 +486,27 @@ validateCurrentNegotiation() {
     
     // Verificar se o jogador controla a região
     if (region.controller !== gameState.currentPlayerIndex) {
-      window.utils.showFeedback('Você só pode construir em regiões que controla.', 'error');
+      this.showFeedback('Você só pode construir em regiões que controla.', 'error');
       return;
     }
     
     // Obter custo da estrutura
     const cost = STRUCTURE_COSTS[structureType];
     if (!cost) {
-      window.utils.showFeedback('Estrutura não encontrada.', 'error');
+      this.showFeedback('Estrutura não encontrada.', 'error');
       return;
     }
     
     // Verificar se já existe essa estrutura na região
     if (region.structures.includes(structureType)) {
-      window.utils.showFeedback(`Esta região já possui um ${structureType}.`, 'error');
+      this.showFeedback(`Esta região já possui um ${structureType}.`, 'error');
       return;
     }
     
     // Verificar se o jogador pode pagar
     const canPay = Object.entries(cost).every(([k,v]) => player.resources[k] >= v);
     if (!canPay) {
-      window.utils.showFeedback('Recursos insuficientes para construir.', 'error');
+      this.showFeedback('Recursos insuficientes para construir.', 'error');
       return;
     }
     
@@ -522,7 +534,7 @@ validateCurrentNegotiation() {
     
     player.victoryPoints += pvGain;
     
-    window.utils.showFeedback(`Construído ${structureType} em ${region.name}. +${pvGain} PV.`, 'success');
+    this.showFeedback(`Construído ${structureType} em ${region.name}. +${pvGain} PV.`, 'success');
 
     // Atualizar conquistas
     achievementsState.totalBuilt++;
@@ -537,7 +549,12 @@ validateCurrentNegotiation() {
     
     this.clearRegionSelection();
     this.checkVictory();
-    window.uiManager.refreshUIAfterStateChange();
+    
+    // Atualizar UI
+    if (window.uiManager) {
+      window.uiManager.updateUI();
+      window.uiManager.updateFooter();
+    }
 
     // No final de cada método de ação (handleExplore, handleCollect, etc.), adicione:
     if (window.uiManager && window.uiManager.updateFooter) {
@@ -547,54 +564,41 @@ validateCurrentNegotiation() {
 
   // ==================== NEGOCIAR ====================
 
-handleNegotiate() {
-  console.log('Fase atual ao tentar negociar:', gameState.currentPhase);
-  
-  if (gameState.currentPhase !== 'negociacao') {
-    window.utils.showFeedback('Negociação só é permitida na fase de Negociação.', 'warning');
-    return;
-  }
-  
-  const player = getCurrentPlayer();
-  
-  if (player.resources.ouro < 1) {
-    window.utils.showFeedback('Você precisa de 1 Ouro para negociar.', 'error');
-    return;
-  }
-  
-  if (gameState.actionsLeft <= 0) {
-    window.utils.showFeedback('Sem ações restantes para negociar.', 'warning');
-    return;
-  }
-  
-  // CHAMAR O NOVO MÓDULO DIRETAMENTE
-  console.log('Chamando novo modal de negociação');
-  
-  if (window.uiManager) {
-    // Vamos garantir que estamos chamando o método correto
-    if (typeof window.uiManager.openNegotiationModal === 'function') {
-      // Primeiro, vamos substituir o método antigo pelo novo
-      console.log('Substituindo método openNegotiationModal');
-      
-      // Salvar o método antigo se necessário
-      const oldMethod = window.uiManager.openNegotiationModal;
-      
-      // Definir novo método
-      window.uiManager.openNegotiationModal = function() {
-        console.log('Executando NOVO openNegotiationModal');
-        this.openNegotiationModalNew();
-      }.bind(window.uiManager);
-      
-      // Chamar o método (que agora é o novo)
-      window.uiManager.openNegotiationModal();
-    } else if (window.uiManager.openNegotiationModalNew) {
-      // Se o novo método existir, usar diretamente
-      window.uiManager.openNegotiationModalNew();
+  handleNegotiate() {
+    console.log('Fase atual ao tentar negociar:', gameState.currentPhase);
+    
+    if (gameState.currentPhase !== 'negociacao') {
+      this.showFeedback('Negociação só é permitida na fase de Negociação.', 'warning');
+      return;
     }
-  } else {
-    console.error('UI Manager não disponível');
+    
+    const player = getCurrentPlayer();
+    
+    if (player.resources.ouro < 1) {
+      this.showFeedback('Você precisa de 1 Ouro para negociar.', 'error');
+      return;
+    }
+    
+    if (gameState.actionsLeft <= 0) {
+      this.showFeedback('Sem ações restantes para negociar.', 'warning');
+      return;
+    }
+    
+    // CHAMAR O NOVO MÓDULO DIRETAMENTE
+    console.log('Chamando novo modal de negociação');
+    
+    if (window.uiManager) {
+      // Chamar o método de negociação através do novo módulo
+      if (window.uiManager.negotiation && typeof window.uiManager.negotiation.openNegotiationModal === 'function') {
+        window.uiManager.negotiation.openNegotiationModal();
+      } else {
+        console.error('Negotiation UI não disponível');
+        this.showFeedback('Sistema de negociação não carregado', 'error');
+      }
+    } else {
+      console.error('UI Manager não disponível');
+    }
   }
-}
 
   // Garantir funções para negociação
   setupNegotiationPhase() {
@@ -605,8 +609,8 @@ handleNegotiate() {
     
     // Verificar propostas pendentes para o jogador atual
     setTimeout(() => {
-      if (window.uiManager && window.uiManager.checkPendingNegotiationsForCurrentPlayer) {
-        window.uiManager.checkPendingNegotiationsForCurrentPlayer();
+      if (window.uiManager && window.uiManager.negotiation && window.uiManager.negotiation.checkPendingNegotiationsForCurrentPlayer) {
+        window.uiManager.negotiation.checkPendingNegotiationsForCurrentPlayer();
       }
     }, 800);
     
@@ -614,7 +618,6 @@ handleNegotiate() {
     if (window.uiManager) {
       window.uiManager.updateUI();
       window.uiManager.updateFooter();
-      window.uiManager.enableNegotiationOnly();
     }
     
     // Registrar mudança de fase
@@ -626,166 +629,166 @@ handleNegotiate() {
       turn: gameState.turn
     });
     
-    window.utils.showFeedback(`${currentPlayer.name} entrou na fase de negociação.`, 'info');
+    this.showFeedback(`${currentPlayer.name} entrou na fase de negociação.`, 'info');
   }
 
   // Enviar porposta de negociação
-async handleSendNegotiation() {
-  console.log('🔄 Iniciando envio de proposta de negociação');
-  
-  const player = getCurrentPlayer();
-  const negotiationState = getNegotiationState();
-  console.log('Estado da negociação:', negotiationState);
-  
-  // Verificações básicas
-  if (gameState.currentPhase !== 'negociacao') {
-    console.log('❌ Fase incorreta:', gameState.currentPhase);
-    window.utils.showFeedback('Negociação só é permitida na fase de Negociação.', 'warning');
-    return false;
+  async handleSendNegotiation() {
+    console.log('🔄 Iniciando envio de proposta de negociação');
+    
+    const player = getCurrentPlayer();
+    const negotiationState = getNegotiationState();
+    console.log('Estado da negociação:', negotiationState);
+    
+    // Verificações básicas
+    if (gameState.currentPhase !== 'negociacao') {
+      console.log('❌ Fase incorreta:', gameState.currentPhase);
+      this.showFeedback('Negociação só é permitida na fase de Negociação.', 'warning');
+      return false;
+    }
+    
+    if (gameState.actionsLeft <= 0) {
+      console.log('❌ Sem ações restantes');
+      this.showFeedback('Sem ações restantes para negociar.', 'warning');
+      return false;
+    }
+    
+    if (player.resources.ouro < 1) {
+      console.log('❌ Sem ouro suficiente');
+      this.showFeedback('Você precisa de 1 Ouro para negociar.', 'error');
+      return false;
+    }
+    
+    if (!negotiationState.targetPlayerId) {
+       console.log('❌ Alvo não definido');
+      this.showFeedback('Selecione um jogador alvo.', 'error');
+      return false;
+    }
+    
+    const targetPlayer = gameState.players.find(p => p.id === negotiationState.targetPlayerId);
+    if (!targetPlayer) {
+      this.showFeedback('Jogador alvo inválido.', 'error');
+      return false;
+    }
+    
+    // Validar proposta usando o estado atual
+    console.log('Validando estado de negociação:', negotiationState);
+    const isValid = validateNegotiationState();
+    
+    if (!isValid) {
+      const errors = getNegotiationValidationErrors();
+      const errorMessage = errors.length > 0 ? errors[0] : 'Proposta inválida';
+      this.showFeedback(errorMessage, 'error');
+      return false;
+    }
+    
+    // Confirmar envio
+    const confirm = await this.showConfirm(
+      'Enviar Proposta',
+      `Enviar proposta para ${targetPlayer.name}?\n\nA proposta será enviada e aguardará resposta.`
+    );
+    
+    if (!confirm) {
+      console.log('Usuário cancelou envio');
+      return false;
+    }
+    
+    // CONSUMIR AÇÃO E OURO APENAS AQUI
+    console.log('Consumindo ação e ouro para negociação');
+    
+    // Consumir ação
+    if (!this.performAction('negociar')) {
+      this.showFeedback('Erro ao consumir ação.', 'error');
+      return false;
+    }
+    
+    // Consumir ouro
+    player.resources.ouro -= 1;
+    
+    // Criar objeto de negociação com ID único
+    const negotiation = {
+      id: 'neg_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9),
+      initiatorId: player.id,
+      targetId: targetPlayer.id,
+      offer: {
+        madeira: negotiationState.offer.madeira || 0,
+        pedra: negotiationState.offer.pedra || 0,
+        ouro: negotiationState.offer.ouro || 0,
+        agua: negotiationState.offer.agua || 0,
+        regions: negotiationState.offerRegions || []
+      },
+      request: {
+        madeira: negotiationState.request.madeira || 0,
+        pedra: negotiationState.request.pedra || 0,
+        ouro: negotiationState.request.ouro || 0,
+        agua: negotiationState.request.agua || 0,
+        regions: negotiationState.requestRegions || []
+      },
+      timestamp: Date.now(),
+      turn: gameState.turn,
+      status: 'pending'
+    };
+    
+    console.log('Proposta criada:', negotiation);
+    
+    // Adicionar à lista de propostas pendentes
+    try {
+      addPendingNegotiation(negotiation);
+      console.log('Proposta adicionada às pendentes');
+    } catch (error) {
+      console.error('Erro ao adicionar proposta pendente:', error);
+      this.showFeedback('Erro ao enviar proposta.', 'error');
+      return false;
+    }
+    
+    // Fechar modal de criação
+    if (window.uiManager && window.uiManager.negotiation && window.uiManager.negotiation.closeNegotiationModal) {
+      window.uiManager.negotiation.closeNegotiationModal();
+    } else {
+      // Fallback
+      const modal = document.getElementById('negotiationModal');
+      if (modal) modal.classList.add('hidden');
+      document.body.classList.remove('modal-active');
+    }
+    
+    // Resetar estado da negociação
+    resetNegotiationState();
+    
+    // Mostrar notificação para o destinatário
+    if (window.uiManager && window.uiManager.negotiation && window.uiManager.negotiation.showNegotiationNotification) {
+      setTimeout(() => {
+        window.uiManager.negotiation.showNegotiationNotification(negotiation);
+      }, 500);
+    }
+    
+    // Registrar envio no log
+    addActivityLog({
+      type: 'negotiate',
+      playerName: player.name,
+      action: 'enviou proposta para',
+      details: `${targetPlayer.name}`,
+      turn: gameState.turn
+    });
+    
+    // Mostrar feedback para o remetente
+    this.showFeedback(`✅ Proposta enviada para ${targetPlayer.name}! Aguardando resposta.`, 'success');
+    
+    // Atualizar UI
+    if (window.uiManager) {
+      window.uiManager.updateUI();
+      window.uiManager.updateFooter();
+    }
+    
+    // Atualizar conquistas
+    achievementsState.totalNegotiations++;
+    if (achievementsState.playerAchievements[player.id]) {
+      achievementsState.playerAchievements[player.id].negotiated = 
+        (achievementsState.playerAchievements[player.id].negotiated || 0) + 1;
+    }
+    
+    console.log('✅ Proposta enviada com sucesso!');
+    return true;
   }
-  
-  if (gameState.actionsLeft <= 0) {
-    console.log('❌ Sem ações restantes');
-    window.utils.showFeedback('Sem ações restantes para negociar.', 'warning');
-    return false;
-  }
-  
-  if (player.resources.ouro < 1) {
-    console.log('❌ Sem ouro suficiente');
-    window.utils.showFeedback('Você precisa de 1 Ouro para negociar.', 'error');
-    return false;
-  }
-  
-  if (!negotiationState.targetPlayerId) {
-     console.log('❌ Alvo não definido');
-    window.utils.showFeedback('Selecione um jogador alvo.', 'error');
-    return false;
-  }
-  
-  const targetPlayer = gameState.players.find(p => p.id === negotiationState.targetPlayerId);
-  if (!targetPlayer) {
-    window.utils.showFeedback('Jogador alvo inválido.', 'error');
-    return false;
-  }
-  
-  // Validar proposta usando o estado atual
-  console.log('Validando estado de negociação:', negotiationState);
-  const isValid = validateNegotiationState();
-  
-  if (!isValid) {
-    const errors = getNegotiationValidationErrors();
-    const errorMessage = errors.length > 0 ? errors[0] : 'Proposta inválida';
-    window.utils.showFeedback(errorMessage, 'error');
-    return false;
-  }
-  
-  // Confirmar envio
-  const confirm = await window.utils.showConfirm(
-    'Enviar Proposta',
-    `Enviar proposta para ${targetPlayer.name}?\n\nA proposta será enviada e aguardará resposta.`
-  );
-  
-  if (!confirm) {
-    console.log('Usuário cancelou envio');
-    return false;
-  }
-  
-  // CONSUMIR AÇÃO E OURO APENAS AQUI
-  console.log('Consumindo ação e ouro para negociação');
-  
-  // Consumir ação
-  if (!this.performAction('negociar')) {
-    window.utils.showFeedback('Erro ao consumir ação.', 'error');
-    return false;
-  }
-  
-  // Consumir ouro
-  player.resources.ouro -= 1;
-  
-  // Criar objeto de negociação com ID único
-  const negotiation = {
-    id: 'neg_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9),
-    initiatorId: player.id,
-    targetId: targetPlayer.id,
-    offer: {
-      madeira: negotiationState.offer.madeira || 0,
-      pedra: negotiationState.offer.pedra || 0,
-      ouro: negotiationState.offer.ouro || 0,
-      agua: negotiationState.offer.agua || 0,
-      regions: negotiationState.offerRegions || []
-    },
-    request: {
-      madeira: negotiationState.request.madeira || 0,
-      pedra: negotiationState.request.pedra || 0,
-      ouro: negotiationState.request.ouro || 0,
-      agua: negotiationState.request.agua || 0,
-      regions: negotiationState.requestRegions || []
-    },
-    timestamp: Date.now(),
-    turn: gameState.turn,
-    status: 'pending'
-  };
-  
-  console.log('Proposta criada:', negotiation);
-  
-  // Adicionar à lista de propostas pendentes
-  try {
-    addPendingNegotiation(negotiation);
-    console.log('Proposta adicionada às pendentes');
-  } catch (error) {
-    console.error('Erro ao adicionar proposta pendente:', error);
-    window.utils.showFeedback('Erro ao enviar proposta.', 'error');
-    return false;
-  }
-  
-  // Fechar modal de criação
-  if (window.uiManager && window.uiManager.closeNegotiationModal) {
-    window.uiManager.closeNegotiationModal();
-  } else {
-    // Fallback
-    const modal = document.getElementById('negotiationModal');
-    if (modal) modal.classList.add('hidden');
-    document.body.classList.remove('modal-active');
-  }
-  
-  // Resetar estado da negociação
-  resetNegotiationState();
-  
-  // Mostrar notificação para o destinatário
-  if (window.uiManager && window.uiManager.showNegotiationNotification) {
-    setTimeout(() => {
-      window.uiManager.showNegotiationNotification(negotiation);
-    }, 500);
-  }
-  
-  // Registrar envio no log
-  addActivityLog({
-    type: 'negotiate',
-    playerName: player.name,
-    action: 'enviou proposta para',
-    details: `${targetPlayer.name}`,
-    turn: gameState.turn
-  });
-  
-  // Mostrar feedback para o remetente
-  window.utils.showFeedback(`✅ Proposta enviada para ${targetPlayer.name}! Aguardando resposta.`, 'success');
-  
-  // Atualizar UI
-  if (window.uiManager) {
-    window.uiManager.updateUI();
-    window.uiManager.updateFooter();
-  }
-  
-  // Atualizar conquistas
-  achievementsState.totalNegotiations++;
-  if (achievementsState.playerAchievements[player.id]) {
-    achievementsState.playerAchievements[player.id].negotiated = 
-      (achievementsState.playerAchievements[player.id].negotiated || 0) + 1;
-  }
-  
-  console.log('✅ Proposta enviada com sucesso!');
-  return true;
-}
 
   // MÉTODOS DE RESPOSTA NEGOCIAÇÃO
 
@@ -796,7 +799,7 @@ async handleSendNegotiation() {
     
     if (!negotiation) {
       console.log('Nenhuma negociação ativa encontrada');
-      window.utils.showFeedback('Nenhuma negociação ativa para responder.', 'error');
+      this.showFeedback('Nenhuma negociação ativa para responder.', 'error');
       return;
     }
     
@@ -814,7 +817,7 @@ async handleSendNegotiation() {
     // Verificar se é o jogador correto respondendo
     if (currentPlayer.id !== target.id) {
       console.log('Jogador incorreto tentando responder:', currentPlayer.name);
-      window.utils.showFeedback('Apenas o destinatário pode responder a esta proposta.', 'error');
+      this.showFeedback('Apenas o destinatário pode responder a esta proposta.', 'error');
       return;
     }
     
@@ -824,7 +827,7 @@ async handleSendNegotiation() {
       // Validar novamente antes de executar
       const canExecute = this.validateNegotiationBeforeExecution(negotiation);
       if (!canExecute.valid) {
-        window.utils.showFeedback(canExecute.message, 'error');
+        this.showFeedback(canExecute.message, 'error');
         return;
       }
       
@@ -859,9 +862,9 @@ async handleSendNegotiation() {
           isMine: (initiator.id === gameState.currentPlayerIndex)
         });
         
-        window.utils.showFeedback(`✅ Proposta aceita! Troca realizada com sucesso. +1 PV para ambos.`, 'success');
+        this.showFeedback(`✅ Proposta aceita! Troca realizada com sucesso. +1 PV para ambos.`, 'success');
       } else {
-        window.utils.showFeedback('Erro ao processar a negociação.', 'error');
+        this.showFeedback('Erro ao processar a negociação.', 'error');
         // Não remover a negociação se houve erro
         return;
       }
@@ -882,19 +885,22 @@ async handleSendNegotiation() {
         isMine: true
       });
       
-      window.utils.showFeedback('❌ Proposta recusada.', 'info');
+      this.showFeedback('❌ Proposta recusada.', 'info');
     }
     
-    // Fechar modal ANTES de limpar a negociação
-    if (window.uiManager && window.uiManager.closeNegResponseModal) {
-      console.log('Chamando closeNegResponseModal');
-      window.uiManager.closeNegResponseModal();
-    } else {
-      console.error('uiManager ou closeNegResponseModal não disponível');
-      // Fallback: fechar manualmente
-      const modal = document.getElementById('negResponseModal');
-      if (modal) modal.classList.add('hidden');
+  // Fechar modal
+  if (window.uiManager && window.uiManager.negotiation) {
+    window.uiManager.negotiation.closeNegResponseModal();
+  } else {
+    // Fallback manual
+    const modal = document.getElementById('negResponseModal');
+    if (modal) modal.classList.add('hidden');
+    
+    // Garantir que o modo modal seja desativado
+    if (window.uiManager && window.uiManager.setModalMode) {
+      window.uiManager.setModalMode(false);
     }
+  }
     
     // Remover da lista de pendentes
     removePendingNegotiation(negotiation.id);
@@ -910,7 +916,6 @@ async handleSendNegotiation() {
     // Atualizar UI
     if (window.uiManager) {
       setTimeout(() => {
-        window.uiManager.refreshUIAfterStateChange();
         window.uiManager.updateUI();
         window.uiManager.updateFooter();
       }, 300);
@@ -971,7 +976,9 @@ async handleSendNegotiation() {
     const negotiation = gameState.activeNegotiation;
     if (!negotiation || !window.uiManager) return;
     
-    window.uiManager.presentNegotiationToTarget(negotiation);
+    if (window.uiManager.negotiation && window.uiManager.negotiation.presentNegotiationToTarget) {
+      window.uiManager.negotiation.presentNegotiationToTarget(negotiation);
+    }
   }
 
   validateNegotiationOffer(offer, player) {
@@ -1084,13 +1091,13 @@ async handleSendNegotiation() {
     // Verificar se há propostas pendentes não respondidas
     const pendingNegotiations = getPendingNegotiationsForPlayer(currentPlayer.id);
     if (pendingNegotiations.length > 0 && gameState.currentPhase === 'negociacao') {
-      const confirm = await window.utils.showConfirm(
+      const confirm = await this.showConfirm(
         'Propostas Pendentes',
         `Você tem ${pendingNegotiations.length} proposta(s) de negociação pendente(s).\nDeseja visualizá-las antes de terminar o turno?`
       );
       
-      if (confirm && window.uiManager) {
-        window.uiManager.showPendingNegotiationsModal();
+      if (confirm && window.uiManager && window.uiManager.negotiation) {
+        window.uiManager.negotiation.showPendingNegotiationsModal();
         return; // Não terminar turno ainda
       }
     }
@@ -1153,10 +1160,10 @@ async handleSendNegotiation() {
         window.uiManager.updateUI();
       }
       
-      window.utils.showFeedback(`Agora é o turno de ${newPlayer.name}`, 'info');
+      this.showFeedback(`Agora é o turno de ${newPlayer.name}`, 'info');
     } else {
       // Se estiver na fase de renda, avisar para aguardar
-      window.utils.showFeedback('Aguarde a fase de renda terminar...', 'info');
+      this.showFeedback('Aguarde a fase de renda terminar...', 'info');
     }
   }
 
@@ -1191,7 +1198,7 @@ async handleSendNegotiation() {
         }
         gameState.currentEvent = null;
         gameState.eventModifiers = {};
-        window.utils.showFeedback('O evento global terminou.', 'info');
+        this.showFeedback('O evento global terminou.', 'info');
       }
     }
 
@@ -1217,33 +1224,33 @@ async handleSendNegotiation() {
   // ==================== RENDA AUTOMÁTICA ====================
 
   applyIncomeForPlayer(player) {
-    const bonuses = { madeira: 0, pedra: 0, ouro: 0, agua: 0, pv: 0 };
+  const bonuses = { madeira: 0, pedra: 0, ouro: 0, agua: 0, pv: 0 };
+  
+  player.regions.forEach(regionId => {
+    const region = gameState.regions[regionId];
+    if (!region) return;
     
-    player.regions.forEach(regionId => {
-      const region = gameState.regions[regionId];
-      if (!region) return;
-      
-      // Produção base por bioma
-      let biomeProd = { madeira: 0, pedra: 0, ouro: 0, agua: 0 };
-      
-      switch(region.biome) {
-        case 'Floresta Tropical':
-          biomeProd.madeira = 1;
-          biomeProd.agua = 1.5;
-          break;
-        case 'Floresta Temperada':
-          biomeProd.madeira = 1.5;
-          biomeProd.pedra = 0.5;
-          break;
-        case 'Savana':
-          biomeProd.ouro = 1.5;
-          biomeProd.agua = 0.5;
-          break;
-        case 'Pântano':
-          biomeProd.agua = 2;
-          biomeProd.pedra = 1;
-          break;
-      }
+    // Produção base por bioma (valores inteiros)
+    let biomeProd = { madeira: 0, pedra: 0, ouro: 0, agua: 0 };
+    
+    switch(region.biome) {
+      case 'Floresta Tropical':
+        biomeProd.madeira = 1;
+        biomeProd.agua = 1;
+        break;
+      case 'Floresta Temperada':
+        biomeProd.madeira = 1;
+        biomeProd.pedra = 0;
+        break;
+      case 'Savana':
+        biomeProd.ouro = 1;
+        biomeProd.agua = 0;
+        break;
+      case 'Pântano':
+        biomeProd.agua = 2;
+        biomeProd.pedra = 1;
+        break;
+    }
       
       // Multiplicadores de eventos
       if (gameState.eventModifiers.madeiraMultiplier) {
@@ -1292,64 +1299,98 @@ async handleSendNegotiation() {
           break;
       }
       
-      // Aplicar multiplicador de exploração
-      Object.keys(biomeProd).forEach(k => {
-        biomeProd[k] *= explMultiplier;
-      });
-      
-      // Acumular bônus
-      Object.keys(biomeProd).forEach(k => {
-        bonuses[k] += biomeProd[k];
-      });
-      
-      // Produção de estruturas
-      if (!gameState.eventModifiers.structuresDisabled && region.structures && region.structures.length > 0) {
-        region.structures.forEach(struct => {
-          if (struct === 'Abrigo') {
-            bonuses.madeira += 0.5;
-            bonuses.agua += 0.5;
-          } else if (struct === 'Mercado') {
-            bonuses.ouro += 1;
-          } else if (struct === 'Laboratório') {
-            bonuses.ouro += 0.5;
-          } else if (struct === 'Torre de Vigia') {
-            bonuses.pv += 1;
-          } else if (struct === 'Santuário') {
-            bonuses.pv += 0.5;
-          }
-        });
-      }
+      // Aplicar multiplicador de exploração (convertendo para inteiro)
+    Object.keys(biomeProd).forEach(k => {
+      biomeProd[k] = Math.floor(biomeProd[k] * explMultiplier);
     });
     
-    // Arredondar valores para inteiros
-    Object.keys(bonuses).forEach(k => {
-      bonuses[k] = Math.floor(bonuses[k]);
+    // Acumular bônus
+    Object.keys(biomeProd).forEach(k => {
+      bonuses[k] += biomeProd[k];
     });
     
-    // Aplicar bônus ao jogador ANTES de mostrar a modal
-    Object.keys(bonuses).forEach(k => {
-      if (k !== 'pv') {
-        player.resources[k] = (player.resources[k] || 0) + bonuses[k];
-      } else {
-        player.victoryPoints += bonuses[k];
-      }
-    });
+    // Produção de estruturas (valores inteiros)
+    if (!gameState.eventModifiers.structuresDisabled && region.structures && region.structures.length > 0) {
+      region.structures.forEach(struct => {
+        if (struct === 'Abrigo') {
+          bonuses.madeira += 1;
+          bonuses.agua += 1;
+        } else if (struct === 'Mercado') {
+          bonuses.ouro += 1;
+        } else if (struct === 'Laboratório') {
+          bonuses.ouro += 1;
+        } else if (struct === 'Torre de Vigia') {
+          bonuses.pv += 1;
+        } else if (struct === 'Santuário') {
+          bonuses.pv += 1;
+        }
+      });
+    }
+  });
+  
+  // Aplicar bônus ao jogador (já são inteiros)
+  Object.keys(bonuses).forEach(k => {
+    if (k !== 'pv') {
+      player.resources[k] = (player.resources[k] || 0) + bonuses[k];
+    } else {
+      player.victoryPoints += bonuses[k];
+    }
+  });
     
     // IMPORTANTE: Mostrar modal de renda apenas se for o jogador atual E estiver na fase de renda
     if (player.id === gameState.currentPlayerIndex && gameState.currentPhase === 'renda') {
       console.log('Mostrando modal de renda para:', player.name);
       
-      // Pequeno delay para garantir que a UI esteja pronta
-      setTimeout(() => {
-        if (window.uiManager && window.uiManager.showIncomeModal) {
-          window.uiManager.showIncomeModal(player, bonuses);
-        } else {
-          console.error('uiManager ou showIncomeModal não disponível');
-        }
-      }, 300);
+      // Resetar tentativas
+      this.incomeModalAttempts = 0;
+      
+      // Tentar mostrar a modal com retry
+      this.tryShowIncomeModal(player, bonuses);
     }
     
     return bonuses;
+  }
+
+  // Método para tentar mostrar a modal com retry
+  tryShowIncomeModal(player, bonuses) {
+    if (this.incomeModalAttempts >= 5) {
+      console.error('Falha ao mostrar modal de renda após 5 tentativas');
+      // Fallback: mostrar feedback simples
+      this.showFeedback(`${player.name} recebeu renda. Iniciando ações.`, 'info');
+      
+      // Avançar para fase de ações mesmo sem modal
+      gameState.currentPhase = 'acoes';
+      gameState.actionsLeft = GAME_CONFIG.ACTIONS_PER_TURN;
+      
+      setTimeout(() => {
+        if (window.uiManager) {
+          window.uiManager.updateUI();
+          window.uiManager.updateFooter();
+        }
+      }, 50);
+      
+      addActivityLog({
+        type: 'phase',
+        playerName: player.name,
+        action: 'iniciou fase de ações',
+        details: '',
+        turn: gameState.turn
+      });
+      
+      return;
+    }
+    
+    // Pequeno delay para garantir que a UI esteja pronta
+    setTimeout(() => {
+      if (window.uiManager && window.uiManager.modals && typeof window.uiManager.modals.showIncomeModal === 'function') {
+        console.log('Modal de renda disponível, mostrando...');
+        window.uiManager.modals.showIncomeModal(player, bonuses);
+      } else {
+        console.log(`Tentativa ${this.incomeModalAttempts + 1}: uiManager ou showIncomeModal não disponível, tentando novamente...`);
+        this.incomeModalAttempts++;
+        this.tryShowIncomeModal(player, bonuses);
+      }
+    }, 300 + (this.incomeModalAttempts * 200)); // Aumenta o delay a cada tentativa
   }
 
   // Inicia a fase de renda  
@@ -1402,6 +1443,9 @@ async handleSendNegotiation() {
       details: ev.description,
       turn: gameState.turn
     });
+    
+    // Mostrar feedback sobre o evento
+    this.showFeedback(`Evento global: ${ev.name}`, 'info');
   }
 
   // ==================== UTILITÁRIOS ====================
@@ -1413,7 +1457,7 @@ async handleSendNegotiation() {
   checkVictory() {
     const winner = gameState.players.find(p => p.victoryPoints >= GAME_CONFIG.VICTORY_POINTS);
     if (winner) {
-      window.utils.showFeedback(`${winner.name} venceu o jogo!`, 'success');
+      this.showFeedback(`${winner.name} venceu o jogo!`, 'success');
       
       // Atualizar conquistas
       achievementsState.wins++;
@@ -1441,6 +1485,33 @@ async handleSendNegotiation() {
       return true;
     }
     return false;
+  }
+
+  // Métodos auxiliares de UI (para compatibilidade)
+  showFeedback(message, type = 'info') {
+    if (window.uiManager && window.uiManager.modals && typeof window.uiManager.modals.showFeedback === 'function') {
+      window.uiManager.modals.showFeedback(message, type);
+    } else {
+      // Fallback simples
+      console.log(`${type}: ${message}`);
+      alert(`${type.toUpperCase()}: ${message}`);
+    }
+  }
+
+  async showConfirm(title, message) {
+    if (window.uiManager && window.uiManager.modals && typeof window.uiManager.modals.showConfirm === 'function') {
+      return await window.uiManager.modals.showConfirm(title, message);
+    } else {
+      // Fallback simples
+      return confirm(`${title}\n\n${message}`);
+    }
+  }
+
+// NO FINAL DA CLASSE, ADICIONE:
+  autoSave() {
+    if (gameState?.gameStarted) {
+      saveGame();
+    }
   }
 }
 

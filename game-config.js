@@ -15,11 +15,12 @@ const GAME_CONFIG = {
     recolher: { cost:{madeira:1}, pv:1 },
     negociar: { cost:{ouro:1}, pv:1 }
   },
-  // Novas constantes adicionadas do main-original.js
   TURNS_UNTIL_NEXT_EVENT: 4,
   INITIAL_EVENT_MODIFIERS: {},
   EVENT_TURNS_LEFT: 0,
-  CONSECUTIVE_NO_ACTION_LIMIT: 3
+  CONSECUTIVE_NO_ACTION_LIMIT: 3,
+  MAX_PLAYERS: 4,
+  MIN_PLAYERS: 2
 };
 
 const RESOURCE_ICONS = {
@@ -30,25 +31,25 @@ const RESOURCE_ICONS = {
 };
 
 const BIOME_INCOME = {
-  'Floresta Tropical': { madeira: 1, pedra: 0, ouro: 0.5, agua: 1.5 },
-  'Floresta Temperada': { madeira: 1.5, pedra: 0.5, ouro: 0, agua: 1 },
-  'Savana': { madeira: 0.5, pedra: 0, ouro: 1.5, agua: 0.5 },
-  'Pântano': { madeira: 0.5, pedra: 1, ouro: 0, agua: 2 }
+  'Floresta Tropical': { madeira: 1, pedra: 0, ouro: 0, agua: 1 },
+  'Floresta Temperada': { madeira: 1, pedra: 0, ouro: 0, agua: 1 },
+  'Savana': { madeira: 0, pedra: 0, ouro: 1, agua: 0 },
+  'Pântano': { madeira: 0, pedra: 1, ouro: 0, agua: 2 }
 };
 
 const BIOME_INITIAL_RESOURCES = {
-  'Floresta Tropical': { madeira:6, pedra:1, ouro:0, agua:3 },
-  'Floresta Temperada': { madeira:5, pedra:2, ouro:0, agua:2 },
-  'Savana': { madeira:2, pedra:1, ouro:3, agua:1 },
-  'Pântano': { madeira:1, pedra:3, ouro:0, agua:4 }
+  'Floresta Tropical': { madeira: 6, pedra: 1, ouro: 0, agua: 3 },
+  'Floresta Temperada': { madeira: 5, pedra: 2, ouro: 0, agua: 2 },
+  'Savana': { madeira: 2, pedra: 1, ouro: 3, agua: 1 },
+  'Pântano': { madeira: 1, pedra: 3, ouro: 0, agua: 4 }
 };
 
 const STRUCTURE_INCOME = {
-  'Abrigo': { madeira: 0.5, agua: 0.5 },
+  'Abrigo': { madeira: 1, agua: 1 },
   'Torre de Vigia': { pv: 1 },
   'Mercado': { ouro: 1 },
-  'Laboratório': { ouro: 0.5 },
-  'Santuário': { pv: 0.5 }
+  'Laboratório': { ouro: 1 },
+  'Santuário': { pv: 1 }
 };
 
 const STRUCTURE_COSTS = {
@@ -87,6 +88,44 @@ const STRUCTURE_LIMITS = {
   'Santuário': 1
 };
 
+const STRUCTURE_CONFIG = {
+  'Abrigo': {
+    icon: '🛖',
+    color: 'green',
+    cost: STRUCTURE_COSTS['Abrigo'],
+    income: STRUCTURE_INCOME['Abrigo'],
+    effect: STRUCTURE_EFFECTS['Abrigo']
+  },
+  'Torre de Vigia': {
+    icon: '🏯',
+    color: 'blue',
+    cost: STRUCTURE_COSTS['Torre de Vigia'],
+    income: STRUCTURE_INCOME['Torre de Vigia'],
+    effect: STRUCTURE_EFFECTS['Torre de Vigia']
+  },
+  'Mercado': {
+    icon: '🏪',
+    color: 'yellow',
+    cost: STRUCTURE_COSTS['Mercado'],
+    income: STRUCTURE_INCOME['Mercado'],
+    effect: STRUCTURE_EFFECTS['Mercado']
+  },
+  'Laboratório': {
+    icon: '🔬',
+    color: 'purple',
+    cost: STRUCTURE_COSTS['Laboratório'],
+    income: STRUCTURE_INCOME['Laboratório'],
+    effect: STRUCTURE_EFFECTS['Laboratório']
+  },
+  'Santuário': {
+    icon: '🛐',
+    color: 'red',
+    cost: STRUCTURE_COSTS['Santuário'],
+    income: STRUCTURE_INCOME['Santuário'],
+    effect: STRUCTURE_EFFECTS['Santuário']
+  }
+};
+
 const EXPLORATION_BONUS = {
   0: 1.0,
   1: 1.25,
@@ -112,7 +151,7 @@ const TURN_PHASES = {
   NEGOCIACAO: 'negociacao'
 };
 
-// Sistema de Eventos Aleatórios - ADICIONADO DO main-original.js
+// Sistema de Eventos Aleatórios
 const GAME_EVENTS = [
   {
     id: 'seca',
@@ -334,7 +373,7 @@ const GAME_EVENTS = [
   }
 ];
 
-// Sistema de Conquistas - ADICIONADO DO main-original.js (versão funcional)
+// Sistema de Conquistas
 const ACHIEVEMENTS = [
   {
     id: 'explorador',
@@ -461,6 +500,7 @@ export {
   STRUCTURE_COSTS,
   STRUCTURE_EFFECTS,
   STRUCTURE_LIMITS,
+  STRUCTURE_CONFIG,
   EXPLORATION_BONUS,
   EXPLORATION_SPECIAL_BONUS,
   TURN_PHASES,

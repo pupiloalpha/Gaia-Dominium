@@ -1,4 +1,4 @@
-// game-state.js - Gerenciamento de estado do jogo completo
+// game-state.js - Estado do jogo + funções de persistência
 import { GAME_CONFIG } from './game-config.js';
 
 // ==================== CONSTANTES DE CONFIGURAÇÃO ====================
@@ -17,7 +17,8 @@ const INITIAL_STATE = {
   eventModifiers: {},
   turnsUntilNextEvent: 4,
   pendingNegotiations: [],
-  activeNegotiation: null
+  activeNegotiation: null,
+  currentPhase: 'renda'
 };
 
 const INITIAL_ACHIEVEMENTS_STATE = {
@@ -25,11 +26,13 @@ const INITIAL_ACHIEVEMENTS_STATE = {
   totalBuilt: 0,
   totalNegotiations: 0,
   wins: 0,
-  unlockedAchievements: [], // Array por jogador: [[id1, id2], [id1], ...]
-  playerAchievements: []    // Array por jogador: [{explored:0, built:0, ...}, ...]
+  unlockedAchievements: [],
+  playerAchievements: []
 };
 
-const LOG_HISTORY_LIMIT = 15;
+const LOG_HISTORY_LIMIT = 50;
+const SAVE_KEY = 'gaia-dominium-save';
+const SAVE_VERSION = '1.0.0';
 
 // ==================== CONSTANTES DE NEGOCIAÇÃO ====================
 const NEGOTIATION_INITIAL_STATE = {
@@ -46,7 +49,6 @@ const NEGOTIATION_INITIAL_STATE = {
 let gameState = { ...INITIAL_STATE };
 let achievementsState = { ...INITIAL_ACHIEVEMENTS_STATE };
 let activityLogHistory = [];
-let currentPhase = 'renda'; // Fase atual: 'renda', 'acoes', 'negociacao'
 let negotiationState = { ...NEGOTIATION_INITIAL_STATE };
 
 // ==================== GETTERS ====================
@@ -59,7 +61,7 @@ function getAchievementsState() {
 }
 
 function getCurrentPhase() { 
-  return currentPhase; 
+  return gameState.currentPhase || 'renda'; 
 }
 
 function getActivityLogs() {
@@ -84,23 +86,16 @@ function getPlayerById(id) {
   return gameState.players.find(p => p.id === id);
 }
 
-// Getter para estado de negociação
 function getNegotiationState() {
   return { ...negotiationState };
 }
 
-// Getter para validar se o jogador pode negociar
 function canPlayerNegotiate(playerId) {
   const player = getPlayerById(playerId);
   if (!player) return false;
   
-  // Verifica se tem ouro para negociar (custo base)
   if (player.resources.ouro < 1) return false;
-  
-  // Verifica se está na fase de negociação
-  if (currentPhase !== 'negociacao') return false;
-  
-  // Verifica se tem ações restantes
+  if (gameState.currentPhase !== 'negociacao') return false;
   if (gameState.actionsLeft <= 0) return false;
   
   return true;
@@ -124,7 +119,7 @@ function setAchievementsState(newState) {
 }
 
 function setCurrentPhase(phase) {
-  currentPhase = phase;
+  gameState.currentPhase = phase;
 }
 
 function setActivityLogHistory(logs) {
@@ -132,10 +127,8 @@ function setActivityLogHistory(logs) {
 }
 
 function setNegotiationState(newState) {
-  // Garantir que não substituímos completamente, apenas atualizamos
   Object.keys(newState).forEach(key => {
     if (negotiationState.hasOwnProperty(key)) {
-      // Para objetos aninhados, mesclar em vez de substituir
       if (typeof negotiationState[key] === 'object' && !Array.isArray(negotiationState[key])) {
         negotiationState[key] = { ...negotiationState[key], ...newState[key] };
       } else {
@@ -150,15 +143,12 @@ function resetNegotiationState() {
 }
 
 function updateNegotiationResource(type, resource, amount) {
-  // type: 'offer' ou 'request'
-  // resource: 'madeira', 'pedra', 'ouro', 'agua'
   if (negotiationState[type] && negotiationState[type][resource] !== undefined) {
     negotiationState[type][resource] = Math.max(0, amount);
   }
 }
 
 function updateNegotiationRegions(type, regionIds) {
-  // type: 'offerRegions' ou 'requestRegions'
   if (negotiationState[type] !== undefined) {
     negotiationState[type] = Array.isArray(regionIds) ? [...regionIds] : regionIds;
   }
@@ -341,21 +331,18 @@ function validateNegotiationState() {
     return false;
   }
   
-  // Validar recursos oferecidos
   Object.entries(negotiationState.offer).forEach(([resource, amount]) => {
     if (amount > 0 && amount > (initiator.resources[resource] || 0)) {
       errors.push(`Você não tem ${amount} ${resource} para oferecer`);
     }
   });
   
-  // Validar recursos solicitados
   Object.entries(negotiationState.request).forEach(([resource, amount]) => {
     if (amount > 0 && amount > (target.resources[resource] || 0)) {
       errors.push(`${target.name} não tem ${amount} ${resource} para trocar`);
     }
   });
   
-  // Validar regiões oferecidas
   negotiationState.offerRegions.forEach(regionId => {
     if (!initiator.regions.includes(regionId)) {
       const regionName = gameState.regions[regionId]?.name || `Região ${regionId}`;
@@ -363,7 +350,6 @@ function validateNegotiationState() {
     }
   });
   
-  // Validar regiões solicitadas
   negotiationState.requestRegions.forEach(regionId => {
     if (!target.regions.includes(regionId)) {
       const regionName = gameState.regions[regionId]?.name || `Região ${regionId}`;
@@ -371,7 +357,6 @@ function validateNegotiationState() {
     }
   });
   
-  // Validar que há algo para negociar
   const totalOffer = Object.values(negotiationState.offer).reduce((a, b) => a + b, 0) + 
                      negotiationState.offerRegions.length;
   const totalRequest = Object.values(negotiationState.request).reduce((a, b) => a + b, 0) + 
@@ -381,12 +366,10 @@ function validateNegotiationState() {
     errors.push('A proposta deve incluir oferta ou solicitação');
   }
   
-  // Validar que o jogador tem ouro para negociar
   if (initiator.resources.ouro < 1) {
     errors.push('Você precisa de 1 Ouro para negociar');
   }
   
-  // Validar ações restantes
   if (gameState.actionsLeft <= 0) {
     errors.push('Sem ações restantes para negociar');
   }
@@ -467,9 +450,109 @@ function updateNegotiationStatus(negotiationId, status) {
   return null;
 }
 
+// ==================== PERSISTÊNCIA ====================
+function saveGame() {
+  try {
+    const saveData = {
+      gameState: getGameState(),
+      achievementsState: getAchievementsState(),
+      activityLogHistory: getActivityLogHistory(),
+      timestamp: new Date().toISOString(),
+      version: SAVE_VERSION
+    };
+    
+    localStorage.setItem(SAVE_KEY, JSON.stringify(saveData));
+    console.log('💾 Jogo salvo:', saveData);
+    return true;
+  } catch (error) {
+    console.error('Erro ao salvar jogo:', error);
+    return false;
+  }
+}
+
+function loadGame(saveData) {
+  try {
+    if (!saveData || !saveData.gameState) {
+      throw new Error('Dados de save inválidos');
+    }
+    
+    setGameState(saveData.gameState);
+    
+    if (saveData.achievementsState) {
+      setAchievementsState(saveData.achievementsState);
+    }
+    
+    if (saveData.activityLogHistory) {
+      setActivityLogHistory(saveData.activityLogHistory);
+    }
+    
+    // GARANTIR que gameStarted seja true
+    if (!gameState.gameStarted) {
+      gameState.gameStarted = true;
+    }
+    
+    console.log('🎮 Jogo carregado:', saveData);
+    return true;
+  } catch (error) {
+    console.error('Erro ao carregar jogo:', error);
+    return false;
+  }
+}
+
+function hasSavedGame() {
+  return localStorage.getItem(SAVE_KEY) !== null;
+}
+
+function getSavedGame() {
+  try {
+    const saved = localStorage.getItem(SAVE_KEY);
+    return saved ? JSON.parse(saved) : null;
+  } catch (error) {
+    console.error('Erro ao ler save:', error);
+    return null;
+  }
+}
+
+function deleteSavedGame() {
+  localStorage.removeItem(SAVE_KEY);
+  return true;
+}
+
+// Função de compatibilidade para migrar saves antigos
+function migrateSaveData(data) {
+  if (!data.version) {
+    // Adicionar campos que podem faltar em saves antigos
+    if (!data.gameState.selectedPlayerForSidebar) {
+      data.gameState.selectedPlayerForSidebar = 0;
+    }
+    
+    if (!data.gameState.eventModifiers) {
+      data.gameState.eventModifiers = {};
+    }
+    
+    if (!data.achievementsState) {
+      data.achievementsState = {
+        totalExplored: 0,
+        totalBuilt: 0,
+        totalNegotiations: 0,
+        wins: 0,
+        unlockedAchievements: [],
+        playerAchievements: []
+      };
+    }
+    
+    data.version = SAVE_VERSION;
+  }
+  
+  return data;
+}
+
 // ==================== INICIALIZAÇÃO DO JOGO ====================
 function initializeGame(playersData) {
   gameState = { ...INITIAL_STATE };
+  achievementsState = { ...INITIAL_ACHIEVEMENTS_STATE };
+  activityLogHistory = [];
+  negotiationState = { ...NEGOTIATION_INITIAL_STATE };
   
   playersData.forEach((playerData, index) => {
     gameState.players.push({
@@ -505,7 +588,7 @@ function initializeGame(playersData) {
   gameState.currentPlayerIndex = 0;
   gameState.selectedPlayerForSidebar = 0;
   gameState.turnsUntilNextEvent = 4;
-  currentPhase = 'renda';
+  gameState.currentPhase = 'renda';
 }
 
 // ==================== EXPORTAÇÕES ====================
@@ -513,7 +596,6 @@ export {
   gameState,
   achievementsState,
   activityLogHistory,
-  currentPhase,
   negotiationState,
   
   // Getters
@@ -575,6 +657,14 @@ export {
   hasPlayerWon,
   getWinner,
   canPlayerAfford,
+  
+  // Persistência
+  saveGame,
+  loadGame,
+  hasSavedGame,
+  getSavedGame,
+  deleteSavedGame,
+  migrateSaveData,
   
   // Inicialização
   initializeGame
