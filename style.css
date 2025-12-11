@@ -2077,7 +2077,7 @@ body.modal-open .board-cell {
   /* 1. Tela Inicial: Empilha o conteúdo (Input e Botões) */
   /* Este seletor assume que o container principal dentro do initialScreen
      é o que controla o layout dos botões e do input. */
-  #initialScreen > div.flex-wrap {
+  #initialScreen > div.flex.flex-wrap {
     flex-direction: column !important; /* Força o empilhamento vertical */
     align-items: center !important; /* Centraliza horizontalmente */
     width: 95vw; /* Ocupa a maior parte da largura da tela */
