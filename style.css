@@ -2068,3 +2068,113 @@ body.modal-open .board-cell {
   text-align: center;
   text-shadow: 0 2px 4px rgba(0,0,0,0.5);
 }
+
+/* ===========================================
+   AJUSTES RESPONSIVOS PARA MOBILE (Max-width 640px)
+   ============================================ */
+@media (max-width: 640px) {
+
+  /* 1. Tela Inicial: Empilha o conteúdo (Input e Botões) */
+  /* Este seletor assume que o container principal dentro do initialScreen
+     é o que controla o layout dos botões e do input. */
+  #initialScreen > div.flex-wrap {
+    flex-direction: column !important; /* Força o empilhamento vertical */
+    align-items: center !important; /* Centraliza horizontalmente */
+    width: 95vw; /* Ocupa a maior parte da largura da tela */
+    max-width: 384px; /* Mantém o limite (w-96) */
+  }
+
+  /* Garante que os botões usem a largura total do contêiner recém-ajustado (95vw) */
+  #addPlayerBtn,
+  #cancelEditBtn,
+  #startGameBtn {
+    width: 100%; /* Ocupa toda a largura do contêiner */
+    margin-top: 0.75rem !important; /* Garante um bom espaçamento entre eles e o input */
+  }
+}
+
+/* 2. gameNavbar: Apenas informações essenciais */
+  #gameNavbar {
+    padding: 0.5rem 0.75rem !important; /* Reduz o preenchimento (p-4) para algo mais compacto */
+    height: auto;
+  }
+
+  /* Oculta o display de recursos. A Sidebar (espero) mostra o detalhe. */
+  #resourcesDisplay {
+    display: none !important;
+  }
+
+  /* Compacta os indicadores (Turno, Fase, Jogador) */
+  #gameNavbar > div.flex { /* Visando o container de Turno/Fase/Jogador */
+    gap: 0.5rem !important; /* Reduz o espaçamento entre eles */
+    justify-content: space-around !important;
+  }
+
+  /* Ajusta o tamanho da fonte dos indicadores */
+  #turnIndicator,
+  #phaseIndicator,
+  #currentPlayerIndicator {
+    font-size: 0.75rem !important; /* text-xs */
+    padding: 0.25rem 0.5rem !important; /* Reduz o padding interno */
+    white-space: nowrap; /* Evita que o texto quebre */
+    overflow: hidden;
+    text-overflow: ellipsis; /* Adiciona "..." se o nome do jogador for longo */
+  }
+
+/* 3. gameFooter: Botões em uma única linha */
+  #gameFooter {
+    padding: 0.5rem !important; /* Reduz o preenchimento de p-3 para p-2 */
+    height: auto;
+  }
+
+  /* Garante que o container interno não quebre (nowrap) e reduz o espaçamento (gap) */
+  #gameFooter > div {
+    flex-wrap: nowrap !important;
+    gap: 0.5rem !important;
+    overflow-x: auto; /* Permite rolagem suave se o conteúdo for grande demais */
+    scrollbar-width: none; /* Oculta a barra de rolagem (Firefox) */
+    -ms-overflow-style: none; /* Oculta a barra de rolagem (IE/Edge) */
+  }
+  #gameFooter > div::-webkit-scrollbar { /* Oculta a barra de rolagem (Chrome/Safari) */
+    display: none;
+  }
+
+  /* Ajusta os botões de ação e término de turno para serem mais compactos */
+  .action-btn,
+  #endTurnBtn {
+    padding: 0.4rem 0.6rem !important; /* Diminui o padding dos botões */
+    font-size: 0.7rem !important; /* text-xs ou menor */
+    white-space: nowrap;
+    min-width: fit-content;
+  }
+
+  /* Ajusta o indicador de ações restantes */
+  #actionsLeft {
+    font-size: 0.625rem !important; /* text-2xs, bem pequeno */
+    white-space: nowrap;
+  }
+
+/* 4. Modais: Ajuste para caber na tela do celular */
+
+  /* Remove o padding do container fixo e alinha no topo */
+  .fixed.inset-0.z-\[100\].flex.items-center.justify-center {
+      padding: 0 !important;
+      align-items: flex-start !important;
+      overflow-y: auto; /* Permite rolagem do container principal */
+  }
+
+  /* Ajusta o contêiner de conteúdo principal do modal */
+  .modal-content-container {
+    max-width: 95vw !important; /* Ocupa quase toda a largura */
+    padding: 1rem !important; /* Reduz o padding de p-6 para p-4 */
+    max-height: 95vh; /* Garante que caiba na altura */
+    margin: 0.5rem auto; /* Centraliza e garante margem na vertical/horizontal */
+  }
+
+  /* Garante que o conteúdo que fica entre o cabeçalho e o rodapé do modal seja rolavel */
+  .modal-content-container > div:last-child:not(button) { /* Se o corpo for o último div antes dos botões */
+    overflow-y: auto;
+    max-height: calc(95vh - 120px); /* Altura máxima ajustada (95% da tela menos a altura do cabeçalho e rodapé) */
+    padding-right: 0.5rem; /* Espaço para a barra de rolagem */
+  }
+} /* Fechamento do @media (max-width: 640px) */
