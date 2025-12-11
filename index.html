@@ -10,11 +10,18 @@
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="style.css">
 </head>
-<body class="bg-cover bg-center bg-fixed" style="background-image: url('gaia-inicio.png');">
+<body class="bg-cover bg-center bg-fixed" style="background-image: url('./assets/images/gaia-inicio.png');">
+
+ <!-- ==================== VÍDEO DE ABERTURA DO JOGO ==================== -->
+
+<video id="introVideo" autoplay muted playsinline aria-hidden="true">
+  <source src="./assets/videos/gaia-video-inicio.mp4" type="video/mp4">
+  Seu navegador não suporta vídeo HTML5. Por favor, atualize.
+</video>
 
   <!-- ==================== MODAIS GLOBAIS (Z-INDEX ALTO) ==================== -->
   
-  <!-- MANUAL MODAL -->
+<!-- MANUAL MODAL -->
   <div id="manualModal" class="hidden fixed inset-0 z-[100] flex items-center justify-center p-6">
     <div class="absolute inset-0 bg-black/60"></div>
     <div class="relative w-full max-w-4xl bg-gray-900/95 backdrop-blur-md border border-white/10 rounded-2xl shadow-xl p-6">
@@ -28,25 +35,30 @@
         <nav class="w-full md:w-48">
           <ul id="manualTabs" class="space-y-2">
             <li><button class="manual-tab w-full text-left px-4 py-2 rounded-md" data-tab="tab-o-jogo">O Jogo</button></li>
-            <li><button class="manual-tab w-full text-left px-4 py-2 rounded-md" data-tab="tab-regioes">Regiões de Gaia</button></li>
-            <li><button class="manual-tab w-full text-left px-4 py-2 rounded-md" data-tab="tab-regras">Regras</button></li>
+            <li><button class="manual-tab w-full text-left px-4 py-2 rounded-md" data-tab="tab-gaia">Universo Gaia</button></li>
+            <li><button class="manual-tab w-full text-left px-4 py-2 rounded-md" data-tab="tab-regioes">As regiões</button></li>
+            <li><button class="manual-tab w-full text-left px-4 py-2 rounded-md" data-tab="tab-faccoes">As facções</button></li>
+            <li><button class="manual-tab w-full text-left px-4 py-2 rounded-md" data-tab="tab-fases">Fases do Jogo</button></li>
             <li><button class="manual-tab w-full text-left px-4 py-2 rounded-md" data-tab="tab-acoes">Ações</button></li>
+            <li><button class="manual-tab w-full text-left px-4 py-2 rounded-md" data-tab="tab-negociacao">Negociação</button></li>
             <li><button class="manual-tab w-full text-left px-4 py-2 rounded-md" data-tab="tab-estrutura">Estruturas</button></li>
             <li><button class="manual-tab w-full text-left px-4 py-2 rounded-md" data-tab="tab-conquistas">Conquistas</button></li>
           </ul>
         </nav>
         <div class="flex-1 overflow-auto max-h-[60vh]">
           <section id="tab-o-jogo" class="manual-content p-2"></section>
+          <section id="tab-gaia" class="manual-content hidden p-2"></section>
           <section id="tab-regioes" class="manual-content hidden p-2"></section>
-          <section id="tab-regras" class="manual-content hidden p-2"></section>
+          <section id="tab-faccoes" class="manual-content hidden p-2"></section>
+          <section id="tab-fases" class="manual-content hidden p-2"></section>
           <section id="tab-acoes" class="manual-content hidden p-2"></section>
+          <section id="tab-negociacao" class="manual-content hidden p-2"></section>
           <section id="tab-estrutura" class="manual-content hidden p-2"></section>
           <section id="tab-conquistas" class="manual-content hidden p-2"></section>
         </div>
       </div>
     </div>
   </div>
-
   <!-- GLOBAL ALERT / CONFIRM MODAL -->
   <div id="alertModal" class="hidden fixed inset-0 z-[101] flex items-center justify-center p-4">
     <div class="relative w-full max-w-sm bg-gray-900 border border-yellow-500/50 rounded-xl shadow-2xl p-6 transform scale-100 transition-all">
@@ -262,6 +274,9 @@
         </div>
         <div class="px-6 pb-6">
           <div id="registeredPlayersList" class="grid grid-cols-2 md:grid-cols-4 gap-2"></div>
+          <div id="aiButtonsContainer" class="mt-4 border-t border-white/10 pt-4">
+            <!-- Os botões de IA serão inseridos aqui pelo JavaScript -->
+          </div>
         </div>
       </div>
     </div>
@@ -374,7 +389,7 @@
         <div id="mapTransform" class="relative w-full h-full">
           <!-- Imagem do mapa (fundo) -->
           <img 
-            src="gaia-mapa.png" 
+            src="./assets/images/gaia-mapa.png" 
             alt="Mapa de Gaia" 
             class="absolute inset-0 w-full h-full object-cover pointer-events-none select-none"
           />
@@ -409,7 +424,20 @@
     </div>
   </footer>
 
+<!-- Painel de Debug da IA (visível apenas em desenvolvimento) -->
+<div id="aiDebugPanel" class="hidden fixed bottom-20 right-4 z-40 w-64 bg-gray-900/90 border border-purple-500/50 rounded-lg p-3 text-xs">
+  <div class="flex justify-between items-center mb-2">
+    <h4 class="font-bold text-purple-300">🤖 Debug IA</h4>
+    <button onclick="document.getElementById('aiDebugPanel').classList.add('hidden')" class="text-gray-400">×</button>
+  </div>
+  <div id="aiDebugContent"></div>
+</div>
+
+<button id="toggleAIDebug" class="hidden fixed bottom-4 right-4 z-40 p-2 bg-purple-600 rounded-full text-white">
+  🤖
+</button>
+
   <!-- SCRIPTS MODULARES -->
-  <script type="module" src="./main.js"></script>
+  <script type="module" src="./js/main.js"></script>
 </body>
 </html>
