@@ -14,10 +14,10 @@
 // main.js - Arquivo principal e inicialização
 
 // ==================== IMPORTAÇÕES DE MÓDULOS ====================
-import { UIManager } from './ui/ui-manager.js';
-import { GameLogic } from './logic/game-logic.js';
-import { Utils } from './utils/utils.js';
-import { AIFactory } from './ai/ai-system.js';
+import { UIManager } from './ui-manager.js';
+import { GameLogic } from './game-logic.js';
+import { Utils } from './utils.js';
+import { AIFactory } from './ai-system.js';
 import { 
   gameState, 
   achievementsState,
@@ -32,7 +32,7 @@ import {
   hasSavedGame,
   getSavedGame,
   migrateSaveData
-} from './state/game-state.js';
+} from './game-state.js';
 
 // ==================== INICIALIZAÇÃO GLOBAL ====================
 window.GaiaDominium = {
@@ -47,38 +47,6 @@ window.GaiaDominium = {
 document.addEventListener('DOMContentLoaded', () => {
   console.log('🚀 Gaia Dominium - Inicializando...');
   
-// Lógica para o vídeo de intro
-const introVideo = document.getElementById('introVideo');
-if (introVideo) {
-  // Esconder todo o conteúdo até o vídeo terminar
-  document.body.style.overflow = 'hidden'; // Impede scroll durante intro
-
-  introVideo.addEventListener('ended', () => {
-    introVideo.classList.add('hidden');
-    setTimeout(() => {
-      introVideo.style.display = 'none'; // Remove completamente após fade
-      document.body.style.overflow = ''; // Restaura scroll
-    }, 500); // Tempo da transição CSS
-
-    // Prosseguir com inicialização normal (exibir tela de cadastro)
-    setTimeout(() => {
-      const initialScreen = document.getElementById('initialScreen');
-      if (initialScreen) {
-        initialScreen.style.display = 'flex'; // Usa 'flex' para preservar centralização
-      }
-      checkForSavedGame(); // Chama a função existente para verificar save
-    }, 100);
-  });
-
-  // Fallback: Se vídeo não carregar ou não terminar em 6s (5s + buffer)
-  setTimeout(() => {
-    if (!introVideo.ended && !introVideo.classList.contains('hidden')) {
-      console.warn('Vídeo de intro não terminou; forçando skip.');
-      introVideo.dispatchEvent(new Event('ended')); // Simula término
-    }
-  }, 6000);
-}
-
   // 1. Inicializar sistema de utilidades
   window.utils = Utils;
   window.GaiaDominium.utils = Utils;
@@ -117,23 +85,18 @@ if (introVideo) {
   // 8. Configurar sistemas auxiliares
   setupAuxiliarySystems();
   
-  // 9. Configurar modal de vitória
-    setupVictoryModal();
+  // 9. Verificar save após um curto delay
+  setTimeout(() => {
+    checkForSavedGame();
+  }, 1500);
   
   console.log('✅ Gaia Dominium - Inicialização completa!');
 });
 
 // ==================== FUNÇÕES DE CONFIGURAÇÃO ====================
-
 function setupInitialUI() {
-  if (window.uiManager) {
+  if (window.uiManager && window.uiManager.renderIconSelection) {
     window.uiManager.renderIconSelection();
-    // Inicializar seleção de facções
-    setTimeout(() => {
-      if (window.uiManager.renderFactionSelection) {
-        window.uiManager.renderFactionSelection();
-      }
-    }, 100);
   }
 }
 
@@ -197,38 +160,6 @@ function setupGlobalEventListeners() {
       }
     }
   });
-}
-
-function setupVictoryModal() {
-    const victoryModal = document.getElementById('victoryModal');
-    if (!victoryModal) return;
-    
-    // Botão para novo jogo
-    const newGameBtn = document.getElementById('victoryNewGameBtn');
-    if (newGameBtn) {
-        newGameBtn.addEventListener('click', () => {
-            victoryModal.classList.add('hidden');
-            // Recarregar a página para novo jogo
-            setTimeout(() => {
-                window.location.reload();
-            }, 300);
-        });
-    }
-    
-    // Botão para fechar
-    const closeBtn = document.getElementById('victoryCloseBtn');
-    if (closeBtn) {
-        closeBtn.addEventListener('click', () => {
-            victoryModal.classList.add('hidden');
-        });
-    }
-    
-    // Fechar ao clicar no overlay
-    victoryModal.addEventListener('click', (e) => {
-        if (e.target === victoryModal) {
-            victoryModal.classList.add('hidden');
-        }
-    });
 }
 
 function setupAuxiliarySystems() {
@@ -339,25 +270,10 @@ function adaptAIDifficulty(ai) {
 }
 
 async function checkForSavedGame() {
-  // VERIFICAÇÃO CRÍTICA: Se o jogo já começou, não mostrar modal de save
-  if (window.gameState?.gameStarted) {
-    console.log('🎮 Jogo já iniciado, pulando verificação de save');
-    return;
-  }
-  
-  // VERIFICAÇÃO: Se já estamos processando um save, não fazer nada
-  if (window._isCheckingSavedGame) {
-    console.log('🎮 Verificação de save já em andamento');
-    return;
-  }
-  
-  window._isCheckingSavedGame = true;
-  
   await new Promise(resolve => setTimeout(resolve, 1500));
   
   if (!window.utils || !window.utils.checkAndOfferLoad) {
     console.warn('Utils não disponível ainda, tentando novamente...');
-    window._isCheckingSavedGame = false;
     setTimeout(checkForSavedGame, 500);
     return;
   }
@@ -365,23 +281,13 @@ async function checkForSavedGame() {
   try {
     const result = await window.utils.checkAndOfferLoad();
     
-    // ADICIONE ESTA VERIFICAÇÃO: Se o jogo já começou durante a espera
-    if (window.gameState?.gameStarted) {
-      console.log('🎮 Jogo iniciado durante verificação, cancelando');
-      window._isCheckingSavedGame = false;
-      return;
-    }
-    
     if (result.hasSave && result.load && result.data) {
       console.log('🎮 Carregando jogo salvo...');
       
       const migratedData = migrateSaveData(result.data);
       loadGame(migratedData);
       
-      // MARCA que o jogo foi carregado
-      window._gameWasLoaded = true;
-      
-      // Ocultar tela de cadastro e mostrar interface do jogo
+      // CORREÇÃO: Ocultar tela de cadastro e mostrar interface do jogo
       hideInitialScreenAndShowGameUI();
       
       // Atualizar a UI após carregar
@@ -394,26 +300,20 @@ async function checkForSavedGame() {
             window.uiManager.modals.showFeedback('Jogo carregado com sucesso!', 'success');
           }
         }
-        window._isCheckingSavedGame = false;
       }, 300);
     } else if (result.hasSave && !result.load) {
       console.log('🎮 Usuário optou por novo jogo');
       localStorage.removeItem('gaia-dominium-save');
-      window._gameWasLoaded = false;
-      
       setTimeout(() => {
         if (window.uiManager?.modals?.showFeedback) {
           window.uiManager.modals.showFeedback('Novo jogo iniciado!', 'info');
         }
-        window._isCheckingSavedGame = false;
       }, 500);
     } else if (!result.hasSave) {
       console.log('🎮 Nenhum jogo salvo encontrado');
-      window._isCheckingSavedGame = false;
     }
   } catch (error) {
     console.error('Erro ao verificar save:', error);
-    window._isCheckingSavedGame = false;
   }
 }
 

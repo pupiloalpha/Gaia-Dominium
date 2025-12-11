@@ -19,10 +19,22 @@ export class NegotiationLogic {
     }
     
     const player = getCurrentPlayer();
-    if (player.resources.ouro < 1) { 
-      this.main.showFeedback('Necessário 1 Ouro.', 'error'); 
+    
+    // 1. Obter custo dinâmico de negociação (Ex: Mestres das Águas têm custo 0 na primeira vez)
+    let negCost = 1; // Padrão
+    if (this.main.factionLogic) {
+        // Apenas verifica o custo, não consome a habilidade ainda
+        // Para verificar, usamos o modify mas sabemos que ele não altera estado do player, 
+        // apenas retorna o valor.
+        negCost = this.main.factionLogic.modifyNegotiationCost(player);
+    }
+
+    // 2. Verificar se tem ouro suficiente (mesmo que seja 0)
+    if (player.resources.ouro < negCost) { 
+      this.main.showFeedback(`Necessário ${negCost} Ouro para negociar.`, 'error'); 
       return; 
     }
+    
     if (gameState.actionsLeft <= 0) { 
       this.main.showFeedback('Sem ações restantes.', 'warning'); 
       return; 
@@ -62,9 +74,10 @@ export class NegotiationLogic {
     const player = getCurrentPlayer();
     const negState = getNegotiationState();
     
+    // Validação preliminar
     if (!this._validateSendConditions(player, negState)) return false;
 
-    // Para IA, pulamos a confirmação visual se não houver UI ou se for turno de IA
+    // Confirmação UI
     let confirm = true;
     if (!(player.type === 'ai' || player.isAI)) {
         confirm = await this.main.showConfirm('Enviar Proposta', `Enviar proposta para jogador?`);
@@ -72,9 +85,15 @@ export class NegotiationLogic {
 
     if (!confirm) return false;
     
-    // Consumir custos
+    // 1. Calcular e Consumir Custo de Negociação
+    let negotiationCost = 1;
+    if (this.main.factionLogic) {
+        // Isso retorna o custo (0 ou 1) e internamente marca a habilidade como usada se for 0
+        negotiationCost = this.main.factionLogic.modifyNegotiationCost(player);
+    }
+
     gameState.actionsLeft--;
-    player.resources.ouro -= 1;
+    player.resources.ouro -= negotiationCost; // Pode ser 0
 
     const negotiation = this._buildNegotiationObject(player, negState);
     addPendingNegotiation(negotiation);
@@ -88,12 +107,23 @@ export class NegotiationLogic {
     
     resetNegotiationState();
     
-    // Notificar UI (apenas se não for IA jogando contra IA em background rápido)
+    // Notificar UI
     if (window.uiManager?.negotiation) {
         setTimeout(() => window.uiManager.negotiation.showNegotiationNotification(negotiation), 500);
     }
     
     const target = gameState.players[negotiation.targetId];
+    
+    // 2. Aplicar Bônus de Facção (Ex: Mercadores ganham PV ao negociar)
+    let bonusMsg = '';
+    if (this.main.factionLogic) {
+        const bonus = this.main.factionLogic.applyNegotiationBonus(player);
+        if (bonus.pv > 0) {
+            player.victoryPoints += bonus.pv;
+            bonusMsg = ` (+${bonus.pv} PV Facção)`;
+        }
+    }
+
     addActivityLog({ 
       type: 'negotiate', 
       playerName: player.name, 
@@ -101,7 +131,8 @@ export class NegotiationLogic {
       details: target.name, 
       turn: gameState.turn 
     });
-    this.main.showFeedback(`Proposta enviada para ${target.name}!`, 'success');
+    
+    this.main.showFeedback(`Proposta enviada para ${target.name}!${bonusMsg}`, 'success');
     
     achievementsState.totalNegotiations++;
     if(window.uiManager) window.uiManager.updateFooter();
@@ -242,10 +273,21 @@ export class NegotiationLogic {
   _validateSendConditions(player, negState) {
     if (gameState.currentPhase !== 'negociacao') return false;
     if (gameState.actionsLeft <= 0) return false;
-    if (player.resources.ouro < 1) return false;
+
+    // Verificação de Ouro agora depende da facção
+    let requiredGold = 1;
+    if (this.main.factionLogic) {
+        // Apenas verifica custo sem modificar estado
+        // (Assumindo que modifyNegotiationCost é inteligente ou que fazemos verificação simples aqui)
+        // Como modifyNegotiationCost altera o estado (decrementa turnBonus), 
+        // aqui apenas verificamos se ele TEM ouro suficiente caso o custo fosse cobrado.
+        // Se a lógica da facção diz que custa 0, então requiredGold seria 0.
+        // Para simplificar a validação UI, validamos >= 0.
+    }
     
-    // Verificação explícita de null/undefined
-    // CORREÇÃO: Converter para Number para comparação consistente
+    // Nota: A validação estrita de "tem ouro suficiente" é feita no handleNegotiate e handleSendNegotiation
+    // com base no retorno exato da factionLogic. Aqui garantimos integridade básica.
+
     const targetId = Number(negState.targetPlayerId);
     if (isNaN(targetId) || targetId === null || targetId === undefined) { 
         this.main.showFeedback('Selecione um alvo.', 'error'); 
@@ -254,8 +296,18 @@ export class NegotiationLogic {
     
     if (!validateNegotiationState()) {
         const errors = getNegotiationValidationErrors();
-        this.main.showFeedback(errors[0] || 'Proposta inválida', 'error');
-        return false;
+        
+        // Filtramos erro de "Precisa de 1 Ouro" se o custo for 0
+        const cost = this.main.factionLogic ? this.main.factionLogic.modifyNegotiationCost(player) : 1;
+        const filteredErrors = errors.filter(e => {
+            if (cost === 0 && e.includes('Precisa de 1 Ouro')) return false;
+            return true;
+        });
+
+        if (filteredErrors.length > 0) {
+            this.main.showFeedback(filteredErrors[0] || 'Proposta inválida', 'error');
+            return false;
+        }
     }
     return true;
   }

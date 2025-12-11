@@ -8,11 +8,11 @@ import {
   getAIPlayer,
   isPlayerAI,
   aiInstances 
- } from '../state/game-state.js';
-import { GAME_CONFIG, RESOURCE_ICONS, ACHIEVEMENTS_CONFIG, FACTION_ABILITIES } from '../state/game-config.js';
-import { AIFactory, AI_DIFFICULTY_SETTINGS } from '../ai/ai-system.js';
-import { ModalManager } from '../ui/ui-modals.js';
-import { NegotiationUI } from '../ui/ui-negotiation.js';
+ } from './game-state.js';
+import { GAME_CONFIG, RESOURCE_ICONS, ACHIEVEMENTS_CONFIG } from './game-config.js';
+import { AIFactory, AI_DIFFICULTY_SETTINGS } from './ai-system.js';
+import { ModalManager } from './ui-modals.js';
+import { NegotiationUI } from './ui-negotiation.js';
 
 // ==================== CONSTANTES DO UI ====================
 const PHASE_NAMES = {
@@ -44,143 +44,20 @@ const ACTION_COSTS = {
 };
 
 class UIManager {
-
-// ==================== INICIALIZAÇÃO DE DROPDOWNS ====================
-
-initDropdowns() {
-  console.log("🔄 Inicializando dropdowns...");
-  
-  // Garantir que os elementos existem
-  this.iconDropdown = document.getElementById('iconDropdown');
-  this.factionDropdown = document.getElementById('factionDropdown');
-  
-  if (!this.iconDropdown) {
-    console.error("❌ Elemento iconDropdown não encontrado!");
-    return;
-  }
-  
-  if (!this.factionDropdown) {
-    console.error("❌ Elemento factionDropdown não encontrado!");
-    return;
-  }
-  
-  console.log("✅ Dropdowns encontrados, preenchendo opções...");
-  
-  // Preencher dropdowns
-  this.populateIconDropdown();
-  this.populateFactionDropdown();
-  
-  // Adicionar botões de IA
-  this.addAIPlayerButtons();
-  
-  // Atualizar contador
-  this.updatePlayerCountDisplay();
-}
-
-// ==================== DROPDOWN DE FACÇÕES ====================
-
-populateFactionDropdown() {
-  if (!this.factionDropdown) {
-    console.error("❌ Elemento factionDropdown não encontrado");
-    return;
-  }
-  
-  // Limpar opções exceto o placeholder
-  while (this.factionDropdown.options.length > 1) {
-    this.factionDropdown.remove(1);
-  }
-  
-  // Adicionar opções
-  Object.entries(FACTION_ABILITIES).forEach(([id, faction]) => {
-    const option = document.createElement('option');
-    option.value = id;
-    option.textContent = `${faction.icon || '🏛️'} ${faction.name}`;
-    
-    // Verificar se facção está disponível
-    const isAvailable = this.isFactionAvailable(id);
-    
-    if (!isAvailable) {
-      option.disabled = true;
-      option.textContent += ' (já em uso)';
-      option.style.opacity = '0.6';
-    }
-    
-    this.factionDropdown.appendChild(option);
-  });
-  
-  console.log(`✅ Dropdown de facções preenchido com ${Object.keys(FACTION_ABILITIES).length} opções`);
-}
-
-isFactionAvailable(factionId) {
-  const faction = FACTION_ABILITIES[factionId];
-  if (!faction) return false;
-  
-  // Facção está disponível se não estiver sendo usada por jogador humano
-  return !gameState.players.some(p => 
-    p.faction && p.faction.id === faction.id && !p.isAI
-  );
-}
-
-// Função auxiliar para verificar disponibilidade de facção
-isFactionAvailable(factionId) {
-  const faction = FACTION_ABILITIES[factionId];
-  if (!faction) return false;
-  
-  return !gameState.players.some(p => 
-    p.faction && p.faction.id === faction.id && !p.isAI
-  );
-}
-
   constructor() {
-  this.modals = new ModalManager(this);
-  this.negotiation = new NegotiationUI(this);
-  this.editingIndex = null;
-  this.selectedIcon = null;
-  
-  this.cacheElements();
-  
-  // Inicializar após um pequeno delay
-  setTimeout(() => {
-    this.initUI();
-  }, 100);
-}
+    this.modals = new ModalManager(this);
+    this.negotiation = new NegotiationUI(this);
+    this.editingIndex = null;
+    this.cacheElements();
+    this.setupEventListeners();
+    this.setupTransparencyControls();
 
-cacheElements() {
-  // Elementos principais
-  this.initialScreen = document.getElementById('initialScreen');
-  this.gameNavbar = document.getElementById('gameNavbar');
-  this.gameContainer = document.getElementById('gameContainer');
-  this.sidebar = document.getElementById('sidebar');
-  this.gameMap = document.getElementById('gameMap');
-  this.gameFooter = document.getElementById('gameFooter');
-  
-  // Elementos do formulário
-  this.playerNameInput = document.getElementById('playerName');
-  this.addPlayerBtn = document.getElementById('addPlayerBtn');
-  this.startGameBtn = document.getElementById('startGameBtn');
-  this.registeredPlayersList = document.getElementById('registeredPlayersList');
-  this.cancelEditBtn = document.getElementById('cancelEditBtn');
-  this.playerCountDisplay = document.getElementById('playerCountDisplay');
-  
-  // Seleção de ícones e facções
-  this.iconSelection = document.getElementById('iconSelection');
-  this.factionDropdown = document.getElementById('factionDropdown');
-  
-  console.log("✅ Elementos cacheados:", {
-    iconSelection: !!this.iconSelection,
-    factionDropdown: !!this.factionDropdown,
-    playerNameInput: !!this.playerNameInput
-  });
-}
+    // Configurar botões de IA após um pequeno delay
+    setTimeout(() => {
+       this.addAIPlayerButton();
+    }, 100);
 
-initUI() {
-  this.renderIconSelection();
-  this.populateFactionDropdown();
-  this.addAIPlayerButtons();
-  this.updatePlayerCountDisplay();
-  this.setupEventListeners();
-  this.setupTransparencyControls();
-}
+  }
 
 // ==================== AÇÕES DE IA ====================
   
@@ -190,54 +67,36 @@ addAIPlayer(difficulty = 'medium', name = null) {
     return null;
   }
   
-  // Encontrar facção disponível
-  const availableFactions = Object.entries(FACTION_ABILITIES)
-    .filter(([id, faction]) => {
-      return this.isFactionAvailable(id);
-    });
-  
-  if (availableFactions.length === 0) {
-    this.modals.showFeedback('Todas as facções estão em uso. Adicione um jogador humano primeiro.', 'error');
-    return null;
-  }
-  
-  // Escolher facção aleatória
-  const randomFaction = availableFactions[Math.floor(Math.random() * availableFactions.length)];
-  const factionId = randomFaction[0];
-  const faction = randomFaction[1];
-  
-  // Nomes baseados na facção
-  const aiNamesByFaction = {
-    '0': ['Druida Ancestral', 'Guardião das Matas', 'Protetor da Floresta'],
-    '1': ['Senhor das Marés', 'Mestre dos Rios', 'Comandante dos Mares'],
-    '2': ['Arquiteto das Montanhas', 'Mestre das Pedreiras', 'Escultor de Rochas'],
-    '3': ['Magnata do Comércio', 'Barão das Caravanas', 'Mestre dos Mercados']
+  // Nomes temáticos para IA
+  const aiNames = {
+    easy: ['Aprendiz de Gaia', 'Novato das Florestas', 'Iniciante dos Pântanos'],
+    medium: ['Estrategista das Savanas', 'Planejador das Matas', 'Administrador dos Rios'],
+    hard: ['Mestre das Montanhas', 'Sábio das Planícies', 'Arquiteto de Gaia'],
+    master: ['Lenda Viva', 'Guardião Ancestral', 'Druida Supremo']
   };
   
-  const nameList = aiNamesByFaction[factionId] || ['IA Estratégica'];
+  const aiIcons = ['🤖', '👾', '👽', '🎮', '🤯', '🧠', '👑', '⚡'];
+  const difficulties = ['easy', 'medium', 'hard', 'master'];
+  
+  const selectedDifficulty = difficulties.includes(difficulty) ? difficulty : 'medium';
+  const nameList = aiNames[selectedDifficulty];
   const aiName = name || nameList[Math.floor(Math.random() * nameList.length)];
   
   const color = GAME_CONFIG.PLAYER_COLORS[gameState.players.length % GAME_CONFIG.PLAYER_COLORS.length];
-  const aiIcon = '🤖';
   
   const player = {
     id: gameState.players.length,
-    name: aiName,
-    icon: aiIcon,
+    name: `${aiName}`,
+    originalName: aiName,
+    icon: aiIcons[gameState.players.length % aiIcons.length],
     color,
     resources: {...GAME_CONFIG.INITIAL_RESOURCES},
     victoryPoints: 0,
     regions: [],
     consecutiveNoActionTurns: 0,
     type: 'ai',
-    aiDifficulty: difficulty,
-    isAI: true,
-    faction,
-    turnBonuses: {
-      freeNegotiationAvailable: faction.abilities.freeNegotiationPerTurn || 0,
-      buildDiscountUsed: false,
-      goldPerRegion: faction.abilities.goldPerRegion || 0
-    }
+    aiDifficulty: selectedDifficulty,
+    isAI: true // Para compatibilidade
   };
   
   gameState.players.push(player);
@@ -245,19 +104,70 @@ addAIPlayer(difficulty = 'medium', name = null) {
   // Atualizar UI
   this.updatePlayerCountDisplay();
   this.renderRegisteredPlayersList();
-  this.renderIconSelection(); // Atualizar disponibilidade de ícones
-  this.populateFactionDropdown(); // Atualizar disponibilidade de facções
   
-  const diffName = AI_DIFFICULTY_SETTINGS[difficulty]?.name || difficulty;
-  this.modals.showFeedback(`IA ${aiName} adicionada como ${faction.name} (${diffName})`, 'success');
-  
-  // Habilitar botão de iniciar se necessário
-  if (gameState.players.length >= GAME_CONFIG.MIN_PLAYERS) {
-    this.startGameBtn.disabled = false;
-  }
+  const diffName = AI_DIFFICULTY_SETTINGS[selectedDifficulty].name;
+  this.modals.showFeedback(`IA ${aiName} adicionada (${diffName})`, 'success');
   
   return player;
 }
+
+  cacheElements() {
+    // Elementos principais
+    this.initialScreen = document.getElementById('initialScreen');
+    this.gameNavbar = document.getElementById('gameNavbar');
+    this.gameContainer = document.getElementById('gameContainer');
+    this.sidebar = document.getElementById('sidebar');
+    this.gameMap = document.getElementById('gameMap');
+    this.gameFooter = document.getElementById('gameFooter');
+    
+    // Elementos do sidebar
+    this.sidebarPlayerHeader = document.getElementById('sidebarPlayerHeader');
+    this.resourceList = document.getElementById('resourceList');
+    this.controlledRegions = document.getElementById('controlledRegions');
+    
+    // Elementos do footer
+    this.actionExploreBtn = document.getElementById('actionExplore');
+    this.actionCollectBtn = document.getElementById('actionCollect');
+    this.actionBuildBtn = document.getElementById('actionBuild');
+    this.actionNegotiateBtn = document.getElementById('actionNegotiate');
+    this.endTurnBtn = document.getElementById('endTurnBtn');
+    this.actionsLeftEl = document.getElementById('actionsLeft');
+    this.phaseIndicator = document.getElementById('phaseIndicator');
+    
+    // Board
+    this.boardContainer = document.getElementById('boardContainer');
+    
+    // Registro de jogadores
+    this.playerNameInput = document.getElementById('playerName');
+    this.iconSelection = document.getElementById('iconSelection');
+    this.addPlayerBtn = document.getElementById('addPlayerBtn');
+    this.startGameBtn = document.getElementById('startGameBtn');
+    this.registeredPlayersList = document.getElementById('registeredPlayersList');
+    this.cancelEditBtn = document.getElementById('cancelEditBtn');
+    this.playerCountDisplay = document.getElementById('playerCountDisplay');
+    
+    // Tooltip
+    this.regionTooltip = document.getElementById('regionTooltip');
+    this.tooltipTitle = document.getElementById('tooltipTitle');
+    this.tooltipBody = document.getElementById('tooltipBody');
+    
+    // Activity Log elements
+    this.activityLog = document.getElementById('activityLog');
+    this.logEntries = document.getElementById('logEntries');
+    this.logFilterAll = document.getElementById('logFilterAll');
+    this.logFilterMine = document.getElementById('logFilterMine');
+    this.logFilterEvents = document.getElementById('logFilterEvents');
+    
+    // Activity Log Sidebar elements
+    this.logEntriesSidebar = document.getElementById('logEntriesSidebar');
+    this.logFilterAllSidebar = document.getElementById('logFilterAllSidebar');
+    this.logFilterMineSidebar = document.getElementById('logFilterMineSidebar');
+    this.logFilterEventsSidebar = document.getElementById('logFilterEventsSidebar');
+    
+    // Header elements
+    this.playerHeaderList = document.getElementById('playerHeaderList');
+    this.turnInfo = document.getElementById('turnInfo');
+  }
 
   setupEventListeners() {
     // Início do jogo
@@ -336,6 +246,7 @@ addAIPlayer(difficulty = 'medium', name = null) {
     }
   });
 
+
   }
 
 initializeSafely() {
@@ -365,53 +276,6 @@ initializeSafely() {
   }
 }
 
-// ==================== SELEÇÃO DE ÍCONES ====================
-
-renderIconSelection() {
-  if (!this.iconSelection) {
-    console.error("❌ Elemento iconSelection não encontrado");
-    return;
-  }
-  
-  this.iconSelection.innerHTML = '';
-  
-  GAME_CONFIG.PLAYER_ICONS.forEach(icon => {
-    const iconButton = document.createElement('button');
-    iconButton.className = 'icon-button';
-    iconButton.type = 'button';
-    iconButton.innerHTML = icon;
-    iconButton.title = `Ícone ${icon}`;
-    
-    // Verificar se ícone já está em uso
-    const isUsed = gameState.players.some(p => p.icon === icon);
-    if (isUsed) {
-      iconButton.classList.add('disabled');
-      iconButton.title = `Ícone ${icon} (já em uso)`;
-      iconButton.style.opacity = '0.4';
-      iconButton.style.cursor = 'not-allowed';
-    } else {
-      iconButton.addEventListener('click', () => this.selectIcon(icon, iconButton));
-    }
-    
-    this.iconSelection.appendChild(iconButton);
-  });
-  
-  console.log(`✅ ${GAME_CONFIG.PLAYER_ICONS.length} botões de ícone renderizados`);
-}
-
-selectIcon(icon, buttonElement) {
-  // Desselecionar todos
-  document.querySelectorAll('.icon-button.selected').forEach(btn => {
-    btn.classList.remove('selected');
-  });
-  
-  // Selecionar novo
-  this.selectedIcon = icon;
-  buttonElement.classList.add('selected');
-  
-  console.log(`✅ Ícone selecionado: ${icon}`);
-}
-
   // ==================== MÉTODOS PRINCIPAIS ====================
   
   updateUI() {
@@ -424,134 +288,6 @@ selectIcon(icon, buttonElement) {
     this.renderActivityLog();
     this.updatePhaseIndicator();
   }
-
-// ==================== DROPDOWN DE ÍCONES ====================
-
-renderIconDropdown() {
-  if (!this.iconDropdown) return;
-  
-  // Manter apenas o placeholder
-  while (this.iconDropdown.options.length > 1) {
-    this.iconDropdown.remove(1);
-  }
-  
-  // Adicionar opções
-  GAME_CONFIG.PLAYER_ICONS.forEach(icon => {
-    const option = document.createElement('option');
-    option.value = icon;
-    option.textContent = `${icon} ${icon}`;
-    this.iconDropdown.appendChild(option);
-  });
-}
-
-// ==================== DROPDOWN DE FACÇÕES ====================
-
-renderFactionDropdown() {
-  if (!this.factionDropdown) return;
-  
-  // Manter apenas o placeholder
-  while (this.factionDropdown.options.length > 1) {
-    this.factionDropdown.remove(1);
-  }
-  
-  // Adicionar opções
-  Object.entries(FACTION_ABILITIES).forEach(([id, faction]) => {
-    const option = document.createElement('option');
-    option.value = id;
-    option.textContent = `${faction.icon || '⚔️'} ${faction.name}`;
-    
-    // Marcar como desabilitado se já estiver em uso por humano
-    const isTaken = gameState.players.some(p => 
-      p.faction && p.faction.id === faction.id && !p.isAI
-    );
-    
-    if (isTaken) {
-      option.disabled = true;
-      option.textContent += ' (ocupada)';
-      option.style.color = '#6b7280';
-    }
-    
-    this.factionDropdown.appendChild(option);
-  });
-}
-
-// Função auxiliar para verificar se facção está disponível
-isFactionAvailable(factionId) {
-  const faction = FACTION_ABILITIES[factionId];
-  if (!faction) return false;
-  
-  return !gameState.players.some(p => 
-    p.faction && p.faction.id === faction.id && !p.isAI
-  );
-}
-
-renderFactionSelection() {
-  const factionSelection = document.getElementById('factionSelection');
-  if (!factionSelection) return;
-  
-  factionSelection.innerHTML = '';
-  
-  Object.entries(FACTION_ABILITIES).forEach(([id, faction]) => {
-    const factionEl = document.createElement('div');
-    factionEl.className = 'faction-option';
-    factionEl.dataset.factionId = id;
-    factionEl.innerHTML = `
-      <div class="faction-icon" style="color: ${faction.color}">${this.getFactionIcon(id)}</div>
-      <div class="faction-name">${faction.name}</div>
-      <div class="faction-desc">${faction.description}</div>
-    `;
-    
-    // Verificar se facção já está em uso
-    const isTaken = gameState.players.some(p => p.faction && p.faction.id === faction.id);
-    if (isTaken) {
-      factionEl.classList.add('disabled');
-      factionEl.title = `${faction.name} já selecionada por outro jogador`;
-    } else {
-      factionEl.title = `Clique para selecionar ${faction.name}`;
-      factionEl.addEventListener('click', () => this.selectFaction(id, factionEl));
-    }
-    
-    factionSelection.appendChild(factionEl);
-  });
-}
-
-// Método para selecionar facção
-selectFaction(factionId, element) {
-  const faction = FACTION_ABILITIES[factionId];
-  if (!faction) return;
-  
-  // Verificar se já está selecionada
-  if (this.selectedFaction === factionId) {
-    this.selectedFaction = null;
-    document.querySelectorAll('.faction-option.selected').forEach(el => {
-      el.classList.remove('selected');
-    });
-    return;
-  }
-  
-  // Desselecionar todas
-  document.querySelectorAll('.faction-option.selected').forEach(el => {
-    el.classList.remove('selected');
-  });
-  
-  // Selecionar nova
-  this.selectedFaction = factionId;
-  element.classList.add('selected');
-  
-  // Feedback
-  this.modals.showFeedback(`${faction.name} selecionada!`, 'success');
-}
-
-// Método auxiliar para ícones de facção
-getFactionIcon(factionId) {
-  const icons = {
-    '0': '🦌', // Guardiões da Floresta
-    '1': '🌊', // Mestres das Águas
-    '2': '⛰️', // Construtores da Montanha
-    '3': '💰'  // Barões do Comércio
-  };
-  return icons[factionId] || '🏛️';
-}
 
   renderHeaderPlayers() {
     if (!this.playerHeaderList) return;
@@ -583,30 +319,6 @@ getFactionIcon(factionId) {
     cell.dataset.regionId = region.id;
     cell.dataset.region = String.fromCharCode(65 + region.id);
     
-// Adicionar classes baseadas no estado
-if (region.controller === gameState.currentPlayerIndex) {
-    cell.classList.add('player-owned');
-}
-
-if (region.controller === null) {
-    cell.classList.add('neutral-available');
-}
-
-// Verificar se há ações disponíveis nesta região
-const currentPlayer = getCurrentPlayer();
-if (currentPlayer && region.controller === currentPlayer.id && region.explorationLevel > 0) {
-    cell.classList.add('action-available');
-    cell.classList.add('clickable');
-}
-
-// Adicionar contador de ações disponíveis (se aplicável)
-if (gameState.actionsLeft > 0) {
-    const actionCounter = document.createElement('div');
-    actionCounter.className = 'action-counter';
-    actionCounter.textContent = `${gameState.actionsLeft}A`;
-    cell.appendChild(actionCounter);
-}
-
     if (region.controller !== null) {
       cell.classList.add('controlled');
       const player = gameState.players[region.controller];
@@ -880,23 +592,6 @@ renderAchievementsInSidebar(playerIndex) {
   }
 
   updateFooter() {
-// Se o jogo terminou, desabilitar tudo
-if (this.gameEnded || (window.gameLogic && window.gameLogic.turnLogic && window.gameLogic.turnLogic.gameEnded)) {
-    [this.actionExploreBtn, this.actionCollectBtn, this.actionBuildBtn, this.actionNegotiateBtn, this.endTurnBtn]
-        .forEach(b => {
-            if (b) {
-                b.disabled = true;
-                b.classList.add('opacity-30', 'cursor-not-allowed');
-            }
-        });
-    
-    if (this.phaseIndicator) {
-        this.phaseIndicator.textContent = '🎉 JOGO TERMINADO!';
-        this.phaseIndicator.classList.add('text-yellow-400', 'font-bold');
-    }
-    return;
-}
-
   if (!gameState.gameStarted) {
     [this.actionExploreBtn, this.actionCollectBtn, this.actionBuildBtn, this.actionNegotiateBtn]
       .forEach(b => {
@@ -935,53 +630,26 @@ if (this.gameEnded || (window.gameLogic && window.gameLogic.turnLogic && window.
     const isNeutral = region.controller === null;
     const canCollect = isOwnRegion && region.explorationLevel > 0;
     
-    const actionExploreCost = ACTION_COSTS['explorar'];
-let exploreReason = '';
-
-if (!isActionPhase) {
-    exploreReason = 'Ação permitida apenas na fase de Ações (⚡).';
-} else if (!regionId) {
-    exploreReason = 'Selecione uma região para Explorar ou Assumir Domínio.';
-} else if (isNeutral) {
-    // Lógica para Assumir Domínio
-    const hasEnoughPV = player.victoryPoints >= 2;
-    const canPayBiome = Object.entries(region.resources)
+    if (isNeutral) {
+      const hasEnoughPV = player.victoryPoints >= 2;
+      const canPayBiome = Object.entries(region.resources)
         .every(([key, value]) => player.resources[key] >= value);
-
-    if (this.actionExploreBtn) {
-        this.actionExploreBtn.disabled = !baseEnabled || !hasEnoughPV || !canPayBiome;
+      if (this.actionExploreBtn) {
+        this.actionExploreBtn.disabled = !baseEnabled || !isActionPhase || !hasEnoughPV || !canPayBiome;
         this.actionExploreBtn.textContent = 'Assumir Domínio';
-        
-        if (this.actionExploreBtn.disabled) {
-            if (!hasEnoughPV) exploreReason = 'Requer 2 PVs (Pontos de Vitória).';
-            else if (!canPayBiome) exploreReason = 'Recursos de Bioma insuficientes.';
-        }
-    }
-} else if (isOwnRegion) {
-    // Lógica para Explorar
-    const canAfford = this.canPlayerAffordAction('explorar', player);
-    
-    if (this.actionExploreBtn) {
-        this.actionExploreBtn.disabled = !baseEnabled || !canAfford;
+      }
+    } else if (isOwnRegion) {
+      const canAfford = this.canPlayerAffordAction('explorar', player);
+      if (this.actionExploreBtn) {
+        this.actionExploreBtn.disabled = !baseEnabled || !isActionPhase || !canAfford;
         this.actionExploreBtn.textContent = 'Explorar';
-        
-        if (this.actionExploreBtn.disabled) {
-             exploreReason = `Requer: ${actionExploreCost.madeira}${RESOURCE_ICONS['madeira']}, ${actionExploreCost.agua}${RESOURCE_ICONS['agua']}`;
-        }
-    }
-} else {
-    // Não é neutro, nem sua região.
-    if (this.actionExploreBtn) {
+      }
+    } else {
+      if (this.actionExploreBtn) {
         this.actionExploreBtn.disabled = true;
         this.actionExploreBtn.textContent = 'Explorar';
-        exploreReason = `Região controlada por ${gameState.players[region.controller].name}.`;
+      }
     }
-}
-
-// Aplica a dica visual (tooltip)
-if (this.actionExploreBtn) {
-    this.actionExploreBtn.title = exploreReason;
-}
     
     if (this.actionBuildBtn) {
       this.actionBuildBtn.disabled = !baseEnabled || !isActionPhase || !isOwnRegion || 
@@ -1089,189 +757,107 @@ if (this.actionExploreBtn) {
   }
 
   handleAddPlayer() {
-  if (this.editingIndex !== null) {
-    this.updatePlayer(this.editingIndex);
-    return;
-  }
-  
-  // Obter valores
-  const name = this.playerNameInput?.value.trim() || '';
-  const icon = this.selectedIcon;
-  const factionId = this.factionDropdown?.value || '';
-  
-  console.log("📝 Valores do formulário:", { name, icon, factionId });
-  
-  // Validações
-  if (!name) {
-    this.modals.showFeedback('Digite um nome para o jogador.', 'error');
-    this.playerNameInput?.focus();
-    return;
-  }
-  
-  if (!icon) {
-    this.modals.showFeedback('Selecione um ícone para o jogador.', 'error');
-    return;
-  }
-  
-  if (!factionId) {
-    this.modals.showFeedback('Selecione uma facção para o jogador.', 'error');
-    this.factionDropdown?.focus();
-    return;
-  }
-  
-  // Validar facção disponível
-  if (!this.isFactionAvailable(factionId)) {
-    this.modals.showFeedback('Esta facção já está sendo usada por outro jogador humano.', 'error');
-    return;
-  }
-  
-  // Limite de jogadores
-  if (gameState.players.length >= GAME_CONFIG.MAX_PLAYERS) {
-    this.modals.showFeedback(`Máximo de ${GAME_CONFIG.MAX_PLAYERS} jogadores atingido.`, 'warning');
-    return;
-  }
-  
-  // Ícone único
-  const iconUsed = gameState.players.some(p => p.icon === icon);
-  if (iconUsed) {
-    this.modals.showFeedback('Este ícone já está sendo usado por outro jogador.', 'error');
-    return;
-  }
-  
-  // Criar jogador
-  const faction = FACTION_ABILITIES[factionId];
-  const color = GAME_CONFIG.PLAYER_COLORS[gameState.players.length % GAME_CONFIG.PLAYER_COLORS.length];
-  
-  const player = {
-    id: gameState.players.length,
-    name,
-    icon,
-    color,
-    resources: {...GAME_CONFIG.INITIAL_RESOURCES},
-    victoryPoints: 0,
-    regions: [],
-    consecutiveNoActionTurns: 0,
-    faction,
-    turnBonuses: {
-      freeNegotiationAvailable: faction.abilities.freeNegotiationPerTurn || 0,
-      buildDiscountUsed: false,
-      goldPerRegion: faction.abilities.goldPerRegion || 0,
-      exploreDiscount: faction.abilities.exploreDiscount || {},
-      waterCollectBonus: faction.abilities.waterCollectBonus || 0,
-      structurePVBonus: faction.abilities.structurePVBonus || 0,
-      negotiationPVBonus: faction.abilities.negotiationPVBonus || 0,
-      marketDiscount: faction.abilities.marketDiscount || 0,
-      goldExplorationBonus: faction.abilities.goldExplorationBonus || 0
+    if (this.editingIndex !== null) {
+      this.updatePlayer(this.editingIndex);
+      return;
     }
-  };
-  
-  // Adicionar ao estado
-  gameState.players.push(player);
-  console.log(`✅ Jogador ${name} adicionado como ${faction.name}`);
-  
-  // Resetar formulário
-  this.resetAddPlayerForm();
-  
-  // Atualizar UI
-  this.updatePlayerCountDisplay();
-  this.renderRegisteredPlayersList();
-  this.renderIconSelection(); // Atualizar disponibilidade de ícones
-  this.populateFactionDropdown(); // Atualizar disponibilidade de facções
-  
-  this.modals.showFeedback(`${name} adicionado como ${faction.name}!`, 'success');
-  
-  // Habilitar botão de iniciar se necessário
-  if (gameState.players.length >= GAME_CONFIG.MIN_PLAYERS) {
-    this.startGameBtn.disabled = false;
+    
+    const name = this.playerNameInput.value.trim();
+    const selected = document.querySelector('.icon-option.selected');
+    
+    if (!name || !selected) {
+      this.modals.showFeedback('Informe o nome e selecione um ícone.', 'error');
+      return;
+    }
+    
+    if (gameState.players.length >= 4) {
+      this.modals.showFeedback('Máximo de 4 jogadores atingido.', 'warning');
+      return;
+    }
+    
+    const color = GAME_CONFIG.PLAYER_COLORS[gameState.players.length % GAME_CONFIG.PLAYER_COLORS.length];
+    const player = {
+      id: gameState.players.length,
+      name,
+      icon: selected.textContent.trim(),
+      color,
+      resources: {...GAME_CONFIG.INITIAL_RESOURCES},
+      victoryPoints: 0,
+      regions: [],
+      consecutiveNoActionTurns: 0
+    };
+    
+    gameState.players.push(player);
+    this.resetAddPlayerForm();
+    this.updatePlayerCountDisplay();
+    this.renderRegisteredPlayersList();
+    this.modals.showFeedback(`Jogador ${name} adicionado com sucesso!`, 'success');
   }
-}
 
-// Função auxiliar para resetar formulário
-resetAddPlayerForm() {
-  // Resetar input
-  if (this.playerNameInput) {
+  resetAddPlayerForm() {
     this.playerNameInput.value = '';
-    this.playerNameInput.focus();
+    document.querySelectorAll('.icon-option.selected').forEach(el => {
+      el.classList.remove('selected');
+    });
   }
-  
-  // Resetar seleção de ícone
-  this.selectedIcon = null;
-  document.querySelectorAll('.icon-button.selected').forEach(btn => {
-    btn.classList.remove('selected');
-  });
-  
-  // Resetar dropdown de facção
-  if (this.factionDropdown) {
-    this.factionDropdown.selectedIndex = 0;
-  }
-  
-  // Resetar modo de edição
-  if (this.editingIndex !== null) {
-    this.editingIndex = null;
-    this.addPlayerBtn.textContent = '+ Adicionar';
-    this.cancelEditBtn.classList.add('hidden');
-    this.clearPlayerHighlight();
-  }
-}
 
   renderRegisteredPlayersList() {
-  const players = gameState.players;
-  const canEdit = !gameState.gameStarted;
-  
-  if (players.length === 0) {
-    this.registeredPlayersList.innerHTML = `
-      <div class="col-span-2 text-center py-8 text-gray-400">
-        <div class="text-3xl mb-3">👤</div>
-        <p class="text-sm">Nenhum jogador adicionado</p>
-        <p class="text-xs mt-2 text-gray-500">Adicione jogadores para começar a partida</p>
-      </div>
-    `;
-    return;
-  }
-  
-  this.registeredPlayersList.innerHTML = players.map((p, index) => `
-    <div class="player-card-horizontal ${index === this.editingIndex ? 'editing' : ''}"
-         style="border-left-color: ${p.color};">
-      <div class="player-info-horizontal">
-        <div class="player-icon-horizontal">${p.icon}</div>
-        <div class="player-details-horizontal">
-          <div class="player-name-horizontal">${p.name}</div>
-          <div class="player-faction-horizontal">
-            ${p.faction ? `
-              <span class="faction-badge" style="background: ${p.faction.color}15; border-color: ${p.faction.color}30;">
-                ${p.faction.icon || '⚔️'} ${p.faction.name}
-              </span>
-            ` : ''}
-            ${p.type === 'ai' ? `<span class="ai-badge-horizontal">🤖 ${p.aiDifficulty}</span>` : ''}
-          </div>
+    const players = gameState.players;
+    const canEdit = !gameState.gameStarted;
+    
+    if (players.length === 0) {
+      this.registeredPlayersList.innerHTML = `
+        <div class="text-sm text-gray-300 p-3 text-center italic">
+          Nenhum jogador cadastrado.
+          <div class="text-xs text-gray-400 mt-1">Adicione pelo menos 2 jogadores</div>
+        </div>
+      `;
+      return;
+    }
+    
+    // Na função renderRegisteredPlayersList, modifique o template do jogador para:
+this.registeredPlayersList.innerHTML = players.map((p, index) => `
+  <div class="player-card group flex items-center justify-between gap-2 p-3 bg-white/5 rounded-lg border border-white/10 hover:bg-white/10 transition-all"
+       style="border-left: 4px solid ${p.color}">
+    <div class="flex items-center gap-3 flex-1">
+      <div class="text-3xl">${p.icon}</div>
+      <div class="flex-1 min-w-0">
+        <div class="text-sm font-semibold text-white truncate">
+          ${p.name}
+          ${p.type === 'ai' ? `<span class="text-xs ml-1 px-1.5 py-0.5 rounded ${this.getAIDifficultyClass(p.aiDifficulty)}">IA</span>` : ''}
+        </div>
+        <div class="text-xs text-gray-400">
+          Jogador ${index + 1} • ${p.victoryPoints} PV
+          ${p.type === 'ai' ? ` • ${AI_DIFFICULTY_SETTINGS[p.aiDifficulty].name}` : ''}
         </div>
       </div>
-      
-      <div class="player-stats-horizontal">
-        <span class="text-yellow-400 font-semibold">${p.victoryPoints} PV</span>
-      </div>
-      
-      ${canEdit ? `
-      <div class="player-actions-horizontal">
-        ${p.type !== 'ai' ? `
-        <button class="edit-player-btn" data-index="${index}" title="Editar jogador">
-          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
-          </svg>
-        </button>
-        ` : ''}
-        
-        <button class="delete-player-btn" data-index="${index}" 
-                title="${p.type === 'ai' ? 'Remover IA' : 'Remover jogador'}">
-          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
-          </svg>
-        </button>
-      </div>
-      ` : ''}
     </div>
-  `).join('');
+    
+    ${canEdit ? `
+    <div class="player-actions flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+      ${p.type !== 'ai' ? `
+      <button class="edit-player-btn p-2 rounded-md hover:bg-white/10 transition" 
+              data-index="${index}"
+              title="Editar jogador">
+        <svg class="w-4 h-4 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
+        </svg>
+      </button>
+      ` : ''}
+      
+      <button class="delete-player-btn p-2 rounded-md hover:bg-white/10 transition" 
+              data-index="${index}"
+              title="${p.type === 'ai' ? 'Remover IA' : 'Remover jogador'}">
+        <svg class="w-4 h-4 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+        </svg>
+      </button>
+    </div>
+    ` : ''}
+  </div>
+`).join('');
   
+  // Adicionar event listeners se puder editar
   if (canEdit) {
     this.setupPlayerActionListeners();
   }
@@ -1294,52 +880,36 @@ resetAddPlayerForm() {
   }
 
   editPlayer(index) {
-  if (gameState.gameStarted) {
-    this.modals.showFeedback('Não é possível editar jogadores após o início do jogo.', 'warning');
-    return;
-  }
-  
-  const player = gameState.players[index];
-  if (!player) return;
-  
-  this.editingIndex = index;
-  
-  // Preencher campos
-  this.playerNameInput.value = player.name;
-  
-  // Selecionar ícone
-  this.selectedIcon = player.icon;
-  document.querySelectorAll('.icon-button').forEach(btn => {
-    if (btn.textContent === player.icon) {
-      btn.classList.add('selected');
-    } else {
-      btn.classList.remove('selected');
+    if (gameState.gameStarted) {
+      this.modals.showFeedback('Não é possível editar jogadores após o início do jogo.', 'warning');
+      return;
     }
-  });
-  
-  // Selecionar facção no dropdown
-  if (player.faction && this.factionDropdown) {
-    const factionId = Object.keys(FACTION_ABILITIES).find(
-      id => FACTION_ABILITIES[id].id === player.faction.id
-    );
     
-    if (factionId) {
-      for (let i = 0; i < this.factionDropdown.options.length; i++) {
-        if (this.factionDropdown.options[i].value === factionId) {
-          this.factionDropdown.selectedIndex = i;
-          break;
-        }
+    const player = gameState.players[index];
+    if (!player) return;
+    
+    this.editingIndex = index;
+    this.playerNameInput.value = player.name;
+    this.playerNameInput.focus();
+    
+    document.querySelectorAll('.icon-option').forEach(iconEl => {
+      const iconText = iconEl.textContent.trim();
+      if (iconText === player.icon) {
+        iconEl.classList.add('selected');
+        iconEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      } else {
+        iconEl.classList.remove('selected');
       }
-    }
+    });
+    
+    this.addPlayerBtn.textContent = 'Atualizar Jogador';
+    this.addPlayerBtn.classList.remove('bg-green-600');
+    this.addPlayerBtn.classList.add('bg-blue-600');
+    this.cancelEditBtn.classList.remove('hidden');
+    this.highlightPlayerBeingEdited(index);
+    
+    this.modals.showFeedback(`Editando ${player.name}. Altere os dados e clique em "Atualizar Jogador".`, 'info');
   }
-  
-  // Atualizar UI
-  this.addPlayerBtn.textContent = '🔄 Atualizar';
-  this.cancelEditBtn.classList.remove('hidden');
-  this.highlightPlayerBeingEdited(index);
-  
-  this.modals.showFeedback(`Editando ${player.name}. Altere os dados e clique em "Atualizar".`, 'info');
-}
 
   highlightPlayerBeingEdited(index) {
     document.querySelectorAll('.player-card').forEach((card, i) => {
@@ -1354,27 +924,21 @@ resetAddPlayerForm() {
   }
 
   cancelEdit() {
-  this.addPlayerBtn.textContent = 'Adicionar';
-  this.addPlayerBtn.classList.remove('bg-blue-600');
-  this.addPlayerBtn.classList.add('bg-green-600');
-  this.cancelEditBtn.classList.add('hidden');
-  this.playerNameInput.value = '';
-  this.playerNameInput.blur();
-  
-  document.querySelectorAll('.icon-option.selected').forEach(el => {
-    el.classList.remove('selected');
-  });
-  
-  // ADICIONAR: Limpar seleção de facção
-  this.selectedFaction = null;
-  document.querySelectorAll('.faction-option.selected').forEach(el => {
-    el.classList.remove('selected');
-  });
-  
-  this.clearPlayerHighlight();
-  this.editingIndex = null;
-  this.modals.showFeedback('Edição cancelada.', 'info');
-}
+    this.addPlayerBtn.textContent = 'Adicionar';
+    this.addPlayerBtn.classList.remove('bg-blue-600');
+    this.addPlayerBtn.classList.add('bg-green-600');
+    this.cancelEditBtn.classList.add('hidden');
+    this.playerNameInput.value = '';
+    this.playerNameInput.blur();
+    
+    document.querySelectorAll('.icon-option.selected').forEach(el => {
+      el.classList.remove('selected');
+    });
+    
+    this.clearPlayerHighlight();
+    this.editingIndex = null;
+    this.modals.showFeedback('Edição cancelada.', 'info');
+  }
 
   clearPlayerHighlight() {
     document.querySelectorAll('.player-card').forEach(card => {
@@ -1413,63 +977,32 @@ resetAddPlayerForm() {
   }
 
   updatePlayer(index) {
-  const name = this.playerNameInput.value.trim();
-  const icon = this.iconDropdown?.value;
-  const factionId = this.factionDropdown?.value;
-  
-  if (!name || !icon || !factionId) {
-    this.modals.showFeedback('Preencha todos os campos.', 'error');
-    return;
-  }
-  
-  // Validar facção disponível (exceto para o próprio jogador)
-  if (!this.isFactionAvailable(factionId) && 
-      gameState.players[index].faction?.id !== FACTION_ABILITIES[factionId]?.id) {
-    this.modals.showFeedback('Esta facção já está sendo usada por outro jogador humano.', 'error');
-    return;
-  }
-  
-  // Validar ícone único (exceto para o próprio jogador)
-  const iconUsed = gameState.players.some((p, i) => 
-    i !== index && p.icon === icon
-  );
-  
-  if (iconUsed) {
-    this.modals.showFeedback('Este ícone já está sendo usado por outro jogador.', 'error');
-    return;
-  }
-  
-  // Atualizar jogador
-  const faction = FACTION_ABILITIES[factionId];
-  
-  gameState.players[index] = {
-    ...gameState.players[index],
-    name,
-    icon,
-    faction,
-    turnBonuses: {
-      freeNegotiationAvailable: faction.abilities.freeNegotiationPerTurn || 0,
-      buildDiscountUsed: false,
-      goldPerRegion: faction.abilities.goldPerRegion || 0,
-      exploreDiscount: faction.abilities.exploreDiscount || {},
-      waterCollectBonus: faction.abilities.waterCollectBonus || 0,
-      structurePVBonus: faction.abilities.structurePVBonus || 0,
-      negotiationPVBonus: faction.abilities.negotiationPVBonus || 0,
-      marketDiscount: faction.abilities.marketDiscount || 0,
-      goldExplorationBonus: faction.abilities.goldExplorationBonus || 0
+    const name = this.playerNameInput.value.trim();
+    const selected = document.querySelector('.icon-option.selected');
+    
+    if (!name || !selected) {
+      this.modals.showFeedback('Informe o nome e selecione um ícone.', 'error');
+      return;
     }
-  };
-  
-  // Finalizar edição
-  this.cancelEdit();
-  
-  // Atualizar UI
-  this.updatePlayerCountDisplay();
-  this.renderRegisteredPlayersList();
-  this.renderFactionDropdown();
-  
-  this.modals.showFeedback(`${name} atualizado como ${faction.name}!`, 'success');
-}
+    
+    const newIcon = selected.textContent.trim();
+    const isIconUsed = gameState.players.some((p, i) => i !== index && p.icon === newIcon);
+    if (isIconUsed) {
+      this.modals.showFeedback('Este ícone já está sendo usado por outro jogador.', 'error');
+      return;
+    }
+    
+    gameState.players[index] = {
+      ...gameState.players[index],
+      name,
+      icon: newIcon
+    };
+    
+    this.cancelEdit();
+    this.updatePlayerCountDisplay();
+    this.renderRegisteredPlayersList();
+    this.modals.showFeedback(`Jogador ${name} atualizado com sucesso!`, 'success');
+  }
 
   handleStartGame() {
   if (gameState.players.length < 2) {
@@ -1551,7 +1084,7 @@ initializeAISystem() {
       }, 2000);
     }
     
-    // Use this.modals.showFeedback em vez de this.showFeedback
+    // CORREÇÃO: Use this.modals.showFeedback em vez de this.showFeedback
     this.modals.showFeedback(`Sistema de IA inicializado com ${aiInstances.length} jogadores`, 'info');
     
   } catch (error) {
@@ -1561,39 +1094,48 @@ initializeAISystem() {
   }
 }
 
-// ==================== BOTÕES DE IA ====================
-
-addAIPlayerButtons() {
-  const container = document.getElementById('aiButtonsContainer');
-  if (!container) {
-    console.error("❌ Container de botões de IA não encontrado");
-    return;
-  }
-  
-  container.innerHTML = `
-    <button class="ai-button-compact easy" data-diff="easy" title="IA Fácil">
-      🤖 Fácil
-    </button>
-    <button class="ai-button-compact medium" data-diff="medium" title="IA Média">
-      🤖 Média
-    </button>
-    <button class="ai-button-compact hard" data-diff="hard" title="IA Difícil">
-      🤖 Difícil
-    </button>
-    <button class="ai-button-compact master" data-diff="master" title="IA Mestre">
-      🤖 Mestre
-    </button>
+addAIPlayerButton() {
+  // Criar container para botões de IA
+  const aiButtonContainer = document.createElement('div');
+  aiButtonContainer.className = 'mt-4 border-t border-white/10 pt-4';
+  aiButtonContainer.innerHTML = `
+    <div class="text-sm text-gray-300 mb-2">Adicionar Jogadores IA:</div>
+    <div class="flex flex-wrap gap-2">
+      <button class="px-3 py-2 bg-green-600 hover:bg-green-700 rounded-lg text-white text-sm font-medium transition" data-diff="easy">
+        + IA Fácil
+      </button>
+      <button class="px-3 py-2 bg-blue-600 hover:bg-blue-700 rounded-lg text-white text-sm font-medium transition" data-diff="medium">
+        + IA Média
+      </button>
+      <button class="px-3 py-2 bg-orange-600 hover:bg-orange-700 rounded-lg text-white text-sm font-medium transition" data-diff="hard">
+        + IA Difícil
+      </button>
+      <button class="px-3 py-2 bg-red-600 hover:bg-red-700 rounded-lg text-white text-sm font-medium transition" data-diff="master">
+        + IA Mestre
+      </button>
+    </div>
   `;
   
-  // Adicionar event listeners
-  container.querySelectorAll('button').forEach(btn => {
-    btn.addEventListener('click', (e) => {
-      const diff = e.currentTarget.dataset.diff;
-      this.addAIPlayer(diff);
+  // Adicionar container após a lista de jogadores
+  const playersList = document.getElementById('registeredPlayersList');
+  if (playersList && playersList.parentNode) {
+    playersList.parentNode.insertBefore(aiButtonContainer, playersList.nextSibling);
+    
+    // CORREÇÃO: Capturar referência ao this atual
+    const self = this;
+    
+    // Adicionar event listeners
+    aiButtonContainer.querySelectorAll('button').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        const diff = e.currentTarget.dataset.diff;
+        if (self.addAIPlayer) {
+          self.addAIPlayer(diff);
+        } else {
+          console.error('addAIPlayer não está definido em', self);
+        }
+      });
     });
-  });
-  
-  console.log("✅ Botões de IA adicionados");
+  }
 }
 
 // Adicione este método auxiliar
@@ -1629,6 +1171,43 @@ addMultipleAIPlayers(count) {
   }
   
   return added;
+}
+
+addAIPlayerButton() {
+  // Criar container para botões de IA
+  const aiButtonContainer = document.createElement('div');
+  aiButtonContainer.className = 'mt-4 border-t border-white/10 pt-4';
+  aiButtonContainer.innerHTML = `
+    <div class="text-sm text-gray-300 mb-2">Adicionar Jogadores IA:</div>
+    <div class="flex flex-wrap gap-2">
+      <button class="px-3 py-2 bg-green-600 hover:bg-green-700 rounded-lg text-white text-sm font-medium transition" data-diff="easy">
+        + IA Fácil
+      </button>
+      <button class="px-3 py-2 bg-blue-600 hover:bg-blue-700 rounded-lg text-white text-sm font-medium transition" data-diff="medium">
+        + IA Média
+      </button>
+      <button class="px-3 py-2 bg-orange-600 hover:bg-orange-700 rounded-lg text-white text-sm font-medium transition" data-diff="hard">
+        + IA Difícil
+      </button>
+      <button class="px-3 py-2 bg-red-600 hover:bg-red-700 rounded-lg text-white text-sm font-medium transition" data-diff="master">
+        + IA Mestre
+      </button>
+    </div>
+  `;
+  
+  // Adicionar container após a lista de jogadores
+  const playersList = document.getElementById('registeredPlayersList');
+  if (playersList && playersList.parentNode) {
+    playersList.parentNode.insertBefore(aiButtonContainer, playersList.nextSibling);
+    
+    // Adicionar event listeners
+    aiButtonContainer.querySelectorAll('button').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        const diff = e.currentTarget.dataset.diff;
+        this.addAIPlayer(diff);
+      });
+    });
+  }
 }
 
 setupAIDebugButton() {
@@ -1829,25 +1408,25 @@ getAIDifficultyClass(difficulty) {
 
 
   updatePlayerCountDisplay() {
-  const count = gameState.players.length;
-  const display = document.getElementById('playerCountDisplay');
-  
-  if (display) {
-    display.textContent = count;
-  }
-  
-  // Atualizar estado do botão iniciar
-  if (this.startGameBtn) {
-    const minPlayers = GAME_CONFIG.MIN_PLAYERS || 2;
-    this.startGameBtn.disabled = count < minPlayers;
+    const count = gameState.players.length;
+    this.playerCountDisplay.textContent = `${count}/4 Jogadores Registrados`;
     
-    if (count < minPlayers) {
-      this.startGameBtn.title = `Adicione mais ${minPlayers - count} jogador(es)`;
+    if (count === 0) {
+      this.registeredPlayersList.innerHTML = `
+        <div class="text-sm text-gray-300 p-3">Nenhum jogador cadastrado.</div>
+      `;
     } else {
-      this.startGameBtn.title = 'Iniciar jogo';
+      this.registeredPlayersList.innerHTML = gameState.players.map(p => `
+        <div class="flex items-center gap-2 p-2 bg-white/10 rounded-lg border border-white/10" 
+             style="border-left:4px solid ${p.color}">
+          <div class="text-2xl text-white">${p.icon}</div>
+          <div class="text-sm font-medium text-white">${p.name}</div>
+        </div>
+      `).join('');
     }
+    
+    this.startGameBtn.disabled = count < 2;
   }
-}
 
   // ==================== LOG DE ATIVIDADES ====================
   renderActivityLog(filter = 'all') {
@@ -1988,45 +1567,24 @@ getAIDifficultyClass(difficulty) {
   }
 
   positionTooltip(targetEl) {
-  const rect = targetEl.getBoundingClientRect();
-  const tooltipRect = this.regionTooltip.getBoundingClientRect();
-  
-  // Posição centralizada acima da célula por padrão
-  let top = rect.top - tooltipRect.height - 10;
-  let left = rect.left + (rect.width / 2) - (tooltipRect.width / 2);
-  
-  // Ajuste para garantir que a tooltip não saia da tela
-  const viewportWidth = window.innerWidth;
-  const viewportHeight = window.innerHeight;
-  const scrollX = window.scrollX || window.pageXOffset;
-  const scrollY = window.scrollY || window.pageYOffset;
-  
-  // Ajuste horizontal
-  if (left < 10) {
-    left = 10;
-  } else if (left + tooltipRect.width > viewportWidth - 10) {
-    left = viewportWidth - tooltipRect.width - 10;
-  }
-  
-  // Ajuste vertical - se não couber acima, coloca abaixo
-  if (top < 10) {
-    top = rect.bottom + 10;
-    // Se também não couber abaixo, ajusta para dentro da tela
-    if (top + tooltipRect.height > viewportHeight - 10) {
-      top = viewportHeight - tooltipRect.height - 10;
+    const rect = targetEl.getBoundingClientRect();
+    const tooltipRect = this.regionTooltip.getBoundingClientRect();
+    
+    let top = rect.top + 8;
+    let left = rect.left - tooltipRect.width - 10;
+    
+    if (left < 10) {
+      left = rect.right + 10;
     }
-  } else if (top + tooltipRect.height > viewportHeight - 10) {
-    // Se não couber acima, coloca abaixo
-    top = rect.bottom + 10;
+    
+    const bottomOverflow = top + tooltipRect.height - window.innerHeight;
+    if (bottomOverflow > 0) {
+      top = window.innerHeight - tooltipRect.height - 10;
+    }
+    
+    this.regionTooltip.style.top = (top + window.scrollY) + 'px';
+    this.regionTooltip.style.left = (left + window.scrollX) + 'px';
   }
-  
-  // Aplica a posição com scroll
-  this.regionTooltip.style.top = (top + scrollY) + 'px';
-  this.regionTooltip.style.left = (left + scrollX) + 'px';
-  
-  // Garante que a tooltip esteja visível
-  this.regionTooltip.style.zIndex = '1000';
-}
 
   hideRegionTooltip() {
     this.regionTooltip.classList.add('hidden');
@@ -2061,6 +1619,8 @@ getAIDifficultyClass(difficulty) {
       transparencySlider.addEventListener('change', (e) => {
         const value = parseInt(e.target.value);
         localStorage.setItem('gaia-cell-transparency', value);
+// Botões de IA na tela inicial
+      this.addAIPlayerButton();
 
         this.modals.showFeedback(`Transparência ajustada para ${value}%`, 'info');
       });

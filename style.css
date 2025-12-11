@@ -365,6 +365,166 @@ input[type="text"]:focus, select:focus, input[type="number"]:focus {
   filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.5));
 }
 
+/* Efeito de pulsação para seleção */
+@keyframes regionSelectedPulse {
+    0%, 100% {
+        box-shadow: 
+            0 0 20px rgba(248, 214, 92, 0.6),
+            0 0 40px rgba(248, 214, 92, 0.3),
+            inset 0 0 15px rgba(248, 214, 92, 0.2);
+    }
+    50% {
+        box-shadow: 
+            0 0 25px rgba(248, 214, 92, 0.8),
+            0 0 50px rgba(248, 214, 92, 0.4),
+            inset 0 0 20px rgba(248, 214, 92, 0.3);
+    }
+}
+
+/* Indicador de clique */
+.board-cell.clickable::after {
+    content: '👆';
+    position: absolute;
+    top: -8px;
+    right: -8px;
+    font-size: 12px;
+    background: rgba(0, 0, 0, 0.7);
+    border-radius: 50%;
+    width: 20px;
+    height: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    animation: clickableBounce 2s infinite;
+}
+
+@keyframes clickableBounce {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-5px); }
+}
+
+/* Contraste do Texto nas Células */
+.board-cell .text-xs {
+  font-size: 11px;
+  line-height: 1.3;
+  font-weight: 700;
+  color: var(--text-primary);
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.8);
+}
+
+.board-cell .text-\[10px\] {
+  font-size: 10px;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.95);
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.7);
+}
+
+/* Elementos da Célula */
+.board-cell .biome-indicator {
+  font-size: 9px;
+  padding: 2px 6px;
+  border-radius: 10px;
+  background: rgba(0, 0, 0, 0.5);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: rgba(255, 255, 255, 0.95);
+  display: inline-block;
+  margin-top: 2px;
+}
+
+.board-cell .resource-item {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  font-size: 12px;
+  padding: 2px 6px;
+  border-radius: 4px;
+  background: rgba(0, 0, 0, 0.45);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.board-cell .resource-value {
+  font-weight: 800;
+  color: var(--text-primary);
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.7);
+}
+
+.board-cell .cell-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 8px;
+  padding-top: 6px;
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.board-cell .controller-info {
+  font-size: 10px;
+  font-weight: 700;
+  color: rgba(255, 255, 255, 0.98);
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.8);
+}
+
+.board-cell .structure-display {
+  display: flex;
+  gap: 2px;
+  font-size: 14px;
+  filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.5));
+}
+
+/* Indicador de que região pode ser interagida */
+.board-cell.action-available {
+    position: relative;
+}
+
+.board-cell.action-available::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    border-radius: 4px;
+    background: linear-gradient(
+        45deg,
+        transparent 30%,
+        rgba(255, 255, 255, 0.05) 50%,
+        transparent 70%
+    );
+    background-size: 200% 200%;
+    animation: shimmer 3s infinite;
+    pointer-events: none;
+}
+
+@keyframes shimmer {
+    0% { background-position: -200% -200%; }
+    100% { background-position: 200% 200%; }
+}
+
+/* Contador de ações no canto da célula */
+.board-cell .action-counter {
+    position: absolute;
+    top: 4px;
+    right: 4px;
+    background: rgba(0, 0, 0, 0.7);
+    color: var(--text-primary);
+    font-size: 10px;
+    padding: 2px 6px;
+    border-radius: 10px;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    font-weight: bold;
+}
+
+/* Outros estados de célula */
+.board-cell.player-owned {
+    border-left-width: 6px !important;
+    border-left-color: var(--accent) !important;
+}
+
+.board-cell.neutral-available {
+    border: 2px dashed rgba(255, 255, 255, 0.4) !important;
+    background: rgba(255, 255, 255, 0.05) !important;
+}
+
 /* ============================================
    SIDEBAR
    ============================================ */
@@ -894,32 +1054,62 @@ body.modal-open .board-cell {
    TOOLTIP OTIMIZADO
    ============================================ */
 
-/* Tooltip melhorado */
+/* Tooltip melhorada - adicione ou substitua as regras existentes */
 #regionTooltip {
-  pointer-events: none !important;
-  transition: opacity 0.2s ease, transform 0.2s ease;
-  background: rgba(15, 15, 15, 0.95);
-  backdrop-filter: blur(8px);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 8px;
-  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
+  position: fixed !important; /* Mude de absolute para fixed */
+  z-index: 1000;
+  pointer-events: none;
+  transition: opacity 0.15s ease, transform 0.15s ease;
+  transform-origin: center bottom;
+  max-width: 300px;
+  min-width: 200px;
+  box-sizing: border-box;
+}
+
+#regionTooltip.visible {
+  opacity: 1;
+  transform: translateY(0) scale(1);
+}
+
+#regionTooltip.hidden {
+  opacity: 0;
+  transform: translateY(10px) scale(0.95);
+  pointer-events: none;
+}
+
+/* Garantir que o tooltip seja legível */
+#tooltipTitle {
+  font-size: 14px;
+  font-weight: 700;
+  color: #ffffff;
+  margin-bottom: 6px;
+  line-height: 1.3;
+}
+
+#tooltipBody {
+  font-size: 12px;
+  line-height: 1.4;
 }
 
 .tooltip-section {
-  margin-bottom: 12px;
+  margin-bottom: 8px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 .tooltip-section:last-child {
   margin-bottom: 0;
+  padding-bottom: 0;
+  border-bottom: none;
 }
 
 .tooltip-section-title {
-  font-size: 10px;
-  color: rgba(255, 255, 255, 0.6);
+  font-size: 11px;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.7);
   margin-bottom: 4px;
   text-transform: uppercase;
   letter-spacing: 0.5px;
-  font-weight: 600;
 }
 
 /* ============================================
@@ -2069,112 +2259,768 @@ body.modal-open .board-cell {
   text-shadow: 0 2px 4px rgba(0,0,0,0.5);
 }
 
-/* ===========================================
-   AJUSTES RESPONSIVOS PARA MOBILE (Max-width 640px)
+/* ============================================
+   SELEÇÃO DE FACÇÕES
    ============================================ */
-@media (max-width: 640px) {
 
-  /* 1. Tela Inicial: Empilha o conteúdo (Input e Botões) */
-  /* Este seletor assume que o container principal dentro do initialScreen
-     é o que controla o layout dos botões e do input. */
-  #initialScreen > div.flex.flex-wrap {
-    flex-direction: column !important; /* Força o empilhamento vertical */
-    align-items: center !important; /* Centraliza horizontalmente */
-    width: 95vw; /* Ocupa a maior parte da largura da tela */
-    max-width: 384px; /* Mantém o limite (w-96) */
+.faction-option {
+  min-width: 120px;
+  min-height: 100px;
+  border-radius: 12px;
+  background: linear-gradient(135deg, rgba(255,255,255,0.03), rgba(0,0,0,0.2));
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  border: 2px solid transparent;
+  padding: 12px 8px;
+  text-align: center;
+  position: relative;
+  overflow: hidden;
+}
+
+.faction-option::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(135deg, 
+    rgba(255,255,255,0.05) 0%,
+    rgba(255,255,255,0.01) 100%);
+  z-index: -1;
+  border-radius: 10px;
+}
+
+.faction-option:hover {
+  transform: translateY(-4px) scale(1.02);
+  border-color: rgba(255,255,255,0.1);
+  box-shadow: 0 8px 25px rgba(0,0,0,0.3);
+}
+
+.faction-option.selected {
+  border: 2px solid var(--accent);
+  background: linear-gradient(135deg, 
+    rgba(248,214,92,0.08) 0%,
+    rgba(0,0,0,0.3) 100%);
+  transform: scale(1.05);
+  box-shadow: 0 0 20px rgba(248,214,92,0.2);
+}
+
+.faction-option.disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+  filter: grayscale(0.7);
+}
+
+.faction-option.disabled:hover {
+  transform: none;
+  box-shadow: none;
+  border-color: transparent;
+}
+
+.faction-icon {
+  font-size: 2rem;
+  margin-bottom: 8px;
+  filter: drop-shadow(0 2px 4px rgba(0,0,0,0.5));
+}
+
+.faction-name {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin-bottom: 4px;
+  text-shadow: 0 1px 2px rgba(0,0,0,0.8);
+}
+
+.faction-desc {
+  font-size: 10px;
+  color: rgba(255,255,255,0.8);
+  line-height: 1.3;
+  max-width: 100px;
+  text-shadow: 0 1px 1px rgba(0,0,0,0.5);
+}
+
+.faction-badge {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  background: rgba(0,0,0,0.6);
+  color: var(--accent);
+  font-size: 9px;
+  padding: 2px 6px;
+  border-radius: 10px;
+  border: 1px solid rgba(255,255,255,0.1);
+  font-weight: bold;
+}
+
+/* ============================================
+   TELA DE CADASTRO - FAIXA FLUTUANTE
+   ============================================ */
+
+/* Faixa principal */
+#initialScreen .bg-gray-900\/90 {
+  backdrop-filter: blur(12px);
+  box-shadow: 
+    0 20px 60px rgba(0, 0, 0, 0.5),
+    inset 0 1px 0 rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  animation: slideUp 0.4s ease-out;
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
   }
-
-  /* Garante que os botões usem a largura total do contêiner recém-ajustado (95vw) */
-  #addPlayerBtn,
-  #cancelEditBtn,
-  #startGameBtn {
-    width: 100%; /* Ocupa toda a largura do contêiner */
-    margin-top: 0.75rem !important; /* Garante um bom espaçamento entre eles e o input */
+  to {
+    opacity: 1;
+    transform: translateY(0);
   }
 }
 
-/* 2. gameNavbar: Apenas informações essenciais */
-  #gameNavbar {
-    padding: 0.5rem 0.75rem !important; /* Reduz o preenchimento (p-4) para algo mais compacto */
-    height: auto;
-  }
+/* Dropdowns estilizados */
+#initialScreen select {
+  background-color: rgba(30, 41, 59, 0.8);
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%239ca3af'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 12px center;
+  background-size: 14px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-size: 13px;
+  padding-right: 32px;
+}
 
-  /* Oculta o display de recursos. A Sidebar (espero) mostra o detalhe. */
-  #resourcesDisplay {
-    display: none !important;
-  }
+#initialScreen select:hover {
+  background-color: rgba(30, 41, 59, 0.95);
+  border-color: rgba(255, 255, 255, 0.2);
+}
 
-  /* Compacta os indicadores (Turno, Fase, Jogador) */
-  #gameNavbar > div.flex { /* Visando o container de Turno/Fase/Jogador */
-    gap: 0.5rem !important; /* Reduz o espaçamento entre eles */
-    justify-content: space-around !important;
-  }
+#initialScreen select:focus {
+  background-color: rgba(30, 41, 59, 0.95);
+  border-color: rgba(248, 214, 92, 0.5);
+  box-shadow: 0 0 0 2px rgba(248, 214, 92, 0.1);
+}
 
-  /* Ajusta o tamanho da fonte dos indicadores */
-  #turnIndicator,
-  #phaseIndicator,
-  #currentPlayerIndicator {
-    font-size: 0.75rem !important; /* text-xs */
-    padding: 0.25rem 0.5rem !important; /* Reduz o padding interno */
-    white-space: nowrap; /* Evita que o texto quebre */
-    overflow: hidden;
-    text-overflow: ellipsis; /* Adiciona "..." se o nome do jogador for longo */
-  }
+/* Input estilizado */
+#initialScreen input[type="text"] {
+  background-color: rgba(30, 41, 59, 0.8);
+  font-size: 13px;
+  transition: all 0.2s ease;
+}
 
-/* 3. gameFooter: Botões em uma única linha */
-  #gameFooter {
-    padding: 0.5rem !important; /* Reduz o preenchimento de p-3 para p-2 */
-    height: auto;
-  }
+#initialScreen input[type="text"]:hover {
+  background-color: rgba(30, 41, 59, 0.95);
+  border-color: rgba(255, 255, 255, 0.2);
+}
 
-  /* Garante que o container interno não quebre (nowrap) e reduz o espaçamento (gap) */
-  #gameFooter > div {
-    flex-wrap: nowrap !important;
-    gap: 0.5rem !important;
-    overflow-x: auto; /* Permite rolagem suave se o conteúdo for grande demais */
-    scrollbar-width: none; /* Oculta a barra de rolagem (Firefox) */
-    -ms-overflow-style: none; /* Oculta a barra de rolagem (IE/Edge) */
-  }
-  #gameFooter > div::-webkit-scrollbar { /* Oculta a barra de rolagem (Chrome/Safari) */
-    display: none;
-  }
+#initialScreen input[type="text"]:focus {
+  background-color: rgba(30, 41, 59, 0.95);
+  border-color: rgba(248, 214, 92, 0.5);
+  box-shadow: 0 0 0 2px rgba(248, 214, 92, 0.1);
+}
 
-  /* Ajusta os botões de ação e término de turno para serem mais compactos */
-  .action-btn,
-  #endTurnBtn {
-    padding: 0.4rem 0.6rem !important; /* Diminui o padding dos botões */
-    font-size: 0.7rem !important; /* text-xs ou menor */
-    white-space: nowrap;
-    min-width: fit-content;
-  }
+/* Botões de ação */
+#initialScreen button {
+  transition: all 0.2s ease;
+}
 
-  /* Ajusta o indicador de ações restantes */
-  #actionsLeft {
-    font-size: 0.625rem !important; /* text-2xs, bem pequeno */
-    white-space: nowrap;
-  }
+#initialScreen button:not(:disabled):hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
 
-/* 4. Modais: Ajuste para caber na tela do celular */
+#initialScreen button:not(:disabled):active {
+  transform: translateY(0);
+}
 
-  /* Remove o padding do container fixo e alinha no topo */
-  .fixed.inset-0.z-\[100\].flex.items-center.justify-center {
-      padding: 0 !important;
-      align-items: flex-start !important;
-      overflow-y: auto; /* Permite rolagem do container principal */
-  }
+/* Grid de jogadores */
+#registeredPlayersList {
+  min-height: 80px;
+}
 
-  /* Ajusta o contêiner de conteúdo principal do modal */
-  .modal-content-container {
-    max-width: 95vw !important; /* Ocupa quase toda a largura */
-    padding: 1rem !important; /* Reduz o padding de p-6 para p-4 */
-    max-height: 95vh; /* Garante que caiba na altura */
-    margin: 0.5rem auto; /* Centraliza e garante margem na vertical/horizontal */
-  }
+.player-card-horizontal {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 12px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 10px;
+  transition: all 0.2s ease;
+}
 
-  /* Garante que o conteúdo que fica entre o cabeçalho e o rodapé do modal seja rolavel */
-  .modal-content-container > div:last-child:not(button) { /* Se o corpo for o último div antes dos botões */
-    overflow-y: auto;
-    max-height: calc(95vh - 120px); /* Altura máxima ajustada (95% da tela menos a altura do cabeçalho e rodapé) */
-    padding-right: 0.5rem; /* Espaço para a barra de rolagem */
+.player-card-horizontal:hover {
+  background: rgba(255, 255, 255, 0.05);
+  border-color: rgba(255, 255, 255, 0.12);
+  transform: translateX(2px);
+}
+
+.player-card-horizontal.editing {
+  background: linear-gradient(135deg, 
+    rgba(59, 130, 246, 0.1) 0%, 
+    rgba(59, 130, 246, 0.05) 100%);
+  border-color: rgba(59, 130, 246, 0.3);
+}
+
+.player-info-horizontal {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex: 1;
+}
+
+.player-icon-horizontal {
+  font-size: 20px;
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: 8px;
+}
+
+.player-details-horizontal {
+  flex: 1;
+  min-width: 0;
+}
+
+.player-name-horizontal {
+  font-size: 13px;
+  font-weight: 600;
+  color: white;
+  margin-bottom: 2px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.player-faction-horizontal {
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.7);
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.faction-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 8px;
+  border-radius: 10px;
+  font-size: 10px;
+  font-weight: 600;
+  background: rgba(0, 0, 0, 0.3);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.ai-badge-horizontal {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  padding: 2px 6px;
+  border-radius: 8px;
+  font-size: 9px;
+  font-weight: 700;
+  background: rgba(139, 92, 246, 0.15);
+  color: #c4b5fd;
+  border: 1px solid rgba(139, 92, 246, 0.3);
+}
+
+.player-stats-horizontal {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.6);
+}
+
+.player-actions-horizontal {
+  display: flex;
+  gap: 4px;
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+
+.player-card-horizontal:hover .player-actions-horizontal {
+  opacity: 1;
+}
+
+.player-actions-horizontal button {
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 6px;
+  color: rgba(255, 255, 255, 0.7);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.player-actions-horizontal button:hover {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: rgba(255, 255, 255, 0.15);
+  color: white;
+}
+
+/* Botões de IA compactos */
+.ai-button-horizontal {
+  padding: 6px 10px;
+  border-radius: 8px;
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  border: 1px solid transparent;
+  white-space: nowrap;
+}
+
+.ai-button-horizontal:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+}
+
+.ai-button-horizontal.easy {
+  background: linear-gradient(135deg, rgba(34, 197, 94, 0.15), rgba(22, 163, 74, 0.15));
+  color: #86efac;
+  border-color: rgba(34, 197, 94, 0.25);
+}
+
+.ai-button-horizontal.medium {
+  background: linear-gradient(135deg, rgba(59, 130, 246, 0.15), rgba(37, 99, 235, 0.15));
+  color: #93c5fd;
+  border-color: rgba(59, 130, 246, 0.25);
+}
+
+.ai-button-horizontal.hard {
+  background: linear-gradient(135deg, rgba(245, 158, 11, 0.15), rgba(217, 119, 6, 0.15));
+  color: #fde68a;
+  border-color: rgba(245, 158, 11, 0.25);
+}
+
+.ai-button-horizontal.master {
+  background: linear-gradient(135deg, rgba(239, 68, 68, 0.15), rgba(220, 38, 38, 0.15));
+  color: #fca5a5;
+  border-color: rgba(239, 68, 68, 0.25);
+}
+
+/* Placeholder da lista */
+#registeredPlayersList .col-span-2 {
+  grid-column: span 2;
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px dashed rgba(255, 255, 255, 0.1);
+  border-radius: 10px;
+}
+
+/* Responsividade */
+@media (max-width: 1024px) {
+  #initialScreen .relative {
+    max-width: 90%;
   }
-} /* Fechamento do @media (max-width: 640px) */
+  
+  #initialScreen .flex.items-center.gap-3 {
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+  
+  #initialScreen .flex.items-center.gap-3 > div {
+    min-width: 120px;
+  }
+  
+  #registeredPlayersList {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Responsividade avançada */
+@media (max-width: 768px) {
+  #initialScreen .relative {
+    max-width: 95%;
+    padding: 0 10px;
+  }
+  
+  /* Faixa de controles em coluna */
+  #initialScreen .bg-gray-900\/90 {
+    padding: 16px;
+  }
+  
+  #initialScreen .flex.items-center.gap-3 {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  
+  #initialScreen .flex.items-center.gap-3 > div {
+    width: 100% !important;
+    margin-bottom: 10px;
+  }
+  
+  #initialScreen .flex.gap-2 {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+    width: 100%;
+  }
+  
+  #initialScreen button {
+    width: 100%;
+  }
+  
+  /* Lista de jogadores em coluna única */
+  #registeredPlayersList {
+    grid-template-columns: 1fr;
+  }
+  
+  /* Botões de IA em grid */
+  #aiButtonsContainer {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 8px;
+  }
+}
+
+/* ============================================
+   ESTILOS PARA DROPDOWNS FUNCIONAIS
+   ============================================ */
+
+/* Dropdown container */
+#initialScreen select {
+  position: relative;
+  z-index: 10;
+}
+
+/* Estilo para as opções do dropdown */
+#initialScreen select option {
+  background-color: #1e293b;
+  color: white;
+  padding: 10px;
+  border: none;
+  font-size: 13px;
+}
+
+/* Hover nas opções (funciona em alguns navegadores) */
+#initialScreen select option:hover {
+  background-color: #374151;
+}
+
+/* Dropdown aberto */
+#initialScreen select:focus {
+  border-color: rgba(248, 214, 92, 0.5);
+  box-shadow: 0 0 0 2px rgba(248, 214, 92, 0.1);
+}
+
+/* Setinha customizada */
+.dropdown-arrow {
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  pointer-events: none;
+  color: rgba(255, 255, 255, 0.5);
+  font-size: 10px;
+}
+
+/* Container de dropdown com ícone */
+.dropdown-container {
+  position: relative;
+}
+
+.dropdown-container .dropdown-icon {
+  position: absolute;
+  left: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: rgba(255, 255, 255, 0.6);
+  font-size: 14px;
+  pointer-events: none;
+}
+
+/* ============================================
+   TELA DE CADASTRO - BOTÕES DE ÍCONES
+   ============================================ */
+
+/* Container de seleção de ícones */
+#iconSelection {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+/* Botões de ícones clicáveis */
+.icon-button {
+  width: 48px;
+  height: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(30, 41, 59, 0.7);
+  border: 2px solid rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+  font-size: 24px;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.icon-button:hover {
+  background: rgba(30, 41, 59, 0.9);
+  border-color: rgba(255, 255, 255, 0.2);
+  transform: translateY(-2px) scale(1.1);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+.icon-button.selected {
+  background: linear-gradient(135deg, 
+    rgba(248, 214, 92, 0.2) 0%, 
+    rgba(248, 214, 92, 0.1) 100%);
+  border-color: rgba(248, 214, 92, 0.6);
+  transform: scale(1.15);
+  box-shadow: 0 0 0 3px rgba(248, 214, 92, 0.1),
+              0 4px 16px rgba(248, 214, 92, 0.2);
+}
+
+.icon-button.selected:hover {
+  transform: scale(1.2);
+  box-shadow: 0 0 0 3px rgba(248, 214, 92, 0.2),
+              0 6px 20px rgba(248, 214, 92, 0.3);
+}
+
+/* Botões de IA compactos */
+.ai-button-compact {
+  padding: 8px 12px;
+  border-radius: 10px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  border: 2px solid transparent;
+  white-space: nowrap;
+}
+
+.ai-button-compact:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+.ai-button-compact.easy {
+  background: linear-gradient(135deg, rgba(34, 197, 94, 0.2), rgba(22, 163, 74, 0.2));
+  color: #86efac;
+  border-color: rgba(34, 197, 94, 0.3);
+}
+
+.ai-button-compact.medium {
+  background: linear-gradient(135deg, rgba(59, 130, 246, 0.2), rgba(37, 99, 235, 0.2));
+  color: #93c5fd;
+  border-color: rgba(59, 130, 246, 0.3);
+}
+
+.ai-button-compact.hard {
+  background: linear-gradient(135deg, rgba(245, 158, 11, 0.2), rgba(217, 119, 6, 0.2));
+  color: #fde68a;
+  border-color: rgba(245, 158, 11, 0.3);
+}
+
+.ai-button-compact.master {
+  background: linear-gradient(135deg, rgba(239, 68, 68, 0.2), rgba(220, 38, 38, 0.2));
+  color: #fca5a5;
+  border-color: rgba(239, 68, 68, 0.3);
+}
+
+/* Dropdown estilizado */
+#initialScreen select {
+  background-color: rgba(30, 41, 59, 0.8);
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%239ca3af'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 12px center;
+  background-size: 16px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  padding-right: 40px;
+}
+
+#initialScreen select:hover {
+  background-color: rgba(30, 41, 59, 0.95);
+  border-color: rgba(255, 255, 255, 0.2);
+}
+
+#initialScreen select:focus {
+  background-color: rgba(30, 41, 59, 0.95);
+  border-color: rgba(248, 214, 92, 0.5);
+  box-shadow: 0 0 0 3px rgba(248, 214, 92, 0.1);
+}
+
+/* Input estilizado */
+#initialScreen input[type="text"] {
+  background-color: rgba(30, 41, 59, 0.8);
+  transition: all 0.2s ease;
+}
+
+#initialScreen input[type="text"]:hover {
+  background-color: rgba(30, 41, 59, 0.95);
+  border-color: rgba(255, 255, 255, 0.2);
+}
+
+#initialScreen input[type="text"]:focus {
+  background-color: rgba(30, 41, 59, 0.95);
+  border-color: rgba(248, 214, 92, 0.5);
+  box-shadow: 0 0 0 3px rgba(248, 214, 92, 0.1);
+}
+
+/* Cartões de jogador horizontais */
+.player-card-horizontal {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 16px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 12px;
+  transition: all 0.2s ease;
+  border-left: 4px solid;
+}
+
+.player-card-horizontal:hover {
+  background: rgba(255, 255, 255, 0.06);
+  border-color: rgba(255, 255, 255, 0.12);
+  transform: translateX(4px);
+}
+
+.player-card-horizontal.editing {
+  background: linear-gradient(135deg, 
+    rgba(59, 130, 246, 0.1) 0%, 
+    rgba(59, 130, 246, 0.05) 100%);
+  border-color: rgba(59, 130, 246, 0.3) !important;
+}
+
+.player-info-horizontal {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex: 1;
+}
+
+.player-icon-horizontal {
+  font-size: 24px;
+  width: 44px;
+  height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: 10px;
+  flex-shrink: 0;
+}
+
+.player-details-horizontal {
+  flex: 1;
+  min-width: 0;
+}
+
+.player-name-horizontal {
+  font-size: 14px;
+  font-weight: 600;
+  color: white;
+  margin-bottom: 4px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.player-faction-horizontal {
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.7);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.faction-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border-radius: 10px;
+  font-size: 11px;
+  font-weight: 600;
+  background: rgba(0, 0, 0, 0.3);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.ai-badge-horizontal {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 8px;
+  border-radius: 8px;
+  font-size: 10px;
+  font-weight: 700;
+  background: rgba(139, 92, 246, 0.15);
+  color: #c4b5fd;
+  border: 1px solid rgba(139, 92, 246, 0.3);
+}
+
+.player-stats-horizontal {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 13px;
+  color: rgba(255, 255, 255, 0.6);
+}
+
+.player-actions-horizontal {
+  display: flex;
+  gap: 6px;
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+
+.player-card-horizontal:hover .player-actions-horizontal {
+  opacity: 1;
+}
+
+.player-actions-horizontal button {
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 8px;
+  color: rgba(255, 255, 255, 0.7);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.player-actions-horizontal button:hover {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: rgba(255, 255, 255, 0.15);
+  color: white;
+  transform: scale(1.1);
+}
+
+/* Responsividade */
+@media (max-width: 1024px) {
+  #initialScreen .relative {
+    max-width: 90%;
+  }
+  
+  #initialScreen .flex.items-center.gap-4 {
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+  
+  #initialScreen .flex.items-center.gap-4 > div {
+    min-width: 100%;
+  }
+  
+  .icon-button {
+    width: 44px;
+    height: 44px;
+    font-size: 22px;
+  }
+}

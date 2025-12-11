@@ -250,37 +250,142 @@
     <svg class="w-6 h-6 text-yellow-200" viewBox="0 0 24 24" fill="currentColor"><path d="M18 2H6C4.89 2 4 2.89 4 4V20C4 21.11 4.89 22 6 22H18C19.11 22 20 21.11 20 20V4C20 2.89 19.11 2 18 2M16 8H8V6H16V8M16 12H8V10H16V12M14 16H8V14H14V16Z"/></svg>
   </button>
 
-  <!-- TELA INICIAL DE CADASTRO -->
-  <div id="initialScreen" class="fixed inset-0 z-50 flex items-center justify-center p-6">
-    <div class="absolute inset-0 bg-black/25"></div>
-    <div class="relative w-full max-w-4xl mx-4">
-      <div class="player-modal rounded-3xl overflow-hidden">
-        <div class="flex items-center gap-4 px-6 py-4">
-          <div>
-            <h2 class="text-2xl font-semibold text-yellow-300">Adicione jogadores</h2>
-            <p id="playerCountDisplay" class="text-sm text-gray-200 mt-1">0/4 Jogadores Registrados</p>
+  <!-- ==================== TELA DE CADASTRO - FORMATO HORIZONTAL ==================== -->
+<div id="initialScreen" class="fixed inset-0 z-50 flex items-center justify-center p-4">
+  <!-- Overlay sutil -->
+  <div class="absolute inset-0 bg-black/40 backdrop-blur-sm"></div>
+  
+  <!-- Faixa horizontal flutuante -->
+  <div class="relative w-full max-w-5xl">
+    
+    <!-- Cabeçalio minimalista -->
+    <div class="text-center mb-8">
+      <h1 class="text-4xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-yellow-300 to-yellow-500">
+        Gaia Dominium
+      </h1>
+      <p class="text-gray-300 mt-2">Configure sua partida</p>
+    </div>
+    
+    <!-- Faixa principal de cadastro -->
+    <div class="bg-gray-900/90 backdrop-blur-lg border border-white/15 rounded-2xl p-6 shadow-2xl">
+      
+      <!-- Linha 1: Controles principais -->
+      <div class="flex items-center gap-4 mb-6">
+        <!-- Nome do jogador -->
+        <div class="flex-1">
+          <div class="relative">
+            <input 
+              id="playerName" 
+              type="text" 
+              placeholder="Nome do jogador" 
+              class="w-full bg-gray-800/70 text-white placeholder-gray-400 border border-white/10 rounded-xl px-4 py-3 pl-12 text-sm focus:outline-none focus:ring-2 focus:ring-yellow-500/50 focus:border-yellow-500/30 transition-all"
+            />
+            <div class="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 text-lg">
+              👤
+            </div>
           </div>
-          <div class="flex-1 flex items-center gap-3">
-  <input id="playerName" type="text" placeholder="Nome do jogador"
-    class="w-full bg-gray-800/60 text-gray-100 placeholder-gray-400 border border-white/6 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-green-400" />
-  <button id="addPlayerBtn" class="px-4 py-3 bg-green-600 rounded-lg text-white font-medium hover:bg-green-700 transition">Adicionar</button>
-  <button id="cancelEditBtn" class="hidden px-4 py-3 bg-gray-700 rounded-lg text-white font-medium hover:bg-gray-600 transition">Cancelar</button>
-</div>
-          <button id="startGameBtn" disabled class="px-6 py-3 bg-blue-600 rounded-lg text-white font-semibold disabled:opacity-40 hover:bg-blue-700 transition">Inicializar Jogo</button>
         </div>
-        <div class="px-6 pt-2 pb-4">
-          <label class="text-gray-200 text-sm mb-2 block">Selecione um ícone</label>
-          <div id="iconSelection" class="flex flex-wrap gap-2"></div>
+        
+        <!-- Dropdown de facção -->
+        <div class="w-48">
+          <div class="relative">
+            <select 
+              id="factionDropdown"
+              class="w-full bg-gray-800/70 text-white border border-white/10 rounded-xl px-4 py-3 pl-12 pr-10 text-sm appearance-none focus:outline-none focus:ring-2 focus:ring-yellow-500/50 focus:border-yellow-500/30 transition-all"
+            >
+              <option value="" selected disabled>Escolha a facção</option>
+              <!-- Opções preenchidas por JS -->
+            </select>
+            <div class="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 text-lg">
+              🏛️
+            </div>
+            <div class="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 text-sm">
+              ▼
+            </div>
+          </div>
         </div>
-        <div class="px-6 pb-6">
-          <div id="registeredPlayersList" class="grid grid-cols-2 md:grid-cols-4 gap-2"></div>
-          <div id="aiButtonsContainer" class="mt-4 border-t border-white/10 pt-4">
-            <!-- Os botões de IA serão inseridos aqui pelo JavaScript -->
+        
+        <!-- Botões de ação -->
+        <div class="flex gap-3">
+          <button 
+            id="addPlayerBtn" 
+            class="px-6 py-3 bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 rounded-xl text-white font-semibold transition-all transform hover:scale-[1.02] active:scale-[0.98] shadow-lg"
+          >
+            + Adicionar
+          </button>
+          <button 
+            id="cancelEditBtn" 
+            class="hidden px-6 py-3 bg-gray-800 hover:bg-gray-700 border border-white/10 rounded-xl text-white font-semibold transition-all"
+          >
+            ✗ Cancelar
+          </button>
+        </div>
+        
+        <!-- Botão iniciar jogo -->
+        <button 
+          id="startGameBtn" 
+          disabled
+          class="px-8 py-3 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 disabled:from-gray-800 disabled:to-gray-900 disabled:cursor-not-allowed rounded-xl text-white font-semibold transition-all whitespace-nowrap shadow-lg"
+        >
+          🚀 Iniciar Jogo
+        </button>
+      </div>
+      
+      <!-- Linha 2: Botões de ícones e IA -->
+      <div class="flex items-center justify-between border-t border-white/10 pt-6">
+        <!-- Botões de ícones -->
+        <div class="flex-1">
+          <div class="flex items-center gap-2 mb-2">
+            <span class="text-sm font-medium text-gray-200">🎭 Selecione um ícone:</span>
+          </div>
+          <div id="iconSelection" class="flex flex-wrap gap-2">
+            <!-- Botões de ícones serão inseridos aqui -->
+          </div>
+        </div>
+        
+        <!-- Divisor vertical -->
+        <div class="h-12 w-px bg-white/10 mx-6"></div>
+        
+        <!-- Botões de IA -->
+        <div>
+          <div class="flex items-center gap-2 mb-2">
+            <span class="text-sm font-medium text-gray-200">🤖 Adicionar IA:</span>
+          </div>
+          <div id="aiButtonsContainer" class="flex gap-2">
+            <!-- Botões de IA serão inseridos aqui -->
           </div>
         </div>
       </div>
     </div>
+    
+    <!-- Lista de jogadores registrados -->
+    <div class="mt-8">
+      <div class="flex items-center justify-between mb-4">
+        <h3 class="text-lg font-medium text-gray-200">👥 Jogadores Registrados</h3>
+        <div class="text-sm text-gray-400">
+          <span id="playerCountDisplay">0</span>/4 jogadores
+        </div>
+      </div>
+      
+      <div 
+        id="registeredPlayersList" 
+        class="grid grid-cols-2 gap-3"
+      >
+        <!-- Lista será preenchida por JS -->
+        <div class="col-span-2 text-center py-8 text-gray-400">
+          <div class="text-3xl mb-3">👤</div>
+          <p class="text-sm">Nenhum jogador adicionado</p>
+          <p class="text-xs mt-2 text-gray-500">Adicione jogadores para começar a partida</p>
+        </div>
+      </div>
+    </div>
+    
+    <!-- Instruções minimalistas -->
+    <div class="text-center mt-8 text-sm text-gray-500">
+      <p>Adicione 2-4 jogadores para iniciar a partida • Cada jogador escolhe uma facção única</p>
+    </div>
   </div>
+</div>
 
   <!-- NAVBAR DO JOGO -->
   <nav id="gameNavbar" class="hidden fixed top-0 left-0 right-0 z-40 bg-black/60 backdrop-blur-md border-b border-white/6">

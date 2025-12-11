@@ -490,7 +490,95 @@ const ACHIEVEMENTS_CONFIG = {
   }
 };
 
-// GARANTIR QUE TODAS AS CONSTANTES SÃO EXPORTADAS
+// ==================== HABILIDADES DAS FACÇÕES ====================
+const FACTION_ABILITIES = {
+  // Facção Verde - "Guardiões da Floresta"
+  0: {
+    id: 'forest_guardians',
+    name: 'Guardiões da Floresta',
+    color: '#166A38',
+    icon: '🦌',
+    description: 'Mestres da natureza e biomas florestais',
+    abilities: {
+      // Bônus permanente em Florestas Tropicais e Temperadas
+      biomeBonus: {
+        'Floresta Tropical': { madeira: 2, agua: 1 },
+        'Floresta Temperada': { madeira: 2, pedra: 1 }
+      },
+      // Explorar custa -1 Madeira
+      exploreDiscount: { madeira: 1 },
+      // +25% produção de Madeira em todas as regiões
+      globalProductionMultiplier: { madeira: 0.25 }
+    }
+  },
+  
+  // Facção Azul - "Mestres das Águas"
+  1: {
+    id: 'water_masters',
+    name: 'Mestres das Águas',
+    color: '#1E40AF',
+    icon: '🌊',
+    description: 'Exploradores dos recursos hídricos e costeiros',
+    abilities: {
+      // Bônus permanente em Pântanos
+      biomeBonus: {
+        'Pântano': { agua: 3, pedra: 2 }
+      },
+      // Negociação custa 0 Ouro (primeira por turno)
+      freeNegotiationPerTurn: 1,
+      // +1 Ação extra ao explorar regiões com água
+      exploreWaterBonus: true,
+      // Coleta em regiões com água dá +1 recurso aleatório
+      waterCollectBonus: 1
+    }
+  },
+  
+  // Facção Vermelha - "Construtores da Montanha"
+  2: {
+    id: 'mountain_builders',
+    name: 'Construtores da Montanha',
+    color: '#991B1B',
+    icon: '⛰️',
+    description: 'Mestres em mineração e construções robustas',
+    abilities: {
+      // Bônus permanente em Savanas (consideradas áridas/montanhosas)
+      biomeBonus: {
+        'Savana': { pedra: 2, ouro: 2 }
+      },
+      // Construir custa -1 Pedra
+      buildDiscount: { pedra: 1 },
+      // Estruturas dão +1 PV extra
+      structurePVBonus: 1,
+      // +50% produção de Pedra
+      globalProductionMultiplier: { pedra: 0.5 }
+    }
+  },
+  
+  // Facção Amarela - "Barões do Comércio"
+  3: {
+    id: 'merchants_barons',
+    name: 'Barões do Comércio',
+    color: '#A16207',
+    icon: '💰',
+    description: 'Especialistas em comércio e economia',
+    abilities: {
+      // Bônus permanente em Savanas
+      biomeBonus: {
+        'Savana': { ouro: 3, agua: 1 }
+      },
+      // +1 Ouro por turno por região controlada
+      goldPerRegion: 1,
+      // Negociações bem-sucedidas dão +1 PV
+      negotiationPVBonus: 1,
+      // Custo de mercado reduzido em 50%
+      marketDiscount: 0.5,
+      // +30% chance de encontrar Ouro ao explorar
+      goldExplorationBonus: 0.3
+    }
+  }
+};
+
+// EXPOSTAÇÃO DE TODAS AS INFORMAÇÕES
 export { 
   GAME_CONFIG, 
   RESOURCE_ICONS, 
@@ -507,5 +595,6 @@ export {
   ACHIEVEMENTS_CONFIG,
   GAME_EVENTS,
   ACHIEVEMENTS,
-  EVENT_CATEGORIES
+  EVENT_CATEGORIES,
+  FACTION_ABILITIES
 };

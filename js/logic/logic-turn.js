@@ -79,6 +79,9 @@ export class TurnLogic {
       turn: gameState.turn 
     });
     
+    // Resetar bônus de turno da facção do jogador que acabou de jogar
+    this.main.factionLogic.resetTurnBonuses(currentPlayer);
+
     // Avançar Jogador
     gameState.currentPlayerIndex = (gameState.currentPlayerIndex + 1) % gameState.players.length;
     
@@ -145,6 +148,20 @@ export class TurnLogic {
         // Somar
         Object.keys(prod).forEach(k => bonuses[k] += prod[k]);
     });
+
+    // Calcular bônus de facção
+    const factionBonuses = this.main.factionLogic.applyFactionBonuses(player);
+    
+    if (factionBonuses && factionBonuses.production) {
+        Object.entries(factionBonuses.production).forEach(([res, amount]) => {
+            // Se for multiplicador (ex: 0.25), calculamos sobre o total atual
+            if (amount < 1 && amount > 0) { 
+                bonuses[res] = Math.floor((bonuses[res] || 0) * (1 + amount));
+            } else {
+                bonuses[res] = (bonuses[res] || 0) + Math.floor(amount);
+            }
+        });
+    }
 
     // Aplicar
     Object.keys(bonuses).forEach(k => {

@@ -1,5 +1,6 @@
 // game-logic.js - Fachada Principal
 import { ActionLogic } from './logic-actions.js';
+import { FactionLogic } from './logic-factions.js';
 import { NegotiationLogic } from './logic-negotiation.js';
 import { TurnLogic } from './logic-turn.js';
 import { AICoordinator } from './logic-ai-coordinator.js';
@@ -13,6 +14,7 @@ class GameLogic {
     this.negotiationLogic = new NegotiationLogic(this);
     this.turnLogic = new TurnLogic(this);
     this.aiCoordinator = new AICoordinator(this);
+    this.factionLogic = new FactionLogic(this);
     
     this.feedbackHistory = []; // Compatibilidade com logs antigos
   }
@@ -161,9 +163,20 @@ class GameLogic {
   }
   
   canAffordAction(actionType) {
-    // Verificação rápida usada pela UI para habilitar/desabilitar botões
     const player = getCurrentPlayer();
-    const cost = GAME_CONFIG.ACTION_DETAILS[actionType]?.cost || {};
+    let cost = GAME_CONFIG.ACTION_DETAILS[actionType]?.cost || {};
+
+    // Verificar descontos de facção
+    if (actionType === 'explorar') {
+      cost = this.factionLogic.modifyExploreCost(player, cost);
+    } else if (actionType === 'construir') {
+      // Nota: Para construção genérica na UI, usamos custo base. 
+      // A verificação real ocorre dentro do handleBuild com o tipo específico.
+    } else if (actionType === 'negociar') {
+       const negCost = this.factionLogic.modifyNegotiationCost(player);
+       return player.resources.ouro >= negCost;
+    }
+
     return Object.entries(cost).every(([resource, amount]) => {
       return (player.resources[resource] || 0) >= amount;
     });
