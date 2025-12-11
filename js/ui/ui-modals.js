@@ -203,6 +203,7 @@ class ModalManager {
       { id: 'tab-gaia', key: 'gaia' },
       { id: 'tab-regioes', key: 'regioes' },
       { id: 'tab-faccoes', key: 'faccoes' },
+      { id: 'tab-fases', key: 'fases' },
       { id: 'tab-acoes', key: 'acoes' },
       { id: 'tab-negociacao', key: 'negociacao' },
       { id: 'tab-estrutura', key: 'estrutura' },
