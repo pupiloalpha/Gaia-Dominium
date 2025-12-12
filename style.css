@@ -2352,6 +2352,17 @@ body.modal-open .board-cell {
   }
 }
 
+/* ========================================================= */
+/* ESTILOS DA TELA INICIAL (Glassmorphism Avançado) */
+/* ========================================================= */
+#initialScreen {
+    /* EFEITOS GLASSMORHISM */
+    background: linear-gradient(180deg, rgba(12,12,12,0.56), rgba(8,8,8,0.45));
+    border: 1px solid rgba(255,255,255,0.06);
+    backdrop-filter: blur(12px) saturate(120%);
+    box-shadow: 0 12px 40px rgba(0,0,0,0.6);
+}
+
 /* Dropdowns estilizados */
 #initialScreen select {
   background-color: rgba(30, 41, 59, 0.8);
