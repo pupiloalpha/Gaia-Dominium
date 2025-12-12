@@ -280,29 +280,26 @@
               placeholder="Nome do jogador" 
               class="w-full bg-gray-800/70 text-white placeholder-gray-400 border border-white/10 rounded-xl px-4 py-3 pl-12 text-sm focus:outline-none focus:ring-2 focus:ring-yellow-500/50 focus:border-yellow-500/30 transition-all"
             />
-            <div class="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 text-lg">
-              👤
-            </div>
           </div>
         </div>
         
         <!-- Dropdown de facção -->
         <div class="w-48">
           <div class="relative">
-            <select 
-              id="factionDropdown"
-              class="w-full bg-gray-800/70 text-white border border-white/10 rounded-xl px-4 py-3 pl-12 pr-10 text-sm appearance-none focus:outline-none focus:ring-2 focus:ring-yellow-500/50 focus:border-yellow-500/30 transition-all"
-            >
-              <option value="" selected disabled>Escolha a facção</option>
-              <!-- Opções preenchidas por JS -->
-            </select>
-            <div class="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 text-lg">
+            <div class="absolute left-3 top-1/2 transform -translate-y-1/2 text-yellow-300 text-lg z-10">
               🏛️
             </div>
-            <div class="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 text-sm">
-              ▼
-            </div>
-          </div>
+            <select 
+               id="factionDropdown"
+               class="faction-dropdown w-full bg-gray-900/80 text-white border border-yellow-500/30 rounded-xl px-4 py-3 pl-12 pr-10 text-sm appearance-none focus:outline-none focus:ring-2 focus:ring-yellow-500/70 focus:border-yellow-500/50 transition-all backdrop-blur-sm shadow-lg"
+    >
+              <option value="" selected disabled class="placeholder-option">Escolha a facção</option>
+              <!-- Opções preenchidas por JS -->
+              </select>
+             <div class="dropdown-arrow absolute right-3 top-1/2 transform -translate-y-1/2 text-yellow-300 text-sm z-10">
+               ▼
+             </div>
+           </div>
         </div>
         
         <!-- Botões de ação -->
@@ -337,11 +334,12 @@
         <div class="flex-1">
           <div class="flex items-center gap-2 mb-2">
             <span class="text-sm font-medium text-gray-200">🎭 Selecione um ícone:</span>
+              <span id="selectedIconDisplay" class="text-lg ml-2"></span>
+            </div>
+            <div id="iconSelection" class="flex flex-wrap gap-2">
+              <!-- Botões de ícones serão inseridos aqui -->
+            </div>
           </div>
-          <div id="iconSelection" class="flex flex-wrap gap-2">
-            <!-- Botões de ícones serão inseridos aqui -->
-          </div>
-        </div>
         
         <!-- Divisor vertical -->
         <div class="h-12 w-px bg-white/10 mx-6"></div>

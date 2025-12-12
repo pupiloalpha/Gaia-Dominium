@@ -7,7 +7,8 @@ import {
   setAIPlayers,
   getAIPlayer,
   isPlayerAI,
-  aiInstances 
+  aiInstances,
+  getPendingNegotiationsForPlayer 
  } from '../state/game-state.js';
 import { GAME_CONFIG, RESOURCE_ICONS, ACHIEVEMENTS_CONFIG, FACTION_ABILITIES } from '../state/game-config.js';
 import { AIFactory, AI_DIFFICULTY_SETTINGS } from '../ai/ai-system.js';
@@ -51,13 +52,7 @@ initDropdowns() {
   console.log("🔄 Inicializando dropdowns...");
   
   // Garantir que os elementos existem
-  this.iconDropdown = document.getElementById('iconDropdown');
   this.factionDropdown = document.getElementById('factionDropdown');
-  
-  if (!this.iconDropdown) {
-    console.error("❌ Elemento iconDropdown não encontrado!");
-    return;
-  }
   
   if (!this.factionDropdown) {
     console.error("❌ Elemento factionDropdown não encontrado!");
@@ -67,7 +62,6 @@ initDropdowns() {
   console.log("✅ Dropdowns encontrados, preenchendo opções...");
   
   // Preencher dropdowns
-  this.populateIconDropdown();
   this.populateFactionDropdown();
   
   // Adicionar botões de IA
@@ -90,10 +84,11 @@ populateFactionDropdown() {
     this.factionDropdown.remove(1);
   }
   
-  // Adicionar opções
+  // Adicionar opções com estilo
   Object.entries(FACTION_ABILITIES).forEach(([id, faction]) => {
     const option = document.createElement('option');
     option.value = id;
+    option.title = faction.description || `Facção ${faction.name}`;
     option.textContent = `${faction.icon || '🏛️'} ${faction.name}`;
     
     // Verificar se facção está disponível
@@ -101,14 +96,66 @@ populateFactionDropdown() {
     
     if (!isAvailable) {
       option.disabled = true;
-      option.textContent += ' (já em uso)';
-      option.style.opacity = '0.6';
+      option.textContent += ' ✗ (em uso)';
+      option.style.color = '#9ca3af';
+      option.style.fontStyle = 'italic';
+    } else {
+      // Adicionar emoji indicador de disponibilidade
+      option.textContent += ' ✓';
     }
+    
+    // Adicionar estilo baseado na facção
+    option.dataset.factionId = id;
+    option.style.padding = '12px 16px';
+    option.style.borderBottom = '1px solid rgba(255, 255, 255, 0.05)';
     
     this.factionDropdown.appendChild(option);
   });
   
   console.log(`✅ Dropdown de facções preenchido com ${Object.keys(FACTION_ABILITIES).length} opções`);
+}
+
+// Adicione este método para melhorar a experiência de seleção de facção
+setupFactionDropdownEffects() {
+  if (!this.factionDropdown) return;
+  
+  const dropdownContainer = this.factionDropdown.closest('.dropdown-container');
+  const dropdownIcon = dropdownContainer?.querySelector('.dropdown-icon');
+  
+  this.factionDropdown.addEventListener('change', () => {
+    const selectedValue = this.factionDropdown.value;
+    const faction = FACTION_ABILITIES[selectedValue];
+    
+    if (faction && dropdownIcon) {
+      // Atualizar ícone do dropdown com o ícone da facção selecionada
+      dropdownIcon.textContent = faction.icon || '🏛️';
+      
+      // Efeito visual de confirmação
+      dropdownContainer.style.animation = 'factionSelected 0.5s ease';
+      setTimeout(() => {
+        dropdownContainer.style.animation = '';
+      }, 500);
+    } else if (dropdownIcon) {
+      // Resetar ícone se nenhuma facção selecionada
+      dropdownIcon.textContent = '🏛️';
+    }
+  });
+  
+  // Efeito ao abrir o dropdown
+  this.factionDropdown.addEventListener('click', () => {
+    const dropdownArrow = dropdownContainer?.querySelector('.dropdown-arrow');
+    if (dropdownArrow) {
+      dropdownArrow.style.transform = 'translateY(-50%) rotate(180deg)';
+    }
+  });
+  
+  // Efeito ao perder foco
+  this.factionDropdown.addEventListener('blur', () => {
+    const dropdownArrow = dropdownContainer?.querySelector('.dropdown-arrow');
+    if (dropdownArrow) {
+      dropdownArrow.style.transform = 'translateY(-50%)';
+    }
+  });
 }
 
 isFactionAvailable(factionId) {
@@ -121,21 +168,16 @@ isFactionAvailable(factionId) {
   );
 }
 
-// Função auxiliar para verificar disponibilidade de facção
-isFactionAvailable(factionId) {
-  const faction = FACTION_ABILITIES[factionId];
-  if (!faction) return false;
-  
-  return !gameState.players.some(p => 
-    p.faction && p.faction.id === faction.id && !p.isAI
-  );
-}
-
-  constructor() {
+constructor() {
   this.modals = new ModalManager(this);
   this.negotiation = new NegotiationUI(this);
   this.editingIndex = null;
   this.selectedIcon = null;
+  
+  // BINDING CRÍTICO: Vincular métodos ao contexto atual
+  this.selectIcon = this.selectIcon.bind(this);
+  this.handleAddPlayer = this.handleAddPlayer.bind(this);
+  this.renderIconSelection = this.renderIconSelection.bind(this);
   
   this.cacheElements();
   
@@ -145,7 +187,10 @@ isFactionAvailable(factionId) {
   }, 100);
 }
 
+
 cacheElements() {
+  console.log("🔄 Cacheando elementos do DOM...");
+  
   // Elementos principais
   this.initialScreen = document.getElementById('initialScreen');
   this.gameNavbar = document.getElementById('gameNavbar');
@@ -153,6 +198,9 @@ cacheElements() {
   this.sidebar = document.getElementById('sidebar');
   this.gameMap = document.getElementById('gameMap');
   this.gameFooter = document.getElementById('gameFooter');
+  
+  // Container do tabuleiro - ESSENCIAL
+  this.boardContainer = document.getElementById('boardContainer');
   
   // Elementos do formulário
   this.playerNameInput = document.getElementById('playerName');
@@ -166,12 +214,58 @@ cacheElements() {
   this.iconSelection = document.getElementById('iconSelection');
   this.factionDropdown = document.getElementById('factionDropdown');
   
+  // Elementos da interface do jogo (que existem no HTML)
+  this.playerHeaderList = document.getElementById('playerHeaderList');
+  this.sidebarPlayerHeader = document.getElementById('sidebarPlayerHeader');
+  this.resourceList = document.getElementById('resourceList');
+  this.controlledRegions = document.getElementById('controlledRegions');
+  this.achievementsList = document.getElementById('achievementsList');
+  
+  // Botões de ação (usando IDs corretos do HTML)
+  this.actionExploreBtn = document.getElementById('actionExplore');
+  this.actionCollectBtn = document.getElementById('actionCollect');
+  this.actionBuildBtn = document.getElementById('actionBuild');
+  this.actionNegotiateBtn = document.getElementById('actionNegotiate');
+  this.endTurnBtn = document.getElementById('endTurnBtn');
+  
+  // Elementos de informação
+  this.actionsLeftEl = document.getElementById('actionsLeft');
+  this.phaseIndicator = document.getElementById('phaseIndicator');
+  this.turnInfo = document.getElementById('turnInfo');
+  
+  // Elementos do log de atividades (apenas os que existem)
+  this.logEntriesSidebar = document.getElementById('logEntriesSidebar');
+  this.logFilterAllSidebar = document.getElementById('logFilterAllSidebar');
+  this.logFilterMineSidebar = document.getElementById('logFilterMineSidebar');
+  this.logFilterEventsSidebar = document.getElementById('logFilterEventsSidebar');
+  
+  // Tooltip
+  this.regionTooltip = document.getElementById('regionTooltip');
+  this.tooltipTitle = document.getElementById('tooltipTitle');
+  this.tooltipBody = document.getElementById('tooltipBody');
+  
   console.log("✅ Elementos cacheados:", {
+    boardContainer: !!this.boardContainer, // CRÍTICO
     iconSelection: !!this.iconSelection,
     factionDropdown: !!this.factionDropdown,
-    playerNameInput: !!this.playerNameInput
+    playerNameInput: !!this.playerNameInput,
+    playerHeaderList: !!this.playerHeaderList,
+    sidebarPlayerHeader: !!this.sidebarPlayerHeader,
+    actionExploreBtn: !!this.actionExploreBtn,
+    actionCollectBtn: !!this.actionCollectBtn,
+    actionBuildBtn: !!this.actionBuildBtn,
+    actionNegotiateBtn: !!this.actionNegotiateBtn,
+    endTurnBtn: !!this.endTurnBtn,
+    boardContainerExists: !!this.boardContainer // Verificação extra
   });
+  
+  // Debug: se boardContainer não existe, mostrar erro
+  if (!this.boardContainer) {
+    console.error("❌ CRÍTICO: boardContainer não encontrado!");
+    console.error("   Procure por #boardContainer no HTML");
+  }
 }
+
 
 initUI() {
   this.renderIconSelection();
@@ -180,6 +274,8 @@ initUI() {
   this.updatePlayerCountDisplay();
   this.setupEventListeners();
   this.setupTransparencyControls();
+  this.setupFormValidation();
+  this.setupFactionDropdownEffects();
 }
 
 // ==================== AÇÕES DE IA ====================
@@ -367,6 +463,7 @@ initializeSafely() {
 
 // ==================== SELEÇÃO DE ÍCONES ====================
 
+// NOVA VERSÃO do método renderIconSelection:
 renderIconSelection() {
   if (!this.iconSelection) {
     console.error("❌ Elemento iconSelection não encontrado");
@@ -381,35 +478,119 @@ renderIconSelection() {
     iconButton.type = 'button';
     iconButton.innerHTML = icon;
     iconButton.title = `Ícone ${icon}`;
+    iconButton.dataset.icon = icon; // Adiciona dataset para fácil identificação
     
-    // Verificar se ícone já está em uso
-    const isUsed = gameState.players.some(p => p.icon === icon);
-    if (isUsed) {
+    // Verificar se ícone já está em uso por outros jogadores
+    const isUsedByOthers = gameState.players.some((p, index) => {
+      // Se estamos editando, ignorar o jogador atual
+      if (this.editingIndex !== null && index === this.editingIndex) {
+        return false;
+      }
+      return p.icon === icon;
+    });
+    
+    if (isUsedByOthers) {
       iconButton.classList.add('disabled');
-      iconButton.title = `Ícone ${icon} (já em uso)`;
+      iconButton.title = `Ícone ${icon} (já em uso por outro jogador)`;
       iconButton.style.opacity = '0.4';
       iconButton.style.cursor = 'not-allowed';
+      iconButton.disabled = true;
     } else {
-      iconButton.addEventListener('click', () => this.selectIcon(icon, iconButton));
+      // Adicionar event listener CORRETAMENTE
+      iconButton.addEventListener('click', (e) => {
+        console.log(`🎯 Clique no ícone: ${icon}`);
+        this.selectIcon(icon, iconButton);
+      });
+      
+      // Marcar que tem listener (para debug)
+      iconButton.__hasClickListener = true;
+    }
+    
+    // Se este é o ícone atualmente selecionado, marque como selecionado
+    if (this.selectedIcon === icon) {
+      iconButton.classList.add('selected');
+      iconButton.style.transform = 'scale(1.1)';
     }
     
     this.iconSelection.appendChild(iconButton);
   });
   
   console.log(`✅ ${GAME_CONFIG.PLAYER_ICONS.length} botões de ícone renderizados`);
+  this.debugIconState(); // Debug temporário
 }
 
+
+// Substitua COMPLETAMENTE o método selectIcon() pelo seguinte:
 selectIcon(icon, buttonElement) {
+  console.log(`🎯 Método selectIcon chamado com ícone: ${icon}`);
+  console.log(`📌 this.selectedIcon antes: ${this.selectedIcon}`);
+  
   // Desselecionar todos
   document.querySelectorAll('.icon-button.selected').forEach(btn => {
     btn.classList.remove('selected');
+    btn.style.transform = '';
   });
   
-  // Selecionar novo
+  // ATUALIZAR: Garantir que a propriedade está sendo atualizada
   this.selectedIcon = icon;
-  buttonElement.classList.add('selected');
+  console.log(`📌 this.selectedIcon depois: ${this.selectedIcon}`);
   
-  console.log(`✅ Ícone selecionado: ${icon}`);
+  if (buttonElement) {
+    buttonElement.classList.add('selected');
+    buttonElement.style.transform = 'scale(1.1)';
+    
+    // Feedback visual
+    buttonElement.animate([
+      { transform: 'scale(1)', opacity: 1 },
+      { transform: 'scale(1.2)', opacity: 0.8 },
+      { transform: 'scale(1.1)', opacity: 1 }
+    ], {
+      duration: 300,
+      easing: 'ease-out'
+    });
+  }
+  
+  // Atualizar display do ícone selecionado
+  const selectedIconDisplay = document.getElementById('selectedIconDisplay');
+  if (selectedIconDisplay) {
+    selectedIconDisplay.textContent = icon;
+    selectedIconDisplay.style.color = '#fbbf24';
+  }
+  
+  console.log(`✅ Ícone selecionado: ${icon}, this.selectedIcon: ${this.selectedIcon}`);
+}
+
+// Adicione este método após o método selectIcon
+setupFormValidation() {
+  // Validação visual do ícone
+  this.iconSelection?.addEventListener('click', (e) => {
+    const iconButton = e.target.closest('.icon-button:not(.disabled)');
+    if (iconButton) {
+      // Remover erro visual se existir
+      this.iconSelection.style.border = '';
+      this.iconSelection.style.borderRadius = '';
+      this.iconSelection.style.padding = '';
+    }
+  });
+  
+  // Validação do nome
+  this.playerNameInput?.addEventListener('input', () => {
+    const name = this.playerNameInput.value.trim();
+    if (name.length > 0) {
+      this.playerNameInput.style.borderColor = '#10b981';
+    } else {
+      this.playerNameInput.style.borderColor = '';
+    }
+  });
+  
+  // Validação da facção
+  this.factionDropdown?.addEventListener('change', () => {
+    if (this.factionDropdown.value) {
+      this.factionDropdown.style.borderColor = '#10b981';
+    } else {
+      this.factionDropdown.style.borderColor = '';
+    }
+  });
 }
 
   // ==================== MÉTODOS PRINCIPAIS ====================
@@ -424,25 +605,6 @@ selectIcon(icon, buttonElement) {
     this.renderActivityLog();
     this.updatePhaseIndicator();
   }
-
-// ==================== DROPDOWN DE ÍCONES ====================
-
-renderIconDropdown() {
-  if (!this.iconDropdown) return;
-  
-  // Manter apenas o placeholder
-  while (this.iconDropdown.options.length > 1) {
-    this.iconDropdown.remove(1);
-  }
-  
-  // Adicionar opções
-  GAME_CONFIG.PLAYER_ICONS.forEach(icon => {
-    const option = document.createElement('option');
-    option.value = icon;
-    option.textContent = `${icon} ${icon}`;
-    this.iconDropdown.appendChild(option);
-  });
-}
 
 // ==================== DROPDOWN DE FACÇÕES ====================
 
@@ -570,7 +732,18 @@ getFactionIcon(factionId) {
   }
 
   renderBoard() {
-    this.boardContainer.innerHTML = '';
+  // VERIFICAÇÃO DE SEGURANÇA
+  if (!this.boardContainer) {
+    console.error("❌ boardContainer não disponível. Tentando recachear...");
+    this.boardContainer = document.getElementById('boardContainer');
+    
+    if (!this.boardContainer) {
+      console.error("❌ boardContainer ainda não encontrado após recache!");
+      return; // Sai do método para evitar erro
+    }
+  }
+  
+  this.boardContainer.innerHTML = '';
     gameState.regions.forEach((region, index) => {
       const cell = this.createRegionCell(region, index);
       this.boardContainer.appendChild(cell);
@@ -740,6 +913,8 @@ if (gameState.actionsLeft > 0) {
   if (!player) return;
   
   const isCurrentPlayer = playerIndex === gameState.currentPlayerIndex;
+  const faction = player.faction;
+  const factionColor = faction?.color || '#9ca3af';
   
   this.sidebarPlayerHeader.innerHTML = `
     <div class="flex items-center gap-3 p-2 rounded-lg" 
@@ -747,9 +922,15 @@ if (gameState.actionsLeft > 0) {
       <div class="text-3xl">${player.icon}</div>
       <div class="flex-1">
         <div class="text-base font-semibold text-white">${player.name}</div>
-        <div class="text-xs text-gray-300">
+        <div class="text-xs text-gray-300 mb-1">
           Jogador ${player.id + 1} ${isCurrentPlayer ? '• 🎮 TURNO' : ''}
         </div>
+        ${faction ? `
+        <div class="text-xs font-medium flex items-center gap-1" style="color: ${factionColor}">
+          <span class="text-sm">${faction.icon || '🏛️'}</span>
+          <span>${faction.name}</span>
+        </div>
+        ` : '<div class="text-xs text-gray-400">Sem facção</div>'}
       </div>
       <div class="text-2xl font-bold text-yellow-400">${player.victoryPoints} PV</div>
     </div>
@@ -1027,7 +1208,11 @@ if (this.actionExploreBtn) {
   
   // Botão Terminar Turno
   if (this.endTurnBtn) {
-    switch(currentPhase) {
+    const currentPlayer = getCurrentPlayer();
+    const pendingNegotiations = getPendingNegotiationsForPlayer(currentPlayer.id);
+    const hasPending = pendingNegotiations.length > 0;
+    
+    switch(gameState.currentPhase) {
       case 'acoes':
         this.endTurnBtn.disabled = false;
         this.endTurnBtn.textContent = 'Ir para Negociação';
@@ -1035,8 +1220,17 @@ if (this.actionExploreBtn) {
         break;
       case 'negociacao':
         this.endTurnBtn.disabled = false;
-        this.endTurnBtn.textContent = 'Terminar Turno';
-        this.endTurnBtn.className = 'px-4 py-2 bg-green-600 hover:bg-green-700 rounded-md text-white font-semibold transition';
+        
+        // Indicador visual de propostas pendentes
+        if (hasPending) {
+          this.endTurnBtn.textContent = `Terminar Turno (${pendingNegotiations.length} pendente(s))`;
+          this.endTurnBtn.className = 'px-4 py-2 bg-yellow-600 hover:bg-yellow-700 rounded-md text-white font-semibold transition animate-pulse';
+          this.endTurnBtn.title = `Você tem ${pendingNegotiations.length} proposta(s) de negociação pendente(s). Clique para verificar antes de terminar o turno.`;
+        } else {
+          this.endTurnBtn.textContent = 'Terminar Turno';
+          this.endTurnBtn.className = 'px-4 py-2 bg-green-600 hover:bg-green-700 rounded-md text-white font-semibold transition';
+          this.endTurnBtn.title = 'Finalizar seu turno e passar para o próximo jogador';
+        }
         break;
       case 'renda':
         this.endTurnBtn.disabled = true;
@@ -1073,20 +1267,63 @@ if (this.actionExploreBtn) {
 
   // ==================== REGISTRO DE JOGADORES ====================
   
-  renderIconSelection() {
-    this.iconSelection.innerHTML = '';
-    GAME_CONFIG.PLAYER_ICONS.forEach(icon => {
-      const el = document.createElement('div');
-      el.className = 'icon-option';
-      el.textContent = icon;
-      el.title = `Ícone ${icon}`;
-      el.addEventListener('click', () => {
-        document.querySelectorAll('.icon-option').forEach(e => e.classList.remove('selected'));
-        el.classList.add('selected');
-      });
-      this.iconSelection.appendChild(el);
-    });
+renderIconSelection() {
+  if (!this.iconSelection) {
+    console.error("❌ Elemento iconSelection não encontrado");
+    return;
   }
+  
+  this.iconSelection.innerHTML = '';
+  
+  // Guardar referência ao contexto atual (this) da instância
+  const self = this;
+  
+  GAME_CONFIG.PLAYER_ICONS.forEach(icon => {
+    const iconButton = document.createElement('button');
+    iconButton.className = 'icon-button';
+    iconButton.type = 'button';
+    iconButton.innerHTML = icon;
+    iconButton.title = `Ícone ${icon}`;
+    iconButton.dataset.icon = icon;
+    
+    // Verificar se ícone já está em uso por outros jogadores
+    const isUsedByOthers = gameState.players.some((p, index) => {
+      // Se estamos editando, ignorar o jogador atual
+      if (self.editingIndex !== null && index === self.editingIndex) {
+        return false;
+      }
+      return p.icon === icon;
+    });
+    
+    if (isUsedByOthers) {
+      iconButton.classList.add('disabled');
+      iconButton.title = `Ícone ${icon} (já em uso por outro jogador)`;
+      iconButton.style.opacity = '0.4';
+      iconButton.style.cursor = 'not-allowed';
+      iconButton.disabled = true;
+    } else {
+      // Usar arrow function para manter o contexto
+      iconButton.addEventListener('click', (e) => {
+        console.log(`🎯 Clique no ícone: ${icon}`);
+        e.stopPropagation();
+        e.preventDefault();
+        
+        // Chamar usando self (referência guardada)
+        self.selectIcon(icon, iconButton);
+      });
+    }
+    
+    // Se este é o ícone atualmente selecionado, marque como selecionado
+    if (self.selectedIcon === icon) {
+      iconButton.classList.add('selected');
+      iconButton.style.transform = 'scale(1.1)';
+    }
+    
+    this.iconSelection.appendChild(iconButton);
+  });
+  
+  console.log(`✅ ${GAME_CONFIG.PLAYER_ICONS.length} botões de ícone renderizados`);
+}
 
   handleAddPlayer() {
   if (this.editingIndex !== null) {
@@ -1094,26 +1331,46 @@ if (this.actionExploreBtn) {
     return;
   }
   
-  // Obter valores
+  // Obter valores - ADICIONE DEBUG AQUI
   const name = this.playerNameInput?.value.trim() || '';
   const icon = this.selectedIcon;
   const factionId = this.factionDropdown?.value || '';
   
-  console.log("📝 Valores do formulário:", { name, icon, factionId });
+  console.log("🔍 DEBUG handleAddPlayer:");
+  console.log("• Nome:", name);
+  console.log("• Ícone (this.selectedIcon):", icon);
+  console.log("• Tipo do ícone:", typeof icon);
+  console.log("• Facção:", factionId);
+  console.log("• this:", this);
+  console.log("• this.selectedIcon === null?", this.selectedIcon === null);
+  console.log("• this.selectedIcon === undefined?", this.selectedIcon === undefined);
   
-  // Validações
+  // VALIDAÇÃO COM DEBUG MELHORADO
   if (!name) {
+    console.error("❌ Falta nome");
     this.modals.showFeedback('Digite um nome para o jogador.', 'error');
     this.playerNameInput?.focus();
     return;
   }
   
   if (!icon) {
+    console.error("❌ Falta ícone - estado atual:");
+    console.error("  - this.selectedIcon:", this.selectedIcon);
+    console.error("  - Botões selecionados:", document.querySelectorAll('.icon-button.selected').length);
+    
+    // Mostrar qual botão está selecionado visualmente
+    const selectedButtons = document.querySelectorAll('.icon-button.selected');
+    if (selectedButtons.length > 0) {
+      console.error("  - Primeiro botão selecionado:", selectedButtons[0].textContent);
+    }
+    
     this.modals.showFeedback('Selecione um ícone para o jogador.', 'error');
+    
     return;
   }
   
   if (!factionId) {
+    console.error("❌ Falta facção");
     this.modals.showFeedback('Selecione uma facção para o jogador.', 'error');
     this.factionDropdown?.focus();
     return;
@@ -1198,7 +1455,15 @@ resetAddPlayerForm() {
   this.selectedIcon = null;
   document.querySelectorAll('.icon-button.selected').forEach(btn => {
     btn.classList.remove('selected');
+    btn.style.transform = '';
   });
+  
+  // Resetar display do ícone selecionado
+  const selectedIconDisplay = document.getElementById('selectedIconDisplay');
+  if (selectedIconDisplay) {
+    selectedIconDisplay.textContent = '❌';
+    selectedIconDisplay.style.color = '';
+  }
   
   // Resetar dropdown de facção
   if (this.factionDropdown) {
@@ -1414,7 +1679,7 @@ resetAddPlayerForm() {
 
   updatePlayer(index) {
   const name = this.playerNameInput.value.trim();
-  const icon = this.iconDropdown?.value;
+  const icon = this.selectedIcon;
   const factionId = this.factionDropdown?.value;
   
   if (!name || !icon || !factionId) {

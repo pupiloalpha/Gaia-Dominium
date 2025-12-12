@@ -2714,6 +2714,146 @@ body.modal-open .board-cell {
 }
 
 /* ============================================
+   DROPDOWN DE FACÇÕES ESTILIZADO
+   ============================================ */
+
+.faction-dropdown {
+  background-color: rgba(17, 24, 39, 0.9) !important;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%23fbbf24'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E") !important;
+  background-repeat: no-repeat !important;
+  background-position: right 12px center !important;
+  background-size: 16px !important;
+  cursor: pointer !important;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2) !important;
+  backdrop-filter: blur(8px) !important;
+  height: 48px !important;
+}
+
+.faction-dropdown:hover {
+  background-color: rgba(30, 41, 59, 0.95) !important;
+  border-color: rgba(251, 191, 36, 0.5) !important;
+  box-shadow: 0 6px 20px rgba(251, 191, 36, 0.15) !important;
+  transform: translateY(-1px) !important;
+}
+
+.faction-dropdown:focus {
+  background-color: rgba(30, 41, 59, 0.95) !important;
+  border-color: rgba(251, 191, 36, 0.7) !important;
+  box-shadow: 0 0 0 3px rgba(251, 191, 36, 0.2), 0 8px 25px rgba(0, 0, 0, 0.3) !important;
+  outline: none !important;
+}
+
+/* Placeholder estilizado */
+.faction-dropdown option.placeholder-option {
+  color: rgba(251, 191, 36, 0.8) !important;
+  background-color: rgba(17, 24, 39, 0.9) !important;
+  font-style: italic !important;
+}
+
+/* Opções do dropdown */
+.faction-dropdown option {
+  background-color: rgba(17, 24, 39, 0.95) !important;
+  color: #f3f4f6 !important;
+  padding: 12px 16px !important;
+  font-size: 13px !important;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05) !important;
+  transition: all 0.2s ease !important;
+}
+
+/* Opção selecionada */
+.faction-dropdown option:checked {
+  background: linear-gradient(135deg, rgba(251, 191, 36, 0.2), rgba(245, 158, 11, 0.1)) !important;
+  color: #fbbf24 !important;
+  font-weight: 600 !important;
+}
+
+/* Opção em foco/hover */
+.faction-dropdown option:hover {
+  background-color: rgba(251, 191, 36, 0.15) !important;
+  color: #ffffff !important;
+}
+
+/* Opção desabilitada (facção em uso) */
+.faction-dropdown option:disabled {
+  color: rgba(156, 163, 175, 0.6) !important;
+  background-color: rgba(55, 65, 81, 0.5) !important;
+  font-style: italic !important;
+}
+
+/* Seta personalizada */
+.dropdown-arrow {
+  pointer-events: none !important;
+  transition: transform 0.2s ease !important;
+}
+
+.faction-dropdown:focus + .dropdown-arrow {
+  transform: translateY(-50%) rotate(180deg) !important;
+}
+
+/* Container do dropdown com efeito de vidro */
+.dropdown-container {
+  position: relative !important;
+}
+
+.dropdown-container::after {
+  content: '' !important;
+  position: absolute !important;
+  inset: 0 !important;
+  background: linear-gradient(135deg, 
+    rgba(251, 191, 36, 0.05) 0%,
+    transparent 50%,
+    rgba(251, 191, 36, 0.02) 100%) !important;
+  border-radius: 12px !important;
+  pointer-events: none !important;
+  z-index: -1 !important;
+}
+
+/* Efeito de foco no container */
+.dropdown-container:has(.faction-dropdown:focus)::after {
+  background: linear-gradient(135deg, 
+    rgba(251, 191, 36, 0.1) 0%,
+    transparent 50%,
+    rgba(251, 191, 36, 0.05) 100%) !important;
+  box-shadow: 0 0 20px rgba(251, 191, 36, 0.1) !important;
+}
+
+/* Adicione esta animação na seção de animações do style.css */
+@keyframes factionSelected {
+  0% {
+    box-shadow: 0 0 0 0 rgba(251, 191, 36, 0);
+  }
+  50% {
+    box-shadow: 0 0 0 8px rgba(251, 191, 36, 0.2);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(251, 191, 36, 0);
+  }
+}
+
+/* Tooltip para opções do dropdown (funciona em alguns navegadores) */
+.faction-dropdown option {
+  position: relative !important;
+}
+
+.faction-dropdown option:hover::after {
+  content: attr(title) !important;
+  position: absolute !important;
+  left: 100% !important;
+  top: 50% !important;
+  transform: translateY(-50%) !important;
+  background: rgba(17, 24, 39, 0.95) !important;
+  color: #fbbf24 !important;
+  padding: 8px 12px !important;
+  border-radius: 6px !important;
+  border: 1px solid rgba(251, 191, 36, 0.3) !important;
+  white-space: nowrap !important;
+  z-index: 1000 !important;
+  font-size: 12px !important;
+  pointer-events: none !important;
+}
+
+/* ============================================
    TELA DE CADASTRO - BOTÕES DE ÍCONES
    ============================================ */
 
