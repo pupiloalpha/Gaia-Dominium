@@ -2131,14 +2131,6 @@ body.modal-open .board-cell {
     color: #333;
   }
   
-  .player-modal {
-    background: linear-gradient(180deg, rgba(12,12,12,0.56), rgba(8,8,8,0.45));
-    border: 1px solid rgba(255,255,255,0.06);
-    backdrop-filter: blur(12px) saturate(120%);
-    box-shadow: 0 12px 40px rgba(0,0,0,0.6);
-    z-index: 9999;
-  }
-  
   .board-cell {
     background: rgba(30, 30, 30, 0.8);
     border: 1px solid rgba(255, 255, 255, 0.1);
@@ -2357,16 +2349,6 @@ body.modal-open .board-cell {
 /* ============================================
    TELA DE CADASTRO - FAIXA FLUTUANTE
    ============================================ */
-
-/* Faixa principal */
-#initialScreen .bg-gray-900\/90 {
-  backdrop-filter: blur(12px);
-  box-shadow: 
-    0 20px 60px rgba(0, 0, 0, 0.5),
-    inset 0 1px 0 rgba(255, 255, 255, 0.1);
-  border: 1px solid rgba(255, 255, 255, 0.15);
-  animation: slideUp 0.4s ease-out;
-}
 
 @keyframes slideUp {
   from {
