@@ -1483,59 +1483,60 @@ resetAddPlayerForm() {
   const players = gameState.players;
   const canEdit = !gameState.gameStarted;
   
+  const container = this.registeredPlayersList;
+  if (!container) return;
+  
   if (players.length === 0) {
-    this.registeredPlayersList.innerHTML = `
-      <div class="col-span-2 text-center py-8 text-gray-400">
-        <div class="text-3xl mb-3">👤</div>
-        <p class="text-sm">Nenhum jogador adicionado</p>
-        <p class="text-xs mt-2 text-gray-500">Adicione jogadores para começar a partida</p>
+    container.innerHTML = `
+      <div class="text-center py-4 text-gray-500">
+        <div class="text-2xl mb-2">👤</div>
+        <p class="text-xs">Adicione jogadores</p>
       </div>
     `;
     return;
   }
   
-  this.registeredPlayersList.innerHTML = players.map((p, index) => `
-    <div class="player-card-horizontal ${index === this.editingIndex ? 'editing' : ''}"
-         style="border-left-color: ${p.color};">
-      <div class="player-info-horizontal">
-        <div class="player-icon-horizontal">${p.icon}</div>
-        <div class="player-details-horizontal">
-          <div class="player-name-horizontal">${p.name}</div>
-          <div class="player-faction-horizontal">
-            ${p.faction ? `
-              <span class="faction-badge" style="background: ${p.faction.color}15; border-color: ${p.faction.color}30;">
-                ${p.faction.icon || '⚔️'} ${p.faction.name}
-              </span>
-            ` : ''}
-            ${p.type === 'ai' ? `<span class="ai-badge-horizontal">🤖 ${p.aiDifficulty}</span>` : ''}
-          </div>
+  container.innerHTML = '';
+  
+  players.forEach((player, index) => {
+    const playerEl = document.createElement('div');
+    playerEl.className = `player-icon-minimal ${index === this.editingIndex ? 'editing' : ''}`;
+    playerEl.dataset.index = index;
+    playerEl.title = `${player.name} • ${player.faction?.name || ''} • ${player.victoryPoints} PV`;
+    
+    // Ícone principal
+    const iconHTML = `
+      <div class="player-icon-mini" style="color: ${player.color}">
+        ${player.icon}
+        ${player.type === 'ai' || player.isAI ? '<span class="ai-dot">🤖</span>' : ''}
+        <span class="pv-badge">${player.victoryPoints}</span>
+      </div>
+    `;
+    
+    // Ações (somente se pode editar)
+    let actionsHTML = '';
+    if (canEdit) {
+      actionsHTML = `
+        <div class="player-mini-actions">
+          ${player.type !== 'ai' ? `
+            <button class="player-mini-edit" data-index="${index}" title="Editar">
+              <svg class="w-2.5 h-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
+              </svg>
+            </button>
+          ` : ''}
+          <button class="player-mini-delete" data-index="${index}" title="Remover">
+            <svg class="w-2.5 h-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+            </svg>
+          </button>
         </div>
-      </div>
-      
-      <div class="player-stats-horizontal">
-        <span class="text-yellow-400 font-semibold">${p.victoryPoints} PV</span>
-      </div>
-      
-      ${canEdit ? `
-      <div class="player-actions-horizontal">
-        ${p.type !== 'ai' ? `
-        <button class="edit-player-btn" data-index="${index}" title="Editar jogador">
-          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
-          </svg>
-        </button>
-        ` : ''}
-        
-        <button class="delete-player-btn" data-index="${index}" 
-                title="${p.type === 'ai' ? 'Remover IA' : 'Remover jogador'}">
-          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
-          </svg>
-        </button>
-      </div>
-      ` : ''}
-    </div>
-  `).join('');
+      `;
+    }
+    
+    playerEl.innerHTML = iconHTML + actionsHTML;
+    container.appendChild(playerEl);
+  });
   
   if (canEdit) {
     this.setupPlayerActionListeners();
@@ -1543,20 +1544,24 @@ resetAddPlayerForm() {
 }
 
   setupPlayerActionListeners() {
-    this.registeredPlayersList.querySelectorAll('.edit-player-btn').forEach(btn => {
-      btn.addEventListener('click', (e) => {
-        const index = parseInt(e.currentTarget.dataset.index);
-        this.editPlayer(index);
-      });
+  // Edit buttons
+  this.registeredPlayersList.querySelectorAll('.player-mini-edit').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const index = parseInt(e.currentTarget.dataset.index);
+      this.editPlayer(index);
     });
-    
-    this.registeredPlayersList.querySelectorAll('.delete-player-btn').forEach(btn => {
-      btn.addEventListener('click', (e) => {
-        const index = parseInt(e.currentTarget.dataset.index);
-        this.deletePlayer(index);
-      });
+  });
+  
+  // Delete buttons
+  this.registeredPlayersList.querySelectorAll('.player-mini-delete').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const index = parseInt(e.currentTarget.dataset.index);
+      this.deletePlayer(index);
     });
-  }
+  });
+}
 
   editPlayer(index) {
   if (gameState.gameStarted) {
@@ -1607,16 +1612,14 @@ resetAddPlayerForm() {
 }
 
   highlightPlayerBeingEdited(index) {
-    document.querySelectorAll('.player-card').forEach((card, i) => {
-      if (i === index) {
-        card.classList.add('ring-2', 'ring-blue-500');
-        card.style.transform = 'translateY(-2px)';
-      } else {
-        card.classList.remove('ring-2', 'ring-blue-500');
-        card.style.transform = '';
-      }
-    });
-  }
+  this.registeredPlayersList.querySelectorAll('.player-icon-minimal').forEach((entry, i) => {
+    if (i === index) {
+      entry.classList.add('editing');
+    } else {
+      entry.classList.remove('editing');
+    }
+  });
+}
 
   cancelEdit() {
   this.addPlayerBtn.textContent = 'Adicionar';
@@ -1642,11 +1645,10 @@ resetAddPlayerForm() {
 }
 
   clearPlayerHighlight() {
-    document.querySelectorAll('.player-card').forEach(card => {
-      card.classList.remove('ring-2', 'ring-blue-500');
-      card.style.transform = '';
-    });
-  }
+  this.registeredPlayersList.querySelectorAll('.player-icon-minimal').forEach(entry => {
+    entry.classList.remove('editing');
+  });
+}
 
   async deletePlayer(index) {
     if (gameState.gameStarted) {

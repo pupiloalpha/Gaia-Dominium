@@ -257,18 +257,8 @@
   
   <!-- Faixa horizontal flutuante -->
   <div class="relative w-full max-w-5xl">
-    
-    <!-- Cabeçalio minimalista -->
-    <div class="text-center mb-8">
-      <h1 class="text-4xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-yellow-300 to-yellow-500">
-        Gaia Dominium
-      </h1>
-      <p class="text-gray-300 mt-2">Configure sua partida</p>
-    </div>
-    
     <!-- Faixa principal de cadastro -->
     <div class="player-modal border border-white/15 rounded-2xl p-6 shadow-2xl">
-      
       <!-- Linha 1: Controles principais -->
       <div class="flex items-center gap-4 mb-6">
         <!-- Nome do jogador -->
@@ -278,25 +268,20 @@
               id="playerName" 
               type="text" 
               placeholder="Nome do jogador" 
-              class="w-full bg-gray-800/70 text-white placeholder-gray-400 border border-white/10 rounded-xl px-4 py-3 pl-12 text-sm focus:outline-none focus:ring-2 focus:ring-yellow-500/50 focus:border-yellow-500/30 transition-all"
-            />
+              class="w-full bg-gray-800/70 text-white placeholder-gray-400 border border-white/10 rounded-xl px-4 py-3 pl-12 text-sm focus:outline-none focus:ring-2 focus:ring-yellow-500/50 focus:border-yellow-500/30 transition-all"/>
           </div>
         </div>
         
         <!-- Dropdown de facção -->
         <div class="w-48">
           <div class="relative">
-            <div class="absolute left-3 top-1/2 transform -translate-y-1/2 text-yellow-300 text-lg z-10">
-            </div>
             <select 
                id="factionDropdown"
                class="faction-dropdown w-full bg-gray-900/80 text-white border border-yellow-500/30 rounded-xl px-4 py-3 pl-12 pr-10 text-sm appearance-none focus:outline-none focus:ring-2 focus:ring-yellow-500/70 focus:border-yellow-500/50 transition-all backdrop-blur-sm shadow-lg"
     >
-              <option value="" selected disabled class="placeholder-option">Escolha a facção</option>
+              <option value="" selected disabled class="placeholder-option">Qual Facção?  </option>
               <!-- Opções preenchidas por JS -->
               </select>
-             <div class="dropdown-arrow absolute right-3 top-1/2 transform -translate-y-1/2 text-yellow-300 text-sm z-10">
-             </div>
            </div>
         </div>
         
@@ -352,21 +337,16 @@
           </div>
         </div>
       </div>
-    </div>
-    
-    <!-- Lista de jogadores registrados -->
-    <div class="mt-8">
       <div class="flex items-center justify-between mb-4">
-        <h3 class="text-lg font-medium text-gray-200">👥 Jogadores Registrados</h3>
-        <div class="text-sm text-gray-400">
+        <p class="text-lg font-medium text-gray-300">👥 Jogadores Registrados</p>
+        <div class="text-sm text-gray-300">
           <span id="playerCountDisplay">0</span>/4 jogadores
         </div>
       </div>
       
       <div 
         id="registeredPlayersList" 
-        class="grid grid-cols-2 gap-3"
-      >
+        class="flex flex-wrap gap-1.5 justify-center items-center py-2 px-1">
         <!-- Lista será preenchida por JS -->
         <div class="col-span-2 text-center py-8 text-gray-400">
           <div class="text-3xl mb-3">👤</div>
@@ -374,11 +354,6 @@
           <p class="text-xs mt-2 text-gray-500">Adicione jogadores para começar a partida</p>
         </div>
       </div>
-    </div>
-    
-    <!-- Instruções minimalistas -->
-    <div class="text-center mt-8 text-sm text-gray-500">
-      <p>Adicione 2-4 jogadores para iniciar a partida • Cada jogador escolhe uma facção única</p>
     </div>
   </div>
 </div>

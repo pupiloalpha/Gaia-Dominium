@@ -2258,17 +2258,17 @@ body.modal-open .board-cell {
 .faction-option {
   min-width: 120px;
   min-height: 100px;
-  border-radius: 12px;
+  border-radius: 8px;
   background: linear-gradient(135deg, rgba(255,255,255,0.03), rgba(0,0,0,0.2));
   display: flex;
   flex-direction: column;
-  align-items: center;
+  align-items: left;
   justify-content: center;
   cursor: pointer;
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   border: 2px solid transparent;
-  padding: 12px 8px;
-  text-align: center;
+  padding: 8px 6px;
+  text-align: left;
   position: relative;
   overflow: hidden;
 }
@@ -3144,5 +3144,204 @@ body.modal-open .board-cell {
     width: 44px;
     height: 44px;
     font-size: 22px;
+  }
+}
+
+/* ============================================
+   LISTA DE JOGADORES MINIMALISTA - ÍCONES PEQUENOS
+   ============================================ */
+
+#registeredPlayersList {
+  min-height: auto !important;
+  padding: 8px 4px !important;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.01);
+}
+
+.player-icon-minimal {
+  position: relative;
+  width: 44px;
+  height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.player-icon-mini {
+  position: relative;
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(30, 41, 59, 0.7);
+  border: 2px solid rgba(255, 255, 255, 0.1);
+  border-radius: 10px;
+  font-size: 18px;
+  transition: all 0.2s ease;
+}
+
+/* Hover effect */
+.player-icon-minimal:hover .player-icon-mini {
+  transform: translateY(-2px) scale(1.1);
+  border-color: rgba(255, 255, 255, 0.2);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+/* Badge de PV */
+.pv-badge {
+  position: absolute;
+  bottom: -4px;
+  right: -4px;
+  background: rgba(0, 0, 0, 0.8);
+  color: #fbbf24;
+  font-size: 9px;
+  font-weight: bold;
+  min-width: 14px;
+  height: 14px;
+  border-radius: 7px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 2px;
+  border: 1px solid rgba(251, 191, 36, 0.3);
+  z-index: 2;
+}
+
+/* Dot de IA */
+.ai-dot {
+  position: absolute;
+  top: -5px;
+  right: -5px;
+  background: rgba(0, 0, 0, 0.8);
+  font-size: 10px;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid rgba(139, 92, 246, 0.4);
+  z-index: 2;
+}
+
+/* Ações (aparecem ao hover) */
+.player-mini-actions {
+  position: absolute;
+  top: 0;
+  right: 0;
+  display: none;
+  flex-direction: column;
+  gap: 1px;
+  z-index: 3;
+}
+
+.player-icon-minimal:hover .player-mini-actions {
+  display: flex;
+}
+
+.player-mini-edit,
+.player-mini-delete {
+  width: 14px;
+  height: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.8);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 3px;
+  color: rgba(255, 255, 255, 0.7);
+  cursor: pointer;
+  transition: all 0.1s ease;
+  padding: 0;
+  font-size: 8px;
+}
+
+.player-mini-edit:hover {
+  background: rgba(59, 130, 246, 0.8);
+  color: white;
+  border-color: #3b82f6;
+}
+
+.player-mini-delete:hover {
+  background: rgba(239, 68, 68, 0.8);
+  color: white;
+  border-color: #ef4444;
+}
+
+/* Estado de edição */
+.player-icon-minimal.editing .player-icon-mini {
+  border-color: #3b82f6;
+  background: rgba(59, 130, 246, 0.15);
+  animation: pulseEditing 1.5s infinite;
+}
+
+@keyframes pulseEditing {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(59, 130, 246, 0); }
+  50% { box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2); }
+}
+
+/* Placeholder quando vazio */
+#registeredPlayersList .text-center {
+  width: 100%;
+  padding: 4px;
+  color: rgba(255, 255, 255, 0.4);
+}
+
+/* Responsividade */
+@media (max-width: 768px) {
+  .player-icon-minimal {
+    width: 40px;
+    height: 40px;
+  }
+  
+  .player-icon-mini {
+    width: 32px;
+    height: 32px;
+    font-size: 16px;
+  }
+  
+  .pv-badge {
+    font-size: 8px;
+    min-width: 12px;
+    height: 12px;
+    bottom: -3px;
+    right: -3px;
+  }
+  
+  .ai-dot {
+    font-size: 9px;
+    width: 14px;
+    height: 14px;
+    top: -4px;
+    right: -4px;
+  }
+  
+  .player-mini-edit,
+  .player-mini-delete {
+    width: 12px;
+    height: 12px;
+  }
+}
+
+/* Para telas muito pequenas */
+@media (max-width: 480px) {
+  #registeredPlayersList {
+    gap: 1px;
+    padding: 6px 2px !important;
+  }
+  
+  .player-icon-minimal {
+    width: 36px;
+    height: 36px;
+  }
+  
+  .player-icon-mini {
+    width: 30px;
+    height: 30px;
+    font-size: 14px;
   }
 }
