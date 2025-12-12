@@ -217,7 +217,7 @@ export class TurnLogic {
 
     // Se o jogo terminou durante a renda, cancelar
     if (this.gameEnded) {
-      console.log('⏹️ Jogo terminado durante renda - cancelando avanço de fase');
+      console.log(`⏹️ Jogo terminado durante renda - cancelando avanço de fase`);
       return;
     }
 
