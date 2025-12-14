@@ -283,7 +283,7 @@ export class NegotiationLogic {
         // aqui apenas verificamos se ele TEM ouro suficiente caso o custo fosse cobrado.
         // Se a lógica da facção diz que custa 0, então requiredGold seria 0.
         // Para simplificar a validação UI, validamos >= 0.
-        // requiredGold = this.main.factionLogic.getNegotiationCost(player);
+        requiredGold = this.main.factionLogic.getNegotiationCost(player);
     }
     
     // Nota: A validação estrita de "tem ouro suficiente" é feita no handleNegotiate e handleSendNegotiation
