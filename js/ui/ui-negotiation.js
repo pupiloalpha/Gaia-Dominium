@@ -19,6 +19,8 @@ import { RESOURCE_ICONS } from '../state/game-config.js';
 class NegotiationUI {
   constructor(uiManager) {
     this.uiManager = uiManager;
+    // Garanta nome público esperado
+    this.uiManager.negotiation = this;
     this.uiManager.negotiationUI = this;
     this.cacheElements();
     this.setupListeners();
