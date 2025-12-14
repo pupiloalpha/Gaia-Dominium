@@ -149,6 +149,20 @@ class FactionLogic {
     return 1;
   }
 
+  getNegotiationCost(player) {
+  if (!player.faction) return 1;
+  if (player.turnBonuses?.freeNegotiationAvailable > 0) return 0;
+  return 1;
+}
+consumeNegotiationCost(player) {
+  const cost = this.getNegotiationCost(player);
+  if (cost === 0 && player.turnBonuses && player.turnBonuses.freeNegotiationAvailable > 0) {
+    player.turnBonuses.freeNegotiationAvailable--;
+    addActivityLog({ /* ... */});
+  }
+  return cost;
+}
+
   // ==================== BÔNUS EM AÇÕES ====================
 
   applyExploreBonus(player, region) {
