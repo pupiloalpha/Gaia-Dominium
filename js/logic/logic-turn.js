@@ -43,57 +43,54 @@ export class TurnLogic {
   }
 
   async handleEndTurn() {
-    if (this.gameEnded) {
-      this.main.showFeedback('O jogo já terminou!', 'warning');
-      return;
-    }
-    
-    const currentPlayer = getCurrentPlayer();
-    
-    // Se for IA, deixe o AI Coordinator lidar
-    if (currentPlayer.type === 'ai' || currentPlayer.isAI) {
-      if (this.main.aiCoordinator && this.main.aiCoordinator.forceAIEndTurn) {
-        this.main.aiCoordinator.forceAIEndTurn();
-      }
-      return;
-    }
-    
-    // Fase de Ações → Ir para Negociação
-    if (gameState.currentPhase === 'acoes') {
-      this.main.negotiationLogic.setupPhase();
-      return;
-    }
+  if (this.gameEnded) {
+    this.main.showFeedback('O jogo já terminou!', 'warning');
+    return;
+  }
+  
+  const currentPlayer = getCurrentPlayer();
+  
+  // Lógica para IA é interceptada no AI Coordinator
+  // MAS se chegarmos aqui, deixamos o fluxo normal continuar
+  // O AI Coordinator já deve ter tratado a IA antes
+  
+  // Fase de Ações → Ir para Negociação
+  if (gameState.currentPhase === 'acoes') {
+    this.main.negotiationLogic.setupPhase();
+    return;
+  }
 
-    // Fase de Negociação - VERIFICAR PROPOSTAS PENDENTES
-    if (gameState.currentPhase === 'negociacao') {
-      // 1. Verificar se há propostas pendentes
+  // Fase de Negociação
+  if (gameState.currentPhase === 'negociacao') {
+    // VERIFICAÇÃO DE PROPOSTAS PENDENTES (APENAS PARA HUMANOS)
+    // IA não precisa desta verificação
+    if (!(currentPlayer.type === 'ai' || currentPlayer.isAI)) {
       const pendingNegotiations = getPendingNegotiationsForPlayer(currentPlayer.id);
       
       if (pendingNegotiations.length > 0) {
-        // 2. Mostrar confirmação ao jogador
         const shouldRespond = await this.main.showConfirm(
           '📨 Propostas Pendentes',
           `Você tem ${pendingNegotiations.length} proposta(s) de negociação pendente(s).\n\nDeseja respondê-las agora antes de terminar seu turno?`
         );
         
         if (shouldRespond) {
-          // 3. Abrir modal de propostas pendentes
           if (window.uiManager && window.uiManager.negotiation && window.uiManager.negotiation.showPendingNegotiationsModal) {
             window.uiManager.negotiation.showPendingNegotiationsModal();
           }
           return; // Não finalizar o turno
         }
       }
-      
-      // 4. Se não há propostas OU jogador optou por não responder → Finalizar turno
-      this._finalizeTurn(currentPlayer);
-    } else if (gameState.currentPhase === 'renda') {
-      // Fallback se travar na renda
-      this.main.showFeedback('Finalizando renda...', 'info');
-      gameState.currentPhase = 'acoes';
-      if (window.uiManager) window.uiManager.updateUI();
     }
+    
+    // Para IA ou humano sem propostas pendentes → Finalizar turno
+    this._finalizeTurn(currentPlayer);
+  } else if (gameState.currentPhase === 'renda') {
+    // Fallback se travar na renda
+    this.main.showFeedback('Finalizando renda...', 'info');
+    gameState.currentPhase = 'acoes';
+    if (window.uiManager) window.uiManager.updateUI();
   }
+}
 
   _finalizeTurn(currentPlayer) {
     // Verificar vitória antes de finalizar
