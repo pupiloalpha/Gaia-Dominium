@@ -158,9 +158,20 @@ function updateNegotiationRegions(type, regionIds) {
 }
 
 function setNegotiationTarget(targetPlayerId) {
-  negotiationState.targetPlayerId = targetPlayerId;
+  // Normaliza o valor: armazena Number inteiro ou null
+  if (targetPlayerId === null || typeof targetPlayerId === 'undefined') {
+    negotiationState.targetPlayerId = null;
+    return;
+  }
+  // Se for string vazia ou não-numérico -> null
+  if (targetPlayerId === '' || Number.isNaN(Number(targetPlayerId))) {
+    negotiationState.targetPlayerId = null;
+    return;
+  }
+  const num = Number(targetPlayerId);
+  // Se não for inteiro válido, armazenar null (proteção)
+  negotiationState.targetPlayerId = Number.isInteger(num) ? num : null;
 }
-
 // ==================== MANIPULAÇÃO DE ESTADO ====================
 function addActivityLog(entry) {
   const logEntry = {
