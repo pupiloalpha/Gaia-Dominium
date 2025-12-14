@@ -18,23 +18,528 @@ import { RESOURCE_ICONS } from '../state/game-config.js';
 
 class NegotiationUI {
   constructor(uiManager) {
-    this.uiManager = uiManager;
-    this.uiManager.negotiationUI = this;
-    this.cacheElements();
-    this.setupListeners();
-  }
+  this.uiManager = uiManager;
+  this.uiManager.negotiationUI = this;
+  this.cacheElements();
+  this.setupListeners();
+}
 
   cacheElements() {
-    this.negotiationModal = document.getElementById('negotiationModal');
-    this.negResponseModal = document.getElementById('negResponseModal');
-    this.negTargetSelect = document.getElementById('negTarget');
-    this.offerRegionsDiv = document.getElementById('offerRegions');
-    this.reqRegionsDiv = document.getElementById('reqRegions');
-    this.negSendBtn = document.getElementById('negSendBtn');
-    this.negCancelBtn = document.getElementById('negCancelBtn');
-    this.negResponseTitle = document.getElementById('negResponseTitle');
-    this.negResponseBody = document.getElementById('negResponseBody');
-    this.negAcceptBtn = document.getElementById('negAcceptBtn');
+  this.negotiationModal = document.getElementById('negotiationModal');
+  this.negResponseModal = document.getElementById('negResponseModal');
+  this.negTargetSelect = document.getElementById('negTarget');
+  this.offerRegionsDiv = document.getElementById('offerRegions');
+  this.reqRegionsDiv = document.getElementById('reqRegions');
+  this.negSendBtn = document.getElementById('negSendBtn');
+  this.negCancelBtn = document.getElementById('negCancelBtn');
+  this.negResponseTitle = document.getElementById('negResponseTitle');
+  this.negResponseBody = document.getElementById('negResponseBody');
+  this.negAcceptBtn = document.getElementById('negAcceptBtn');
+  this.negDeclineBtn = document.getElementById('negDeclineBtn');
+  
+  this.offerResourcesContainer = document.getElementById('offerResourcesContainer');
+  this.requestResourcesContainer = document.getElementById('requestResourcesContainer');
+}
+
+  setupListeners() {
+    this.negCancelBtn?.addEventListener('click', (e) => this.closeNegotiationModal(e));
+    this.negTargetSelect?.addEventListener('change', () => this.onTargetChange());
+  }
+
+  // ==================== MÉTODOS PRINCIPAIS ====================
+
+openNegotiationModal() {
+  console.log('Abrindo modal de negociação - resetando estado');
+  
+  // 1. Resetar estado completamente
+  resetNegotiationState();
+  
+  // 2. Configurar modo modal
+  this.uiManager.setModalMode(true);
+  
+  const initiator = getCurrentPlayer();
+  
+  // 3. Verificar se jogador atual tem 1+ ouro
+  if (initiator.resources.ouro < 1) {
+    this.uiManager.modals.showFeedback('Você precisa de pelo menos 1 🪙 Ouro para enviar uma proposta.', 'warning');
+    this.uiManager.setModalMode(false);
+    return;
+  }
+  
+  // 4. Limpar todos os campos da UI
+  this.clearAllNegotiationFields();
+  
+  // 5. Preencher seleção de alvo apenas com jogadores que têm 1+ ouro
+  this.negTargetSelect.innerHTML = '<option value="">Selecione um jogador...</option>';
+  let hasValidTargets = false;
+  
+  gameState.players.forEach(p => {
+    if (p.id !== initiator.id && p.resources.ouro >= 1) {
+      const opt = document.createElement('option');
+      opt.value = p.id;
+      opt.textContent = `${p.icon} ${p.name} (${p.resources.ouro}🪙)`;
+      this.negTargetSelect.appendChild(opt);
+      hasValidTargets = true;
+    }
+  });
+  
+  if (!hasValidTargets) {
+    this.uiManager.modals.showFeedback('Nenhum outro jogador com 1+ 🪙 Ouro disponível para negociar.', 'warning');
+    this.uiManager.setModalMode(false);
+    return;
+  }
+  
+  // 6. Configurar evento de mudança no select
+  this.negTargetSelect.onchange = () => {
+    const targetId = parseInt(this.negTargetSelect.value);
+    if (!isNaN(targetId)) {
+      setNegotiationTarget(targetId);
+      this.populateReqRegions(); // Atualizar regiões do alvo
+      this.updateNegotiationUI();
+    }
+  };
+  
+  // 7. Configurar botão de envio
+  const sendBtn = document.getElementById('negSendBtn');
+  if (sendBtn) {
+    sendBtn.onclick = (e) => {
+      e.preventDefault();
+      this.handleSendNegotiation(e);
+    };
+  }
+  
+  // 8. Configurar botão de cancelar
+  const cancelBtn = document.getElementById('negCancelBtn');
+  if (cancelBtn) {
+    cancelBtn.onclick = (e) => {
+      e.preventDefault();
+      this.closeNegotiationModal();
+    };
+  }
+  
+  // 9. Configurar sliders de recursos
+  this.setupResourceSliders();
+  
+  // 10. Mostrar modal
+  if (this.negotiationModal) {
+    this.negotiationModal.classList.remove('hidden');
+    console.log('Modal de negociação aberto com estado limpo');
+  }
+}
+
+setupResourceSliders() {
+  const initiator = getCurrentPlayer();
+  
+  // Configurar sliders de oferta
+  ['madeira', 'pedra', 'ouro', 'agua'].forEach(resource => {
+    const slider = document.querySelector(`#offerResourcesContainer input[data-resource="${resource}"]`);
+    if (slider) {
+      slider.max = initiator.resources[resource] || 0;
+      slider.value = 0;
+      slider.oninput = (e) => {
+        const value = parseInt(e.target.value);
+        updateNegotiationResource('offer', resource, value);
+        this.updateNegotiationUI();
+      };
+    }
+  });
+  
+  // Configurar sliders de solicitação (serão atualizados quando o alvo mudar)
+  this.updateRequestSliders();
+}
+
+// Adicionar método para atualizar sliders de solicitação
+updateRequestSliders() {
+  const targetId = this.negTargetSelect ? parseInt(this.negTargetSelect.value) : null;
+  const targetPlayer = targetId !== null ? gameState.players.find(p => p.id === targetId) : null;
+  
+  if (!targetPlayer) return;
+  
+  ['madeira', 'pedra', 'ouro', 'agua'].forEach(resource => {
+    const slider = document.querySelector(`#requestResourcesContainer input[data-resource="${resource}"]`);
+    if (slider) {
+      slider.max = targetPlayer.resources[resource] || 0;
+      slider.value = 0;
+      slider.oninput = (e) => {
+        const value = parseInt(e.target.value);
+        updateNegotiationResource('request', resource, value);
+        this.updateNegotiationUI();
+      };
+    }
+  });
+}
+
+populateRegionControls() {
+  const initiator = getCurrentPlayer();
+  
+// Preencher regiões oferecidas - SEMPRE começar limpo
+  if (this.offerRegionsDiv) {
+    this.offerRegionsDiv.innerHTML = '';
+    initiator.regions.forEach(rid => {
+      const region = gameState.regions[rid];
+      if (!region) return;
+      
+      const chkWrap = document.createElement('label');
+      chkWrap.className = 'flex items-center gap-2 p-2 bg-gray-800/60 rounded cursor-pointer hover:bg-gray-700/60';
+      
+      const chk = document.createElement('input');
+      chk.type = 'checkbox';
+      chk.value = rid;
+      chk.className = 'rounded negotiation-checkbox';
+      chk.dataset.type = 'offer';
+      chk.dataset.region = rid;
+      
+      // SEMPRE começar desmarcado (limpo)
+      chk.checked = false;
+      
+      chk.addEventListener('change', (e) => {
+        const regionId = parseInt(e.target.value);
+        const currentRegions = [...getNegotiationState().offerRegions];
+        let newRegions;
+        
+        if (e.target.checked) {
+          newRegions = [...currentRegions, regionId];
+        } else {
+          newRegions = currentRegions.filter(id => id !== regionId);
+        }
+        
+        updateNegotiationRegions('offerRegions', newRegions);
+        this.updateNegotiationUI(); // ATUALIZA RESUMO
+        this.validateNegotiation();
+      });
+      
+      const span = document.createElement('span');
+      span.className = 'text-sm text-white';
+      span.textContent = `${region.name} (${region.biome})`;
+      
+      chkWrap.appendChild(chk);
+      chkWrap.appendChild(span);
+      this.offerRegionsDiv.appendChild(chkWrap);
+    });
+  }
+  
+  // Preencher regiões solicitadas - SEMPRE começar limpo
+  this.populateReqRegions();
+}
+ 
+createResourceControl(type, resourceKey, maxValue, currentValue = 0) {
+  const control = document.createElement('div');
+  control.className = 'flex flex-col gap-1 mb-2';
+  
+  control.innerHTML = `
+    <div class="flex justify-between items-center">
+      <label class="text-sm text-gray-300 flex items-center gap-1">
+        <span class="text-lg">${RESOURCE_ICONS[resourceKey]}</span>
+        <span class="capitalize">${resourceKey}</span>
+      </label>
+      <span class="text-white font-bold" id="${type}_${resourceKey}_value">${currentValue}</span>
+    </div>
+    <div class="flex items-center gap-2">
+      <button class="decrease-btn px-2 py-1 bg-gray-700 rounded text-white disabled:opacity-30" 
+              data-type="${type}" data-resource="${resourceKey}">-</button>
+      <input type="range" min="0" max="${maxValue}" value="${currentValue}" 
+             class="flex-1 negotiation-slider" 
+             data-type="${type}" data-resource="${resourceKey}">
+      <button class="increase-btn px-2 py-1 bg-gray-700 rounded text-white disabled:opacity-30" 
+              data-type="${type}" data-resource="${resourceKey}">+</button>
+    </div>
+  `;
+  
+  return control;
+}
+
+setupResourceControlListeners() {
+  // Sliders
+  document.querySelectorAll('.negotiation-slider').forEach(slider => {
+    slider.addEventListener('input', (e) => {
+      const type = e.target.dataset.type;
+      const resource = e.target.dataset.resource;
+      const value = parseInt(e.target.value);
+      
+      updateNegotiationResource(type, resource, value);
+      
+      // Atualiza valor exibido
+      const valueEl = document.getElementById(`${type}_${resource}_value`);
+      if (valueEl) valueEl.textContent = value;
+      
+      this.updateNegotiationUI(); // Atualiza toda a UI, incluindo o resumo
+      this.validateNegotiation();
+    });
+  });
+  
+  // Botões +/-
+  document.querySelectorAll('.increase-btn, .decrease-btn').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      const type = e.target.dataset.type;
+      const resource = e.target.dataset.resource;
+      const isIncrease = e.target.classList.contains('increase-btn');
+      
+      const current = getNegotiationState()[type][resource] || 0;
+      const max = this.getResourceMax(type, resource);
+      const newValue = isIncrease ? Math.min(current + 1, max) : Math.max(current - 1, 0);
+      
+      updateNegotiationResource(type, resource, newValue);
+      
+      // Atualiza slider e valor
+      const slider = document.querySelector(`.negotiation-slider[data-type="${type}"][data-resource="${resource}"]`);
+      if (slider) slider.value = newValue;
+      
+      const valueEl = document.getElementById(`${type}_${resource}_value`);
+      if (valueEl) valueEl.textContent = newValue;
+      
+      this.updateNegotiationUI(); // Atualiza toda a UI, incluindo o resumo
+      this.validateNegotiation();
+    });
+  });
+}
+
+  adjustNegotiationResource(resourceKey, type, delta) {
+    // Obtém estado atual
+    const negotiationState = getNegotiationState();
+    const current = negotiationState[type][resourceKey] || 0;
+    
+    // Calcula máximo disponível
+    let max = 0;
+    if (type === 'offer') {
+      const currentPlayer = getCurrentPlayer();
+      max = currentPlayer.resources[resourceKey] || 0;
+    } else {
+      // Para request, precisa do jogador alvo
+      const targetSelect = document.getElementById('negTarget');
+      const targetId = targetSelect ? parseInt(targetSelect.value) : null;
+      if (targetId !== null) {
+        const targetPlayer = gameState.players.find(p => p.id === targetId);
+        if (targetPlayer) {
+          max = targetPlayer.resources[resourceKey] || 0;
+        }
+      }
+    }
+    
+    // Calcula novo valor (limitado entre 0 e max)
+    const newValue = Math.max(0, Math.min(max, current + delta));
+    
+    // Atualiza estado
+    updateNegotiationResource(type, resourceKey, newValue);
+    
+    // Atualiza UI
+    this.updateNegotiationUI();
+    this.validateNegotiation();
+  }
+
+resetNegotiationUI() {
+  // Resetar estado
+  resetNegotiationState();
+  
+  // Limpar containers de recursos
+  const offerContainer = document.getElementById('offerResourcesContainer');
+  const requestContainer = document.getElementById('requestResourcesContainer');
+  if (offerContainer) offerContainer.innerHTML = '';
+  if (requestContainer) requestContainer.innerHTML = '';
+  
+  // Limpar checkboxes de regiões
+  if (this.offerRegionsDiv) {
+    this.offerRegionsDiv.innerHTML = '';
+  }
+  if (this.reqRegionsDiv) {
+    this.reqRegionsDiv.innerHTML = '';
+  }
+  
+  // Atualizar controles (após reset)
+  this.populateNegotiationControls();
+  this.populateRegionControls();
+  
+  // Atualizar UI e resumo
+  this.updateNegotiationUI();
+  this.updateNegotiationSummary();
+  this.validateNegotiation();
+  
+  // Garantir que o botão de envio esteja no estado correto
+  const sendBtn = document.getElementById('negSendBtn');
+  if (sendBtn) {
+    sendBtn.disabled = true;
+    sendBtn.classList.remove('bg-green-600', 'hover:bg-green-700');
+    sendBtn.classList.add('bg-gray-600');
+  }
+}
+
+updateNegotiationUI() {
+  const negotiationState = getNegotiationState();
+  const currentPlayer = getCurrentPlayer();
+  const targetSelect = document.getElementById('negTarget');
+  const targetId = targetSelect ? parseInt(targetSelect.value) : null;
+  const targetPlayer = targetId !== null ? gameState.players.find(p => p.id === targetId) : null;
+  
+  // Atualiza todos os controles visuais
+  ['madeira', 'pedra', 'ouro', 'agua'].forEach(resource => {
+    // Para oferta
+    const offerValue = negotiationState.offer[resource] || 0;
+    const offerMax = currentPlayer ? currentPlayer.resources[resource] || 0 : 0;
+    const offerValueEl = document.getElementById(`offer_${resource}_value`);
+    if (offerValueEl) {
+      offerValueEl.textContent = offerValue;
+      // Atualiza botões
+      const offerDecreaseBtn = offerValueEl.previousElementSibling;
+      const offerIncreaseBtn = offerValueEl.nextElementSibling;
+      if (offerDecreaseBtn) offerDecreaseBtn.disabled = offerValue <= 0;
+      if (offerIncreaseBtn) offerIncreaseBtn.disabled = offerValue >= offerMax;
+    }
+    
+    // Para solicitação
+    const requestValue = negotiationState.request[resource] || 0;
+    const requestMax = targetPlayer ? targetPlayer.resources[resource] || 0 : 0;
+    const requestValueEl = document.getElementById(`request_${resource}_value`);
+    if (requestValueEl) {
+      requestValueEl.textContent = requestValue;
+      // Atualiza botões
+      const requestDecreaseBtn = requestValueEl.previousElementSibling;
+      const requestIncreaseBtn = requestValueEl.nextElementSibling;
+      if (requestDecreaseBtn) requestDecreaseBtn.disabled = requestValue <= 0;
+      if (requestIncreaseBtn) requestIncreaseBtn.disabled = requestValue >= requestMax;
+    }
+  });
+  
+  // Atualizar informações dos jogadores
+  this.updateNegotiationInfo();
+  
+  // ATUALIZAR RESUMO DA PROPOSTA
+  this.updateNegotiationSummary();
+  
+  // Atualizar tooltip de erro no botão de envio
+  const sendBtn = document.getElementById('negSendBtn');
+  if (sendBtn) {
+    const errors = getNegotiationValidationErrors();
+    sendBtn.title = errors.length > 0 ? errors.join('\n') : 'Pronto para enviar!';
+  }
+}
+
+  updateNegotiationInfo() {
+    const currentPlayer = getCurrentPlayer();
+    const targetSelect = document.getElementById('negTarget');
+    const targetId = targetSelect ? parseInt(targetSelect.value) : null;
+    const targetPlayer = targetId !== null ? gameState.players.find(p => p.id === targetId) : null;
+    
+    // Atualiza informações do jogador atual (oferta)
+    if (currentPlayer) {
+      const offerInfo = Object.entries(currentPlayer.resources)
+        .map(([key, value]) => `${value}${RESOURCE_ICONS[key]}`)
+        .join(' ');
+      const offerInfoEl = document.getElementById('offerResourcesInfo');
+      if (offerInfoEl) offerInfoEl.textContent = offerInfo;
+    }
+    
+    // Atualiza informações do jogador alvo (solicitação)
+    if (targetPlayer) {
+      const targetNameEl = document.getElementById('targetPlayerName');
+      if (targetNameEl) targetNameEl.textContent = targetPlayer.name;
+      
+      const requestInfo = Object.entries(targetPlayer.resources)
+        .map(([key, value]) => `${value}${RESOURCE_ICONS[key]}`)
+        .join(' ');
+      const requestInfoEl = document.getElementById('requestResourcesInfo');
+      if (requestInfoEl) requestInfoEl.textContent = requestInfo;
+    } else {
+      const targetNameEl = document.getElementById('targetPlayerName');
+      if (targetNameEl) targetNameEl.textContent = 'Ninguém';
+      const requestInfoEl = document.getElementById('requestResourcesInfo');
+      if (requestInfoEl) requestInfoEl.textContent = '—';
+    }
+  }
+
+populateNegotiationControls() {
+  const offerContainer = document.getElementById('offerResourcesContainer');
+  const requestContainer = document.getElementById('requestResourcesContainer');
+  
+  if (!offerContainer || !requestContainer) return;
+  
+  // Limpa containers
+  offerContainer.innerHTML = '';
+  requestContainer.innerHTML = '';
+  
+  const currentPlayer = getCurrentPlayer();
+  const targetSelect = document.getElementById('negTarget');
+  const targetId = targetSelect ? parseInt(targetSelect.value) : null;
+  const targetPlayer = targetId !== null ? gameState.players.find(p => p.id === targetId) : null;
+  
+  // Garantir que os valores atuais não excedam os máximos
+  const currentState = getNegotiationState();
+  
+  // Cria controles para oferta (recursos do jogador atual)
+  ['madeira', 'pedra', 'ouro', 'agua'].forEach(resource => {
+    const max = currentPlayer ? currentPlayer.resources[resource] || 0 : 0;
+    const current = Math.min(currentState.offer[resource] || 0, max); // FORÇA limite
+    updateNegotiationResource('offer', resource, current); // Atualiza estado
+    
+    const control = this.createResourceControl('offer', resource, max, current);
+    offerContainer.appendChild(control);
+  });
+  
+  // Cria controles para solicitação (recursos do alvo)
+  ['madeira', 'pedra', 'ouro', 'agua'].forEach(resource => {
+    const max = targetPlayer ? targetPlayer.resources[resource] || 0 : 0;
+    const current = Math.min(currentState.request[resource] || 0, max); // FORÇA limite
+    updateNegotiationResource('request', resource, current); // Atualiza estado
+    
+    const control = this.createResourceControl('request', resource, max, current);
+    requestContainer.appendChild(control);
+  });
+  
+  // Configurar listeners para os novos controles
+  this.setupResourceControlListeners();
+}
+
+setupNegotiationControlListeners() {
+  // Sliders
+  document.querySelectorAll('.negotiation-slider').forEach(slider => {
+    slider.addEventListener('input', (e) => {
+      const type = e.target.dataset.type;
+      const resource = e.target.dataset.resource;
+      const value = parseInt(e.target.value);
+      
+      updateNegotiationResource(type, resource, value);
+      
+      // Atualiza valor exibido
+      const valueEl = document.getElementById(`${type}_${resource}_value`);
+      if (valueEl) valueEl.textContent = value;
+      
+      this.validateNegotiation();
+    });
+  });
+  
+  // Botões +/-
+  document.querySelectorAll('.increase-btn, .decrease-btn').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      const type = e.target.dataset.type;
+      const resource = e.target.dataset.resource;
+      const isIncrease = e.target.classList.contains('increase-btn');
+      
+      const current = getNegotiationState()[type][resource] || 0;
+      const max = this.getResourceMax(type, resource);
+      const newValue = isIncrease ? Math.min(current + 1, max) : Math.max(current - 1, 0);
+      
+      updateNegotiationResource(type, resource, newValue);
+      
+      // Atualiza slider e valor
+      const slider = document.querySelector(`.negotiation-slider[data-type="${type}"][data-resource="${resource}"]`);
+      if (slider) slider.value = newValue;
+      
+      const valueEl = document.getElementById(`${type}_${resource}_value`);
+      if (valueEl) valueEl.textContent = newValue;
+      
+      this.validateNegotiation();
+    });
+  });
+}
+
+// Adicione este método auxiliar:
+getResourceMax(type, resource) {
+  if (type === 'offer') {
+    const player = getCurrentPlayer();
+    return player ? player.resources[resource] || 0 : 0;
+  } else {
+    const targetSelect = document.getElementById('negTarget');
+    const targetId = targetSelect ? parseInt(targetSelect.value) : null;
+    const targetPlayer = targetId !== null ? gameState.players.find(p => p.id === targetId) : null;
+    return targetPlayer ? targetPlayer.    this.negAcceptBtn = document.getElementById('negAcceptBtn');
     this.negDeclineBtn = document.getElementById('negDeclineBtn');
     
     this.offerResourcesContainer = document.getElementById('offerResourcesContainer');
