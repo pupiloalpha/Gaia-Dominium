@@ -136,7 +136,9 @@ class NegotiationUI {
     }
     
     // 9. Configurar sliders de recursos
-    this.setupResourceSliders();
+    // this.setupResourceSliders();
+    this.populateNegotiationControls(); // Cria sliders, zera valores e listeners
+    this.populateRegionControls();    // Cria checkboxes e desmarca todos
     
     // 10. Mostrar modal
     if (this.negotiationModal) {
