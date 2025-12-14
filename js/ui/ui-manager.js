@@ -1139,17 +1139,12 @@ if (!isActionPhase) {
         }
     }
 } else if (isOwnRegion) {
-    // Lógica para Explorar
-    const canAfford = this.canPlayerAffordAction('explorar', player);
-    
-    if (this.actionExploreBtn) {
-        this.actionExploreBtn.disabled = !baseEnabled || !canAfford;
-        this.actionExploreBtn.textContent = 'Explorar';
-        
-        if (this.actionExploreBtn.disabled) {
-             exploreReason = `Requer: ${actionExploreCost.madeira}${RESOURCE_ICONS['madeira']}, ${actionExploreCost.agua}${RESOURCE_ICONS['agua']}`;
+    // Lógica para Explorar - GRATUITO em regiões próprias!
+        if (this.actionExploreBtn) {
+            this.actionExploreBtn.disabled = !baseEnabled;
+            this.actionExploreBtn.textContent = 'Explorar';
+            this.actionExploreBtn.title = 'Explorar região própria (ação gratuita)';
         }
-    }
 } else {
     // Não é neutro, nem sua região.
     if (this.actionExploreBtn) {
