@@ -26,7 +26,7 @@ export class NegotiationLogic {
         // Apenas verifica o custo, não consome a habilidade ainda
         // Para verificar, usamos o modify mas sabemos que ele não altera estado do player, 
         // apenas retorna o valor.
-        negCost = this.main.factionLogic.modifyNegotiationCost(player);
+        negCost = this.main.factionLogic.getNegotiationCost(player);
     }
 
     // 2. Verificar se tem ouro suficiente (mesmo que seja 0)
@@ -89,7 +89,7 @@ export class NegotiationLogic {
     let negotiationCost = 1;
     if (this.main.factionLogic) {
         // Isso retorna o custo (0 ou 1) e internamente marca a habilidade como usada se for 0
-        negotiationCost = this.main.factionLogic.modifyNegotiationCost(player);
+        negotiationCost = this.main.factionLogic.consumeNegotiationCost(player);
     }
 
     gameState.actionsLeft--;
