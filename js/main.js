@@ -17,7 +17,7 @@
 import { UIManager } from './ui/ui-manager.js';
 import { GameLogic } from './logic/game-logic.js';
 import { Utils } from './utils/utils.js';
-import { AIFactory, AI_PERSONALITIES } from './ai/ai-system.js';
+import { AIFactory } from './ai/ai-system.js';
 import { 
   gameState, 
   achievementsState,
