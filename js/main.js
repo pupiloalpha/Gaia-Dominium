@@ -186,16 +186,6 @@ function setupGlobalEventListeners() {
           break;
       }
     }
-
-    // Tecla 'P' para avançar fase (debug/desenvolvimento)
-    if (e.key === 'p' || e.key === 'P') {
-      e.preventDefault();
-      if (window.gameState?.gameStarted && window.gameLogic?.advancePhase) {
-        const newPhase = window.gameLogic.advancePhase();
-        window.utils?.showFeedback(`Fase avançada para: ${newPhase}`, 'info');
-        window.uiManager?.refreshUIAfterStateChange?.();
-      }
-    }
   });
 }
 
