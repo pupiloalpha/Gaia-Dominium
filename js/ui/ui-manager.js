@@ -156,22 +156,23 @@ preventInitialScreenReturn() {
 
     // ==================== SISTEMA DE IA ====================
 
-    initializeAISystem() {
-        console.log('🤖 Inicializando sistema de IA...');
-        
-        // Identificar jogadores IA
-        const aiPlayers = gameState.players
-            .map((player, index) => {
-                if (player.type === 'ai') {
-                    return { 
-                        index, 
-                        difficulty: player.aiDifficulty || 'medium',
-                        name: player.name
-                    };
-                }
-                return null;
-            })
-            .filter(Boolean);
+initializeAISystem() {
+    console.log('🤖 Inicializando sistema de IA...');
+    
+    // Identificar jogadores IA por MULTIPLOS critérios
+    const aiPlayers = gameState.players
+        .map((player, index) => {
+            if (player.type === 'ai' || player.isAI === true) {
+                return { 
+                    index: player.id, // USAR player.id em vez do índice do array
+                    difficulty: player.aiDifficulty || 'medium',
+                    name: player.name,
+                    playerObject: player
+                };
+            }
+            return null;
+        })
+        .filter(Boolean);
         
         if (aiPlayers.length === 0) {
             console.log('🤖 Nenhum jogador IA encontrado');
