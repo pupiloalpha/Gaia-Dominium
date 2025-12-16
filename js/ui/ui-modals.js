@@ -497,19 +497,25 @@ addStructureSelectionFeedback(structureName) {
 showIncomeModal(player, bonuses) {
   console.log('💰 showIncomeModal chamado para:', player.name);
   
-  if (!this.incomeModal) {
-    this.incomeModal = document.getElementById('incomeModal');
+  // Garantir que o modal está cacheado
+  if (!this.modals.income) {
+    this.modals.income = document.getElementById('incomeModal');
   }
   
-  if (!this.incomeModal) {
+  if (!this.modals.income) {
     console.error('❌ incomeModal não encontrado no DOM');
     return;
   }
   
-  // CORREÇÃO: Usar os IDs corretos do seu HTML
-  const playerNameEl = this.incomeModal.querySelector('#incomePlayerName');
-  const resourcesEl = this.incomeModal.querySelector('#incomeResources');
-  const okBtn = this.incomeModal.querySelector('#incomeOkBtn');
+  // Ativar modo modal
+  if (this.uiManager && this.uiManager.setModalMode) {
+    this.uiManager.setModalMode(true);
+  }
+  
+  // CORREÇÃO: Usar seletores diretos do modal
+  const playerNameEl = this.modals.income.querySelector('#incomePlayerName');
+  const resourcesEl = this.modals.income.querySelector('#incomeResources');
+  const okBtn = this.modals.income.querySelector('#incomeOkBtn');
   
   // Configurar nome do jogador
   if (playerNameEl) {
@@ -553,67 +559,56 @@ showIncomeModal(player, bonuses) {
     }
     
     html += '</div>';
-    
     resourcesEl.innerHTML = html;
   }
   
-  // Configurar botão OK
+  // CORREÇÃO CRÍTICA: Configurar botão OK corretamente
   if (okBtn) {
-    // Remover listeners anteriores (para evitar múltiplos bindings)
+    // Remover listeners antigos
     const newOkBtn = okBtn.cloneNode(true);
     okBtn.parentNode.replaceChild(newOkBtn, okBtn);
     
     // Adicionar novo listener
-    document.getElementById('incomeOkBtn').addEventListener('click', () => {
-      console.log('✅ Jogador clicou em OK na renda');
-      
-      // Avançar para fase de ações
-      if (window.gameLogic) {
-        gameState.currentPhase = 'acoes';
-        gameState.actionsLeft = GAME_CONFIG.ACTIONS_PER_TURN;
-        
-        addActivityLog({
-          type: 'phase',
-          playerName: player.name,
-          action: 'iniciou fase de ações',
-          details: '',
-          turn: gameState.turn
-        });
-        
-        // Atualizar UI
-        if (window.uiManager) {
-          window.uiManager.updateUI();
-          window.uiManager.updateFooter();
-        }
-      }
-      
-      this.closeModal('incomeModal');
-    });
+    const currentOkBtn = this.modals.income.querySelector('#incomeOkBtn');
+    if (currentOkBtn) {
+      currentOkBtn.addEventListener('click', () => {
+        console.log('✅ Botão OK do modal de renda clicado');
+        this.closeIncomeModal();
+      });
+    }
   }
   
   // Mostrar modal
-  this.showModal('incomeModal');
+  this.modals.income.classList.remove('hidden');
   console.log('✅ Modal de renda mostrado com sucesso');
 }
-
+  
   closeIncomeModal() {
   if (!this.modals.income) {
-    console.error('Elemento incomeModal não encontrado!');
+    this.modals.income = document.getElementById('incomeModal');
+  }
+  
+  if (!this.modals.income) {
+    console.error('❌ Elemento incomeModal não encontrado!');
     return;
   }
   
+  console.log('🔴 Fechando modal de renda...');
+  
+  // Esconder modal
   this.modals.income.classList.add('hidden');
   
-  if (gameState.gameStarted) {
+  // Desativar modo modal
+  if (this.uiManager && this.uiManager.setModalMode) {
+    this.uiManager.setModalMode(false);
+  }
+  
+  // Avançar para fase de ações (se jogo iniciado)
+  if (gameState.gameStarted && gameState.currentPhase === 'renda') {
     gameState.currentPhase = 'acoes';
     gameState.actionsLeft = GAME_CONFIG.ACTIONS_PER_TURN;
     
-    setTimeout(() => {
-      if (window.uiManager) {
-        window.uiManager.updateUI();
-        window.uiManager.updateFooter();
-      }
-    }, 50);
+    console.log('🔄 Avançando para fase de ações...');
     
     const currentPlayer = getCurrentPlayer();
     if (currentPlayer) {
@@ -625,28 +620,17 @@ showIncomeModal(player, bonuses) {
         turn: gameState.turn
       });
     }
+    
+    // Atualizar UI
+    setTimeout(() => {
+      if (window.uiManager) {
+        window.uiManager.updateUI();
+      }
+    }, 100);
   }
-}
-
-showModal(modalId) {
-  const modal = document.getElementById(modalId);
-  if (modal) {
-    modal.classList.remove('hidden');
-    // Garantir que o modal esteja no topo
-    modal.style.zIndex = '9999';
-    console.log(`✅ Modal ${modalId} mostrado`);
-  } else {
-    console.error(`❌ Modal ${modalId} não encontrado`);
+  
+  console.log('✅ Modal de renda fechado com sucesso');
   }
-}
-
-closeModal(modalId) {
-  const modal = document.getElementById(modalId);
-  if (modal) {
-    modal.classList.add('hidden');
-    console.log(`✅ Modal ${modalId} fechado`);
-  }
-}
 
   // ==================== MODAL DE CONQUISTAS ====================
 renderAchievementsModal() {
