@@ -232,17 +232,68 @@
   </div>
 </div>
 
-  <!-- MODAL DE VITÓRIA -->
-  <div id="victoryModal" class="hidden fixed inset-0 z-[102] flex items-center justify-center p-6 modal-content-container">
-    <div class="absolute inset-0 bg-black/70"></div>
-    <div class="relative bg-gray-900/90 backdrop-blur-md border border-yellow-500/40 rounded-lg p-6 max-w-md mx-4 text-center">
-      <div class="text-6xl mb-4">🏆</div>
-      <h3 id="victoryModalTitle" class="text-xl font-bold text-yellow-300 mb-2">Vitória!</h3>
-      <p id="victoryModalMessage" class="text-gray-200 mb-4">Parabéns, [nome do jogador]! Você venceu Gaia!</p>
-      <button id="victoryModalClose" class="px-4 py-2 bg-yellow-600 hover:bg-yellow-500 rounded-lg text-white">Fechar</button>
+  <!-- MODAL DE VITÓRIA COMPLETO -->
+<div id="victoryModal" class="hidden fixed inset-0 z-[102] flex items-center justify-center p-6 modal-content-container">
+  <div class="absolute inset-0 bg-black/80 backdrop-blur-sm"></div>
+  <div class="relative bg-gradient-to-br from-gray-900 to-gray-950 backdrop-blur-xl border-2 border-yellow-400/40 rounded-3xl p-8 max-w-2xl w-full mx-4 text-center shadow-2xl shadow-yellow-500/10 animate__animated animate__bounceIn">
+    
+    <!-- Ícone animado -->
+    <div class="relative mb-6">
+      <div class="absolute inset-0 flex items-center justify-center">
+        <div class="w-48 h-48 bg-yellow-500/10 rounded-full animate-ping"></div>
+      </div>
+      <div class="text-8xl mb-2 animate__animated animate__tada animate__infinite">🏆</div>
     </div>
+    
+    <!-- Título -->
+    <h3 id="victoryModalTitle" class="text-4xl font-bold bg-gradient-to-r from-yellow-300 to-yellow-500 bg-clip-text text-transparent mb-3">
+      VITÓRIA!
+    </h3>
+    
+    <!-- Mensagem -->
+    <div class="mb-8">
+      <p id="victoryModalMessage" class="text-xl text-gray-200 mb-2">
+        Parabéns, <span id="victoryPlayerName" class="text-yellow-300 font-bold"></span>!
+      </p>
+      <p class="text-gray-300">Você dominou Gaia!</p>
+    </div>
+    
+    <!-- Pontuação -->
+    <div class="mb-8 p-6 bg-gradient-to-r from-yellow-900/30 to-amber-900/20 border border-yellow-500/30 rounded-2xl backdrop-blur-sm">
+      <h4 class="text-lg font-semibold text-yellow-200 mb-3">Pontuação Final</h4>
+      <div class="flex items-center justify-center gap-4">
+        <div class="text-center">
+          <div class="text-5xl font-bold text-white" id="victoryPointsDisplay">0</div>
+          <div class="text-sm text-yellow-300 mt-1">⭐ Pontos de Vitória</div>
+        </div>
+        <div class="h-16 w-px bg-yellow-500/30"></div>
+        <div class="text-center">
+          <div class="text-4xl font-bold text-white" id="victoryTurnCount">0</div>
+          <div class="text-sm text-yellow-300 mt-1">🔄 Turnos</div>
+        </div>
+      </div>
+    </div>
+    
+    <!-- Botões -->
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <button id="victoryNewGameBtn" 
+              class="px-8 py-4 bg-gradient-to-r from-green-600 to-emerald-700 hover:from-green-700 hover:to-emerald-800 rounded-xl text-white font-bold text-lg transition-all transform hover:scale-105 hover:shadow-2xl hover:shadow-green-500/20 active:scale-95">
+        🎮 Novo Jogo
+      </button>
+      <button id="victoryModalClose" 
+              class="px-8 py-4 bg-gradient-to-r from-gray-800 to-gray-900 hover:from-gray-700 hover:to-gray-800 border-2 border-white/10 rounded-xl text-white font-bold text-lg transition-all transform hover:scale-105 active:scale-95">
+        Fechar
+      </button>
+    </div>
+    
+    <!-- Mensagem extra -->
+    <p class="text-gray-400 text-sm mt-8">
+      O jogo será reiniciado ao clicar em "Novo Jogo". Seus dados serão salvos.
+    </p>
+    
   </div>
-
+</div>
+  
   <!-- ==================== INTERFACE PRINCIPAL ==================== -->
   
   <!-- MANUAL ICON (flutuante) -->
