@@ -147,21 +147,24 @@ const AI_PERSONALITIES = {
 // ==================== CLASSE PRINCIPAL ====================
 
 class AIBrain {
-  constructor(playerId, difficulty = 'medium') {
-    this.playerId = playerId;
+constructor(playerId, difficulty = 'medium') {
+    // playerId deve ser o ID real no gameState.players
+    this.playerId = Number(playerId); // GARANTIR que é número
     this.difficulty = difficulty;
     this.settings = AI_DIFFICULTY_SETTINGS[difficulty];
     this.personality = this.assignPersonality();
     this.memory = {
-      playerStyles: {},
-      regionValues: {},
-      threatAssessment: {},
-      lastActions: [],
-      negotiationHistory: []
+        playerStyles: {},
+        regionValues: {},
+        threatAssessment: {},
+        lastActions: [],
+        negotiationHistory: []
     };
     this.currentPlan = null;
     this.phase = 'idle';
-  }
+    
+    console.log(`🤖 IA criada com playerId: ${this.playerId} (tipo: ${typeof this.playerId})`);
+}
 
   // ==================== CONFIGURAÇÃO ====================
   
