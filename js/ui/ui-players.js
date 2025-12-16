@@ -160,7 +160,7 @@ export class UIPlayersManager {
             option.disabled = true;
             
             // Descobrir quem está usando esta facção
-            const user = gameState.players.find(p => p.faction?.id === id);
+            const user = gameState.players.find(p => p.faction && p.faction.id === faction.id);
             const userType = user?.isAI ? 'IA' : 'Jogador';
             const userName = user?.name || 'Desconhecido';
             
@@ -226,13 +226,14 @@ export class UIPlayersManager {
     }
 
     isFactionAvailable(factionId) {
-        const faction = FACTION_ABILITIES[factionId];
-        if (!faction) return false;
-        // Verifica se a facção já está sendo usada por QUALQUER jogador (humano ou AI)
-        return !gameState.players.some(p => 
-            p.faction && p.faction.id === factionId
-        );
-    }
+    const faction = FACTION_ABILITIES[factionId];
+    if (!faction) return false;
+    
+    // Verifica se a facção já está sendo usada por QUALQUER jogador (humano ou AI)
+    return !gameState.players.some(p => 
+        p.faction && p.faction.id === faction.id
+    );
+}
 
     // ==================== FORMULÁRIO DE JOGADORES ====================
 
@@ -306,7 +307,7 @@ export class UIPlayersManager {
     
     // Validar facção disponível (para qualquer jogador)
     if (!this.isFactionAvailable(factionId)) {
-        const user = gameState.players.find(p => p.faction?.id === factionId);
+        const user = gameState.players.find(p => p.faction && p.faction.id === FACTION_ABILITIES[factionId].id);
         const userType = user?.isAI ? 'IA' : 'Jogador';
         const userName = user?.name || 'Desconhecido';
         
@@ -329,7 +330,9 @@ export class UIPlayersManager {
     
     // Criar jogador
     const faction = FACTION_ABILITIES[factionId];
-    const color = GAME_CONFIG.PLAYER_COLORS[gameState.players.length % GAME_CONFIG.PLAYER_COLORS.length];
+    
+    // USAR A COR DA FACÇÃO (removido GAME_CONFIG.PLAYER_COLORS)
+    const color = faction.color;
     
     const player = {
         id: gameState.players.length,
@@ -356,7 +359,7 @@ export class UIPlayersManager {
     
     // Adicionar ao estado
     gameState.players.push(player);
-    console.log(`✅ Jogador ${name} adicionado como ${faction.name}`);
+    console.log(`✅ Jogador ${name} adicionado como ${faction.name} (cor: ${color})`);
     
     // Resetar formulário
     this.resetAddPlayerForm();
@@ -626,7 +629,7 @@ export class UIPlayersManager {
     if (!this.isFactionAvailable(factionId) && 
         gameState.players[index].faction?.id !== FACTION_ABILITIES[factionId]?.id) {
         
-        const user = gameState.players.find(p => p.faction?.id === factionId);
+        const user = gameState.players.find(p => p.faction && p.faction.id === FACTION_ABILITIES[factionId].id);
         const userType = user?.isAI ? 'IA' : 'Jogador';
         const userName = user?.name || 'Desconhecido';
         
@@ -651,6 +654,7 @@ export class UIPlayersManager {
         ...gameState.players[index],
         name,
         icon,
+        color: faction.color, // ATUALIZAR COR DA FACÇÃO
         faction,
         turnBonuses: {
             freeNegotiationAvailable: faction.abilities.freeNegotiationPerTurn || 0,
@@ -730,7 +734,9 @@ export class UIPlayersManager {
     const nameList = aiNamesByFaction[factionId] || ['IA Estratégica'];
     const aiName = name || nameList[Math.floor(Math.random() * nameList.length)];
     
-    const color = GAME_CONFIG.PLAYER_COLORS[gameState.players.length % GAME_CONFIG.PLAYER_COLORS.length];
+    // USAR A COR DA FACÇÃO (removido GAME_CONFIG.PLAYER_COLORS)
+    const color = faction.color;
+    
     const aiIcon = '🤖';
     
     const player = {
