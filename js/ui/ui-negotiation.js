@@ -65,7 +65,9 @@ class NegotiationUI {
     resetNegotiationState();
     
     // 2. Configurar modo modal
+    if (this.uiManager && this.uiManager.setModalMode) {
     this.uiManager.setModalMode(true);
+  }
     
     const initiator = getCurrentPlayer();
     
