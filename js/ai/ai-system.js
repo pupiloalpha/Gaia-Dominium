@@ -1181,6 +1181,104 @@ evaluateNegotiationProposal(negotiation, gameState) {
     
     return offerValue - requestValue;
   }
+
+
+  // MÉTODO para processar propostas
+async processPendingNegotiations(gameState) {
+    const myPlayer = gameState.players[this.playerId];
+    
+    if (!myPlayer) {
+        console.error(`🤖 IA ${this.playerId} não encontrada no gameState`);
+        return;
+    }
+    
+    console.log(`🤖 ${myPlayer.name} (IA) verificando propostas...`);
+    
+    // Obter propostas pendentes DIRETAMENTE do gameState
+    const allPending = gameState.pendingNegotiations || [];
+    console.log(`📨 Total de propostas no sistema: ${allPending.length}`);
+    
+    // Filtrar manualmente (evitar dependência de funções externas)
+    const myPending = allPending.filter(neg => {
+        // Verificar se a proposta é para esta IA
+        const targetId = Number(neg.targetId);
+        const myId = Number(myPlayer.id);
+        
+        const isForMe = targetId === myId && neg.status === 'pending';
+        
+        if (isForMe) {
+            console.log(`🎯 Proposta ${neg.id} é para mim (${myPlayer.name})`);
+        }
+        
+        return isForMe;
+    });
+    
+    if (myPending.length === 0) {
+        console.log(`🤖 ${myPlayer.name} não tem propostas pendentes`);
+        return;
+    }
+    
+    console.log(`🤖 ${myPlayer.name} tem ${myPending.length} proposta(s) pendente(s)`);
+    
+    // Processar cada proposta
+    for (const negotiation of myPending) {
+        try {
+            console.log(`🤖 Avaliando proposta ${negotiation.id}...`);
+            
+            // Pequeno delay para simular pensamento
+            await this.delay(this.settings.reactionDelay);
+            
+            // AVALIAR a proposta
+            const shouldAccept = this.evaluateNegotiationProposal(negotiation, gameState);
+            
+            if (shouldAccept) {
+                console.log(`🤖 ${myPlayer.name} ACEITANDO proposta ${negotiation.id}`);
+                
+                // Executar aceitação
+                await this.acceptNegotiation(negotiation);
+                
+                // Remover da lista pendente
+                const index = gameState.pendingNegotiations.findIndex(n => n.id === negotiation.id);
+                if (index !== -1) {
+                    gameState.pendingNegotiations[index].status = 'accepted';
+                }
+                
+                // Registrar no histórico
+                this.memory.negotiationHistory.push({
+                    turn: gameState.turn,
+                    partner: negotiation.initiatorId,
+                    accepted: true,
+                    proposal: negotiation
+                });
+                
+            } else {
+                console.log(`🤖 ${myPlayer.name} RECUSANDO proposta ${negotiation.id}`);
+                
+                // Marcar como recusada
+                const index = gameState.pendingNegotiations.findIndex(n => n.id === negotiation.id);
+                if (index !== -1) {
+                    gameState.pendingNegotiations[index].status = 'rejected';
+                }
+                
+                // Registrar no histórico
+                this.memory.negotiationHistory.push({
+                    turn: gameState.turn,
+                    partner: negotiation.initiatorId,
+                    accepted: false,
+                    proposal: negotiation
+                });
+            }
+            
+        } catch (error) {
+            console.error(`🤖 Erro ao processar proposta ${negotiation.id}:`, error);
+        }
+    }
+    
+    // Limpar propostas processadas
+    gameState.pendingNegotiations = gameState.pendingNegotiations.filter(
+        neg => neg.status === 'pending'
+    );
+}
   
   async sendNegotiationProposal(gameState) {
     console.log(`🤖 ${this.personality.name} preparando proposta de negociação`);
