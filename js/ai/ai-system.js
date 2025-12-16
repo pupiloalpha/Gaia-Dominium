@@ -1036,15 +1036,6 @@ evaluateNegotiationProposal(negotiation, gameState) {
     }
     
     console.log(`🤖 ${this.personality.name} avaliando proposta de ${theirPlayer.name}`);
-    
-    const myPlayer = gameState.players[this.playerId];
-    const theirPlayer = gameState.players[negotiation.initiatorId];
-    
-    if (!myPlayer || !theirPlayer) {
-      console.log(`🤖 Jogador não encontrado, recusando`);
-      return false;
-    }
-    
     console.log(`🤖 Proposta de ${theirPlayer.name}:`);
     console.log(`   Oferece:`, negotiation.offer);
     console.log(`   Solicita:`, negotiation.request);
