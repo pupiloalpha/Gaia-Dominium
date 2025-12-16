@@ -154,7 +154,8 @@ export class UIPlayersManager {
         option.textContent = `${faction.icon || '🏛️'} ${faction.name}`;
         
         // Verificar se facção está disponível (para qualquer jogador)
-        const isAvailable = this.isFactionAvailable(id);
+        // Ao editar, excluímos o jogador atual da verificação
+        const isAvailable = this.isFactionAvailable(id, this.editingIndex);
         
         if (!isAvailable) {
             option.disabled = true;
@@ -167,15 +168,19 @@ export class UIPlayersManager {
             option.textContent += ` ✗ (usado por ${userType}: ${userName})`;
             option.style.color = '#9ca3af';
             option.style.fontStyle = 'italic';
+            option.style.backgroundColor = 'rgba(156, 163, 175, 0.1)';
         } else {
             // Adicionar emoji indicador de disponibilidade
             option.textContent += ' ✓';
+            option.style.color = '#f0f0f0';
+            option.style.backgroundColor = 'transparent';
         }
         
         // Adicionar estilo baseado na facção
         option.dataset.factionId = id;
         option.style.padding = '12px 16px';
         option.style.borderBottom = '1px solid rgba(255, 255, 255, 0.05)';
+        option.style.borderLeft = `4px solid ${faction.color}`;
         
         this.factionDropdown.appendChild(option);
     });
@@ -225,14 +230,19 @@ export class UIPlayersManager {
         });
     }
 
-    isFactionAvailable(factionId) {
+    isFactionAvailable(factionId, excludePlayerIndex = null) {
     const faction = FACTION_ABILITIES[factionId];
     if (!faction) return false;
     
     // Verifica se a facção já está sendo usada por QUALQUER jogador (humano ou AI)
-    return !gameState.players.some(p => 
-        p.faction && p.faction.id === faction.id
-    );
+    // exceto pelo jogador que estamos editando (se especificado)
+    return !gameState.players.some((p, index) => {
+        // Pular o jogador que estamos editando (se aplicável)
+        if (excludePlayerIndex !== null && index === excludePlayerIndex) {
+            return false;
+        }
+        return p.faction && p.faction.id === faction.id;
+    });
 }
 
     // ==================== FORMULÁRIO DE JOGADORES ====================
@@ -331,8 +341,8 @@ export class UIPlayersManager {
     // Criar jogador
     const faction = FACTION_ABILITIES[factionId];
     
-    // USAR A COR DA FACÇÃO (removido GAME_CONFIG.PLAYER_COLORS)
-    const color = faction.color;
+    // USAR A COR DA FACÇÃO
+    const color = faction.color || '#9ca3af';
     
     const player = {
         id: gameState.players.length,
@@ -626,9 +636,7 @@ export class UIPlayersManager {
     }
     
     // Validar facção disponível (exceto para o próprio jogador)
-    if (!this.isFactionAvailable(factionId) && 
-        gameState.players[index].faction?.id !== FACTION_ABILITIES[factionId]?.id) {
-        
+    if (!this.isFactionAvailable(factionId, index)) {
         const user = gameState.players.find(p => p.faction && p.faction.id === FACTION_ABILITIES[factionId].id);
         const userType = user?.isAI ? 'IA' : 'Jogador';
         const userName = user?.name || 'Desconhecido';
@@ -704,7 +712,7 @@ export class UIPlayersManager {
     // ==================== SISTEMA DE IA ====================
 
     addAIPlayer(difficulty = 'medium', name = null) {
-    if (gameState.players.length >= 4) {
+    if (gameState.players.length >= GAME_CONFIG.MAX_PLAYERS) {
         this.uiManager.modals.showFeedback('Máximo de 4 jogadores atingido.', 'warning');
         return null;
     }
@@ -734,8 +742,8 @@ export class UIPlayersManager {
     const nameList = aiNamesByFaction[factionId] || ['IA Estratégica'];
     const aiName = name || nameList[Math.floor(Math.random() * nameList.length)];
     
-    // USAR A COR DA FACÇÃO (removido GAME_CONFIG.PLAYER_COLORS)
-    const color = faction.color;
+    // USAR A COR DA FACÇÃO
+    const color = faction.color || '#9ca3af';
     
     const aiIcon = '🤖';
     
