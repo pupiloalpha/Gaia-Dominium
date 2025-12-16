@@ -111,8 +111,20 @@ export class NegotiationLogic {
     if (window.uiManager?.negotiation) {
         setTimeout(() => window.uiManager.negotiation.showNegotiationNotification(negotiation), 500);
     }
-    
+     
     const target = gameState.players[negotiation.targetId];
+    
+    // NOTIFICAR A IA SE O ALVO FOR IA
+    if (target.type === 'ai' || target.isAI) {
+        console.log(`🤖 Notificando IA ${target.name} sobre nova proposta`);
+        
+        // Pequeno delay para garantir processamento
+        setTimeout(() => {
+            if (window.uiManager?.negotiation?.showNegotiationNotification) {
+                window.uiManager.negotiation.showNegotiationNotification(negotiation);
+            }
+        }, 500);
+    }
     
     // 2. Aplicar Bônus de Facção (Ex: Mercadores ganham PV ao negociar)
     let bonusMsg = '';
