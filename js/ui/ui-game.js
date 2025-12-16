@@ -516,7 +516,7 @@ export class UIGameManager {
 
             if (!isActionPhase) {
                 exploreReason = 'Ação permitida apenas na fase de Ações (⚡).';
-            } else if (!regionId) {
+            } else if (regionId == null) {
                 exploreReason = 'Selecione uma região para Explorar ou Assumir Domínio.';
             } else if (isNeutral) {
                 // Lógica para Assumir Domínio
