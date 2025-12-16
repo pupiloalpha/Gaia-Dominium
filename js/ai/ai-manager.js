@@ -177,33 +177,22 @@ async handleNegotiationPhaseAI(ai) {
     console.log(`🤖 ${player.name} (${ai.personality.type}) na fase de negociação`);
     
     try {
-        // 1. PRIMEIRO: Processar propostas PENDENTES
-        const pending = getPendingNegotiationsForPlayer(player.id);
-        
-        if (pending.length > 0) {
-            console.log(`🤖 ${player.name} tem ${pending.length} proposta(s) pendente(s)`);
-            
-            // Usar o método corrigido do AIBrain
-            if (ai.handlePendingNegotiations) {
-                await ai.handlePendingNegotiations(pending, gameState);
-                await this.delay(1000); // Dar tempo para processar
-            }
+        // 1. PROCESSAR PROPOSTAS PENDENTES usando método direto
+        if (ai.processPendingNegotiations) {
+            console.log(`🤖 Processando propostas pendentes para ${player.name}...`);
+            await ai.processPendingNegotiations(gameState);
+            await this.delay(1000);
         } else {
-            console.log(`🤖 ${player.name} não tem propostas pendentes`);
+            console.log(`⚠️ IA ${player.name} não tem método processPendingNegotiations`);
         }
         
         // 2. DEPOIS: Enviar proposta se possível
         if (gameState.actionsLeft > 0 && player.resources.ouro >= 1) {
             console.log(`🤖 ${player.name} pode enviar proposta`);
             await this.sendAINegotiationProposal(ai);
-        } else {
-            console.log(`🤖 ${player.name} não pode enviar proposta (Ações: ${gameState.actionsLeft}, Ouro: ${player.resources.ouro})`);
         }
         
-        // 3. Pequeno delay antes de terminar
-        await this.delay(800);
-        
-        // 4. Terminar fase de negociação
+        // 3. Terminar fase
         console.log(`🤖 ${player.name} terminou negociação`);
         
         // Chamar o término do turno
@@ -220,7 +209,7 @@ async handleNegotiationPhaseAI(ai) {
         }
     }
 }
-
+  
   // ==================== NEGOCIAÇÃO ====================
 
   async sendAINegotiationProposal(ai) {
