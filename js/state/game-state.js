@@ -487,21 +487,35 @@ function addPendingNegotiation(negotiation) {
 }
 
 function getPendingNegotiationsForPlayer(playerId) {
-  const numericPlayerId = Number(playerId);
-  
-  // Primeiro fazer limpeza
-  cleanupNegotiations();
-  
-  // Filtrar negociações pendentes para este jogador
-  const pending = gameState.pendingNegotiations.filter(neg => {
-    const targetId = Number(neg.targetId);
-    return targetId === numericPlayerId && neg.status === 'pending';
-  });
-  
-  // Ordenar por timestamp (mais antigas primeiro)
-  pending.sort((a, b) => a.timestamp - b.timestamp);
-  
-  return pending;
+    const numericPlayerId = Number(playerId);
+    console.log(`📋 Buscando propostas para jogador ID: ${numericPlayerId}`);
+    
+    if (!gameState.pendingNegotiations) {
+        gameState.pendingNegotiations = [];
+        return [];
+    }
+    
+    // Primeiro fazer limpeza
+    cleanupNegotiations();
+    
+    // Filtrar negociações pendentes para este jogador
+    const pending = gameState.pendingNegotiations.filter(neg => {
+        const targetId = Number(neg.targetId);
+        const matches = targetId === numericPlayerId && neg.status === 'pending';
+        
+        if (matches) {
+            console.log(`✅ Proposta ${neg.id} destinada a jogador ${numericPlayerId}`);
+        }
+        
+        return matches;
+    });
+    
+    // Ordenar por timestamp (mais antigas primeiro)
+    pending.sort((a, b) => a.timestamp - b.timestamp);
+    
+    console.log(`📋 Encontradas ${pending.length} propostas para jogador ${numericPlayerId}`);
+    
+    return pending;
 }
 
 function removePendingNegotiation(negotiationId) {
