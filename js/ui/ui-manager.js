@@ -56,31 +56,103 @@ class UIManager {
     // ==================== INICIALIZAÇÃO DO JOGO ====================
 
     handleStartGame() {
-        if (gameState.players.length < 2) {
-            this.modals.showFeedback('São necessários ao menos 2 jogadores.', 'error');
-            return;
-        }
-        
-        // Ocultar tela de cadastro e mostrar interface do jogo
-        this.initialScreen.style.display = 'none';
-        this.gameNavbar.classList.remove('hidden');
-        this.gameContainer.classList.remove('hidden');
-        this.sidebar.classList.remove('hidden');
-        this.gameMap.classList.remove('hidden');
-        this.gameFooter.classList.remove('hidden');
-        
-        document.getElementById('manualIcon')?.classList.add('hidden');
-        
-        window.gameLogic.initializeGame();
-
-        // Inicializar sistema de IA
-        this.initializeAISystem();
-
-        // Adicionar listener para botão de debug da IA
-        this.setupAIDebugButton();
-
-        this.updateUI();
+    if (gameState.players.length < 2) {
+        this.modals.showFeedback('São necessários ao menos 2 jogadores.', 'error');
+        return;
     }
+    
+    console.log('🚀 Iniciando jogo - Escondendo tela inicial...');
+    
+    // 1. FORÇAR que a tela inicial fique completamente invisível
+    if (this.initialScreen) {
+        this.initialScreen.classList.add('hidden');
+        this.initialScreen.style.display = 'none';
+        this.initialScreen.style.visibility = 'hidden';
+        this.initialScreen.style.opacity = '0';
+        this.initialScreen.style.pointerEvents = 'none';
+        this.initialScreen.style.position = 'absolute'; // Remove do fluxo
+        this.initialScreen.style.zIndex = '-1000'; // Coloca atrás de tudo
+        this.initialScreen.setAttribute('data-game-started', 'true');
+    }
+    
+    // 2. Garantir que elementos do jogo fiquem visíveis
+    const gameElements = [
+        this.gameNavbar,
+        this.gameContainer,
+        this.sidebar,
+        this.gameMap,
+        this.gameFooter
+    ];
+    
+    gameElements.forEach(el => {
+        if (el) {
+            el.classList.remove('hidden');
+            el.style.display = ''; // Reseta para CSS padrão
+            el.style.visibility = 'visible';
+            el.style.opacity = '1';
+            el.style.pointerEvents = 'auto';
+        }
+    });
+    
+    // 3. Ocultar ícone manual da barra de navegação
+    document.getElementById('manualIcon')?.classList.add('hidden');
+    
+    // 4. Inicializar jogo com pequeno delay para garantir renderização
+    setTimeout(() => {
+        window.gameLogic.initializeGame();
+        
+        // 5. Inicializar sistema de IA
+        this.initializeAISystem();
+        
+        // 6. Adicionar listener para botão de debug da IA
+        this.setupAIDebugButton();
+        
+        this.updateUI();
+        
+        // 7. Verificação final - garantir que tela inicial não volte
+        setTimeout(() => {
+            if (this.initialScreen && !this.initialScreen.classList.contains('hidden')) {
+                console.warn('⚠️ Tela inicial reapareceu! Forçando ocultação...');
+                this.initialScreen.classList.add('hidden');
+                this.initialScreen.style.display = 'none';
+            }
+        }, 1000);
+        
+        // 8. Registrar evento para monitoramento
+        window.addEventListener('resize', () => this.preventInitialScreenReturn());
+        
+    }, 100);
+    
+    console.log('✅ Jogo iniciado com sucesso');
+}
+
+preventInitialScreenReturn() {
+    // Monitora continuamente para prevenir reaparecimento
+    if (!gameState.gameStarted) return;
+    
+    const initialScreen = document.getElementById('initialScreen');
+    if (initialScreen && !initialScreen.classList.contains('hidden')) {
+        console.warn('🛡️ Prevenindo retorno da tela inicial...');
+        initialScreen.classList.add('hidden');
+        initialScreen.style.display = 'none';
+        initialScreen.style.visibility = 'hidden';
+    }
+    
+    // Garantir que elementos do jogo permaneçam visíveis
+    const requiredElements = [
+        'gameNavbar', 'gameContainer', 'sidebar', 
+        'gameMap', 'gameFooter', 'boardContainer'
+    ];
+    
+    requiredElements.forEach(id => {
+        const el = document.getElementById(id);
+        if (el && el.classList.contains('hidden')) {
+            console.warn(`⚠️ Elemento ${id} está oculto! Reexibindo...`);
+            el.classList.remove('hidden');
+        }
+    });
+}
+
 
     // ==================== SISTEMA DE IA ====================
 
