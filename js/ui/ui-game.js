@@ -304,48 +304,48 @@ export class UIGameManager {
     }
 
     renderSidebar(playerIndex = gameState.selectedPlayerForSidebar) {
-        const player = gameState.players[playerIndex];
-        if (!player) return;
-        
-        const isCurrentPlayer = playerIndex === gameState.currentPlayerIndex;
-        const faction = player.faction;
-        const factionColor = faction?.color || '#9ca3af';
-        
-        this.sidebarPlayerHeader.innerHTML = `
-            <div class="flex items-center gap-3 p-2 rounded-lg" 
-                 style="border-left: 4px solid ${player.color}; background: rgba(${this.hexToRgb(player.color).join(', ')}, 0.05)">
-                <div class="text-3xl">${player.icon}</div>
-                <div class="flex-1">
-                    <div class="text-base font-semibold text-white">${player.name}</div>
-                    <div class="text-xs text-gray-300 mb-1">
-                        Jogador ${player.id + 1} ${isCurrentPlayer ? '• 🎮 TURNO' : ''}
-                    </div>
-                    ${faction ? `
-                    <div class="text-xs font-medium flex items-center gap-1" style="color: ${factionColor}">
-                        <span class="text-sm">${faction.icon || '🏛️'}</span>
-                        <span>${faction.name}</span>
-                    </div>
-                    ` : '<div class="text-xs text-gray-400">Sem facção</div>'}
+    const player = gameState.players[playerIndex];
+    if (!player) return;
+    
+    const isCurrentPlayer = playerIndex === gameState.currentPlayerIndex;
+    const faction = player.faction;
+    const factionColor = player.color; // Usar a cor do jogador (da facção)
+    
+    this.sidebarPlayerHeader.innerHTML = `
+        <div class="flex items-center gap-3 p-2 rounded-lg" 
+             style="border-left: 4px solid ${player.color}; background: rgba(${this.hexToRgb(player.color).join(', ')}, 0.05)">
+            <div class="text-3xl">${player.icon}</div>
+            <div class="flex-1">
+                <div class="text-base font-semibold text-white">${player.name}</div>
+                <div class="text-xs text-gray-300 mb-1">
+                    Jogador ${player.id + 1} ${isCurrentPlayer ? '• 🎮 TURNO' : ''}
                 </div>
-                <div class="text-2xl font-bold text-yellow-400">${player.victoryPoints} PV</div>
+                ${faction ? `
+                <div class="text-xs font-medium flex items-center gap-1" style="color: ${factionColor}">
+                    <span class="text-sm">${faction.icon || '🏛️'}</span>
+                    <span>${faction.name}</span>
+                </div>
+                ` : '<div class="text-xs text-gray-400">Sem facção</div>'}
             </div>
-        `;
-        
-        this.resourceList.innerHTML = Object.entries(player.resources)
-            .map(([key, value]) => `
-                <li class="flex justify-between items-center py-0.5">
-                    <span class="text-sm text-gray-200 flex items-center gap-1.5">
-                        <span class="text-base">${RESOURCE_ICONS[key]}</span>
-                        <span class="capitalize">${key}</span>
-                    </span>
-                    <span class="text-sm font-bold text-white">${value}</span>
+            <div class="text-2xl font-bold text-yellow-400">${player.victoryPoints} PV</div>
+        </div>
+    `;
+    
+    this.resourceList.innerHTML = Object.entries(player.resources)
+        .map(([key, value]) => `
+            <li class="flex justify-between items-center py-0.5">
+                <span class="text-sm text-gray-200 flex items-center gap-1.5">
+                    <span class="text-base">${RESOURCE_ICONS[key]}</span>
+                    <span class="capitalize">${key}</span>
+                </span>
+                <span class="text-sm font-bold text-white">${value}</span>
                 </li>
             `).join('');
-        
-        this.renderControlledRegions(player);
-        this.renderAchievementsInSidebar(playerIndex);
-        this.renderActivityLog('all');
-    }
+    
+    this.renderControlledRegions(player);
+    this.renderAchievementsInSidebar(playerIndex);
+    this.renderActivityLog('all');
+}
 
     renderAchievementsInSidebar(playerIndex) {
         const achievementsList = document.getElementById('achievementsList');
