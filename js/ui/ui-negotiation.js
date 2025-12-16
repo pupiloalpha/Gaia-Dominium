@@ -19,6 +19,7 @@ import { RESOURCE_ICONS } from '../state/game-config.js';
 class NegotiationUI {
   constructor(uiManager) {
     this.uiManager = uiManager;
+    this.uiManager.negotiation = this;
     this.uiManager.negotiationUI = this;
     this.cacheElements();
     this.setupListeners();
@@ -64,7 +65,9 @@ class NegotiationUI {
     resetNegotiationState();
     
     // 2. Configurar modo modal
+    if (this.uiManager && this.uiManager.setModalMode) {
     this.uiManager.setModalMode(true);
+  }
     
     const initiator = getCurrentPlayer();
     
@@ -75,10 +78,7 @@ class NegotiationUI {
       return;
     }
     
-    // 4. Limpar todos os campos da UI
-    this.clearAllNegotiationFields();
-    
-    // 5. Preencher seleção de alvo apenas com jogadores que têm 1+ ouro
+    // 4. Preencher seleção de alvo apenas com jogadores que têm 1+ ouro
     if (this.negTargetSelect) {
       this.negTargetSelect.innerHTML = '<option value="">Selecione um jogador...</option>';
     }
@@ -100,7 +100,7 @@ class NegotiationUI {
       return;
     }
     
-    // 6. Configurar evento de mudança no select (já ligado em setupListeners, mas garantir comportamento)
+    // 5. Configurar evento de mudança no select (já ligado em setupListeners, mas garantir comportamento)
     this.negTargetSelect.onchange = () => {
       const targetId = this.getParsedTargetId();
       if (!isNaN(targetId)) {
@@ -116,7 +116,7 @@ class NegotiationUI {
       }
     };
     
-    // 7. Configurar botão de envio
+    // 6. Configurar botão de envio
     const sendBtn = document.getElementById('negSendBtn');
     if (sendBtn) {
       sendBtn.onclick = (e) => {
@@ -125,7 +125,7 @@ class NegotiationUI {
       };
     }
     
-    // 8. Configurar botão de cancelar
+    // 7. Configurar botão de cancelar
     const cancelBtn = document.getElementById('negCancelBtn');
     if (cancelBtn) {
       cancelBtn.onclick = (e) => {
@@ -134,8 +134,14 @@ class NegotiationUI {
       };
     }
     
-    // 9. Configurar sliders de recursos
+    // 8. Configurar sliders de recursos
     this.setupResourceSliders();
+    this.populateNegotiationControls(); // Cria sliders, zera valores e listeners
+    this.populateRegionControls();    // Cria checkboxes e desmarca todos
+
+    // 9. Limpar todos os campos da UI
+    this.clearAllNegotiationFields();
+    
     
     // 10. Mostrar modal
     if (this.negotiationModal) {
