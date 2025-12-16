@@ -356,7 +356,12 @@ class UIManager {
             if (this.gameManager.boardContainer) {
                 this.gameManager.boardContainer.style.pointerEvents = 'auto';
             }
-            setTimeout(() => this.gameManager.updateFooter(), 50);
+            // Pequeno delay para garantir que a UI seja atualizada
+    setTimeout(() => {
+      if (this.gameManager && this.gameManager.updateFooter) {
+        this.gameManager.updateFooter();
+      }
+    }, 50);
         }
     }
 
