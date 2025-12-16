@@ -172,66 +172,54 @@ class AIManager {
     this.setupNegotiationPhase();
   }
 
-  async handleNegotiationPhaseAI(ai) {
+async handleNegotiationPhaseAI(ai) {
     const player = getCurrentPlayer();
-    console.log(`🤖 ${player.name} na fase de negociação`);
-
+    console.log(`🤖 ${player.name} (${ai.personality.type}) na fase de negociação`);
+    
     try {
-      // 1. Verificar propostas pendentes
-      const pending = getPendingNegotiationsForPlayer(player.id);
-      if (pending.length > 0) {
-        console.log(`🤖 ${player.name} tem ${pending.length} proposta(s) pendente(s)`);
+        // 1. PRIMEIRO: Processar propostas PENDENTES
+        const pending = getPendingNegotiationsForPlayer(player.id);
         
-        for (const negotiation of pending) {
-          await this.delay(1000);
-          
-          const shouldAccept = ai.evaluateNegotiation(negotiation, gameState);
-          
-          if (shouldAccept) {
-            console.log(`🤖 ${player.name} aceitando proposta`);
-            setActiveNegotiation(negotiation);
-            await this.delay(500);
+        if (pending.length > 0) {
+            console.log(`🤖 ${player.name} tem ${pending.length} proposta(s) pendente(s)`);
             
-            // Executar aceitação
-            if (window.gameLogic?.handleNegResponse) {
-              await window.gameLogic.handleNegResponse(true);
+            // Usar o método corrigido do AIBrain
+            if (ai.handlePendingNegotiations) {
+                await ai.handlePendingNegotiations(pending, gameState);
+                await this.delay(1000); // Dar tempo para processar
             }
-          } else {
-            console.log(`🤖 ${player.name} recusando proposta`);
-            setActiveNegotiation(negotiation);
-            await this.delay(500);
-            
-            // Executar recusa
-            if (window.gameLogic?.handleNegResponse) {
-              await window.gameLogic.handleNegResponse(false);
-            }
-          }
+        } else {
+            console.log(`🤖 ${player.name} não tem propostas pendentes`);
         }
-      }
-
-      // 2. Enviar proposta se possível
-      if (gameState.actionsLeft > 0 && player.resources.ouro >= 1) {
-        console.log(`🤖 ${player.name} preparando para enviar proposta`);
-        await this.sendAINegotiationProposal(ai);
-      }
-
-      // 3. Terminar fase de negociação
-      console.log(`🤖 ${player.name} terminou negociação`);
-      await this.delay(1000);
-      
-      // Terminar turno
-      if (window.gameLogic?.handleEndTurn) {
-        await window.gameLogic.handleEndTurn();
-      }
-      
+        
+        // 2. DEPOIS: Enviar proposta se possível
+        if (gameState.actionsLeft > 0 && player.resources.ouro >= 1) {
+            console.log(`🤖 ${player.name} pode enviar proposta`);
+            await this.sendAINegotiationProposal(ai);
+        } else {
+            console.log(`🤖 ${player.name} não pode enviar proposta (Ações: ${gameState.actionsLeft}, Ouro: ${player.resources.ouro})`);
+        }
+        
+        // 3. Pequeno delay antes de terminar
+        await this.delay(800);
+        
+        // 4. Terminar fase de negociação
+        console.log(`🤖 ${player.name} terminou negociação`);
+        
+        // Chamar o término do turno
+        if (window.gameLogic?.turnLogic?.handleEndTurn) {
+            window.gameLogic.turnLogic.handleEndTurn();
+        }
+        
     } catch (error) {
-      console.error(`🤖 Erro na negociação da IA:`, error);
-      // Em caso de erro, terminar turno
-      if (window.gameLogic?.handleEndTurn) {
-        await window.gameLogic.handleEndTurn();
-      }
+        console.error(`🤖 Erro na negociação da IA ${player.name}:`, error);
+        
+        // Em caso de erro, forçar término do turno
+        if (window.gameLogic?.turnLogic?.handleEndTurn) {
+            window.gameLogic.turnLogic.handleEndTurn();
+        }
     }
-  }
+}
 
   // ==================== NEGOCIAÇÃO ====================
 
