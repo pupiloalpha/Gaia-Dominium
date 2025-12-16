@@ -65,9 +65,7 @@ class NegotiationUI {
     resetNegotiationState();
     
     // 2. Configurar modo modal
-    if (this.uiManager && this.uiManager.setModalMode) {
     this.uiManager.setModalMode(true);
-  }
     
     const initiator = getCurrentPlayer();
     
@@ -78,7 +76,10 @@ class NegotiationUI {
       return;
     }
     
-    // 4. Preencher seleção de alvo apenas com jogadores que têm 1+ ouro
+    // 4. Limpar todos os campos da UI
+    this.clearAllNegotiationFields();
+    
+    // 5. Preencher seleção de alvo apenas com jogadores que têm 1+ ouro
     if (this.negTargetSelect) {
       this.negTargetSelect.innerHTML = '<option value="">Selecione um jogador...</option>';
     }
@@ -100,23 +101,23 @@ class NegotiationUI {
       return;
     }
     
-    // 5. Configurar evento de mudança no select (já ligado em setupListeners, mas garantir comportamento)
+    // 6. Configurar evento de mudança no select
     this.negTargetSelect.onchange = () => {
       const targetId = this.getParsedTargetId();
       if (!isNaN(targetId)) {
         setNegotiationTarget(targetId);
-        this.populateReqRegions(); // Atualizar regiões do alvo
-        this.populateNegotiationControls(); // reconstruir controles de request com limites corretos
+        this.populateReqRegions();
+        this.populateNegotiationControls();
+        this.setupResourceSliders(); // NOVO: Atualizar sliders
         this.updateNegotiationUI();
       } else {
-        // Limpar estado caso selecione placeholder
         setNegotiationTarget(null);
         this.clearAllNegotiationFields();
         this.updateNegotiationUI();
       }
     };
     
-    // 6. Configurar botão de envio
+    // 7. Configurar botão de envio
     const sendBtn = document.getElementById('negSendBtn');
     if (sendBtn) {
       sendBtn.onclick = (e) => {
@@ -125,7 +126,7 @@ class NegotiationUI {
       };
     }
     
-    // 7. Configurar botão de cancelar
+    // 8. Configurar botão de cancelar
     const cancelBtn = document.getElementById('negCancelBtn');
     if (cancelBtn) {
       cancelBtn.onclick = (e) => {
@@ -134,43 +135,87 @@ class NegotiationUI {
       };
     }
     
-    // 8. Configurar sliders de recursos
+    // 9. Criar controles ANTES de configurar sliders
+    this.populateNegotiationControls();
+    this.populateRegionControls();
+    
+    // 10. Configurar sliders com recursos atuais
     this.setupResourceSliders();
-    this.populateNegotiationControls(); // Cria sliders, zera valores e listeners
-    this.populateRegionControls();    // Cria checkboxes e desmarca todos
-
-    // 9. Limpar todos os campos da UI
-    this.clearAllNegotiationFields();
     
+    // 11. Atualizar UI inicial
+    this.updateNegotiationUI();
+    this.validateNegotiation();
     
-    // 10. Mostrar modal
+    // 12. Mostrar modal
     if (this.negotiationModal) {
       this.negotiationModal.classList.remove('hidden');
       console.log('Modal de negociação aberto com estado limpo');
     }
-  }
+}
 
   setupResourceSliders() {
     const initiator = getCurrentPlayer();
+    const targetId = this.getParsedTargetId();
+    const targetPlayer = !isNaN(targetId) ? gameState.players.find(p => p.id === targetId) : null;
+    const negotiationState = getNegotiationState();
     
-    // Configurar sliders de oferta
+    // Configurar sliders de OFERTA (recursos do jogador atual)
     ['madeira', 'pedra', 'ouro', 'agua'].forEach(resource => {
-      const slider = document.querySelector(`#offerResourcesContainer input[data-resource="${resource}"]`);
-      if (slider) {
-        slider.max = initiator ? (initiator.resources[resource] || 0) : 0;
-        slider.value = 0;
-        slider.oninput = (e) => {
-          const value = parseInt(e.target.value) || 0;
-          updateNegotiationResource('offer', resource, value);
-          this.updateNegotiationUI();
-          this.validateNegotiation();
-        };
-      }
+        const slider = document.querySelector(`#offerResourcesContainer input[data-resource="${resource}"]`);
+        if (slider) {
+            // Obter máximo atual do jogador
+            const max = initiator ? (initiator.resources[resource] || 0) : 0;
+            slider.max = max;
+            
+            // Garantir que valor atual não exceda o máximo
+            const currentValue = negotiationState.offer[resource] || 0;
+            if (currentValue > max) {
+                slider.value = max;
+                updateNegotiationResource('offer', resource, max);
+            } else {
+                slider.value = currentValue;
+            }
+            
+            slider.oninput = (e) => {
+                const value = parseInt(e.target.value) || 0;
+                updateNegotiationResource('offer', resource, value);
+                this.updateNegotiationUI();
+                this.validateNegotiation();
+            };
+        }
     });
     
-    // Configurar sliders de solicitação (serão atualizados quando o alvo mudar)
-    this.updateRequestSliders();
-  }
+    // Configurar sliders de SOLICITAÇÃO (recursos do alvo)
+    ['madeira', 'pedra', 'ouro', 'agua'].forEach(resource => {
+        const slider = document.querySelector(`#requestResourcesContainer input[data-resource="${resource}"]`);
+        if (slider && targetPlayer) {
+            // Obter máximo atual do alvo
+            const max = targetPlayer.resources[resource] || 0;
+            slider.max = max;
+            
+            // Garantir que valor atual não exceda o máximo
+            const currentValue = negotiationState.request[resource] || 0;
+            if (currentValue > max) {
+                slider.value = max;
+                updateNegotiationResource('request', resource, max);
+            } else {
+                slider.value = currentValue;
+            }
+            
+            slider.oninput = (e) => {
+                const value = parseInt(e.target.value) || 0;
+                updateNegotiationResource('request', resource, value);
+                this.updateNegotiationUI();
+                this.validateNegotiation();
+            };
+        }
+    });
+    
+    console.log('Sliders configurados com recursos atuais:', {
+        initiator: initiator?.resources,
+        target: targetPlayer?.resources
+    });
+}
 
   // Atualizar sliders de solicitação com base no alvo selecionado (uso do helper)
   updateRequestSliders() {
@@ -386,7 +431,41 @@ class NegotiationUI {
     }
   }
 
+  syncNegotiationWithGameState() {
+    const initiator = getCurrentPlayer();
+    const targetId = this.getParsedTargetId();
+    const targetPlayer = !isNaN(targetId) ? gameState.players.find(p => p.id === targetId) : null;
+    const negotiationState = getNegotiationState();
+    
+    // Sincronizar ofertas com recursos atuais
+    ['madeira', 'pedra', 'ouro', 'agua'].forEach(resource => {
+        const maxOffer = initiator ? (initiator.resources[resource] || 0) : 0;
+        const currentOffer = negotiationState.offer[resource] || 0;
+        
+        if (currentOffer > maxOffer) {
+            updateNegotiationResource('offer', resource, maxOffer);
+        }
+        
+        if (targetPlayer) {
+            const maxRequest = targetPlayer.resources[resource] || 0;
+            const currentRequest = negotiationState.request[resource] || 0;
+            
+            if (currentRequest > maxRequest) {
+                updateNegotiationResource('request', resource, maxRequest);
+            }
+        }
+    });
+    
+    // Atualizar sliders
+    this.setupResourceSliders();
+    this.updateNegotiationUI();
+  }
+  
   updateNegotiationUI() {
+
+    // Sincronizar primeiro
+    this.syncNegotiationWithGameState();
+    
     const negotiationState = getNegotiationState();
     const currentPlayer = getCurrentPlayer();
     const targetId = this.getParsedTargetId();
@@ -629,18 +708,23 @@ class NegotiationUI {
     // Reconstruir controles para o novo alvo
     this.populateNegotiationControls();
     this.populateRegionControls();
+    
+    // Configurar sliders com novos limites
+    this.setupResourceSliders();
+    
+    // Atualizar UI
     this.updateNegotiationUI();
     this.updateNegotiationSummary();
     
     // Garantir botão desabilitado
     const sendBtn = document.getElementById('negSendBtn');
     if (sendBtn) {
-      sendBtn.disabled = true;
-      sendBtn.classList.remove('bg-green-600', 'hover:bg-green-700');
-      sendBtn.classList.add('bg-gray-600');
-      sendBtn.title = 'Adicione algo na oferta ou solicitação';
+        sendBtn.disabled = true;
+        sendBtn.classList.remove('bg-green-600', 'hover:bg-green-700');
+        sendBtn.classList.add('bg-gray-600');
+        sendBtn.title = 'Adicione algo na oferta ou solicitação';
     }
-  }
+}
 
   updateNegotiationSummary() {
     const summaryEl = document.getElementById('negotiationSummary');
