@@ -964,15 +964,24 @@ async handlePendingNegotiations(pendingNegotiations, gameState) {
         return;
     }
     
-    // Converter ID da IA para número
-    const currentPlayerId = Number(this.playerId);
-    console.log(`🤖 IA ID: ${currentPlayerId} (tipo: ${typeof currentPlayerId})`);
+    // ENCONTRAR ID DO JOGADOR ATUAL (IA) CORRETAMENTE
+    const myPlayer = gameState.players[this.playerId];
+    if (!myPlayer) {
+        console.error(`🤖 Jogador IA com ID ${this.playerId} não encontrado`);
+        return;
+    }
+    
+    const myPlayerId = Number(myPlayer.id);
+    console.log(`🤖 IA ID: ${myPlayerId} (nome: ${myPlayer.name})`);
     
     // Filtrar apenas propostas DESTINADAS a esta IA
     const relevantNegotiations = pendingNegotiations.filter(negotiation => {
+        // Verificar se a negociação está pendente
+        if (negotiation.status !== 'pending') return false;
+        
         // Converter IDs para número para comparação consistente
         const negotiationTargetId = Number(negotiation.targetId);
-        return negotiationTargetId === currentPlayerId;
+        return negotiationTargetId === myPlayerId;
     });
     
     console.log(`🤖 ${relevantNegotiations.length} proposta(s) relevantes para ${this.personality.name}`);
@@ -1027,6 +1036,16 @@ evaluateNegotiationProposal(negotiation, gameState) {
     if (!myPlayer || !theirPlayer) {
         console.log('🤖 Jogador não encontrado');
         return false;
+    }
+    
+    // VERIFICAR SE A PROPOSTA É PARA ESTA IA
+    // Usar conversão consistente para Number
+    const negotiationTargetId = Number(negotiation.targetId);
+    const myPlayerId = Number(myPlayer.id);
+    
+    if (negotiationTargetId !== myPlayerId) {
+        console.log(`🤖 Esta proposta não é para mim. Destino: ${negotiationTargetId}, Eu: ${myPlayerId}`);
+        return false; // Não é para esta IA
     }
     
     // Verificar se a proposta ainda está pendente
