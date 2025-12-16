@@ -136,46 +136,52 @@ export class UIPlayersManager {
     // ==================== DROPDOWN DE FACÇÕES ====================
 
     populateFactionDropdown() {
-        if (!this.factionDropdown) {
-            console.error("❌ Elemento factionDropdown não encontrado");
-            return;
-        }
-        
-        // Limpar opções exceto o placeholder
-        while (this.factionDropdown.options.length > 1) {
-            this.factionDropdown.remove(1);
-        }
-        
-        // Adicionar opções com estilo
-        Object.entries(FACTION_ABILITIES).forEach(([id, faction]) => {
-            const option = document.createElement('option');
-            option.value = id;
-            option.title = faction.description || `Facção ${faction.name}`;
-            option.textContent = `${faction.icon || '🏛️'} ${faction.name}`;
-            
-            // Verificar se facção está disponível
-            const isAvailable = this.isFactionAvailable(id);
-            
-            if (!isAvailable) {
-                option.disabled = true;
-                option.textContent += ' ✗ (em uso)';
-                option.style.color = '#9ca3af';
-                option.style.fontStyle = 'italic';
-            } else {
-                // Adicionar emoji indicador de disponibilidade
-                option.textContent += ' ✓';
-            }
-            
-            // Adicionar estilo baseado na facção
-            option.dataset.factionId = id;
-            option.style.padding = '12px 16px';
-            option.style.borderBottom = '1px solid rgba(255, 255, 255, 0.05)';
-            
-            this.factionDropdown.appendChild(option);
-        });
-        
-        console.log(`✅ Dropdown de facções preenchido com ${Object.keys(FACTION_ABILITIES).length} opções`);
+    if (!this.factionDropdown) {
+        console.error("❌ Elemento factionDropdown não encontrado");
+        return;
     }
+    
+    // Limpar opções exceto o placeholder
+    while (this.factionDropdown.options.length > 1) {
+        this.factionDropdown.remove(1);
+    }
+    
+    // Adicionar opções com estilo
+    Object.entries(FACTION_ABILITIES).forEach(([id, faction]) => {
+        const option = document.createElement('option');
+        option.value = id;
+        option.title = faction.description || `Facção ${faction.name}`;
+        option.textContent = `${faction.icon || '🏛️'} ${faction.name}`;
+        
+        // Verificar se facção está disponível (para qualquer jogador)
+        const isAvailable = this.isFactionAvailable(id);
+        
+        if (!isAvailable) {
+            option.disabled = true;
+            
+            // Descobrir quem está usando esta facção
+            const user = gameState.players.find(p => p.faction?.id === id);
+            const userType = user?.isAI ? 'IA' : 'Jogador';
+            const userName = user?.name || 'Desconhecido';
+            
+            option.textContent += ` ✗ (usado por ${userType}: ${userName})`;
+            option.style.color = '#9ca3af';
+            option.style.fontStyle = 'italic';
+        } else {
+            // Adicionar emoji indicador de disponibilidade
+            option.textContent += ' ✓';
+        }
+        
+        // Adicionar estilo baseado na facção
+        option.dataset.factionId = id;
+        option.style.padding = '12px 16px';
+        option.style.borderBottom = '1px solid rgba(255, 255, 255, 0.05)';
+        
+        this.factionDropdown.appendChild(option);
+    });
+    
+    console.log(`✅ Dropdown de facções preenchido com ${Object.keys(FACTION_ABILITIES).length} opções`);
+}
 
     setupFactionDropdownEffects() {
         if (!this.factionDropdown) return;
@@ -222,10 +228,9 @@ export class UIPlayersManager {
     isFactionAvailable(factionId) {
         const faction = FACTION_ABILITIES[factionId];
         if (!faction) return false;
-        
-        // Facção está disponível se não estiver sendo usada por jogador humano
+        // Verifica se a facção já está sendo usada por QUALQUER jogador (humano ou AI)
         return !gameState.players.some(p => 
-            p.faction && p.faction.id === faction.id && !p.isAI
+            p.faction && p.faction.id === factionId
         );
     }
 
@@ -263,108 +268,112 @@ export class UIPlayersManager {
     }
 
     handleAddPlayer() {
-        if (this.editingIndex !== null) {
-            this.updatePlayer(this.editingIndex);
-            return;
-        }
-        
-        // Obter valores
-        const name = this.playerNameInput?.value.trim() || '';
-        const icon = this.selectedIcon;
-        const factionId = this.factionDropdown?.value || '';
-        
-        console.log("🔍 DEBUG handleAddPlayer:");
-        console.log("• Nome:", name);
-        console.log("• Ícone:", icon);
-        console.log("• Facção:", factionId);
-        
-        // VALIDAÇÃO
-        if (!name) {
-            console.error("❌ Falta nome");
-            this.uiManager.modals.showFeedback('Digite um nome para o jogador.', 'error');
-            this.playerNameInput?.focus();
-            return;
-        }
-        
-        if (!icon) {
-            console.error("❌ Falta ícone");
-            this.uiManager.modals.showFeedback('Selecione um ícone para o jogador.', 'error');
-            return;
-        }
-        
-        if (!factionId) {
-            console.error("❌ Falta facção");
-            this.uiManager.modals.showFeedback('Selecione uma facção para o jogador.', 'error');
-            this.factionDropdown?.focus();
-            return;
-        }
-        
-        // Validar facção disponível
-        if (!this.isFactionAvailable(factionId)) {
-            this.uiManager.modals.showFeedback('Esta facção já está sendo usada por outro jogador humano.', 'error');
-            return;
-        }
-        
-        // Limite de jogadores
-        if (gameState.players.length >= GAME_CONFIG.MAX_PLAYERS) {
-            this.uiManager.modals.showFeedback(`Máximo de ${GAME_CONFIG.MAX_PLAYERS} jogadores atingido.`, 'warning');
-            return;
-        }
-        
-        // Ícone único
-        const iconUsed = gameState.players.some(p => p.icon === icon);
-        if (iconUsed) {
-            this.uiManager.modals.showFeedback('Este ícone já está sendo usado por outro jogador.', 'error');
-            return;
-        }
-        
-        // Criar jogador
-        const faction = FACTION_ABILITIES[factionId];
-        const color = GAME_CONFIG.PLAYER_COLORS[gameState.players.length % GAME_CONFIG.PLAYER_COLORS.length];
-        
-        const player = {
-            id: gameState.players.length,
-            name,
-            icon,
-            color,
-            resources: {...GAME_CONFIG.INITIAL_RESOURCES},
-            victoryPoints: 0,
-            regions: [],
-            consecutiveNoActionTurns: 0,
-            faction,
-            turnBonuses: {
-                freeNegotiationAvailable: faction.abilities.freeNegotiationPerTurn || 0,
-                buildDiscountUsed: false,
-                goldPerRegion: faction.abilities.goldPerRegion || 0,
-                exploreDiscount: faction.abilities.exploreDiscount || {},
-                waterCollectBonus: faction.abilities.waterCollectBonus || 0,
-                structurePVBonus: faction.abilities.structurePVBonus || 0,
-                negotiationPVBonus: faction.abilities.negotiationPVBonus || 0,
-                marketDiscount: faction.abilities.marketDiscount || 0,
-                goldExplorationBonus: faction.abilities.goldExplorationBonus || 0
-            }
-        };
-        
-        // Adicionar ao estado
-        gameState.players.push(player);
-        console.log(`✅ Jogador ${name} adicionado como ${faction.name}`);
-        
-        // Resetar formulário
-        this.resetAddPlayerForm();
-        
-        // Atualizar UI
-        this.updatePlayerCountDisplay();
-        this.renderRegisteredPlayersList();
-        this.renderIconSelection();
-        this.populateFactionDropdown();
-        
-        this.uiManager.modals.showFeedback(`${name} adicionado como ${faction.name}!`, 'success');
-        
-        // Habilitar botão de iniciar se necessário
-        if (gameState.players.length >= GAME_CONFIG.MIN_PLAYERS) {
-            this.startGameBtn.disabled = false;
-        }
+    if (this.editingIndex !== null) {
+        this.updatePlayer(this.editingIndex);
+        return;
     }
+    
+    // Obter valores
+    const name = this.playerNameInput?.value.trim() || '';
+    const icon = this.selectedIcon;
+    const factionId = this.factionDropdown?.value || '';
+    
+    console.log("🔍 DEBUG handleAddPlayer:");
+    console.log("• Nome:", name);
+    console.log("• Ícone:", icon);
+    console.log("• Facção:", factionId);
+    
+    // VALIDAÇÃO
+    if (!name) {
+        console.error("❌ Falta nome");
+        this.uiManager.modals.showFeedback('Digite um nome para o jogador.', 'error');
+        this.playerNameInput?.focus();
+        return;
+    }
+    
+    if (!icon) {
+        console.error("❌ Falta ícone");
+        this.uiManager.modals.showFeedback('Selecione um ícone para o jogador.', 'error');
+        return;
+    }
+    
+    if (!factionId) {
+        console.error("❌ Falta facção");
+        this.uiManager.modals.showFeedback('Selecione uma facção para o jogador.', 'error');
+        this.factionDropdown?.focus();
+        return;
+    }
+    
+    // Validar facção disponível (para qualquer jogador)
+    if (!this.isFactionAvailable(factionId)) {
+        const user = gameState.players.find(p => p.faction?.id === factionId);
+        const userType = user?.isAI ? 'IA' : 'Jogador';
+        const userName = user?.name || 'Desconhecido';
+        
+        this.uiManager.modals.showFeedback(`Esta facção já está sendo usada por ${userType}: ${userName}.`, 'error');
+        return;
+    }
+    
+    // Limite de jogadores
+    if (gameState.players.length >= GAME_CONFIG.MAX_PLAYERS) {
+        this.uiManager.modals.showFeedback(`Máximo de ${GAME_CONFIG.MAX_PLAYERS} jogadores atingido.`, 'warning');
+        return;
+    }
+    
+    // Ícone único
+    const iconUsed = gameState.players.some(p => p.icon === icon);
+    if (iconUsed) {
+        this.uiManager.modals.showFeedback('Este ícone já está sendo usado por outro jogador.', 'error');
+        return;
+    }
+    
+    // Criar jogador
+    const faction = FACTION_ABILITIES[factionId];
+    const color = GAME_CONFIG.PLAYER_COLORS[gameState.players.length % GAME_CONFIG.PLAYER_COLORS.length];
+    
+    const player = {
+        id: gameState.players.length,
+        name,
+        icon,
+        color,
+        resources: {...GAME_CONFIG.INITIAL_RESOURCES},
+        victoryPoints: 0,
+        regions: [],
+        consecutiveNoActionTurns: 0,
+        faction,
+        turnBonuses: {
+            freeNegotiationAvailable: faction.abilities.freeNegotiationPerTurn || 0,
+            buildDiscountUsed: false,
+            goldPerRegion: faction.abilities.goldPerRegion || 0,
+            exploreDiscount: faction.abilities.exploreDiscount || {},
+            waterCollectBonus: faction.abilities.waterCollectBonus || 0,
+            structurePVBonus: faction.abilities.structurePVBonus || 0,
+            negotiationPVBonus: faction.abilities.negotiationPVBonus || 0,
+            marketDiscount: faction.abilities.marketDiscount || 0,
+            goldExplorationBonus: faction.abilities.goldExplorationBonus || 0
+        }
+    };
+    
+    // Adicionar ao estado
+    gameState.players.push(player);
+    console.log(`✅ Jogador ${name} adicionado como ${faction.name}`);
+    
+    // Resetar formulário
+    this.resetAddPlayerForm();
+    
+    // Atualizar UI
+    this.updatePlayerCountDisplay();
+    this.renderRegisteredPlayersList();
+    this.renderIconSelection();
+    this.populateFactionDropdown();
+    
+    this.uiManager.modals.showFeedback(`${name} adicionado como ${faction.name}!`, 'success');
+    
+    // Habilitar botão de iniciar se necessário
+    if (gameState.players.length >= GAME_CONFIG.MIN_PLAYERS) {
+        this.startGameBtn.disabled = false;
+    }
+}
 
     resetAddPlayerForm() {
         // Resetar input
@@ -604,63 +613,68 @@ export class UIPlayersManager {
     }
 
     updatePlayer(index) {
-        const name = this.playerNameInput.value.trim();
-        const icon = this.selectedIcon;
-        const factionId = this.factionDropdown?.value;
-        
-        if (!name || !icon || !factionId) {
-            this.uiManager.modals.showFeedback('Preencha todos os campos.', 'error');
-            return;
-        }
-        
-        // Validar facção disponível (exceto para o próprio jogador)
-        if (!this.isFactionAvailable(factionId) && 
-            gameState.players[index].faction?.id !== FACTION_ABILITIES[factionId]?.id) {
-            this.uiManager.modals.showFeedback('Esta facção já está sendo usada por outro jogador humano.', 'error');
-            return;
-        }
-        
-        // Validar ícone único (exceto para o próprio jogador)
-        const iconUsed = gameState.players.some((p, i) => 
-            i !== index && p.icon === icon
-        );
-        
-        if (iconUsed) {
-            this.uiManager.modals.showFeedback('Este ícone já está sendo usado por outro jogador.', 'error');
-            return;
-        }
-        
-        // Atualizar jogador
-        const faction = FACTION_ABILITIES[factionId];
-        
-        gameState.players[index] = {
-            ...gameState.players[index],
-            name,
-            icon,
-            faction,
-            turnBonuses: {
-                freeNegotiationAvailable: faction.abilities.freeNegotiationPerTurn || 0,
-                buildDiscountUsed: false,
-                goldPerRegion: faction.abilities.goldPerRegion || 0,
-                exploreDiscount: faction.abilities.exploreDiscount || {},
-                waterCollectBonus: faction.abilities.waterCollectBonus || 0,
-                structurePVBonus: faction.abilities.structurePVBonus || 0,
-                negotiationPVBonus: faction.abilities.negotiationPVBonus || 0,
-                marketDiscount: faction.abilities.marketDiscount || 0,
-                goldExplorationBonus: faction.abilities.goldExplorationBonus || 0
-            }
-        };
-        
-        // Finalizar edição
-        this.cancelEdit();
-        
-        // Atualizar UI
-        this.updatePlayerCountDisplay();
-        this.renderRegisteredPlayersList();
-        this.populateFactionDropdown();
-        
-        this.uiManager.modals.showFeedback(`${name} atualizado como ${faction.name}!`, 'success');
+    const name = this.playerNameInput.value.trim();
+    const icon = this.selectedIcon;
+    const factionId = this.factionDropdown?.value;
+    
+    if (!name || !icon || !factionId) {
+        this.uiManager.modals.showFeedback('Preencha todos os campos.', 'error');
+        return;
     }
+    
+    // Validar facção disponível (exceto para o próprio jogador)
+    if (!this.isFactionAvailable(factionId) && 
+        gameState.players[index].faction?.id !== FACTION_ABILITIES[factionId]?.id) {
+        
+        const user = gameState.players.find(p => p.faction?.id === factionId);
+        const userType = user?.isAI ? 'IA' : 'Jogador';
+        const userName = user?.name || 'Desconhecido';
+        
+        this.uiManager.modals.showFeedback(`Esta facção já está sendo usada por ${userType}: ${userName}.`, 'error');
+        return;
+    }
+    
+    // Validar ícone único (exceto para o próprio jogador)
+    const iconUsed = gameState.players.some((p, i) => 
+        i !== index && p.icon === icon
+    );
+    
+    if (iconUsed) {
+        this.uiManager.modals.showFeedback('Este ícone já está sendo usado por outro jogador.', 'error');
+        return;
+    }
+    
+    // Atualizar jogador
+    const faction = FACTION_ABILITIES[factionId];
+    
+    gameState.players[index] = {
+        ...gameState.players[index],
+        name,
+        icon,
+        faction,
+        turnBonuses: {
+            freeNegotiationAvailable: faction.abilities.freeNegotiationPerTurn || 0,
+            buildDiscountUsed: false,
+            goldPerRegion: faction.abilities.goldPerRegion || 0,
+            exploreDiscount: faction.abilities.exploreDiscount || {},
+            waterCollectBonus: faction.abilities.waterCollectBonus || 0,
+            structurePVBonus: faction.abilities.structurePVBonus || 0,
+            negotiationPVBonus: faction.abilities.negotiationPVBonus || 0,
+            marketDiscount: faction.abilities.marketDiscount || 0,
+            goldExplorationBonus: faction.abilities.goldExplorationBonus || 0
+        }
+    };
+    
+    // Finalizar edição
+    this.cancelEdit();
+    
+    // Atualizar UI
+    this.updatePlayerCountDisplay();
+    this.renderRegisteredPlayersList();
+    this.populateFactionDropdown();
+    
+    this.uiManager.modals.showFeedback(`${name} atualizado como ${faction.name}!`, 'success');
+}
 
     updatePlayerCountDisplay() {
         const count = gameState.players.length;
@@ -686,79 +700,83 @@ export class UIPlayersManager {
     // ==================== SISTEMA DE IA ====================
 
     addAIPlayer(difficulty = 'medium', name = null) {
-        if (gameState.players.length >= 4) {
-            this.uiManager.modals.showFeedback('Máximo de 4 jogadores atingido.', 'warning');
-            return null;
-        }
-        
-        // Encontrar facção disponível
-        const availableFactions = Object.entries(FACTION_ABILITIES)
-            .filter(([id, faction]) => {
-                return this.isFactionAvailable(id);
-            });
-        
-        if (availableFactions.length === 0) {
-            this.uiManager.modals.showFeedback('Todas as facções estão em uso. Adicione um jogador humano primeiro.', 'error');
-            return null;
-        }
-        
-        // Escolher facção aleatória
-        const randomFaction = availableFactions[Math.floor(Math.random() * availableFactions.length)];
-        const factionId = randomFaction[0];
-        const faction = randomFaction[1];
-        
-        // Nomes baseados na facção
-        const aiNamesByFaction = {
-            '0': ['Druida Ancestral', 'Guardião das Matas', 'Protetor da Floresta'],
-            '1': ['Senhor das Marés', 'Mestre dos Rios', 'Comandante dos Mares'],
-            '2': ['Arquiteto das Montanhas', 'Mestre das Pedreiras', 'Escultor de Rochas'],
-            '3': ['Magnata do Comércio', 'Barão das Caravanas', 'Mestre dos Mercados']
-        };
-        
-        const nameList = aiNamesByFaction[factionId] || ['IA Estratégica'];
-        const aiName = name || nameList[Math.floor(Math.random() * nameList.length)];
-        
-        const color = GAME_CONFIG.PLAYER_COLORS[gameState.players.length % GAME_CONFIG.PLAYER_COLORS.length];
-        const aiIcon = '🤖';
-        
-        const player = {
-            id: gameState.players.length,
-            name: aiName,
-            icon: aiIcon,
-            color,
-            resources: {...GAME_CONFIG.INITIAL_RESOURCES},
-            victoryPoints: 0,
-            regions: [],
-            consecutiveNoActionTurns: 0,
-            type: 'ai',
-            aiDifficulty: difficulty,
-            isAI: true,
-            faction,
-            turnBonuses: {
-                freeNegotiationAvailable: faction.abilities.freeNegotiationPerTurn || 0,
-                buildDiscountUsed: false,
-                goldPerRegion: faction.abilities.goldPerRegion || 0
-            }
-        };
-        
-        gameState.players.push(player);
-        
-        // Atualizar UI
-        this.updatePlayerCountDisplay();
-        this.renderRegisteredPlayersList();
-        this.renderIconSelection();
-        this.populateFactionDropdown();
-        
-        const diffName = AI_DIFFICULTY_SETTINGS[difficulty]?.name || difficulty;
-        this.uiManager.modals.showFeedback(`IA ${aiName} adicionada como ${faction.name} (${diffName})`, 'success');
-        
-        // Habilitar botão de iniciar se necessário
-        if (gameState.players.length >= GAME_CONFIG.MIN_PLAYERS) {
-            this.startGameBtn.disabled = false;
-        }
-        
-        return player;
+    if (gameState.players.length >= 4) {
+        this.uiManager.modals.showFeedback('Máximo de 4 jogadores atingido.', 'warning');
+        return null;
     }
+    
+    // Encontrar facções realmente disponíveis (não usadas por nenhum jogador)
+    const availableFactions = Object.entries(FACTION_ABILITIES)
+        .filter(([id, faction]) => this.isFactionAvailable(id));
+    
+    if (availableFactions.length === 0) {
+        this.uiManager.modals.showFeedback('Todas as facções estão em uso. Não é possível adicionar mais jogadores.', 'error');
+        return null;
+    }
+    
+    // Escolher facção aleatória entre as disponíveis
+    const randomFaction = availableFactions[Math.floor(Math.random() * availableFactions.length)];
+    const factionId = randomFaction[0];
+    const faction = randomFaction[1];
+    
+    // Nomes baseados na facção
+    const aiNamesByFaction = {
+        '0': ['Druida Ancestral', 'Guardião das Matas', 'Protetor da Floresta'],
+        '1': ['Senhor das Marés', 'Mestre dos Rios', 'Comandante dos Mares'],
+        '2': ['Arquiteto das Montanhas', 'Mestre das Pedreiras', 'Escultor de Rochas'],
+        '3': ['Magnata do Comércio', 'Barão das Caravanas', 'Mestre dos Mercados']
+    };
+    
+    const nameList = aiNamesByFaction[factionId] || ['IA Estratégica'];
+    const aiName = name || nameList[Math.floor(Math.random() * nameList.length)];
+    
+    const color = GAME_CONFIG.PLAYER_COLORS[gameState.players.length % GAME_CONFIG.PLAYER_COLORS.length];
+    const aiIcon = '🤖';
+    
+    const player = {
+        id: gameState.players.length,
+        name: aiName,
+        icon: aiIcon,
+        color,
+        resources: {...GAME_CONFIG.INITIAL_RESOURCES},
+        victoryPoints: 0,
+        regions: [],
+        consecutiveNoActionTurns: 0,
+        type: 'ai',
+        aiDifficulty: difficulty,
+        isAI: true,
+        faction,
+        turnBonuses: {
+            freeNegotiationAvailable: faction.abilities.freeNegotiationPerTurn || 0,
+            buildDiscountUsed: false,
+            goldPerRegion: faction.abilities.goldPerRegion || 0,
+            exploreDiscount: faction.abilities.exploreDiscount || {},
+            waterCollectBonus: faction.abilities.waterCollectBonus || 0,
+            structurePVBonus: faction.abilities.structurePVBonus || 0,
+            negotiationPVBonus: faction.abilities.negotiationPVBonus || 0,
+            marketDiscount: faction.abilities.marketDiscount || 0,
+            goldExplorationBonus: faction.abilities.goldExplorationBonus || 0
+        }
+    };
+    
+    gameState.players.push(player);
+    
+    // Atualizar UI
+    this.updatePlayerCountDisplay();
+    this.renderRegisteredPlayersList();
+    this.renderIconSelection();
+    this.populateFactionDropdown();
+    
+    const diffName = AI_DIFFICULTY_SETTINGS[difficulty]?.name || difficulty;
+    this.uiManager.modals.showFeedback(`IA ${aiName} adicionada como ${faction.name} (${diffName})`, 'success');
+    
+    // Habilitar botão de iniciar se necessário
+    if (gameState.players.length >= GAME_CONFIG.MIN_PLAYERS) {
+        this.startGameBtn.disabled = false;
+    }
+    
+    return player;
+}
 
     addAIPlayerButtons() {
         const container = document.getElementById('aiButtonsContainer');
