@@ -86,25 +86,51 @@ export class AICoordinator {
     }
   }
 
-  async _executeNegotiations(aiPlayer) {
-    console.log(`🤖 [COORD] ${aiPlayer.name} iniciando fase de negociação...`);
-    
-    // Verifica se o sistema de negociação foi instanciado
-    if (this.main.aiNegotiationSystem) {
-        try {
-            await this.main.aiNegotiationSystem.processTurn(aiPlayer);
-        } catch (e) {
-            console.error("❌ [COORD] Erro fatal no aiNegotiationSystem:", e);
-        }
-    } else {
-        console.warn("⚠️ [COORD] AINegotiationSystem não encontrado no GameLogic!");
-    }
-    
-    // Aguarda um pouco antes de terminar o turno para dar sensação de "tempo de pensamento"
-    await this._delay(1000);
-
-    return 'end_turn';
+async _executeNegotiations(ai) {
+  console.log(`🤖 ${ai.personality.name} entrando na fase de negociação`);
+  
+  const currentPlayer = getCurrentPlayer();
+  const currentPlayerId = Number(currentPlayer.id);
+  
+  // 1. PRIMEIRO: Processar propostas PENDENTES (destinadas à IA)
+  const pending = getPendingNegotiationsForPlayer(currentPlayerId);
+  console.log(`🤖 ${currentPlayer.name} tem ${pending.length} proposta(s) pendente(s)`);
+  
+  if (pending.length > 0 && ai.handlePendingNegotiations) {
+    console.log(`🤖 Processando ${pending.length} proposta(s) pendente(s)`);
+    await ai.handlePendingNegotiations(pending, gameState);
+    await this._delay(1500); // Dar tempo para processar
+  } else {
+    console.log(`🤖 Nenhuma proposta pendente para ${currentPlayer.name}`);
   }
+  
+  // 2. DEPOIS: Enviar nova proposta (se possível)
+  if (gameState.actionsLeft > 0 && currentPlayer.resources.ouro >= 1) {
+    console.log(`🤖 ${currentPlayer.name} pode enviar proposta (Ações: ${gameState.actionsLeft}, Ouro: ${currentPlayer.resources.ouro})`);
+    
+    await this._delay(2000);
+    
+    if (ai.sendNegotiationProposal) {
+      try {
+        console.log(`🤖 ${currentPlayer.name} tentando enviar proposta...`);
+        const success = await ai.sendNegotiationProposal(gameState);
+        if (success) {
+          console.log(`✅ ${currentPlayer.name} enviou proposta com sucesso`);
+        } else {
+          console.log(`❌ ${currentPlayer.name} falhou ao enviar proposta`);
+        }
+      } catch (error) {
+        console.error(`❌ Erro ao enviar proposta:`, error);
+      }
+    }
+  } else {
+    console.log(`🤖 ${currentPlayer.name} não pode enviar proposta (Ações: ${gameState.actionsLeft}, Ouro: ${currentPlayer.resources.ouro})`);
+  }
+  
+  // 3. Finalizar fase de negociação
+  console.log(`🤖 ${currentPlayer.name} terminou fase de negociação`);
+  return 'end_turn';
+}
 
   captureFeedback(message, type) {
     this.feedbackHistory.push({ message, type, timestamp: Date.now() });
