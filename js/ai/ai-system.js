@@ -1361,54 +1361,74 @@ async processPendingNegotiations(gameState) {
     otherPlayers.sort((a, b) => a.victoryPoints - b.victoryPoints);
     return otherPlayers[0];
   }
+
+createNegotiationProposal(myPlayer, targetPlayer, gameState) {
+  const proposal = {
+    offer: { madeira: 0, pedra: 0, ouro: 0, agua: 0 },
+    request: { madeira: 0, pedra: 0, ouro: 0, agua: 0 }
+  };
   
-  createNegotiationProposal(myPlayer, targetPlayer, gameState) {
-    const proposal = {
-      offer: {},
-      request: {}
-    };
-    
-    switch (this.personality.type) {
-      case 'economist':
-        if (myPlayer.resources.madeira > 10) {
-          proposal.offer.madeira = Math.min(5, Math.floor(myPlayer.resources.madeira * 0.3));
-          proposal.request.ouro = 1;
-        } else if (myPlayer.resources.pedra > 8) {
-          proposal.offer.pedra = Math.min(3, Math.floor(myPlayer.resources.pedra * 0.3));
-          proposal.request.ouro = 1;
-        } else {
-          proposal.offer.madeira = 2;
-          proposal.request.ouro = 1;
-        }
-        break;
-        
-      case 'expansionist':
-        proposal.offer.ouro = 2;
-        proposal.request.pedra = 3;
-        break;
-        
-      case 'builder':
-        if (myPlayer.resources.madeira > 8) {
-          proposal.offer.madeira = 4;
-          proposal.request.pedra = 2;
-        } else {
-          proposal.offer.ouro = 1;
-          proposal.request.pedra = 2;
-        }
-        break;
-        
-      case 'diplomat':
+  // Analisar recursos disponíveis
+  const myResources = myPlayer.resources;
+  const targetResources = targetPlayer.resources;
+  
+  // Lógica baseada na personalidade
+  switch (this.personality.type) {
+    case 'economist':
+      // Oferece madeira por ouro
+      if (myResources.madeira >= 3 && targetResources.ouro >= 1) {
+        proposal.offer.madeira = Math.min(3, myResources.madeira - 2);
+        proposal.request.ouro = 1;
+      } else if (myResources.pedra >= 2 && targetResources.ouro >= 1) {
+        proposal.offer.pedra = Math.min(2, myResources.pedra - 1);
+        proposal.request.ouro = 1;
+      }
+      break;
+      
+    case 'expansionist':
+      // Oferece ouro por pedra
+      if (myResources.ouro >= 2 && targetResources.pedra >= 2) {
+        proposal.offer.ouro = 1;
+        proposal.request.pedra = 2;
+      }
+      break;
+      
+    case 'builder':
+      // Oferece madeira por pedra
+      if (myResources.madeira >= 4 && targetResources.pedra >= 2) {
+        proposal.offer.madeira = 2;
+        proposal.request.pedra = 2;
+      }
+      break;
+      
+    case 'diplomat':
+      // Troca equilibrada
+      if (myResources.madeira >= 3 && targetResources.agua >= 2) {
         proposal.offer.madeira = 2;
         proposal.request.agua = 2;
-        break;
-        
-      default:
+      }
+      break;
+      
+    default:
+      // Proposta simples
+      if (myResources.madeira >= 2 && targetResources.agua >= 1) {
         proposal.offer.madeira = 1;
         proposal.request.agua = 1;
-    }
-    
-    return proposal;
+      }
   }
+  
+  // Garantir que a proposta tenha conteúdo
+  const hasOffer = Object.values(proposal.offer).some(v => v > 0);
+  const hasRequest = Object.values(proposal.request).some(v => v > 0);
+  
+  if (!hasOffer || !hasRequest) {
+    console.log(`🤖 ${this.personality.name} não conseguiu criar proposta válida`);
+    return null;
+  }
+  
+  console.log(`🤖 ${this.personality.name} criou proposta:`, proposal);
+  return proposal;
+}
 
 async acceptNegotiation(negotiation) {
   console.log(`✅ ${this.personality.name} aceitando negociação ${negotiation.id}`);
