@@ -105,32 +105,33 @@ async checkAndExecuteAITurn() {
     }
 }
 
-  async _runAILoop(player) {
-    const ai = getAIPlayer(player.id);
-    if (!ai) { this.forceAIEndTurn(); return; }
-
-    // 1. Fase RENDA (já tratada no TurnLogic, mas se cair aqui, avança)
-    if (gameState.currentPhase === 'renda') {
-        gameState.currentPhase = 'acoes';
-        gameState.actionsLeft = GAME_CONFIG.ACTIONS_PER_TURN;
-        await this._delay(1000);
+  async _runAILoop() {
+    const currentPlayer = getCurrentPlayer();
+    const ai = this._getAIPlayerForCurrentPlayer();
+    
+    if (!ai) {
+        this.forceAIEndTurn();
+        return;
     }
 
-    // 2. Fase AÇÕES
-    if (gameState.currentPhase === 'acoes') {
-        await this._executeActions(ai);
-        // Avançar para negociação
-        this.main.negotiationLogic.setupPhase();
-        await this._delay(1000);
-    }
+    console.log(`🤖 Executando turno para ${currentPlayer.name} (Fase: ${gameState.currentPhase})`);
 
-    // 3. Fase NEGOCIAÇÃO
-    if (gameState.currentPhase === 'negociacao') {
-        await this._executeNegotiations(ai);
-        // Finalizar turno
-        this.main.turnLogic.handleEndTurn();
+    // Executar baseado na fase atual
+    switch(gameState.currentPhase) {
+        case 'renda':
+            await this.handleIncomePhaseAI(currentPlayer);
+            break;
+        case 'acoes':
+            await this._executeActions(ai);
+            // Avançar para negociação
+            this.main.negotiationLogic.setupPhase();
+            await this._delay(1000);
+            break;
+        case 'negociacao':
+            await this._executeNegotiationPhaseForAI(); // ← USAR NOVA FUNÇÃO
+            break;
     }
-  }
+}
 
   async _executeActions(ai) {
     while (gameState.actionsLeft > 0) {
@@ -294,6 +295,88 @@ async _sendSimpleProposal(ai, player, gameState) {
         return false;
     }
 }
+
+  async _executeNegotiationPhaseForAI() {
+    try {
+        const currentPlayer = getCurrentPlayer();
+        const ai = this._getAIPlayerForCurrentPlayer();
+        
+        if (!ai) {
+            console.error(`🤖 IA não encontrada para ${currentPlayer.name}, forçando término`);
+            this.forceAIEndTurn();
+            return;
+        }
+        
+        console.log(`🤖 ${currentPlayer.name} (${ai.personality?.type || 'IA'}) iniciando fase de negociação`);
+        
+        // 1. Processar propostas pendentes
+        const pending = getPendingNegotiationsForPlayer(currentPlayer.id);
+        console.log(`📨 ${pending.length} proposta(s) pendente(s) para ${currentPlayer.name}`);
+        
+        if (pending.length > 0) {
+            console.log(`🤖 Processando ${pending.length} proposta(s) pendente(s)`);
+            
+            if (ai.processPendingNegotiations) {
+                await ai.processPendingNegotiations(gameState);
+            } else {
+                // Fallback: Processar manualmente
+                for (const negotiation of pending) {
+                    console.log(`🤖 Avaliando proposta ${negotiation.id}...`);
+                    const shouldAccept = ai.evaluateNegotiationProposal ? 
+                        ai.evaluateNegotiationProposal(negotiation, gameState) : 
+                        Math.random() > 0.5;
+                    
+                    setActiveNegotiation(negotiation);
+                    
+                    if (shouldAccept) {
+                        console.log(`🤖 Aceitando proposta`);
+                        if (window.gameLogic?.handleNegResponse) {
+                            window.gameLogic.handleNegResponse(true);
+                        }
+                    } else {
+                        console.log(`🤖 Recusando proposta`);
+                        if (window.gameLogic?.handleNegResponse) {
+                            window.gameLogic.handleNegResponse(false);
+                        }
+                    }
+                    
+                    await this._delay(1500);
+                }
+            }
+        }
+        
+        // 2. Tentar enviar proposta própria
+        if (gameState.actionsLeft > 0 && currentPlayer.resources.ouro >= 1) {
+            console.log(`🤖 ${currentPlayer.name} tentando enviar proposta`);
+            
+            if (ai.createAndSendProposal) {
+                await ai.createAndSendProposal(gameState);
+            } else if (ai.sendNegotiationProposal) {
+                await ai.sendNegotiationProposal(gameState);
+            } else {
+                console.log(`🤖 ${currentPlayer.name} não tem método de envio de proposta`);
+            }
+        } else {
+            console.log(`🤖 ${currentPlayer.name} não pode enviar proposta (ações: ${gameState.actionsLeft}, ouro: ${currentPlayer.resources.ouro})`);
+        }
+        
+        // 3. Finalizar fase de negociação
+        console.log(`🤖 ${currentPlayer.name} finalizou negociação`);
+        
+        // Avançar para próximo jogador
+        setTimeout(() => {
+            if (this.main?.turnLogic?.handleEndTurn) {
+                this.main.turnLogic.handleEndTurn();
+            } else if (window.gameLogic?.handleEndTurn) {
+                window.gameLogic.handleEndTurn();
+            }
+        }, 2000);
+        
+    } catch (error) {
+        console.error(`🤖 Erro na negociação da IA:`, error);
+        this.forceAIEndTurn();
+    }
+  }
   
   captureFeedback(message, type) {
     this.feedbackHistory.push({ message, type, timestamp: Date.now() });
