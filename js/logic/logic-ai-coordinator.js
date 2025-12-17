@@ -42,30 +42,38 @@ _getAIPlayerForCurrentPlayer() {
     const currentPlayer = getCurrentPlayer();
     if (!currentPlayer) return null;
     
-    // Buscar por ID direto no gameState
+    console.log(`🔍 Buscando IA para jogador ${currentPlayer.id} (${currentPlayer.name})`);
+    
+    // Usar a função importada
     let allAIs = [];
     if (typeof getAllAIPlayers === 'function') {
         allAIs = getAllAIPlayers();
+        console.log(`🤖 ${allAIs.length} IA(s) disponíveis via função`);
     } else if (window.aiInstances) {
         allAIs = window.aiInstances;
+        console.log(`🤖 ${allAIs.length} IA(s) disponíveis via window`);
     }
     
-    // Procurar IA com ID correspondente
+    // Log detalhado das IAs disponíveis
+    console.log('📋 Lista de IAs disponíveis:', allAIs.map(ai => ({
+        id: ai.playerId,
+        name: ai.personality?.name || 'Sem nome',
+        difficulty: ai.difficulty
+    })));
+    
+    // Buscar IA correspondente
     const ai = allAIs.find(aiInstance => {
-        // Converter ambos para Number para comparação segura
         const aiId = Number(aiInstance.playerId);
         const playerId = Number(currentPlayer.id);
+        console.log(`🔍 Comparando: IA ${aiId} vs Jogador ${playerId}`);
         return aiId === playerId;
     });
     
     if (!ai) {
         console.warn(`🤖 IA não encontrada para jogador ${currentPlayer.id} (${currentPlayer.name})`);
-        console.log('📋 IAs disponíveis:', allAIs.map(a => {
-            return {
-                id: a.playerId,
-                name: a.personality ? a.personality.name : 'Sem nome'
-            };
-        }));
+        console.log('Tipo do jogador:', currentPlayer.type, 'isAI:', currentPlayer.isAI);
+    } else {
+        console.log(`✅ IA encontrada: ${ai.personality?.name || 'Sem nome'}`);
     }
     
     return ai;
