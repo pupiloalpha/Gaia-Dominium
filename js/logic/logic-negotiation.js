@@ -161,6 +161,7 @@ export class NegotiationLogic {
 
     const target = gameState.players[negotiation.targetId];
     const currentPlayer = getCurrentPlayer();
+    const initiator = gameState.players[negotiation.initiatorId];
 
     // CORREÇÃO: Converter ambos para Number para comparação consistente
     const currentPlayerId = Number(currentPlayer.id);
@@ -207,7 +208,6 @@ export class NegotiationLogic {
     console.log(`📤 Oferecido:`, negotiation.offer);
     console.log(`📥 Recebido:`, negotiation.request);
             
-            const initiator = gameState.players[negotiation.initiatorId];
             addActivityLog({ 
               type: 'negotiate', 
               playerName: target.name, 
