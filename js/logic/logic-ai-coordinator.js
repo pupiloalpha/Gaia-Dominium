@@ -34,7 +34,12 @@ _getAIPlayerForCurrentPlayer() {
     if (!currentPlayer) return null;
     
     // Buscar por ID direto no gameState
-    const allAIs = getAllAIPlayers?.() || window.aiInstances || [];
+    let allAIs = [];
+    if (typeof getAllAIPlayers === 'function') {
+        allAIs = getAllAIPlayers();
+    } else if (window.aiInstances) {
+        allAIs = window.aiInstances;
+    }
     
     // Procurar IA com ID correspondente
     const ai = allAIs.find(aiInstance => {
@@ -46,12 +51,17 @@ _getAIPlayerForCurrentPlayer() {
     
     if (!ai) {
         console.warn(`🤖 IA não encontrada para jogador ${currentPlayer.id} (${currentPlayer.name})`);
-        console.log('📋 IAs disponíveis:', allAIs.map(a => ({id: a.playerId, name: a.personality?.name})));
+        console.log('📋 IAs disponíveis:', allAIs.map(a => {
+            return {
+                id: a.playerId,
+                name: a.personality ? a.personality.name : 'Sem nome'
+            };
+        }));
     }
     
     return ai;
 }
-
+  
 async checkAndExecuteAITurn() {
     if (this.inProgress) return;
     const player = getCurrentPlayer();
