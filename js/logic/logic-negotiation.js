@@ -227,7 +227,6 @@ export class NegotiationLogic {
     
     console.log(`❌ NEGOCIAÇÃO RECUSADA: ${initiator.name} → ${target.name}`);
         
-        const initiator = gameState.players[negotiation.initiatorId];
         addActivityLog({ 
           type: 'negotiate', 
           playerName: target.name, 
