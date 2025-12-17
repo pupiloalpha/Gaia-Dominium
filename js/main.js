@@ -229,10 +229,40 @@ function setupAuxiliarySystems() {
     Utils.setupMapZoom();
   }, 1000);
 
- // Configurar sistema de IA após jogo iniciado
+  // Configurar sistema de IA após jogo iniciado
   window.addEventListener('gameStarted', () => {
     initializeAISystem();
   });
+
+  // Adicionar função global para obter todas as IAs
+  window.getAllAIPlayers = () => {
+    console.log('🔍 Função global getAllAIPlayers chamada');
+    
+    // Tenta obter das instâncias do estado do jogo
+    if (window.gameState && window.gameState.aiInstances) {
+      console.log(`✅ Obtendo IAs do gameState: ${window.gameState.aiInstances.length} instâncias`);
+      return window.gameState.aiInstances;
+    }
+    
+    // Tenta obter da variável global window.aiInstances
+    if (window.aiInstances) {
+      console.log(`✅ Obtendo IAs da variável global: ${window.aiInstances.length} instâncias`);
+      return window.aiInstances;
+    }
+    
+    // Tenta usar a função do módulo (se disponível)
+    if (typeof getAllAIPlayers === 'function') {
+      const ais = getAllAIPlayers();
+      console.log(`✅ Obtendo IAs da função do módulo: ${ais.length} instâncias`);
+      return ais;
+    }
+    
+    console.warn('⚠️ Nenhuma IA encontrada em nenhuma fonte');
+    return [];
+  };
+  
+  console.log('✅ Fallback global para IA configurado');
+  
 }
 
 // Função para inicializar IA após início do jogo
