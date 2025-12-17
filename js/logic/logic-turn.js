@@ -36,7 +36,9 @@ export class TurnLogic {
     
     if (window.uiManager) { 
       window.uiManager.updateUI(); 
-      window.uiManager.updateFooter(); 
+      if (window.uiManager.gameManager) {
+            window.uiManager.gameManager.updateFooter();
+      }
     }
     
     return gameState.currentPhase;
@@ -146,7 +148,9 @@ export class TurnLogic {
     // Atualizar UI
     if (window.uiManager) {
         window.uiManager.updateUI();
-        window.uiManager.updateFooter();
+        if (window.uiManager.gameManager) {
+            window.uiManager.gameManager.updateFooter();
+        }
     }
     
     this.main.showFeedback(`Turno de ${newPlayer.name}`, 'info');
@@ -380,7 +384,9 @@ export class TurnLogic {
     
     if (window.uiManager) {
       window.uiManager.updateUI();
-      window.uiManager.updateFooter();
+      if (window.uiManager.gameManager) {
+            window.uiManager.gameManager.updateFooter();
+      }
     }
   }
   
