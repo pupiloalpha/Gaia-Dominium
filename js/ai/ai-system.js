@@ -1027,28 +1027,30 @@ async handlePendingNegotiations(pendingNegotiations, gameState) {
 }
 
 evaluateNegotiationProposal(negotiation, gameState) {
-    // VALIDAÇÃO INICIAL CRÍTICA
+    // VALIDAÇÃO CRÍTICA: Verificar se a proposta é para esta IA
     if (!negotiation || !gameState) {
-        console.log('🤖 Proposta ou estado do jogo inválido');
+        console.log('🤖 Proposta ou estado inválido');
         return false;
     }
     
-    const myPlayer = gameState.players[this.playerId];
+    // Converter IDs para Number para comparação segura
+    const negotiationTargetId = Number(negotiation.targetId);
+    const myPlayerId = Number(this.playerId);
+    
+    console.log(`🤖 Verificando proposta: Destino=${negotiationTargetId}, Eu=${myPlayerId}`);
+    
+    // VERIFICAÇÃO ESSENCIAL: A proposta é para mim?
+    if (negotiationTargetId !== myPlayerId) {
+        console.log(`🤖 Esta proposta não é para mim (${myPlayerId}). Destino: ${negotiationTargetId}`);
+        return false;
+    }
+    
+    const myPlayer = gameState.players[myPlayerId];
     const theirPlayer = gameState.players[negotiation.initiatorId];
     
     if (!myPlayer || !theirPlayer) {
         console.log('🤖 Jogador não encontrado');
         return false;
-    }
-    
-    // VERIFICAR SE A PROPOSTA É PARA ESTA IA
-    // Usar conversão consistente para Number
-    const negotiationTargetId = Number(negotiation.targetId);
-    const myPlayerId = Number(myPlayer.id);
-    
-    if (negotiationTargetId !== myPlayerId) {
-        console.log(`🤖 Esta proposta não é para mim. Destino: ${negotiationTargetId}, Eu: ${myPlayerId}`);
-        return false; // Não é para esta IA
     }
     
     // Verificar se a proposta ainda está pendente
@@ -1058,27 +1060,20 @@ evaluateNegotiationProposal(negotiation, gameState) {
     }
     
     console.log(`🤖 ${this.personality.name} avaliando proposta de ${theirPlayer.name}`);
-    console.log(`🤖 Proposta de ${theirPlayer.name}:`);
-    console.log(`   Oferece:`, negotiation.offer);
-    console.log(`   Solicita:`, negotiation.request);
     
     switch (this.personality.type) {
-      case 'economist':
-        return this.evaluateAsEconomist(negotiation, myPlayer, theirPlayer);
-        
-      case 'expansionist':
-        return this.evaluateAsExpansionist(negotiation, myPlayer, theirPlayer);
-        
-      case 'builder':
-        return this.evaluateAsBuilder(negotiation, myPlayer, theirPlayer);
-        
-      case 'diplomat':
-        return this.evaluateAsDiplomat(negotiation, myPlayer, theirPlayer);
-        
-      default:
-        return this.evaluateAsEconomist(negotiation, myPlayer, theirPlayer);
+        case 'economist':
+            return this.evaluateAsEconomist(negotiation, myPlayer, theirPlayer);
+        case 'expansionist':
+            return this.evaluateAsExpansionist(negotiation, myPlayer, theirPlayer);
+        case 'builder':
+            return this.evaluateAsBuilder(negotiation, myPlayer, theirPlayer);
+        case 'diplomat':
+            return this.evaluateAsDiplomat(negotiation, myPlayer, theirPlayer);
+        default:
+            return this.evaluateAsEconomist(negotiation, myPlayer, theirPlayer);
     }
-  }
+}
   
   evaluateAsEconomist(negotiation, myPlayer, theirPlayer) {
     let offerValue = 0;
@@ -1193,86 +1188,48 @@ async processPendingNegotiations(gameState) {
         return;
     }
     
-    // Obter propostas pendentes DIRETAMENTE do gameState
-    const allPending = gameState.pendingNegotiations || [];
-    const myPending = allPending.filter(neg => {
-        // Verificar se a proposta é para esta IA e está pendente
-        const targetId = Number(neg.targetId);
-        const myId = Number(myPlayer.id);
-        
-        return targetId === myId && neg.status === 'pending';
-    });
+    // Obter propostas PENDENTES para este jogador
+    const pendingNegotiations = getPendingNegotiationsForPlayer(this.playerId);
     
-    if (myPending.length === 0) {
-        console.log(`🤖 ${myPlayer.name} não tem propostas pendentes`);
+    console.log(`🤖 ${myPlayer.name} encontrou ${pendingNegotiations.length} proposta(s) pendente(s)`);
+    
+    if (pendingNegotiations.length === 0) {
         return;
     }
     
-    console.log(`🤖 ${myPlayer.name} processando ${myPending.length} proposta(s)`);
-    
-    // Ordenar por turno (mais antigas primeiro)
-    myPending.sort((a, b) => a.turn - b.turn || a.timestamp - b.timestamp);
-    
     // Processar cada proposta
-    for (const negotiation of myPending) {
+    for (const negotiation of pendingNegotiations) {
         try {
-            console.log(`🤖 ${myPlayer.name} avaliando proposta ${negotiation.id}`);
+            console.log(`🤖 ${myPlayer.name} avaliando proposta de ${gameState.players[negotiation.initiatorId]?.name}`);
             
             // Pequeno delay para simular pensamento
             await this.delay(this.settings.reactionDelay);
             
-            // Verificar se a proposta ainda é válida
-            const initiator = gameState.players[negotiation.initiatorId];
-            if (!initiator) {
-                console.log(`🤖 Proponente não encontrado, ignorando proposta`);
+            // VERIFICAR SE A PROPOSTA É VÁLIDA
+            if (negotiation.status !== 'pending') {
+                console.log(`🤖 Proposta ${negotiation.id} já processada (status: ${negotiation.status})`);
                 continue;
             }
             
-            // AVALIAR a proposta
+            // AVALIAR proposta
             const shouldAccept = this.evaluateNegotiationProposal(negotiation, gameState);
             
+            console.log(`🤖 ${myPlayer.name} decidiu: ${shouldAccept ? 'ACEITAR' : 'RECUSAR'}`);
+            
+            // Responder
             if (shouldAccept) {
-                console.log(`🤖 ${myPlayer.name} ACEITANDO proposta de ${initiator.name}`);
-                
-                // Configurar negociação ativa e responder
-                setActiveNegotiation(negotiation);
-                await this.delay(500);
-                
-                // Chamar lógica de resposta do jogo
-                if (window.gameLogic?.handleNegResponse) {
-                    window.gameLogic.handleNegResponse(true);
-                }
-                
-                // Registrar no histórico
-                this.memory.negotiationHistory.push({
-                    turn: gameState.turn,
-                    partner: negotiation.initiatorId,
-                    accepted: true,
-                    resourcesOffered: negotiation.offer,
-                    resourcesRequested: negotiation.request
-                });
-                
+                await this.acceptNegotiation(negotiation);
             } else {
-                console.log(`🤖 ${myPlayer.name} RECUSANDO proposta de ${initiator.name}`);
-                
-                // Configurar negociação ativa e responder
-                setActiveNegotiation(negotiation);
-                await this.delay(500);
-                
-                // Chamar lógica de resposta do jogo
-                if (window.gameLogic?.handleNegResponse) {
-                    window.gameLogic.handleNegResponse(false);
-                }
-                
-                // Registrar no histórico
-                this.memory.negotiationHistory.push({
-                    turn: gameState.turn,
-                    partner: negotiation.initiatorId,
-                    accepted: false,
-                    resourcesOffered: negotiation.offer,
-                    resourcesRequested: negotiation.request
-                });
+                await this.rejectNegotiation(negotiation);
             }
+            
+            // Registrar no histórico
+            this.memory.negotiationHistory.push({
+                turn: gameState.turn,
+                partner: negotiation.initiatorId,
+                accepted: shouldAccept,
+                timestamp: Date.now()
+            });
             
             // Pequeno delay entre propostas
             await this.delay(800);
@@ -1283,6 +1240,78 @@ async processPendingNegotiations(gameState) {
     }
     
     console.log(`🤖 ${myPlayer.name} finalizou processamento de propostas`);
+}
+
+// ADICIONAR método auxiliar para criar e enviar proposta
+async createAndSendProposal(gameState) {
+    try {
+        const myPlayer = gameState.players[this.playerId];
+        
+        // Verificar condições básicas
+        if (!myPlayer || myPlayer.resources.ouro < 1 || gameState.actionsLeft <= 0) {
+            return false;
+        }
+        
+        // Encontrar alvo
+        const target = this.findNegotiationTarget(gameState);
+        if (!target) {
+            console.log(`🤖 ${myPlayer.name} não encontrou alvo para negociação`);
+            return false;
+        }
+        
+        console.log(`🤖 ${myPlayer.name} enviando proposta para ${target.name}`);
+        
+        // Criar proposta usando método existente
+        const proposal = this.createNegotiationProposal(myPlayer, target, gameState);
+        if (!proposal) {
+            console.log(`🤖 ${myPlayer.name} não conseguiu criar proposta`);
+            return false;
+        }
+        
+        // Configurar estado de negociação
+        resetNegotiationState();
+        setNegotiationTarget(target.id);
+        
+        // Configurar oferta
+        Object.keys(proposal.offer).forEach(resource => {
+            if (resource !== 'regions' && proposal.offer[resource] > 0) {
+                updateNegotiationResource('offer', resource, proposal.offer[resource]);
+            }
+        });
+        
+        // Configurar solicitação
+        Object.keys(proposal.request).forEach(resource => {
+            if (resource !== 'regions' && proposal.request[resource] > 0) {
+                updateNegotiationResource('request', resource, proposal.request[resource]);
+            }
+        });
+        
+        // Configurar regiões (se houver)
+        if (proposal.offer.regions && proposal.offer.regions.length > 0) {
+            updateNegotiationRegions('offerRegions', proposal.offer.regions);
+        }
+        
+        if (proposal.request.regions && proposal.request.regions.length > 0) {
+            updateNegotiationRegions('requestRegions', proposal.request.regions);
+        }
+        
+        // Validar
+        if (!validateNegotiationState()) {
+            console.log(`🤖 Proposta inválida de ${myPlayer.name}`);
+            return false;
+        }
+        
+        // Enviar via gameLogic
+        if (window.gameLogic?.handleSendNegotiation) {
+            return await window.gameLogic.handleSendNegotiation();
+        }
+        
+        return false;
+        
+    } catch (error) {
+        console.error(`🤖 Erro em createAndSendProposal:`, error);
+        return false;
+    }
 }
   
   async sendNegotiationProposal(gameState) {
