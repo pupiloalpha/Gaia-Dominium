@@ -166,11 +166,11 @@ async handleResponse(accepted) {
   const currentPlayerId = Number(currentPlayer.id);
   const negotiationTargetId = Number(negotiation.targetId);
 
-  console.log(`📨 Validação de resposta:`, {
-    currentPlayer: `${currentPlayer.name} (${currentPlayerId})`,
-    negotiationTarget: `${target?.name} (${negotiationTargetId})`,
-    negotiationId: negotiation.id
-  });
+console.log(`📨 Validação de resposta:`, {
+  currentPlayer: `${currentPlayer.name} (${currentPlayerId})`,
+  negotiationTarget: target ? `${target.name} (${negotiationTargetId})` : `Desconhecido (${negotiationTargetId})`,
+  negotiationId: negotiation.id
+});
 
   if (currentPlayerId !== negotiationTargetId) {
     console.error(`❌ Erro de permissão: Current(${currentPlayerId}) !== NegotiationTarget(${negotiationTargetId})`);
