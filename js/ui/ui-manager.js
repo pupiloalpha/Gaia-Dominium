@@ -53,6 +53,26 @@ class UIManager {
         this.setupGlobalEventListeners();
     }
 
+// ==================== MÉTODOS PROXY PARA SUBCLASSES ====================
+
+renderIconSelection() {
+    if (this.playersManager && this.playersManager.renderIconSelection) {
+        this.playersManager.renderIconSelection();
+    }
+}
+
+updateFooter() {
+    if (this.gameManager && this.gameManager.updateFooter) {
+        this.gameManager.updateFooter();
+    }
+}
+
+renderFactionSelection() {
+    if (this.playersManager && this.playersManager.populateFactionDropdown) {
+        this.playersManager.populateFactionDropdown();
+    }
+}
+    
     // ==================== INICIALIZAÇÃO DO JOGO ====================
 
     handleStartGame() {
