@@ -110,26 +110,38 @@ async checkAndExecuteAITurn() {
     const ai = this._getAIPlayerForCurrentPlayer();
     
     if (!ai) {
+        console.error(`🤖 IA não encontrada para ${currentPlayer?.name || 'desconhecido'}`);
         this.forceAIEndTurn();
         return;
     }
 
     console.log(`🤖 Executando turno para ${currentPlayer.name} (Fase: ${gameState.currentPhase})`);
 
-    // Executar baseado na fase atual
-    switch(gameState.currentPhase) {
-        case 'renda':
-            await this.handleIncomePhaseAI(currentPlayer);
-            break;
-        case 'acoes':
-            await this._executeActions(ai);
-            // Avançar para negociação
-            this.main.negotiationLogic.setupPhase();
-            await this._delay(1000);
-            break;
-        case 'negociacao':
-            await this._executeNegotiationPhaseForAI(); // ← USAR NOVA FUNÇÃO
-            break;
+    try {
+        // Executar baseado na fase atual
+        switch(gameState.currentPhase) {
+            case 'renda':
+                await this.handleIncomePhaseAI(currentPlayer);
+                break;
+            case 'acoes':
+                await this._executeActions(ai);
+                // Avançar para negociação
+                this.main.negotiationLogic.setupPhase();
+                await this._delay(1000);
+                // Chamar negociação imediatamente
+                await this._executeNegotiationPhaseForAI();
+                break;
+            case 'negociacao':
+                await this._executeNegotiationPhaseForAI();
+                break;
+        }
+        
+        // Garantir que o turno foi finalizado
+        await this._ensureAICompletion();
+        
+    } catch (error) {
+        console.error(`🤖 Erro no loop da IA ${currentPlayer.name}:`, error);
+        this.forceAIEndTurn();
     }
 }
 
@@ -310,6 +322,7 @@ async _sendSimpleProposal(ai, player, gameState) {
         }
         
         console.log(`🤖 ${currentPlayer.name} (${ai.personality?.type || 'IA'}) iniciando fase de negociação`);
+        console.log(`📊 Status: Ações: ${gameState.actionsLeft}, Ouro: ${currentPlayer.resources.ouro}`);
         
         // 1. Processar propostas pendentes
         const pending = getPendingNegotiationsForPlayer(currentPlayer.id);
@@ -318,12 +331,20 @@ async _sendSimpleProposal(ai, player, gameState) {
         if (pending.length > 0) {
             console.log(`🤖 Processando ${pending.length} proposta(s) pendente(s)`);
             
+            // Pequeno delay para simulação
+            await this._delay(2000);
+            
             if (ai.processPendingNegotiations) {
-                await ai.processPendingNegotiations(gameState);
+                const result = await ai.processPendingNegotiations(gameState);
+                console.log(`🤖 Resultado do processamento: ${result}`);
             } else {
                 // Fallback: Processar manualmente
                 for (const negotiation of pending) {
                     console.log(`🤖 Avaliando proposta ${negotiation.id}...`);
+                    
+                    // Pequeno delay entre avaliações
+                    await this._delay(1500);
+                    
                     const shouldAccept = ai.evaluateNegotiationProposal ? 
                         ai.evaluateNegotiationProposal(negotiation, gameState) : 
                         Math.random() > 0.5;
@@ -334,50 +355,118 @@ async _sendSimpleProposal(ai, player, gameState) {
                         console.log(`🤖 Aceitando proposta`);
                         if (window.gameLogic?.handleNegResponse) {
                             window.gameLogic.handleNegResponse(true);
+                            await this._delay(1000);
                         }
                     } else {
                         console.log(`🤖 Recusando proposta`);
                         if (window.gameLogic?.handleNegResponse) {
                             window.gameLogic.handleNegResponse(false);
+                            await this._delay(1000);
                         }
                     }
                     
-                    await this._delay(1500);
+                    // Pequena pausa entre negociações
+                    await this._delay(1000);
                 }
             }
+        } else {
+            console.log(`🤖 Nenhuma proposta pendente para ${currentPlayer.name}`);
         }
         
-        // 2. Tentar enviar proposta própria
+        // 2. Verificar se ainda pode enviar proposta
         if (gameState.actionsLeft > 0 && currentPlayer.resources.ouro >= 1) {
-            console.log(`🤖 ${currentPlayer.name} tentando enviar proposta`);
+            console.log(`🤖 ${currentPlayer.name} pode enviar proposta, verificando alvos...`);
             
-            if (ai.createAndSendProposal) {
-                await ai.createAndSendProposal(gameState);
-            } else if (ai.sendNegotiationProposal) {
-                await ai.sendNegotiationProposal(gameState);
+            // Verificar se há alvos válidos
+            const validTargets = gameState.players.filter(p => 
+                p.id !== currentPlayer.id && 
+                p.resources.ouro >= 1
+            );
+            
+            if (validTargets.length > 0) {
+                console.log(`🤖 ${validTargets.length} alvo(s) válido(s) encontrado(s)`);
+                
+                // Pequeno delay para decisão
+                await this._delay(2000);
+                
+                if (ai.createAndSendProposal) {
+                    const success = await ai.createAndSendProposal(gameState);
+                    console.log(`🤖 Proposta enviada: ${success ? '✅' : '❌'}`);
+                } else if (ai.sendNegotiationProposal) {
+                    const success = await ai.sendNegotiationProposal(gameState);
+                    console.log(`🤖 Proposta enviada: ${success ? '✅' : '❌'}`);
+                } else {
+                    console.log(`🤖 ${currentPlayer.name} não tem método de envio de proposta`);
+                    // Se não tem método, decrementa ação e termina
+                    if (gameState.actionsLeft > 0) {
+                        gameState.actionsLeft--;
+                    }
+                }
             } else {
-                console.log(`🤖 ${currentPlayer.name} não tem método de envio de proposta`);
+                console.log(`🤖 Nenhum alvo válido para ${currentPlayer.name} (todos sem ouro?)`);
+                // Se não há alvos, decrementa ação
+                if (gameState.actionsLeft > 0) {
+                    gameState.actionsLeft--;
+                }
             }
         } else {
             console.log(`🤖 ${currentPlayer.name} não pode enviar proposta (ações: ${gameState.actionsLeft}, ouro: ${currentPlayer.resources.ouro})`);
         }
         
         // 3. Finalizar fase de negociação
-        console.log(`🤖 ${currentPlayer.name} finalizou negociação`);
+        console.log(`🤖 ${currentPlayer.name} finalizando fase de negociação...`);
         
-        // Avançar para próximo jogador
-        setTimeout(() => {
-            if (this.main?.turnLogic?.handleEndTurn) {
-                this.main.turnLogic.handleEndTurn();
-            } else if (window.gameLogic?.handleEndTurn) {
-                window.gameLogic.handleEndTurn();
-            }
-        }, 2000);
+        // Atualizar UI
+        if (window.uiManager) {
+            window.uiManager.updateUI();
+        }
+        
+        // Pequeno delay antes de finalizar
+        await this._delay(2000);
+        
+        // Finalizar turno
+        if (this.main?.turnLogic?.handleEndTurn) {
+            await this.main.turnLogic.handleEndTurn();
+        } else if (window.gameLogic?.handleEndTurn) {
+            await window.gameLogic.handleEndTurn();
+        }
         
     } catch (error) {
         console.error(`🤖 Erro na negociação da IA:`, error);
         this.forceAIEndTurn();
     }
+}
+
+  async _ensureAICompletion() {
+    console.log(`🤖 Garantindo conclusão do turno da IA...`);
+    
+    const currentPlayer = getCurrentPlayer();
+    if (!currentPlayer || !(currentPlayer.type === 'ai' || currentPlayer.isAI)) {
+        console.log(`🤖 Não é turno de IA, ignorando...`);
+        return;
+    }
+    
+    // Se ainda estiver na fase de negociação e sem ações, finalizar
+    if (gameState.currentPhase === 'negociacao' && gameState.actionsLeft <= 0) {
+        console.log(`🤖 ${currentPlayer.name} sem ações na negociação, finalizando...`);
+        this.forceAIEndTurn();
+        return;
+    }
+    
+    // Se a IA não tem ouro para negociar, finalizar
+    if (gameState.currentPhase === 'negociacao' && currentPlayer.resources.ouro < 1) {
+        console.log(`🤖 ${currentPlayer.name} sem ouro para negociar, finalizando...`);
+        this.forceAIEndTurn();
+        return;
+    }
+    
+    // Timeout de segurança
+    setTimeout(() => {
+        if (this.inProgress) {
+            console.warn(`⚠️ Timeout de segurança para IA ${currentPlayer.name}, forçando término`);
+            this.forceAIEndTurn();
+        }
+    }, 15000);
   }
   
   captureFeedback(message, type) {
