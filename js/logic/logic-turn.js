@@ -97,67 +97,84 @@ export class TurnLogic {
     this.checkVictory();
     
     if (this.gameEnded) {
-      return;
+        return;
     }
     
     addActivityLog({ 
-      type: 'turn', 
-      playerName: 'SISTEMA', 
-      action: 'Turno finalizado', 
-      details: currentPlayer.name, 
-      turn: gameState.turn 
+        type: 'turn', 
+        playerName: 'SISTEMA', 
+        action: 'Turno finalizado', 
+        details: currentPlayer.name, 
+        turn: gameState.turn 
     });
     
-    // Resetar bônus de turno
+    // Resetar bônus de turno (facções)
     if (this.main.factionLogic) {
-      this.main.factionLogic.resetTurnBonuses(currentPlayer);
+        this.main.factionLogic.resetTurnBonuses(currentPlayer);
     }
 
-    // Avançar Jogador
+    // Avançar para próximo jogador
     gameState.currentPlayerIndex = (gameState.currentPlayerIndex + 1) % gameState.players.length;
     
     if (gameState.currentPlayerIndex === 0) {
-      gameState.turn += 1;
-      this._handleEvents();
+        gameState.turn += 1;
+        this._handleEvents();
     }
 
-    // Resetar para novo jogador
+    // Resetar estado para novo jogador
     gameState.actionsLeft = GAME_CONFIG.ACTIONS_PER_TURN;
     gameState.selectedRegionId = null;
     gameState.currentPhase = 'renda';
     gameState.selectedPlayerForSidebar = gameState.currentPlayerIndex;
 
     const newPlayer = getCurrentPlayer();
+    
+    // Aplicar renda ao novo jogador
     this.applyIncome(newPlayer);
 
     addActivityLog({ 
-      type: 'turn', 
-      playerName: 'SISTEMA', 
-      action: 'Turno iniciado', 
-      details: newPlayer.name, 
-      turn: gameState.turn 
+        type: 'turn', 
+        playerName: 'SISTEMA', 
+        action: 'Turno iniciado', 
+        details: newPlayer.name, 
+        turn: gameState.turn 
     });
     
     // Verificar vitória novamente
     this.checkVictory();
     
-    if (window.uiManager) window.uiManager.updateUI();
+    // Atualizar UI
+    if (window.uiManager) {
+        window.uiManager.updateUI();
+        window.uiManager.updateFooter();
+    }
+    
     this.main.showFeedback(`Turno de ${newPlayer.name}`, 'info');
 
-    // Gatilho para IA
+    // GATILHO CRÍTICO PARA IA
     if (!this.gameEnded) {
-      setTimeout(() => {
-        if (newPlayer.type === 'ai' || newPlayer.isAI) {
-          if (this.main.aiCoordinator) {
-            this.main.aiCoordinator.checkAndExecuteAITurn();
-          }
-        }
-      }, 1000);
+        setTimeout(() => {
+            const nextPlayer = getCurrentPlayer();
+            
+            // Se o próximo jogador for IA, iniciar seu turno
+            if (nextPlayer && (nextPlayer.type === 'ai' || nextPlayer.isAI)) {
+                console.log(`🤖 Iniciando turno da IA: ${nextPlayer.name}`);
+                
+                // Pequeno delay para UI atualizar
+                setTimeout(() => {
+                    if (this.main.aiCoordinator) {
+                        this.main.aiCoordinator.checkAndExecuteAITurn();
+                    } else if (window.aiCoordinator) {
+                        window.aiCoordinator.checkAndExecuteAITurn();
+                    }
+                }, 1500);
+            }
+        }, 1000);
     }
     
     saveGame();
-  }
-
+}
+  
   applyIncome(player) {
     if (this.gameEnded) return;
     
