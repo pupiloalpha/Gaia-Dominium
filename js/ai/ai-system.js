@@ -1185,32 +1185,22 @@ evaluateNegotiationProposal(negotiation, gameState) {
 
   // MÉTODO para processar propostas
 async processPendingNegotiations(gameState) {
-    const myPlayer = gameState.players[this.playerId];
+    console.log(`🤖 ${this.personality.name} verificando propostas pendentes`);
     
+    const myPlayer = gameState.players[this.playerId];
     if (!myPlayer) {
-        console.error(`🤖 IA ${this.playerId} não encontrada no gameState`);
+        console.error(`🤖 Jogador IA ${this.playerId} não encontrado`);
         return;
     }
     
-    console.log(`🤖 ${myPlayer.name} (IA) verificando propostas...`);
-    
     // Obter propostas pendentes DIRETAMENTE do gameState
     const allPending = gameState.pendingNegotiations || [];
-    console.log(`📨 Total de propostas no sistema: ${allPending.length}`);
-    
-    // Filtrar manualmente (evitar dependência de funções externas)
     const myPending = allPending.filter(neg => {
-        // Verificar se a proposta é para esta IA
+        // Verificar se a proposta é para esta IA e está pendente
         const targetId = Number(neg.targetId);
         const myId = Number(myPlayer.id);
         
-        const isForMe = targetId === myId && neg.status === 'pending';
-        
-        if (isForMe) {
-            console.log(`🎯 Proposta ${neg.id} é para mim (${myPlayer.name})`);
-        }
-        
-        return isForMe;
+        return targetId === myId && neg.status === 'pending';
     });
     
     if (myPending.length === 0) {
@@ -1218,29 +1208,39 @@ async processPendingNegotiations(gameState) {
         return;
     }
     
-    console.log(`🤖 ${myPlayer.name} tem ${myPending.length} proposta(s) pendente(s)`);
+    console.log(`🤖 ${myPlayer.name} processando ${myPending.length} proposta(s)`);
+    
+    // Ordenar por turno (mais antigas primeiro)
+    myPending.sort((a, b) => a.turn - b.turn || a.timestamp - b.timestamp);
     
     // Processar cada proposta
     for (const negotiation of myPending) {
         try {
-            console.log(`🤖 Avaliando proposta ${negotiation.id}...`);
+            console.log(`🤖 ${myPlayer.name} avaliando proposta ${negotiation.id}`);
             
             // Pequeno delay para simular pensamento
             await this.delay(this.settings.reactionDelay);
+            
+            // Verificar se a proposta ainda é válida
+            const initiator = gameState.players[negotiation.initiatorId];
+            if (!initiator) {
+                console.log(`🤖 Proponente não encontrado, ignorando proposta`);
+                continue;
+            }
             
             // AVALIAR a proposta
             const shouldAccept = this.evaluateNegotiationProposal(negotiation, gameState);
             
             if (shouldAccept) {
-                console.log(`🤖 ${myPlayer.name} ACEITANDO proposta ${negotiation.id}`);
+                console.log(`🤖 ${myPlayer.name} ACEITANDO proposta de ${initiator.name}`);
                 
-                // Executar aceitação
-                await this.acceptNegotiation(negotiation);
+                // Configurar negociação ativa e responder
+                setActiveNegotiation(negotiation);
+                await this.delay(500);
                 
-                // Remover da lista pendente
-                const index = gameState.pendingNegotiations.findIndex(n => n.id === negotiation.id);
-                if (index !== -1) {
-                    gameState.pendingNegotiations[index].status = 'accepted';
+                // Chamar lógica de resposta do jogo
+                if (window.gameLogic?.handleNegResponse) {
+                    window.gameLogic.handleNegResponse(true);
                 }
                 
                 // Registrar no histórico
@@ -1248,16 +1248,20 @@ async processPendingNegotiations(gameState) {
                     turn: gameState.turn,
                     partner: negotiation.initiatorId,
                     accepted: true,
-                    proposal: negotiation
+                    resourcesOffered: negotiation.offer,
+                    resourcesRequested: negotiation.request
                 });
                 
             } else {
-                console.log(`🤖 ${myPlayer.name} RECUSANDO proposta ${negotiation.id}`);
+                console.log(`🤖 ${myPlayer.name} RECUSANDO proposta de ${initiator.name}`);
                 
-                // Marcar como recusada
-                const index = gameState.pendingNegotiations.findIndex(n => n.id === negotiation.id);
-                if (index !== -1) {
-                    gameState.pendingNegotiations[index].status = 'rejected';
+                // Configurar negociação ativa e responder
+                setActiveNegotiation(negotiation);
+                await this.delay(500);
+                
+                // Chamar lógica de resposta do jogo
+                if (window.gameLogic?.handleNegResponse) {
+                    window.gameLogic.handleNegResponse(false);
                 }
                 
                 // Registrar no histórico
@@ -1265,19 +1269,20 @@ async processPendingNegotiations(gameState) {
                     turn: gameState.turn,
                     partner: negotiation.initiatorId,
                     accepted: false,
-                    proposal: negotiation
+                    resourcesOffered: negotiation.offer,
+                    resourcesRequested: negotiation.request
                 });
             }
+            
+            // Pequeno delay entre propostas
+            await this.delay(800);
             
         } catch (error) {
             console.error(`🤖 Erro ao processar proposta ${negotiation.id}:`, error);
         }
     }
     
-    // Limpar propostas processadas
-    gameState.pendingNegotiations = gameState.pendingNegotiations.filter(
-        neg => neg.status === 'pending'
-    );
+    console.log(`🤖 ${myPlayer.name} finalizou processamento de propostas`);
 }
   
   async sendNegotiationProposal(gameState) {
@@ -1366,53 +1371,124 @@ async processPendingNegotiations(gameState) {
     return otherPlayers[0];
   }
   
-  createNegotiationProposal(myPlayer, targetPlayer, gameState) {
+createNegotiationProposal(myPlayer, targetPlayer, gameState) {
+    console.log(`🤖 ${this.personality.name} criando proposta para ${targetPlayer.name}`);
+    
     const proposal = {
-      offer: {},
-      request: {}
+        offer: { madeira: 0, pedra: 0, ouro: 0, agua: 0, regions: [] },
+        request: { madeira: 0, pedra: 0, ouro: 0, agua: 0, regions: [] }
     };
     
+    // Analisar necessidades e recursos
+    const myNeeds = this.calculateResourceNeeds(myPlayer);
+    const theirResources = targetPlayer.resources;
+    const myResources = myPlayer.resources;
+    
+    // Estratégia baseada na personalidade
     switch (this.personality.type) {
-      case 'economist':
-        if (myPlayer.resources.madeira > 10) {
-          proposal.offer.madeira = Math.min(5, Math.floor(myPlayer.resources.madeira * 0.3));
-          proposal.request.ouro = 1;
-        } else if (myPlayer.resources.pedra > 8) {
-          proposal.offer.pedra = Math.min(3, Math.floor(myPlayer.resources.pedra * 0.3));
-          proposal.request.ouro = 1;
-        } else {
-          proposal.offer.madeira = 2;
-          proposal.request.ouro = 1;
-        }
-        break;
-        
-      case 'expansionist':
-        proposal.offer.ouro = 2;
-        proposal.request.pedra = 3;
-        break;
-        
-      case 'builder':
-        if (myPlayer.resources.madeira > 8) {
-          proposal.offer.madeira = 4;
-          proposal.request.pedra = 2;
-        } else {
-          proposal.offer.ouro = 1;
-          proposal.request.pedra = 2;
-        }
-        break;
-        
-      case 'diplomat':
-        proposal.offer.madeira = 2;
-        proposal.request.agua = 2;
-        break;
-        
-      default:
-        proposal.offer.madeira = 1;
-        proposal.request.agua = 1;
+        case 'economist':
+            // Oferecer recursos que tenho em excesso, pedir recursos que preciso
+            if (myResources.madeira > 15 && theirResources.ouro > 5) {
+                proposal.offer.madeira = Math.min(5, Math.floor(myResources.madeira * 0.2));
+                proposal.request.ouro = Math.min(2, Math.floor(theirResources.ouro * 0.3));
+            } else if (myResources.pedra > 10 && theirResources.agua > 6) {
+                proposal.offer.pedra = Math.min(3, Math.floor(myResources.pedra * 0.2));
+                proposal.request.agua = Math.min(3, Math.floor(theirResources.agua * 0.3));
+            } else {
+                // Proposta padrão equilibrada
+                proposal.offer.madeira = Math.min(3, Math.floor(myResources.madeira * 0.15));
+                proposal.request.pedra = Math.min(2, Math.floor(theirResources.pedra * 0.2));
+            }
+            break;
+            
+        case 'expansionist':
+            // Oferecer recursos por território
+            if (myPlayer.regions.length > targetPlayer.regions.length) {
+                // Tenho mais regiões, posso oferecer uma
+                if (myPlayer.regions.length > 6 && targetPlayer.regions.length < 5) {
+                    const regionToOffer = myPlayer.regions[0]; // Primeira região
+                    proposal.offer.regions = [regionToOffer];
+                    proposal.request.ouro = 3;
+                }
+            } else {
+                // Pedir recursos para expansão
+                proposal.offer.ouro = Math.min(2, Math.floor(myResources.ouro * 0.3));
+                proposal.request.pedra = Math.min(3, Math.floor(theirResources.pedra * 0.25));
+            }
+            break;
+            
+        case 'builder':
+            // Trocar madeira por pedra
+            if (myResources.madeira > 12 && theirResources.pedra > 8) {
+                proposal.offer.madeira = Math.min(4, Math.floor(myResources.madeira * 0.2));
+                proposal.request.pedra = Math.min(2, Math.floor(theirResources.pedra * 0.2));
+            } else if (myResources.ouro > 4 && theirResources.madeira > 10) {
+                proposal.offer.ouro = Math.min(1, Math.floor(myResources.ouro * 0.25));
+                proposal.request.madeira = Math.min(3, Math.floor(theirResources.madeira * 0.2));
+            }
+            break;
+            
+        case 'diplomat':
+            // Proposta balanceada para construir relações
+            const resources = ['madeira', 'pedra', 'ouro', 'agua'];
+            const myExcess = resources.filter(r => myResources[r] > 10);
+            const theirExcess = resources.filter(r => theirResources[r] > 10);
+            
+            if (myExcess.length > 0 && theirExcess.length > 0) {
+                const offerRes = myExcess[0];
+                const requestRes = theirExcess[0];
+                
+                if (offerRes !== requestRes) {
+                    proposal.offer[offerRes] = Math.min(3, Math.floor(myResources[offerRes] * 0.15));
+                    proposal.request[requestRes] = Math.min(3, Math.floor(theirResources[requestRes] * 0.15));
+                }
+            } else {
+                // Troca simples
+                proposal.offer.madeira = 2;
+                proposal.request.agua = 2;
+            }
+            break;
+            
+        default:
+            // Proposta padrão
+            proposal.offer.madeira = Math.min(2, Math.floor(myResources.madeira * 0.1));
+            proposal.request.agua = Math.min(2, Math.floor(theirResources.agua * 0.1));
     }
     
+    // Garantir que não está oferecendo mais do que tem
+    Object.keys(proposal.offer).forEach(resource => {
+        if (resource !== 'regions') {
+            proposal.offer[resource] = Math.min(
+                proposal.offer[resource], 
+                myResources[resource] || 0
+            );
+        }
+    });
+    
+    // Garantir que não está pedindo mais do que o alvo tem
+    Object.keys(proposal.request).forEach(resource => {
+        if (resource !== 'regions') {
+            proposal.request[resource] = Math.min(
+                proposal.request[resource], 
+                theirResources[resource] || 0
+            );
+        }
+    });
+    
+    // Verificar se a proposta tem conteúdo
+    const hasOffer = Object.values(proposal.offer).some(v => v > 0) || 
+                    (proposal.offer.regions && proposal.offer.regions.length > 0);
+    const hasRequest = Object.values(proposal.request).some(v => v > 0) || 
+                      (proposal.request.regions && proposal.request.regions.length > 0);
+    
+    if (!hasOffer && !hasRequest) {
+        console.log(`🤖 Proposta vazia, cancelando`);
+        return null;
+    }
+    
+    console.log(`🤖 Proposta criada:`, proposal);
     return proposal;
-  }
+}
   
   async acceptNegotiation(negotiation) {
   return new Promise((resolve) => {
