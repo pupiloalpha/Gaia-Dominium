@@ -126,8 +126,9 @@ if (introVideo) {
 // ==================== FUNÇÕES DE CONFIGURAÇÃO ====================
 
 function setupInitialUI() {
-  if (window.uiManager) {
-    window.uiManager.renderIconSelection();
+  if (window.uiManager && window.uiManager.playersManager) {
+    window.uiManager.playersManager.renderIconSelection();
+  }
     // Inicializar seleção de facções
     setTimeout(() => {
       if (window.uiManager.renderFactionSelection) {
