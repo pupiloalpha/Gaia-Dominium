@@ -987,17 +987,19 @@ class NegotiationUI {
     if (targetPlayer && (targetPlayer.type === 'ai' || targetPlayer.isAI)) {
         console.log(`🤖 PROPOSTA PARA IA: ${targetPlayer.name} será notificada`);
         
-        // Gatilho imediato para IA processar
-        setTimeout(() => {
-            if (window.aiCoordinator && window.gameLogic) {
-                console.log(`🤖 Gatilho para IA ${targetPlayer.name} processar proposta`);
-                
-                // Se for o turno da IA, processar imediatamente
-                if (gameState.currentPlayerIndex === negotiation.targetId) {
+        // Se for o turno da IA, processar imediatamente
+        if (gameState.currentPlayerIndex === negotiation.targetId) {
+            console.log(`🤖 É turno da IA ${targetPlayer.name}, processando proposta...`);
+            
+            setTimeout(() => {
+                if (window.gameLogic?.aiCoordinator) {
+                    // Forçar processamento da proposta
+                    window.gameLogic.aiCoordinator.checkAndExecuteAITurn();
+                } else if (window.aiCoordinator) {
                     window.aiCoordinator.checkAndExecuteAITurn();
                 }
-            }
-        }, 1000);
+            }, 1000);
+        }
     }
     
     const initiatorPlayer = gameState.players[negotiation.initiatorId];
