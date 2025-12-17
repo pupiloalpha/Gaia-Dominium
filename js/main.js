@@ -302,6 +302,19 @@ function initializeAISystem() {
     });
     
     setAIPlayers(aiInstances);
+
+    // 1. Expor no objeto gameState
+    gameState.aiInstances = aiInstances;
+    
+    // 2. Expor como variável global window.aiInstances
+    window.aiInstances = aiInstances;
+    
+    // 3. Expor cada IA individualmente para debug
+    aiInstances.forEach((ai, idx) => {
+      window[`ai_${ai.playerId}`] = ai;
+    });
+    
+    console.log(`✅ ${aiInstances.length} IA(s) expostas globalmente`);
     
     // Configurar sistema de aprendizado
     this.setupAILearningSystem(aiInstances);
