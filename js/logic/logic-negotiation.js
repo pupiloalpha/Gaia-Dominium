@@ -152,88 +152,81 @@ export class NegotiationLogic {
     return true;
   }
 
-  async handleResponse(accepted) {
-    const negotiation = gameState.activeNegotiation;
-    if (!negotiation) {
-        console.warn("Tentativa de responder sem negociação ativa");
-        return;
-    }
-
-    const target = gameState.players[negotiation.targetId];
-    const currentPlayer = getCurrentPlayer();
-
-    // CORREÇÃO: Converter ambos para Number para comparação consistente
-    const currentPlayerId = Number(currentPlayer.id);
-    const targetId = Number(target.id);
-    const negotiationTargetId = Number(negotiation.targetId);
-
-    if (currentPlayerId !== negotiationTargetId) {
-        console.error(`Erro de permissão: Current(${currentPlayerId}) !== NegotiationTarget(${negotiationTargetId})`);
-        console.log('Detalhes da negociação:', {
-          negotiationId: negotiation.id,
-          initiatorId: negotiation.initiatorId,
-          targetId: negotiation.targetId,
-          currentPlayer: {
-            id: currentPlayer.id,
-            name: currentPlayer.name,
-            type: currentPlayer.type
-          },
-          targetPlayer: {
-            id: target.id,
-            name: target.name,
-            type: target.type
-          }
-        });
-        this.main.showFeedback('Apenas o destinatário pode responder.', 'error');
-        return;
-    }
-
-    if (accepted) {
-        const validation = this._validateExecution(negotiation);
-        if (!validation.valid) {
-            this.main.showFeedback(validation.message, 'error');
-            return;
-        }
-
-        if (this._executeTrade(negotiation)) {
-            updateNegotiationStatus(negotiation.id, 'accepted');
-            this.main.showFeedback('Proposta aceita! Troca realizada.', 'success');
-            
-            const initiator = gameState.players[negotiation.initiatorId];
-            addActivityLog({ 
-              type: 'negotiate', 
-              playerName: target.name, 
-              action: 'aceitou proposta de', 
-              details: initiator.name, 
-              turn: gameState.turn 
-            });
-            
-            // Verificar vitória após negociação bem-sucedida
-            this.main.turnLogic.checkVictory();
-        }
-    } else {
-        updateNegotiationStatus(negotiation.id, 'rejected');
-        this.main.showFeedback('Proposta recusada.', 'info');
-        
-        const initiator = gameState.players[negotiation.initiatorId];
-        addActivityLog({ 
-          type: 'negotiate', 
-          playerName: target.name, 
-          action: 'recusou proposta de', 
-          details: initiator.name, 
-          turn: gameState.turn 
-        });
-    }
-
-    if (window.uiManager?.negotiation) window.uiManager.negotiation.closeNegResponseModal();
-    
-    removePendingNegotiation(negotiation.id);
-    clearActiveNegotiation();
-    
-    if (window.uiManager) {
-        setTimeout(() => window.uiManager.updateUI(), 300);
-    }
+async handleResponse(accepted) {
+  const negotiation = gameState.activeNegotiation;
+  if (!negotiation) {
+    console.warn("Tentativa de responder sem negociação ativa");
+    return;
   }
+
+  const target = gameState.players[negotiation.targetId];
+  const currentPlayer = getCurrentPlayer();
+
+  // CORREÇÃO CRÍTICA: Converter todos para Number para comparação
+  const currentPlayerId = Number(currentPlayer.id);
+  const negotiationTargetId = Number(negotiation.targetId);
+
+  console.log(`📨 Validação de resposta:`, {
+    currentPlayer: `${currentPlayer.name} (${currentPlayerId})`,
+    negotiationTarget: `${target?.name} (${negotiationTargetId})`,
+    negotiationId: negotiation.id
+  });
+
+  if (currentPlayerId !== negotiationTargetId) {
+    console.error(`❌ Erro de permissão: Current(${currentPlayerId}) !== NegotiationTarget(${negotiationTargetId})`);
+    console.log('Detalhes da negociação:', negotiation);
+    this.main.showFeedback('Apenas o destinatário pode responder.', 'error');
+    return;
+  }
+
+  if (accepted) {
+    const validation = this._validateExecution(negotiation);
+    if (!validation.valid) {
+      this.main.showFeedback(validation.message, 'error');
+      return;
+    }
+
+    if (this._executeTrade(negotiation)) {
+      updateNegotiationStatus(negotiation.id, 'accepted');
+      this.main.showFeedback('Proposta aceita! Troca realizada.', 'success');
+      
+      const initiator = gameState.players[negotiation.initiatorId];
+      addActivityLog({ 
+        type: 'negotiate', 
+        playerName: target.name, 
+        action: 'aceitou proposta de', 
+        details: initiator.name, 
+        turn: gameState.turn 
+      });
+      
+      // Verificar vitória após negociação
+      this.main.turnLogic.checkVictory();
+    }
+  } else {
+    updateNegotiationStatus(negotiation.id, 'rejected');
+    this.main.showFeedback('Proposta recusada.', 'info');
+    
+    const initiator = gameState.players[negotiation.initiatorId];
+    addActivityLog({ 
+      type: 'negotiate', 
+      playerName: target.name, 
+      action: 'recusou proposta de', 
+      details: initiator.name, 
+      turn: gameState.turn 
+    });
+  }
+
+  if (window.uiManager?.negotiation) {
+    window.uiManager.negotiation.closeNegResponseModal();
+  }
+  
+  removePendingNegotiation(negotiation.id);
+  clearActiveNegotiation();
+  
+  if (window.uiManager) {
+    setTimeout(() => window.uiManager.updateUI(), 300);
+  }
+}
 
   _executeTrade(negotiation) {
     try {
