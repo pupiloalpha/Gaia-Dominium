@@ -1,208 +1,179 @@
+// ai-negotiation.js - Módulo para gerenciar negociações da AI
 import { 
     gameState, 
-    getCurrentPlayer,
     getPendingNegotiationsForPlayer,
     addPendingNegotiation,
     removePendingNegotiation,
     updateNegotiationStatus,
-    addActivityLog,
-    updateRegionController,
-    achievementsState
+    addActivityLog
 } from '../state/game-state.js';
-
-import { GAME_CONFIG } from '../state/game-config.js';
 
 export class AINegotiationSystem {
     constructor(gameLogic) {
         this.main = gameLogic;
     }
 
-    /**
-     * Ponto de entrada principal chamado pelo Coordenador de IA
-     */
     async processTurn(aiPlayer) {
-        // 1. Responder a propostas pendentes (Prioridade)
+        console.log(`🤖 [IA-NEG] Iniciando turno de negociação para: ${aiPlayer.name}`);
+
+        // 1. Responder a propostas recebidas (PRIORIDADE)
         await this.handleIncomingProposals(aiPlayer);
 
-        // 2. Tentar iniciar uma nova negociação (Se tiver recursos e ações)
-        if (gameState.actionsLeft > 0 && aiPlayer.resources.ouro >= 1) {
+        // 2. Tentar enviar propostas (Se tiver Ouro e Ações)
+        // Relaxei a condição: Se tiver >= 1 Ouro E Ações > 0
+        if (gameState.actionsLeft > 0 && (aiPlayer.resources.ouro || 0) >= 1) {
             await this.initiateProposal(aiPlayer);
+        } else {
+            console.log(`🤖 [IA-NEG] Sem recursos para propor. Ouro: ${aiPlayer.resources.ouro}, Ações: ${gameState.actionsLeft}`);
         }
     }
 
     // =========================================================================
-    // LÓGICA DE RESPOSTA (RECEBER PROPOSTAS)
+    // 1. RECEBENDO PROPOSTAS
     // =========================================================================
 
     async handleIncomingProposals(aiPlayer) {
-        const pending = getPendingNegotiationsForPlayer(aiPlayer.id);
+        // IMPORTANTE: Converter ID para Number para garantir compatibilidade
+        const myId = Number(aiPlayer.id);
+        const allPending = getPendingNegotiationsForPlayer(myId);
         
-        for (const negotiation of pending) {
-            // Validar se a proposta ainda é válida (recursos ainda existem?)
-            if (!this.isValidTransaction(negotiation)) {
-                this.rejectProposal(negotiation, "Inválida (recursos insuficientes)");
-                continue;
-            }
+        // Criamos uma cópia do array para evitar erros ao remover itens dentro do loop
+        const pendingList = [...allPending]; 
 
-            const initiator = gameState.players[negotiation.initiatorId];
-            const decision = this.evaluateProposal(aiPlayer, negotiation, initiator);
+        if (pendingList.length > 0) {
+            console.log(`🤖 [IA-NEG] Analisando ${pendingList.length} propostas recebidas.`);
+        }
 
-            if (decision.accepted) {
-                this.executeTrade(negotiation);
-                console.log(`🤖 IA ${aiPlayer.name} ACEITOU proposta de ${initiator.name}`);
-            } else {
-                this.rejectProposal(negotiation, "IA recusou baseada em valor");
-                console.log(`🤖 IA ${aiPlayer.name} RECUSOU proposta de ${initiator.name}`);
+        for (const negotiation of pendingList) {
+            try {
+                // Validação de segurança
+                if (!this.isValidTransaction(negotiation)) {
+                    this.rejectProposal(negotiation, "Recursos insuficientes do remetente");
+                    continue;
+                }
+
+                const initiator = gameState.players[negotiation.initiatorId];
+                
+                // Avaliação
+                const decision = this.evaluateProposal(aiPlayer, negotiation, initiator);
+
+                if (decision.accepted) {
+                    console.log(`🤖 [IA-NEG] ACEITOU proposta de ${initiator.name}`);
+                    this.executeTrade(negotiation);
+                } else {
+                    console.log(`🤖 [IA-NEG] RECUSOU proposta de ${initiator.name}`);
+                    this.rejectProposal(negotiation, "Valor insuficiente");
+                }
+                
+                // Pequeno delay para processamento visual não travar
+                await new Promise(r => setTimeout(r, 300));
+
+            } catch (error) {
+                console.error("Erro ao processar proposta na IA:", error);
             }
-            
-            // Pequeno delay para não travar a thread se houver muitas
-            await new Promise(r => setTimeout(r, 200));
         }
     }
 
-    /**
-     * O "Cérebro" da avaliação. Retorna true/false baseado na personalidade.
-     */
     evaluateProposal(aiPlayer, negotiation, initiator) {
-        // Calcular valor da Oferta (o que a IA ganha)
-        const gainValue = this.calculateValue(aiPlayer, negotiation.offer);
-        
-        // Calcular valor da Demanda (o que a IA perde)
-        const costValue = this.calculateValue(aiPlayer, negotiation.request);
+        // IA Aceita quase tudo para testes se não for prejuízo absurdo
+        const gainValue = this.calculateValue(negotiation.offer);
+        const costValue = this.calculateValue(negotiation.request);
 
-        // Fatores de personalidade (simplificado para eficiência)
-        let threshold = 1.0; // Neutro: Aceita se ganho >= perda
+        console.log(`🤖 [IA-EVAL] Ganho: ${gainValue} | Custo: ${costValue}`);
 
-        // Se a IA precisa muito de um recurso específico que está sendo ofertado
-        if (this.needsResources(aiPlayer, negotiation.offer)) {
-            threshold = 0.8; // Aceita mesmo perdendo um pouco de valor
-        }
+        // Lógica de Personalidade Simplificada:
+        // Se Ganho >= 80% do Custo, aceita (IA amigável para movimentar o jogo)
+        const threshold = 0.8; 
 
-        // Se o iniciador está ganhando o jogo, a IA é mais exigente
-        if (initiator.victoryPoints > aiPlayer.victoryPoints + 3) {
-            threshold = 1.5; // Exige 50% de lucro para aceitar
-        }
-
-        const isGoodDeal = gainValue >= (costValue * threshold);
-        return { accepted: isGoodDeal };
+        return { accepted: gainValue >= (costValue * threshold) };
     }
 
-    calculateValue(player, resourcesObj) {
-        // Pesos base
-        const weights = { madeira: 1, agua: 1.5, pedra: 2, ouro: 3, regions: 10 };
-        
+    calculateValue(resourcesObj) {
+        // Pesos: Ouro vale muito, Recursos básicos valem normal
+        const weights = { madeira: 1, agua: 1.5, pedra: 2, ouro: 4, regions: 15 };
         let value = 0;
+        
         ['madeira', 'pedra', 'ouro', 'agua'].forEach(r => {
-            if (resourcesObj[r]) value += resourcesObj[r] * weights[r];
+            if (resourcesObj[r]) value += (resourcesObj[r] * weights[r]);
         });
         
-        if (resourcesObj.regions) {
+        // Valoriza regiões
+        if (resourcesObj.regions && Array.isArray(resourcesObj.regions)) {
             value += resourcesObj.regions.length * weights.regions;
         }
         
         return value;
     }
 
-    needsResources(player, offer) {
-        // Exemplo: Se tem menos de 2 de algo e a oferta contém isso
-        return ['madeira', 'agua'].some(r => player.resources[r] < 2 && offer[r] > 0);
-    }
-
     // =========================================================================
-    // LÓGICA DE CRIAÇÃO (ENVIAR PROPOSTAS)
+    // 2. ENVIANDO PROPOSTAS
     // =========================================================================
 
     async initiateProposal(aiPlayer) {
-        // 1. Encontrar um alvo (alguém que tenha ouro e não seja o líder disparado)
-        const targets = gameState.players.filter(p => p.id !== aiPlayer.id && p.resources.ouro >= 1);
+        // Encontrar alvos que tenham ouro (para poderem aceitar futuras trocas) ou recursos
+        const targets = gameState.players.filter(p => p.id !== aiPlayer.id);
+        
         if (targets.length === 0) return;
 
-        // Escolhe um alvo aleatório ou estratégico
+        // Escolhe alvo aleatório
         const target = targets[Math.floor(Math.random() * targets.length)];
 
-        // 2. Montar proposta baseada no que a IA tem sobrando e o que precisa
-        const proposal = this.generateSmartProposal(aiPlayer, target);
+        // Gera proposta
+        const content = this.generateSmartProposal(aiPlayer, target);
 
-        if (proposal) {
-            // 3. Efetivar o envio (Bypassing UI)
-            this.sendProposal(aiPlayer, target, proposal);
+        if (content) {
+            this.sendProposal(aiPlayer, target, content);
+        } else {
+            console.log(`🤖 [IA-NEG] Não encontrou troca interessante com ${target.name}`);
         }
     }
 
     generateSmartProposal(aiPlayer, target) {
-        // Lógica simplificada: Vender excedente por Ouro ou trocar recurso por recurso
-        const surplus = Object.keys(aiPlayer.resources).find(k => k !== 'ouro' && aiPlayer.resources[k] > 4);
-        const need = Object.keys(aiPlayer.resources).find(k => k !== 'ouro' && aiPlayer.resources[k] < 2);
-
+        // Lógica Agressiva: Tenta vender qualquer coisa que tenha > 2
+        const resources = ['madeira', 'pedra', 'agua']; // Não vende ouro facilmente
+        
+        // 1. Tenta VENDER (IA tem sobrando)
+        const surplus = resources.find(k => (aiPlayer.resources[k] || 0) > 2);
+        
         if (surplus) {
-            // Tenta vender 2 do excedente por 1 Ouro
+            // Oferece 2 do excedente por 1 Ouro
             return {
                 offer: { [surplus]: 2 },
                 request: { ouro: 1 }
             };
         }
-        
-        if (need && target.resources[need] > 3) {
-            // Tenta comprar o que precisa pagando com o que tem mais (ou ouro)
-            const payWith = Object.keys(aiPlayer.resources).reduce((a, b) => aiPlayer.resources[a] > aiPlayer.resources[b] ? a : b);
-            return {
-                offer: { [payWith]: 2 },
-                request: { [need]: 1 }
-            };
-        }
 
-        return null; // Não encontrou troca interessante
-    }
-
-    // =========================================================================
-    // EXECUÇÃO DIRETA (BYPASS UI)
-    // =========================================================================
-
-    executeTrade(negotiation) {
-        // Reutiliza a lógica robusta de troca do LogicNegotiation, mas sem validações de UI
-        // Precisamos injetar a negociação no estado ativo temporariamente ou chamar o método privado se acessível
-        // Como _executeTrade é um método da classe NegotiationLogic, acessamos via this.main
-        
-        if (this.main.negotiationLogic._executeTrade(negotiation)) {
-            updateNegotiationStatus(negotiation.id, 'accepted');
-            removePendingNegotiation(negotiation.id);
+        // 2. Tenta COMPRAR (IA tem pouco)
+        const need = resources.find(k => (aiPlayer.resources[k] || 0) < 2);
+        if (need && (target.resources[need] || 0) > 1) {
+            // Tenta pagar com o recurso que tem mais
+            const payWith = resources.reduce((a, b) => (aiPlayer.resources[a]||0) > (aiPlayer.resources[b]||0) ? a : b);
             
-            const initiator = gameState.players[negotiation.initiatorId];
-            const target = gameState.players[negotiation.targetId];
-
-            addActivityLog({ 
-                type: 'negotiate', 
-                playerName: target.name, // A IA é o target aqui
-                action: 'aceitou proposta de', 
-                details: initiator.name, 
-                turn: gameState.turn 
-            });
-
-            this.main.showFeedback(`🤖 ${target.name} aceitou a proposta de ${initiator.name}!`, 'success');
+            // Só propõe se tiver como pagar
+            if ((aiPlayer.resources[payWith] || 0) >= 2) {
+                return {
+                    offer: { [payWith]: 2 },
+                    request: { [need]: 1 }
+                };
+            }
         }
-    }
 
-    rejectProposal(negotiation, reason) {
-        updateNegotiationStatus(negotiation.id, 'rejected');
-        removePendingNegotiation(negotiation.id);
-        
-        const initiator = gameState.players[negotiation.initiatorId];
-        const target = gameState.players[negotiation.targetId]; // A IA
-
-        // Só notifica se o iniciador for humano (para não spamar log de IA x IA)
-        const initiatorIsHuman = !(initiator.type === 'ai' || initiator.isAI);
-        
-        if (initiatorIsHuman) {
-             this.main.showFeedback(`${target.name} recusou sua proposta.`, 'info');
+        // 3. Fallback: Proposta aleatória para teste (1 Madeira por 1 Agua se tiver)
+        if (aiPlayer.resources.madeira >= 1 && target.resources.agua >= 1) {
+             return { offer: { madeira: 1 }, request: { agua: 1 } };
         }
+
+        return null; 
     }
 
     sendProposal(initiator, target, content) {
         // Consumir custo
         let cost = 1;
-        if (this.main.factionLogic) cost = this.main.factionLogic.modifyNegotiationCost(initiator);
+        if (this.main.factionLogic) {
+             cost = this.main.factionLogic.modifyNegotiationCost(initiator);
+        }
         
-        initiator.resources.ouro -= cost;
+        initiator.resources.ouro = Math.max(0, initiator.resources.ouro - cost);
         gameState.actionsLeft--;
 
         const negotiation = {
@@ -218,6 +189,8 @@ export class AINegotiationSystem {
 
         addPendingNegotiation(negotiation);
         
+        console.log(`🤖 [IA-NEG] Enviou proposta para ${target.name}:`, negotiation);
+
         addActivityLog({ 
             type: 'negotiate', 
             playerName: initiator.name, 
@@ -226,31 +199,57 @@ export class AINegotiationSystem {
             turn: gameState.turn 
         });
 
-        // Se o alvo for Humano, mostra notificação
+        // NOTIFICAÇÃO PARA O JOGADOR HUMANO
+        // Se o alvo não for IA, mostra na tela
         if (!(target.type === 'ai' || target.isAI)) {
-            if (window.uiManager?.negotiation) {
+            if (window.uiManager && window.uiManager.negotiation) {
                 window.uiManager.negotiation.showNegotiationNotification(negotiation);
             }
         }
     }
 
+    // =========================================================================
+    // EXECUÇÃO E UTILITÁRIOS
+    // =========================================================================
+
+    executeTrade(negotiation) {
+        // Chama a lógica central de troca
+        // O método _executeTrade do NegotiationLogic deve ser acessado via main
+        if (this.main.negotiationLogic && typeof this.main.negotiationLogic._executeTrade === 'function') {
+            const success = this.main.negotiationLogic._executeTrade(negotiation);
+            
+            if (success) {
+                updateNegotiationStatus(negotiation.id, 'accepted');
+                removePendingNegotiation(negotiation.id);
+                
+                // Feedback visual se o player humano estiver envolvido
+                const targetIsHuman = !gameState.players[negotiation.targetId].isAI;
+                const initiatorIsHuman = !gameState.players[negotiation.initiatorId].isAI;
+
+                if (targetIsHuman || initiatorIsHuman) {
+                    this.main.showFeedback(`Troca realizada entre ${gameState.players[negotiation.initiatorId].name} e ${gameState.players[negotiation.targetId].name}`, 'success');
+                }
+            }
+        } else {
+            console.error("CRÍTICO: Não foi possível acessar _executeTrade em NegotiationLogic");
+        }
+    }
+
+    rejectProposal(negotiation, reason) {
+        updateNegotiationStatus(negotiation.id, 'rejected');
+        removePendingNegotiation(negotiation.id);
+        console.log(`🤖 [IA-NEG] Proposta rejeitada: ${reason}`);
+    }
+
     isValidTransaction(negotiation) {
-        // Verifica se quem enviou ainda tem os recursos (pode ter gasto no turno de outro jogador ou evento)
         const initiator = gameState.players[negotiation.initiatorId];
-        
-        // Verifica recursos simples
+        if (!initiator) return false;
+
+        // Verifica se o iniciador ainda tem os recursos ofertados
         const hasResources = ['madeira', 'pedra', 'ouro', 'agua'].every(r => 
             (initiator.resources[r] || 0) >= (negotiation.offer[r] || 0)
         );
         
-        if (!hasResources) return false;
-
-        // Verifica regiões (se ainda controla)
-        if (negotiation.offer.regions) {
-            const controlsRegions = negotiation.offer.regions.every(rid => initiator.regions.includes(rid));
-            if (!controlsRegions) return false;
-        }
-
-        return true;
+        return hasResources;
     }
 }
