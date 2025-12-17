@@ -197,7 +197,15 @@ export class NegotiationLogic {
 
         if (this._executeTrade(negotiation)) {
             updateNegotiationStatus(negotiation.id, 'accepted');
-            this.main.showFeedback('Proposta aceita! Troca realizada.', 'success');
+            
+      // FEEDBACK VISUAL MELHORADO
+    const feedbackMsg = `🤝 ${target.name} aceitou a proposta de ${initiator.name}!`;
+    this.main.showFeedback(feedbackMsg, 'success');
+    
+    // Log detalhado no console
+    console.log(`✅ NEGOCIAÇÃO ACEITA: ${initiator.name} ↔ ${target.name}`);
+    console.log(`📤 Oferecido:`, negotiation.offer);
+    console.log(`📥 Recebido:`, negotiation.request);
             
             const initiator = gameState.players[negotiation.initiatorId];
             addActivityLog({ 
@@ -213,7 +221,11 @@ export class NegotiationLogic {
         }
     } else {
         updateNegotiationStatus(negotiation.id, 'rejected');
-        this.main.showFeedback('Proposta recusada.', 'info');
+        // FEEDBACK VISUAL MELHORADO
+    const feedbackMsg = `❌ ${target.name} recusou a proposta de ${initiator.name}.`;
+    this.main.showFeedback(feedbackMsg, 'info');
+    
+    console.log(`❌ NEGOCIAÇÃO RECUSADA: ${initiator.name} → ${target.name}`);
         
         const initiator = gameState.players[negotiation.initiatorId];
         addActivityLog({ 
