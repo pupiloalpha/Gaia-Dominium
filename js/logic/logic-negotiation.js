@@ -149,7 +149,9 @@ export class NegotiationLogic {
     this.main.showFeedback(`Proposta enviada para ${target.name}!${bonusMsg}`, 'success');
     
     achievementsState.totalNegotiations++;
-    if(window.uiManager) window.uiManager.updateFooter();
+    if (window.uiManager && window.uiManager.gameManager) {
+            window.uiManager.gameManager.updateFooter();
+    }
     
     return true;
   }
