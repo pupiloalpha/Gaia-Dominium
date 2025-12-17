@@ -1,5 +1,14 @@
 // logic-ai-coordinator.js - Coordenador de IA
-import { gameState, getCurrentPlayer, getAIPlayer, getPendingNegotiationsForPlayer, setActiveNegotiation } from '../state/game-state.js';
+
+import { 
+  gameState, getCurrentPlayer, getAIPlayer, 
+  getPendingNegotiationsForPlayer, setActiveNegotiation,
+  clearActiveNegotiation, removePendingNegotiation,
+  updateNegotiationStatus, resetNegotiationState,
+  setNegotiationTarget, updateNegotiationResource,
+  validateNegotiationState, getNegotiationValidationErrors,
+  getAllAIPlayers
+} from '../state/game-state.js';
 import { GAME_CONFIG } from '../state/game-config.js';
 
 export class AICoordinator {
