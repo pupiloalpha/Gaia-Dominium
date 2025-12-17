@@ -159,12 +159,19 @@ preventInitialScreenReturn() {
 initializeAISystem() {
     console.log('🤖 Inicializando sistema de IA...');
     
-    // Identificar jogadores IA por MULTIPLOS critérios
+    // Limpar instâncias anteriores
+    if (window.aiInstances) {
+        window.aiInstances = [];
+    }
+    
     const aiPlayers = gameState.players
         .map((player, index) => {
-            if (player.type === 'ai' || player.isAI === true) {
+            // VERIFICAÇÃO ROBUSTA - múltiplos critérios
+            const isAI = player.type === 'ai' || player.isAI === true;
+            
+            if (isAI) {
                 return { 
-                    index: player.id, // USAR player.id em vez do índice do array
+                    index: player.id, // Usar ID real do jogador
                     difficulty: player.aiDifficulty || 'medium',
                     name: player.name,
                     playerObject: player
@@ -174,48 +181,57 @@ initializeAISystem() {
         })
         .filter(Boolean);
         
-        if (aiPlayers.length === 0) {
-            console.log('🤖 Nenhum jogador IA encontrado');
-            return;
-        }
-        
-        console.log(`🤖 Encontrados ${aiPlayers.length} jogadores IA:`, aiPlayers);
-        
-        try {
-            // Criar instâncias de IA
-            const aiInstances = aiPlayers.map(({ index, difficulty }) => {
-                const ai = AIFactory.createAI(index, difficulty);
-                console.log(`🤖 IA criada para jogador ${index} (${difficulty}): ${ai.personality.name}`);
-                return ai;
-            });
-            
-            // Registrar IAs no estado do jogo
-            setAIPlayers(aiInstances);
-            
-            // Adicionar evento de debug
-            window.aiDebugUpdate = () => this.updateAIDebugPanel();
-            
-            // Se o primeiro jogador for IA, iniciar turno após delay
-            if (aiPlayers.some(p => p.index === gameState.currentPlayerIndex)) {
-                console.log('🤖 Primeiro jogador é IA, aguardando início...');
-                
-                // Pequeno delay para UI carregar
-                setTimeout(() => {
-                    if (window.gameLogic && window.gameLogic.checkAndExecuteAITurn) {
-                        console.log('🤖 Iniciando turno da IA...');
-                        window.gameLogic.checkAndExecuteAITurn();
-                    }
-                }, 2000);
-            }
-            
-            this.modals.showFeedback(`Sistema de IA inicializado com ${aiInstances.length} jogadores`, 'info');
-            
-        } catch (error) {
-            console.error('🤖 Erro ao inicializar IA:', error);
-            this.modals.showFeedback('Erro ao inicializar sistema de IA', 'error');
-        }
+    if (aiPlayers.length === 0) {
+        console.log('🤖 Nenhum jogador IA encontrado');
+        return;
     }
-
+    
+    console.log(`🤖 Encontrados ${aiPlayers.length} jogadores IA:`, 
+                aiPlayers.map(p => `${p.name} (${p.difficulty})`));
+    
+    try {
+        // Criar instâncias de IA e registrar globalmente
+        window.aiInstances = aiPlayers.map(({ index, difficulty, name }) => {
+            const ai = AIFactory.createAI(index, difficulty);
+            console.log(`✅ IA criada: ${name} (ID: ${index}, Dificuldade: ${difficulty})`);
+            return ai;
+        });
+        
+        // Registrar no estado do jogo
+        if (typeof setAIPlayers === 'function') {
+            setAIPlayers(window.aiInstances);
+        }
+        
+        // Adicionar evento de debug
+        window.aiDebugUpdate = () => this.updateAIDebugPanel();
+        
+        // Verificar se é turno de IA
+        const currentPlayer = getCurrentPlayer();
+        const isFirstPlayerAI = currentPlayer && 
+                              (currentPlayer.type === 'ai' || currentPlayer.isAI);
+        
+        if (isFirstPlayerAI) {
+            console.log('🤖 Primeiro jogador é IA, iniciando em 2 segundos...');
+            
+            setTimeout(() => {
+                if (window.gameLogic && window.gameLogic.checkAndExecuteAITurn) {
+                    console.log('🚀 Iniciando turno da IA...');
+                    window.gameLogic.checkAndExecuteAITurn();
+                }
+            }, 2000);
+        }
+        
+        this.modals.showFeedback(
+            `Sistema de IA inicializado com ${aiPlayers.length} jogadores controlados por computador`,
+            'info'
+        );
+        
+    } catch (error) {
+        console.error('❌ Erro ao inicializar IA:', error);
+        this.modals.showFeedback('Erro ao inicializar sistema de IA', 'error');
+    }
+}
+    
     setupAIDebugButton() {
         // Criar botão de debug da IA (apenas em desenvolvimento)
         const debugBtn = document.createElement('button');
