@@ -159,9 +159,18 @@ preventInitialScreenReturn() {
 initializeAISystem() {
     console.log('🤖 Inicializando sistema de IA...');
     
+    // Log de todos os jogadores
+    console.log('👥 Lista completa de jogadores:', gameState.players.map(p => ({
+        id: p.id,
+        name: p.name,
+        type: p.type,
+        isAI: p.isAI,
+        aiDifficulty: p.aiDifficulty
+    })));
+    
     const aiPlayers = gameState.players
         .map((player, index) => {
-            console.log(`👤 Verificando jogador ${player.id}: ${player.name}`, {
+            console.log(`🔍 Verificando jogador ${index}: ${player.name}`, {
                 type: player.type,
                 isAI: player.isAI,
                 aiDifficulty: player.aiDifficulty
@@ -188,35 +197,54 @@ initializeAISystem() {
     
     try {
         const aiInstances = aiPlayers.map(({ index, difficulty }) => {
-            console.log(`🤖 Criando IA para jogador ${index} (${difficulty})...`);
+            console.log(`🤖 Criando IA para jogador ID: ${index} (${difficulty})...`);
+            
+            // Verificar se o índice é válido
+            if (index === undefined || index === null) {
+                console.error(`❌ Índice inválido para IA: ${index}`);
+                return null;
+            }
+            
             const ai = AIFactory.createAI(index, difficulty);
-            console.log(`🤖 IA criada: ${ai.personality.name} (ID: ${ai.playerId})`);
+            console.log(`✅ IA criada: ${ai.personality.name} (ID: ${ai.playerId}, Dif: ${difficulty})`);
             return ai;
-        });
+        }).filter(Boolean); // Filtrar nulos
         
         console.log(`✅ ${aiInstances.length} instância(s) de IA criadas`);
+        
+        // Log detalhado de cada IA
+        aiInstances.forEach((ai, idx) => {
+            console.log(`   ${idx + 1}. ${ai.personality.name} - Jogador ID: ${ai.playerId}`);
+        });
         
         // Registrar IAs no estado do jogo
         setAIPlayers(aiInstances);
         
-        // Também expor globalmente para backup
+        // Expor globalmente
         window.aiInstances = aiInstances;
         
-        console.log('🤖 IAs registradas no estado do jogo');
+        // Adicionar ao gameState para acesso fácil
+        gameState.aiInstances = aiInstances;
+        
+        console.log('🤖 IAs registradas e expostas globalmente');
         
         // Verificar se o primeiro jogador é IA
         const firstPlayer = gameState.players[gameState.currentPlayerIndex];
         const isFirstPlayerAI = firstPlayer && (firstPlayer.type === 'ai' || firstPlayer.isAI);
         
         if (isFirstPlayerAI) {
-            console.log(`🤖 Primeiro jogador é IA: ${firstPlayer.name}, iniciando em 2 segundos...`);
+            console.log(`🤖 Primeiro jogador é IA: ${firstPlayer.name}, iniciando em 3 segundos...`);
             
             setTimeout(() => {
                 if (window.gameLogic && window.gameLogic.checkAndExecuteAITurn) {
-                    console.log('🤖 Iniciando turno da IA...');
+                    console.log('🤖 Iniciando turno da primeira IA...');
                     window.gameLogic.checkAndExecuteAITurn();
+                } else {
+                    console.error('❌ gameLogic ou checkAndExecuteAITurn não disponível');
                 }
-            }, 2000);
+            }, 3000);
+        } else {
+            console.log(`🤖 Primeiro jogador é humano: ${firstPlayer?.name}`);
         }
         
         this.modals.showFeedback(`Sistema de IA inicializado com ${aiInstances.length} jogador(es)`, 'info');
