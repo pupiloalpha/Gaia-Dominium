@@ -287,6 +287,12 @@ export class NegotiationLogic {
         achievementsState.totalNegotiations++;
 
         console.log('Troca concluída com sucesso');
+      // Verificar vitória IMEDIATAMENTE após negociação
+      setTimeout(() => {
+          if (window.gameLogic?.turnLogic?.checkVictory) {
+              window.gameLogic.turnLogic.checkVictory();
+          }
+      }, 500);
         return true;
     } catch (e) {
         console.error("Erro na troca:", e);
