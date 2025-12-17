@@ -1,7 +1,6 @@
 // game-logic.js - Fachada Principal
 import { ActionLogic } from './logic-actions.js';
 import { FactionLogic } from './logic-factions.js';
-import { AINegotiationSystem } from '../ai/ai-negotiation.js';
 import { NegotiationLogic } from './logic-negotiation.js';
 import { TurnLogic } from './logic-turn.js';
 import { AICoordinator } from './logic-ai-coordinator.js';
@@ -13,7 +12,6 @@ class GameLogic {
     // Inicializar submódulos
     this.actionsLogic = new ActionLogic(this);
     this.negotiationLogic = new NegotiationLogic(this);
-    this.aiNegotiationSystem = new AINegotiationSystem(this);
     this.turnLogic = new TurnLogic(this);
     this.aiCoordinator = new AICoordinator(this);
     this.factionLogic = new FactionLogic(this);
@@ -146,6 +144,25 @@ class GameLogic {
   handleAITurn() { this.aiCoordinator.checkAndExecuteAITurn(); } // Compatibilidade com main.js
   checkAndExecuteAITurn() { this.aiCoordinator.checkAndExecuteAITurn(); }
   forceAIEndTurn() { this.aiCoordinator.forceAIEndTurn(); }
+
+async executeAITurnIfNeeded() {
+  const currentPlayer = getCurrentPlayer();
+  
+  // Verificar se o jogador atual é IA
+  if (currentPlayer && (currentPlayer.type === 'ai' || currentPlayer.isAI)) {
+    console.log(`🤖 É turno da IA: ${currentPlayer.name}`);
+    
+    // Pequeno delay antes de iniciar
+    await new Promise(resolve => setTimeout(resolve, 1000));
+    
+    // Executar turno da IA
+    if (this.aiCoordinator) {
+      await this.aiCoordinator.checkAndExecuteAITurn();
+    } else {
+      console.error('❌ AICoordinator não disponível');
+    }
+  }
+}
   
   // Utils de Feedback (Centralizado)
   showFeedback(message, type = 'info') {
