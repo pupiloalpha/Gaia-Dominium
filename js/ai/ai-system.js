@@ -1200,7 +1200,9 @@ async processPendingNegotiations(gameState) {
     // Processar cada proposta
     for (const negotiation of pendingNegotiations) {
         try {
-            console.log(`🤖 ${myPlayer.name} avaliando proposta de ${gameState.players[negotiation.initiatorId]?.name}`);
+            const initiator = gameState.players[negotiation.initiatorId];
+            const initiatorName = initiator ? initiator.name : 'Desconhecido';
+            console.log(`🤖 ${myPlayer.name} avaliando proposta de ${initiatorName}`);
             
             // Pequeno delay para simular pensamento
             await this.delay(this.settings.reactionDelay);
@@ -1241,7 +1243,7 @@ async processPendingNegotiations(gameState) {
     
     console.log(`🤖 ${myPlayer.name} finalizou processamento de propostas`);
 }
-
+  
 // ADICIONAR método auxiliar para criar e enviar proposta
 async createAndSendProposal(gameState) {
     try {
