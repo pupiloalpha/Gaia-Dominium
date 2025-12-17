@@ -970,13 +970,7 @@ class NegotiationUI {
   // ==================== NOTIFICAÇÕES ====================
   
   showNegotiationNotification(negotiation) {
-    // Não mostrar notificação para IA
-  const targetPlayer = gameState.players[negotiation.targetId];
-  if (targetPlayer && (targetPlayer.type === 'ai' || targetPlayer.isAI)) {
-    console.log(`🤖 Notificação ignorada para IA ${targetPlayer.name}`);
-    return;
-  }
-  
+    const targetPlayer = gameState.players[negotiation.targetId];
     const initiatorPlayer = gameState.players[negotiation.initiatorId];
     
     if (!targetPlayer || !initiatorPlayer) return;
