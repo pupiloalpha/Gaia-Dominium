@@ -86,48 +86,24 @@ export class AICoordinator {
     }
   }
 
-async _executeNegotiations(ai) {
-    console.log(`🤖 ${ai.personality.name} processando negociações`);
+  async _executeNegotiations(aiPlayer) {
+    console.log(`🤖 ${aiPlayer.name} iniciando sistema de negociação simplificado`);
     
-    // 1. Processar propostas PENDENTES (destinadas à IA)
-    const currentPlayer = getCurrentPlayer();
-    const currentPlayerId = Number(currentPlayer.id);
-    
-    const pending = getPendingNegotiationsForPlayer(currentPlayerId);
-    console.log(`🤖 ${currentPlayer.name} tem ${pending.length} proposta(s) pendente(s)`);
-    
-    if (pending.length > 0 && ai.handlePendingNegotiations) {
-        await ai.handlePendingNegotiations(pending, gameState);
-        await this._delay(1000); // Dar tempo para processar
-    }
-    
-    // 2. Enviar nova proposta (se possível)
-    if (gameState.actionsLeft > 0 && currentPlayer.resources.ouro >= 1) {
-        console.log(`🤖 ${currentPlayer.name} tentando enviar proposta`);
-        
-        // Pequeno delay antes de enviar nova proposta
-        await this._delay(1500);
-        
-        if (ai.sendNegotiationProposal) {
-            try {
-                const success = await ai.sendNegotiationProposal(gameState);
-                if (success) {
-                    console.log(`✅ ${currentPlayer.name} enviou proposta com sucesso`);
-                }
-            } catch (error) {
-                console.error(`❌ Erro ao enviar proposta:`, error);
-            }
+    // Verifica se o módulo de negociação de IA existe
+    if (this.main.aiNegotiationSystem) {
+        try {
+            await this.main.aiNegotiationSystem.processTurn(aiPlayer);
+        } catch (e) {
+            console.error("Erro no aiNegotiationSystem:", e);
         }
+    } else {
+        console.warn("AINegotiationSystem não inicializado no GameLogic");
     }
     
-    // 3. Se não há ações ou não tem ouro, finalizar turno
-    if (gameState.actionsLeft === 0 || currentPlayer.resources.ouro < 1) {
-        console.log(`🤖 ${currentPlayer.name} terminou negociação`);
-        return 'end_turn';
-    }
-    
-    return 'continue';
-}
+    // Sempre retorna 'end_turn' pois a IA faz tudo o que precisa no processTurn acima
+    // e não fica "esperando" input.
+    return 'end_turn';
+  }
 
   captureFeedback(message, type) {
     this.feedbackHistory.push({ message, type, timestamp: Date.now() });
