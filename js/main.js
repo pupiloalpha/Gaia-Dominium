@@ -439,7 +439,9 @@ window.showGameInterface = () => {
   hideInitialScreenAndShowGameUI();
   if (window.uiManager) {
     window.uiManager.updateUI();
-    window.uiManager.updateFooter();
+    if (window.uiManager.updateFooter) {
+        window.uiManager.updateFooter();
+    }
   }
 };
 
