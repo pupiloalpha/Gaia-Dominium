@@ -144,25 +144,6 @@ class GameLogic {
   handleAITurn() { this.aiCoordinator.checkAndExecuteAITurn(); } // Compatibilidade com main.js
   checkAndExecuteAITurn() { this.aiCoordinator.checkAndExecuteAITurn(); }
   forceAIEndTurn() { this.aiCoordinator.forceAIEndTurn(); }
-
-async executeAITurnIfNeeded() {
-  const currentPlayer = getCurrentPlayer();
-  
-  // Verificar se o jogador atual é IA
-  if (currentPlayer && (currentPlayer.type === 'ai' || currentPlayer.isAI)) {
-    console.log(`🤖 É turno da IA: ${currentPlayer.name}`);
-    
-    // Pequeno delay antes de iniciar
-    await new Promise(resolve => setTimeout(resolve, 1000));
-    
-    // Executar turno da IA
-    if (this.aiCoordinator) {
-      await this.aiCoordinator.checkAndExecuteAITurn();
-    } else {
-      console.error('❌ AICoordinator não disponível');
-    }
-  }
-}
   
   // Utils de Feedback (Centralizado)
   showFeedback(message, type = 'info') {
