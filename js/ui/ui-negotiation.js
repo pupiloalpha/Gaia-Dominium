@@ -969,8 +969,34 @@ class NegotiationUI {
 
   // ==================== NOTIFICAÇÕES ====================
   
-  showNegotiationNotification(negotiation) {
+  showNegotiationNotification(negotiation) {)
+    // LOG PARA DEBUG
+    console.log(`📨 NOVA PROPOSTA:`, {
+        id: negotiation.id,
+        de: gameState.players[negotiation.initiatorId]?.name,
+        para: gameState.players[negotiation.targetId]?.name,
+        status: negotiation.status,
+        turno: negotiation.turn
+    });
+    
+    // Verificar se o alvo é IA
     const targetPlayer = gameState.players[negotiation.targetId];
+    if (targetPlayer && (targetPlayer.type === 'ai' || targetPlayer.isAI)) {
+        console.log(`🤖 PROPOSTA PARA IA: ${targetPlayer.name} será notificada`);
+        
+        // Gatilho imediato para IA processar
+        setTimeout(() => {
+            if (window.aiCoordinator && window.gameLogic) {
+                console.log(`🤖 Gatilho para IA ${targetPlayer.name} processar proposta`);
+                
+                // Se for o turno da IA, processar imediatamente
+                if (gameState.currentPlayerIndex === negotiation.targetId) {
+                    window.aiCoordinator.checkAndExecuteAITurn();
+                }
+            }
+        }, 1000);
+    }
+    
     const initiatorPlayer = gameState.players[negotiation.initiatorId];
     
     if (!targetPlayer || !initiatorPlayer) return;
