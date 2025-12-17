@@ -172,7 +172,9 @@ async _executeNegotiations(ai) {
         // Atualizar UI após processar propostas
         if (window.uiManager) {
             window.uiManager.updateUI();
-            window.uiManager.updateFooter();
+            if (window.uiManager.gameManager) {
+            window.uiManager.gameManager.updateFooter();
+            }
         }
         
         await this._delay(1000);
