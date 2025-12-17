@@ -969,12 +969,15 @@ class NegotiationUI {
 
   // ==================== NOTIFICAÇÕES ====================
   
-  showNegotiationNotification(negotiation) {)
+  showNegotiationNotification(negotiation) {
     // LOG PARA DEBUG
+    const initiator = gameState.players[negotiation.initiatorId];
+    const target = gameState.players[negotiation.targetId];
+    
     console.log(`📨 NOVA PROPOSTA:`, {
         id: negotiation.id,
-        de: gameState.players[negotiation.initiatorId]?.name,
-        para: gameState.players[negotiation.targetId]?.name,
+        de: initiator ? initiator.name : 'Desconhecido',
+        para: target ? target.name : 'Desconhecido',
         status: negotiation.status,
         turno: negotiation.turn
     });
