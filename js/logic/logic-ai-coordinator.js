@@ -119,97 +119,148 @@ async checkAndExecuteAITurn() {
   }
 
 async _executeNegotiations(ai) {
-    console.log(`🤖 ${ai.personality.name} processando negociações`);
+    console.log(`🤖 ${ai.personality?.name || 'IA'} processando negociações`);
     
-    // 1. Processar propostas PENDENTES (destinadas à IA)
     const currentPlayer = getCurrentPlayer();
     
-    // Obter propostas pendentes usando método robusto
+    // 1. PRIMEIRO: Processar propostas recebidas (se houver)
     const pending = getPendingNegotiationsForPlayer(currentPlayer.id);
-    console.log(`🤖 ${currentPlayer.name} tem ${pending.length} proposta(s) pendente(s)`);
+    console.log(`📨 ${currentPlayer.name} tem ${pending.length} proposta(s) pendente(s)`);
     
     if (pending.length > 0) {
         console.log(`🤖 Processando ${pending.length} proposta(s) pendente(s)`);
         
-        for (const negotiation of pending) {
-            try {
-                await this._delay(1000);
-                
-                // Verificar se a proposta ainda é válida
-                const initiator = gameState.players[negotiation.initiatorId];
-                const target = gameState.players[negotiation.targetId];
-                
-                if (!initiator || !target) {
-                    console.log(`🤖 Proposta ${negotiation.id} inválida - jogador não encontrado`);
-                    removePendingNegotiation(negotiation.id);
-                    continue;
-                }
-                
-                // Avaliar proposta usando o AIBrain
-                const shouldAccept = ai.evaluateNegotiationProposal(negotiation, gameState);
-                
-                console.log(`🤖 ${ai.personality.name} decidiu: ${shouldAccept ? 'ACEITAR' : 'RECUSAR'}`);
-                
-                if (shouldAccept) {
-                    await ai.acceptNegotiation(negotiation);
-                    // Registrar no histórico
-                    ai.memory.negotiationHistory.push({
-                        turn: gameState.turn,
-                        partner: negotiation.initiatorId,
-                        accepted: true
-                    });
-                } else {
-                    await ai.rejectNegotiation(negotiation);
-                    // Registrar no histórico
-                    ai.memory.negotiationHistory.push({
-                        turn: gameState.turn,
-                        partner: negotiation.initiatorId,
-                        accepted: false
-                    });
-                }
-                
-                await this._delay(500);
-                
-            } catch (error) {
-                console.error(`🤖 Erro ao processar proposta ${negotiation.id}:`, error);
+        // Usar o método CORRETO do AIBrain (se disponível)
+        if (ai.processPendingNegotiations) {
+            await ai.processPendingNegotiations(gameState);
+        } else {
+            // Fallback: processar manualmente
+            for (const negotiation of pending) {
+                await this._processSingleNegotiation(ai, negotiation);
+                await this._delay(800);
             }
         }
+        
+        // Atualizar UI após processar propostas
+        if (window.uiManager) {
+            window.uiManager.updateUI();
+            window.uiManager.updateFooter();
+        }
+        
+        await this._delay(1000);
     }
     
-    // 2. Enviar nova proposta (se possível)
+    // 2. DEPOIS: Enviar proposta (se possível)
     if (gameState.actionsLeft > 0 && currentPlayer.resources.ouro >= 1) {
-        console.log(`🤖 ${currentPlayer.name} tentando enviar proposta`);
+        console.log(`🤖 ${currentPlayer.name} pode enviar proposta`);
         
-        await this._delay(1500);
+        await this._delay(1200);
         
         try {
-            // Usar método correto do AIBrain
+            // Chamar método CORRETO de envio
+            let success = false;
+            
             if (ai.sendNegotiationProposal) {
-                const success = await ai.sendNegotiationProposal(gameState);
-                console.log(`🤖 Proposta enviada: ${success ? 'SUCESSO' : 'FALHA'}`);
-                
-                if (success) {
-                    // Consumir ação
-                    if (gameState.actionsLeft > 0) gameState.actionsLeft--;
-                    
-                    // Atualizar UI
-                    if (window.uiManager) {
-                        window.uiManager.updateUI();
-                    }
-                }
+                success = await ai.sendNegotiationProposal(gameState);
+            } else if (ai.createAndSendProposal) {
+                success = await ai.createAndSendProposal(gameState);
+            } else {
+                console.warn(`🤖 IA ${currentPlayer.name} não tem método de envio de proposta`);
+                success = await this._sendSimpleProposal(ai, currentPlayer, gameState);
             }
+            
+            console.log(`🤖 Proposta enviada: ${success ? '✅ SUCESSO' : '❌ FALHA'}`);
+            
+            if (success && gameState.actionsLeft > 0) {
+                gameState.actionsLeft--;
+            }
+            
         } catch (error) {
             console.error(`🤖 Erro ao enviar proposta:`, error);
         }
+    } else {
+        console.log(`🤖 ${currentPlayer.name} não pode enviar proposta (ações: ${gameState.actionsLeft}, ouro: ${currentPlayer.resources.ouro})`);
     }
     
-    // 3. Se não há ações ou não tem ouro, finalizar fase
-    if (gameState.actionsLeft === 0 || currentPlayer.resources.ouro < 1) {
-        console.log(`🤖 ${currentPlayer.name} terminou negociação`);
-        return 'end_turn';
+    // 3. Sinalizar término da fase
+    console.log(`🤖 ${currentPlayer.name} terminou fase de negociação`);
+    return 'end_turn';
+}
+
+// ADICIONAR função auxiliar para processar negociação individual
+async _processSingleNegotiation(ai, negotiation) {
+    try {
+        console.log(`🤖 Avaliando proposta ${negotiation.id} de ${gameState.players[negotiation.initiatorId]?.name}`);
+        
+        // Avaliar proposta
+        const shouldAccept = ai.evaluateNegotiationProposal?.(negotiation, gameState) || false;
+        
+        console.log(`🤖 Decisão: ${shouldAccept ? '✅ ACEITAR' : '❌ RECUSAR'}`);
+        
+        // Configurar como negociação ativa
+        setActiveNegotiation(negotiation);
+        await this._delay(500);
+        
+        // Responder via gameLogic
+        if (window.gameLogic?.handleNegResponse) {
+            window.gameLogic.handleNegResponse(shouldAccept);
+        }
+        
+        // Registrar no histórico
+        if (ai.memory && ai.memory.negotiationHistory) {
+            ai.memory.negotiationHistory.push({
+                turn: gameState.turn,
+                partner: negotiation.initiatorId,
+                accepted: shouldAccept,
+                timestamp: Date.now()
+            });
+        }
+        
+        await this._delay(500);
+        
+    } catch (error) {
+        console.error(`🤖 Erro ao processar proposta ${negotiation.id}:`, error);
     }
-    
-    return 'continue';
+}
+
+// ADICIONAR função auxiliar para envio simples
+async _sendSimpleProposal(ai, player, gameState) {
+    try {
+        // Encontrar alvo
+        const otherPlayers = gameState.players.filter(p => 
+            p.id !== player.id && 
+            p.resources.ouro >= 1
+        );
+        
+        if (otherPlayers.length === 0) return false;
+        
+        const target = otherPlayers[0]; // Primeiro alvo disponível
+        
+        // Criar proposta simples
+        const proposal = {
+            offer: { madeira: 1, pedra: 0, ouro: 0, agua: 1 },
+            request: { madeira: 0, pedra: 1, ouro: 0, agua: 0 }
+        };
+        
+        // Configurar estado
+        resetNegotiationState();
+        setNegotiationTarget(target.id);
+        
+        // Configurar recursos
+        updateNegotiationResource('offer', 'madeira', 1);
+        updateNegotiationResource('offer', 'agua', 1);
+        updateNegotiationResource('request', 'pedra', 1);
+        
+        // Enviar
+        if (window.gameLogic?.handleSendNegotiation) {
+            return await window.gameLogic.handleSendNegotiation();
+        }
+        
+        return false;
+    } catch (error) {
+        console.error('Erro em proposta simples:', error);
+        return false;
+    }
 }
   
   captureFeedback(message, type) {
