@@ -127,7 +127,9 @@ if (introVideo) {
 
 function setupInitialUI() {
   if (window.uiManager) {
-    window.uiManager.renderIconSelection();
+    if (window.uiManager.playersManager) {
+    window.uiManager.playersManager.renderIconSelection();
+    }
     // Inicializar seleção de facções
     setTimeout(() => {
       if (window.uiManager.renderFactionSelection) {
@@ -378,7 +380,9 @@ async function checkForSavedGame() {
       setTimeout(() => {
         if (window.uiManager) {
           window.uiManager.updateUI();
-          window.uiManager.updateFooter();
+          if (window.uiManager.gameManager) {
+            window.uiManager.gameManager.updateFooter();
+          }
           
           if (window.uiManager.modals?.showFeedback) {
             window.uiManager.modals.showFeedback('Jogo carregado com sucesso!', 'success');
@@ -436,7 +440,9 @@ window.showGameInterface = () => {
   hideInitialScreenAndShowGameUI();
   if (window.uiManager) {
     window.uiManager.updateUI();
-    window.uiManager.updateFooter();
+    if (window.uiManager.gameManager) {
+       window.uiManager.gameManager.updateFooter();
+    }
   }
 };
 
