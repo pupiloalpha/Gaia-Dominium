@@ -33,7 +33,10 @@ export class ActionLogic {
 
   consumeAction() {
     gameState.actionsLeft--;
-    if (window.uiManager?.updateFooter) setTimeout(() => window.uiManager.updateFooter(), 10);
+    if (window.uiManager && window.uiManager.gameManager) {
+         setTimeout(() => window.uiManager.gameManager.updateFooter(), 10);
+    }
+    
     return true;
   }
 
@@ -251,7 +254,9 @@ export class ActionLogic {
     this.main.turnLogic.checkVictory();
     if (window.uiManager) {
       window.uiManager.updateUI();
-      setTimeout(() => window.uiManager.updateFooter(), 100);
+      if (window.uiManager.gameManager) {
+          setTimeout(() => window.uiManager.gameManager.updateFooter(), 100);
+      }    
     }
   }
 }
