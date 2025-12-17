@@ -567,6 +567,63 @@
 </button>
 
   <!-- SCRIPTS MODULARES -->
-  <script type="module" src="./js/main.js"></script>
+  <script type="module" src="./js/main.js">
+
+    // test-negotiation.js - Teste de Negociação
+function testAINegotiation() {
+    console.log('🧪 TESTE DE NEGOCIAÇÃO DA IA');
+    
+    const aiPlayers = gameState.players.filter(p => p.type === 'ai' || p.isAI);
+    const humanPlayers = gameState.players.filter(p => !p.type || p.type === 'human');
+    
+    console.log(`Jogadores IA: ${aiPlayers.length}`);
+    console.log(`Jogadores Humanos: ${humanPlayers.length}`);
+    
+    // Forçar uma negociação de teste
+    if (aiPlayers.length > 0 && humanPlayers.length > 0) {
+        const ai = aiPlayers[0];
+        const human = humanPlayers[0];
+        
+        console.log(`🧪 Testando negociação: ${ai.name} (IA) ↔ ${human.name} (Humano)`);
+        
+        // Criar proposta de teste
+        const testNegotiation = {
+            id: 'test_' + Date.now(),
+            initiatorId: ai.id,
+            targetId: human.id,
+            offer: { madeira: 3, pedra: 0, ouro: 0, agua: 0 },
+            request: { madeira: 0, pedra: 2, ouro: 0, agua: 0 },
+            timestamp: Date.now(),
+            turn: gameState.turn,
+            status: 'pending'
+        };
+        
+        // Adicionar à lista pendente
+        addPendingNegotiation(testNegotiation);
+        
+        console.log('✅ Proposta de teste criada:', testNegotiation);
+        
+        // Mostrar notificação para humano
+        if (window.uiManager?.negotiation?.showNegotiationNotification) {
+            window.uiManager.negotiation.showNegotiationNotification(testNegotiation);
+        }
+    }
+}
+
+// Adicionar botão de teste à UI
+function addTestButton() {
+    const testBtn = document.createElement('button');
+    testBtn.id = 'testNegotiationBtn';
+    testBtn.className = 'fixed bottom-20 right-4 z-40 p-3 bg-purple-600 rounded-lg text-white shadow-lg hover:bg-purple-700 transition';
+    testBtn.innerHTML = '🧪 Testar Negociação';
+    testBtn.onclick = testAINegotiation;
+    
+    document.body.appendChild(testBtn);
+}
+
+// Inicializar após carregamento
+setTimeout(addTestButton, 3000);
+    
+  </script>
 </body>
 </html>
