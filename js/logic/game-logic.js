@@ -61,7 +61,9 @@ class GameLogic {
                 gameState.actionsLeft = GAME_CONFIG.ACTIONS_PER_TURN;
                 if (window.uiManager) {
                     window.uiManager.updateUI();
-                    window.uiManager.updateFooter();
+                    if (window.uiManager.gameManager) {
+                        window.uiManager.gameManager.updateFooter();
+                    }
                 }
             }
         }, 5000);
