@@ -200,10 +200,15 @@ async _executeNegotiations(ai) {
 // ADICIONAR função auxiliar para processar negociação individual
 async _processSingleNegotiation(ai, negotiation) {
     try {
-        console.log(`🤖 Avaliando proposta ${negotiation.id} de ${gameState.players[negotiation.initiatorId]?.name}`);
+        const initiator = gameState.players[negotiation.initiatorId];
+        const initiatorName = initiator ? initiator.name : 'Desconhecido';
+        console.log(`🤖 Avaliando proposta ${negotiation.id} de ${initiatorName}`);
         
         // Avaliar proposta
-        const shouldAccept = ai.evaluateNegotiationProposal?.(negotiation, gameState) || false;
+        let shouldAccept = false;
+        if (ai.evaluateNegotiationProposal) {
+            shouldAccept = ai.evaluateNegotiationProposal(negotiation, gameState);
+        }
         
         console.log(`🤖 Decisão: ${shouldAccept ? '✅ ACEITAR' : '❌ RECUSAR'}`);
         
@@ -212,7 +217,7 @@ async _processSingleNegotiation(ai, negotiation) {
         await this._delay(500);
         
         // Responder via gameLogic
-        if (window.gameLogic?.handleNegResponse) {
+        if (window.gameLogic && window.gameLogic.handleNegResponse) {
             window.gameLogic.handleNegResponse(shouldAccept);
         }
         
@@ -232,7 +237,7 @@ async _processSingleNegotiation(ai, negotiation) {
         console.error(`🤖 Erro ao processar proposta ${negotiation.id}:`, error);
     }
 }
-
+  
 // ADICIONAR função auxiliar para envio simples
 async _sendSimpleProposal(ai, player, gameState) {
     try {
@@ -262,8 +267,8 @@ async _sendSimpleProposal(ai, player, gameState) {
         updateNegotiationResource('request', 'pedra', 1);
         
         // Enviar
-        if (window.gameLogic?.handleSendNegotiation) {
-            return await window.gameLogic.handleSendNegotiation();
+        if (window.gameLogic && window.gameLogic.handleSendNegotiation) {
+           return await window.gameLogic.handleSendNegotiation();
         }
         
         return false;
