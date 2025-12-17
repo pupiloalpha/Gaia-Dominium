@@ -58,7 +58,9 @@ export class NegotiationLogic {
 
     if (window.uiManager) {
       window.uiManager.updateUI();
-      window.uiManager.updateFooter();
+      if (window.uiManager.gameManager) {
+            window.uiManager.gameManager.updateFooter();
+      }
     }
     
     addActivityLog({ 
