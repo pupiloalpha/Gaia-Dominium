@@ -28,23 +28,55 @@ export class AICoordinator {
     }
   }
 
-  async checkAndExecuteAITurn() {
+  // FUNÇÃO helper para obter IA correta
+_getAIPlayerForCurrentPlayer() {
+    const currentPlayer = getCurrentPlayer();
+    if (!currentPlayer) return null;
+    
+    // Buscar por ID direto no gameState
+    const allAIs = getAllAIPlayers?.() || window.aiInstances || [];
+    
+    // Procurar IA com ID correspondente
+    const ai = allAIs.find(aiInstance => {
+        // Converter ambos para Number para comparação segura
+        const aiId = Number(aiInstance.playerId);
+        const playerId = Number(currentPlayer.id);
+        return aiId === playerId;
+    });
+    
+    if (!ai) {
+        console.warn(`🤖 IA não encontrada para jogador ${currentPlayer.id} (${currentPlayer.name})`);
+        console.log('📋 IAs disponíveis:', allAIs.map(a => ({id: a.playerId, name: a.personality?.name})));
+    }
+    
+    return ai;
+}
+
+async checkAndExecuteAITurn() {
     if (this.inProgress) return;
     const player = getCurrentPlayer();
     if (!player || (!player.type === 'ai' && !player.isAI)) return;
 
     this.inProgress = true;
-    console.log(`🤖 Iniciando loop IA para ${player.name}`);
+    console.log(`🤖 Iniciando loop IA para ${player.name} (ID: ${player.id})`);
 
     try {
-        await this._runAILoop(player);
+        // USAR a nova função helper
+        const ai = this._getAIPlayerForCurrentPlayer();
+        if (!ai) { 
+            console.error(`🤖 IA não encontrada para ${player.name}`);
+            this.forceAIEndTurn(); 
+            return; 
+        }
+
+        await this._runAILoop(ai); // Passar a instância da IA
     } catch (e) {
         console.error('Erro crítico IA:', e);
         this.forceAIEndTurn();
     } finally {
         this.inProgress = false;
     }
-  }
+}
 
   async _runAILoop(player) {
     const ai = getAIPlayer(player.id);
