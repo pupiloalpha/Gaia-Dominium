@@ -129,7 +129,9 @@ class AIManager {
     // Atualizar UI
     if (window.uiManager) {
       window.uiManager.updateUI();
-      window.uiManager.updateFooter();
+      if (window.uiManager.gameManager) {
+       window.uiManager.gameManager.updateFooter();
+      }
     }
     
     // Executar ações imediatamente
@@ -155,7 +157,9 @@ class AIManager {
         // Atualizar UI
         if (window.uiManager) {
           window.uiManager.updateUI();
-          window.uiManager.updateFooter();
+          if (window.uiManager.gameManager) {
+            window.uiManager.gameManager.updateFooter();
+          }
         }
         
       } catch (error) {
@@ -321,7 +325,9 @@ async handleNegotiationPhaseAI(ai) {
     // Atualizar UI
     if (window.uiManager) {
       window.uiManager.updateUI();
-      window.uiManager.updateFooter();
+      if (window.uiManager.gameManager) {
+        window.uiManager.gameManager.updateFooter();
+      }
     }
     
     console.log(`🤖 ${currentPlayer.name} entrou na fase de negociação`);
