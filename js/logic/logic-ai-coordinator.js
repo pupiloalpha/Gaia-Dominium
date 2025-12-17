@@ -87,21 +87,22 @@ export class AICoordinator {
   }
 
   async _executeNegotiations(aiPlayer) {
-    console.log(`🤖 ${aiPlayer.name} iniciando sistema de negociação simplificado`);
+    console.log(`🤖 [COORD] ${aiPlayer.name} iniciando fase de negociação...`);
     
-    // Verifica se o módulo de negociação de IA existe
+    // Verifica se o sistema de negociação foi instanciado
     if (this.main.aiNegotiationSystem) {
         try {
             await this.main.aiNegotiationSystem.processTurn(aiPlayer);
         } catch (e) {
-            console.error("Erro no aiNegotiationSystem:", e);
+            console.error("❌ [COORD] Erro fatal no aiNegotiationSystem:", e);
         }
     } else {
-        console.warn("AINegotiationSystem não inicializado no GameLogic");
+        console.warn("⚠️ [COORD] AINegotiationSystem não encontrado no GameLogic!");
     }
     
-    // Sempre retorna 'end_turn' pois a IA faz tudo o que precisa no processTurn acima
-    // e não fica "esperando" input.
+    // Aguarda um pouco antes de terminar o turno para dar sensação de "tempo de pensamento"
+    await this._delay(1000);
+
     return 'end_turn';
   }
 
