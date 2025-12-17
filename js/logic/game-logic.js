@@ -1,6 +1,7 @@
 // game-logic.js - Fachada Principal
 import { ActionLogic } from './logic-actions.js';
 import { FactionLogic } from './logic-factions.js';
+import { AINegotiationSystem } from '../ai/ai-negotiation.js';
 import { NegotiationLogic } from './logic-negotiation.js';
 import { TurnLogic } from './logic-turn.js';
 import { AICoordinator } from './logic-ai-coordinator.js';
@@ -12,6 +13,7 @@ class GameLogic {
     // Inicializar submódulos
     this.actionsLogic = new ActionLogic(this);
     this.negotiationLogic = new NegotiationLogic(this);
+    this.aiNegotiationSystem = new AINegotiationSystem(this);
     this.turnLogic = new TurnLogic(this);
     this.aiCoordinator = new AICoordinator(this);
     this.factionLogic = new FactionLogic(this);
