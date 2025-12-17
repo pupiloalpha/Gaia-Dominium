@@ -379,7 +379,9 @@ async function checkForSavedGame() {
       setTimeout(() => {
         if (window.uiManager) {
           window.uiManager.updateUI();
-          window.uiManager.updateFooter();
+          if (window.uiManager.updateFooter) {
+            window.uiManager.updateFooter();
+          }
           
           if (window.uiManager.modals?.showFeedback) {
             window.uiManager.modals.showFeedback('Jogo carregado com sucesso!', 'success');
