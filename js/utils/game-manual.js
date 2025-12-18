@@ -44,7 +44,7 @@ const MANUAL_CONTENT = {
       <ul class="text-xs text-gray-200 space-y-1 ml-4">
         <li><strong>• Recursos:</strong> 🪵 Madeira, 🪨 Pedra, 🪙 Ouro, 💧 Água</li>
         <li><strong>• Biomas:</strong> 🌴 Floresta Tropical, 🌲 Floresta Temperada, 🏜️ Savana, 🌊 Pântano</li>
-        <li><strong>• Ações:</strong> Assumir Domínio, Explorar, Construir, Recolher, Negociar</li>
+        <li><strong>• Ações:</strong> Dominar, Explorar, Coletar, Construir, Negociar</li>
         <li><strong>• Eventos Globais:</strong> 15 eventos aleatórios que transformam o jogo</li>
       </ul>
     </div>
@@ -325,7 +325,7 @@ const MANUAL_CONTENT = {
         </h4>
         <p class="text-sm text-gray-200 leading-relaxed text-justify">
           A fase principal do turno, onde você executa um número limitado de ações para expandir seu domínio. 
-          Escolha sabiamente entre explorar novas regiões, recolher recursos ou construir estruturas, sempre considerando custos e benefícios.
+          Escolha sabiamente entre explorar novas regiões, coletar recursos ou construir estruturas, sempre considerando custos e benefícios.
         </p>
         <ul class="text-xs text-gray-300 space-y-1 mt-2 list-disc ml-4">
           <li>Limite: Geralmente 2 ações por turno, consumidas ao realizar tarefas.</li>
@@ -372,9 +372,9 @@ const MANUAL_CONTENT = {
     </p>
 
     <div class="space-y-4">
-      <!-- AÇÃO 1: ASSUMIR DOMÍNIO -->
+      <!-- AÇÃO 1: DOMINAR -->
       <div class="bg-gradient-to-r from-purple-900/30 to-pink-900/30 border border-purple-500/40 rounded-lg p-4">
-        <h4 class="text-base font-bold text-purple-300 mb-2">1️⃣ Assumir Domínio 🗺️</h4>
+        <h4 class="text-base font-bold text-purple-300 mb-2">1️⃣ Dominar 🗺️</h4>
         
         <div class="grid grid-cols-3 gap-2 mb-3 text-xs">
           <div class="bg-purple-800/30 rounded p-2 text-center">
@@ -430,7 +430,36 @@ const MANUAL_CONTENT = {
         </div>
       </div>
 
-      <!-- AÇÃO 3: CONSTRUIR -->
+      <!-- AÇÃO 3: COLETAR -->
+      <div class="bg-gradient-to-r from-green-900/30 to-lime-900/30 border border-green-500/40 rounded-lg p-4">
+        <h4 class="text-base font-bold text-green-300 mb-2">4️⃣ Coletar 🌾</h4>
+        
+        <div class="grid grid-cols-3 gap-2 mb-3 text-xs">
+          <div class="bg-gray-800/30 rounded p-2 text-center">
+            <p class="font-bold text-gray-400">❌ Neutra</p>
+            <p class="text-gray-300">Indisponível</p>
+          </div>
+          <div class="bg-green-800/30 rounded p-2 text-center">
+            <p class="font-bold text-green-300">✅ Própria</p>
+            <p class="text-gray-300">Disponível</p>
+          </div>
+          <div class="bg-gray-800/30 rounded p-2 text-center">
+            <p class="font-bold text-gray-400">❌ Inimiga</p>
+            <p class="text-gray-300">Indisponível</p>
+          </div>
+        </div>
+        
+        <p class="text-sm text-gray-200 mb-2">
+          Colete 50-75% dos recursos restantes de uma região própria. Ganhe +1 PV e 
+          bônus aleatórios baseados no nível de exploração.
+        </p>
+        
+        <div class="bg-green-900/20 rounded p-2 text-xs text-green-200">
+          <strong>Dica:</strong> Use após explorar para maximizar ganhos antes da renda.
+        </div>
+      </div>
+      
+      <!-- AÇÃO 4: CONSTRUIR -->
       <div class="bg-gradient-to-r from-orange-900/30 to-red-900/30 border border-orange-500/40 rounded-lg p-4">
         <h4 class="text-base font-bold text-orange-300 mb-2">3️⃣ Construir 🏗️</h4>
         
@@ -456,35 +485,6 @@ const MANUAL_CONTENT = {
         
         <div class="bg-orange-900/20 rounded p-2 text-xs text-orange-200">
           <strong>Dica:</strong> Escolha estruturas que sinergizem com seu bioma e estratégia.
-        </div>
-      </div>
-
-      <!-- AÇÃO 4: RECOLHER -->
-      <div class="bg-gradient-to-r from-green-900/30 to-lime-900/30 border border-green-500/40 rounded-lg p-4">
-        <h4 class="text-base font-bold text-green-300 mb-2">4️⃣ Recolher 🌾</h4>
-        
-        <div class="grid grid-cols-3 gap-2 mb-3 text-xs">
-          <div class="bg-gray-800/30 rounded p-2 text-center">
-            <p class="font-bold text-gray-400">❌ Neutra</p>
-            <p class="text-gray-300">Indisponível</p>
-          </div>
-          <div class="bg-green-800/30 rounded p-2 text-center">
-            <p class="font-bold text-green-300">✅ Própria</p>
-            <p class="text-gray-300">Disponível</p>
-          </div>
-          <div class="bg-gray-800/30 rounded p-2 text-center">
-            <p class="font-bold text-gray-400">❌ Inimiga</p>
-            <p class="text-gray-300">Indisponível</p>
-          </div>
-        </div>
-        
-        <p class="text-sm text-gray-200 mb-2">
-          Colete 50-75% dos recursos restantes de uma região própria. Ganhe +1 PV e 
-          bônus aleatórios baseados no nível de exploração.
-        </p>
-        
-        <div class="bg-green-900/20 rounded p-2 text-xs text-green-200">
-          <strong>Dica:</strong> Use após explorar para maximizar ganhos antes da renda.
         </div>
       </div>
     </div>
@@ -721,7 +721,7 @@ const MANUAL_CONTENT = {
           <span class="text-2xl">🌾</span>
           <div>
             <h5 class="text-sm font-bold text-teal-300">Colecionador</h5>
-            <p class="text-xs text-gray-300">Recolha recursos de 8 regiões diferentes</p>
+            <p class="text-xs text-gray-300">Colete recursos de 8 regiões diferentes</p>
           </div>
         </div>
         <div class="text-xs text-teal-200"><strong>Recompensa:</strong> +1 recurso ao recolher</div>
