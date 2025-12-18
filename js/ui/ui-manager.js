@@ -16,6 +16,7 @@ import { ModalManager } from '../ui/ui-modals.js';
 import { NegotiationUI } from '../ui/ui-negotiation.js';
 import { UIPlayersManager } from '../ui/ui-players.js';
 import { UIGameManager } from '../ui/ui-game.js';
+import { MobileManager } from '../ui/ui-mobile.js'; // ADICIONAR ESTA LINHA
 
 class UIManager {
     constructor() {
@@ -23,11 +24,7 @@ class UIManager {
         this.negotiation = new NegotiationUI(this);
         this.playersManager = new UIPlayersManager(this);
         this.gameManager = new UIGameManager(this);
-
-        // Inicializar mobile manager se necessário
-        if (window.mobileManager) {
-            window.mobileManager.uiManager = this;
-        }
+        this.mobileManager = new MobileManager(this); // INICIALIZAR O MOBILE MANAGER
         
         this.cacheElements();
         
@@ -55,6 +52,7 @@ class UIManager {
     initUI() {
         this.playersManager.init();
         this.gameManager.init();
+        this.mobileManager.init(); // INICIALIZAR O MOBILE MANAGER
         this.setupGlobalEventListeners();
     }
 
@@ -126,6 +124,9 @@ class UIManager {
         // 8. Registrar evento para monitoramento
         window.addEventListener('resize', () => this.preventInitialScreenReturn());
         
+        // 9. Configurar orientação mobile
+        this.setupMobileOrientation();
+        
     }, 100);
     
     console.log('✅ Jogo iniciado com sucesso');
@@ -158,6 +159,23 @@ preventInitialScreenReturn() {
     });
 }
 
+setupMobileOrientation() {
+    // Configurar evento de mudança de orientação para mobile
+    window.addEventListener('orientationchange', () => {
+        if (this.mobileManager && this.mobileManager.handleOrientationChange) {
+            this.mobileManager.handleOrientationChange();
+        }
+    });
+    
+    window.addEventListener('resize', () => {
+        // Pequeno delay para garantir que o resize tenha terminado
+        setTimeout(() => {
+            if (this.mobileManager && this.mobileManager.handleOrientationChange) {
+                this.mobileManager.handleOrientationChange();
+            }
+        }, 100);
+    });
+}
 
     // ==================== SISTEMA DE IA ====================
 
