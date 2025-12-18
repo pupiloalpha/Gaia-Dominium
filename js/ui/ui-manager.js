@@ -73,8 +73,8 @@ class UIManager {
         this.initialScreen.style.visibility = 'hidden';
         this.initialScreen.style.opacity = '0';
         this.initialScreen.style.pointerEvents = 'none';
-        this.initialScreen.style.position = 'absolute'; // Remove do fluxo
-        this.initialScreen.style.zIndex = '-1000'; // Coloca atrás de tudo
+        this.initialScreen.style.position = 'absolute';
+        this.initialScreen.style.zIndex = '-1000';
         this.initialScreen.setAttribute('data-game-started', 'true');
     }
     
@@ -90,7 +90,7 @@ class UIManager {
     gameElements.forEach(el => {
         if (el) {
             el.classList.remove('hidden');
-            el.style.display = ''; // Reseta para CSS padrão
+            el.style.display = '';
             el.style.visibility = 'visible';
             el.style.opacity = '1';
             el.style.pointerEvents = 'auto';
@@ -107,12 +107,17 @@ class UIManager {
         // 5. Inicializar sistema de IA
         this.initializeAISystem();
         
-        // 6. Adicionar listener para botão de debug da IA
+        // 6. Configurar interface mobile APÓS iniciar o jogo
+        if (this.mobileManager) {
+            this.mobileManager.setupGameInterface();
+        }
+        
+        // 7. Adicionar listener para botão de debug da IA
         this.setupAIDebugButton();
         
         this.updateUI();
         
-        // 7. Verificação final - garantir que tela inicial não volte
+        // 8. Verificação final - garantir que tela inicial não volte
         setTimeout(() => {
             if (this.initialScreen && !this.initialScreen.classList.contains('hidden')) {
                 console.warn('⚠️ Tela inicial reapareceu! Forçando ocultação...');
@@ -121,11 +126,8 @@ class UIManager {
             }
         }, 1000);
         
-        // 8. Registrar evento para monitoramento
+        // 9. Registrar evento para monitoramento
         window.addEventListener('resize', () => this.preventInitialScreenReturn());
-        
-        // 9. Configurar orientação mobile
-        this.setupMobileOrientation();
         
     }, 100);
     
