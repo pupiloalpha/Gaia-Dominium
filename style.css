@@ -1550,6 +1550,21 @@ input[type="text"]:focus, select:focus, input[type="number"]:focus {
   }
 }
 
+   @media (max-width: 768px) {
+  #gameFooter {
+    z-index: 100 !important;
+  }
+  
+  #regionTooltip {
+    z-index: 90 !important;
+    pointer-events: none !important;
+  }
+  
+  #regionTooltip > * {
+    pointer-events: auto !important;
+  }
+   }
+
   /* ============ TELA DE CADASTRO MOBILE ============ */
   
   #initialScreen {
