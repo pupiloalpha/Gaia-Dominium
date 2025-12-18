@@ -309,7 +309,7 @@ const MANUAL_CONTENT = {
         </h4>
         <p class="text-sm text-gray-200 leading-relaxed text-justify">
           Nesta fase inicial, você recebe recursos automáticos baseados nas regiões que controla, estruturas construídas e eventuais bônus de eventos ou conquistas. 
-          É o momento de "recolher os frutos" do seu império, preparando o terreno para as ações subsequentes.
+          É o momento de "acumular os frutos" do seu império, preparando o terreno para as ações subsequentes.
         </p>
         <ul class="text-xs text-gray-300 space-y-1 mt-2 list-disc ml-4">
           <li>Recursos são adicionados diretamente ao seu estoque.</li>
@@ -664,7 +664,7 @@ const MANUAL_CONTENT = {
         <li>• Priorize Abrigo em florestas para renda básica.</li>
         <li>• Use Mercado/Laboratório em savanas para ouro diplomático.</li>
         <li>• Construa Santuário em regiões seguras para PV contínuo.</li>
-        <li>• Combine com recolher para maximizar retornos.</li>
+        <li>• Combine com coletar para maximizar retornos.</li>
       </ul>
     </div>
   `,
@@ -724,7 +724,7 @@ const MANUAL_CONTENT = {
             <p class="text-xs text-gray-300">Colete recursos de 8 regiões diferentes</p>
           </div>
         </div>
-        <div class="text-xs text-teal-200"><strong>Recompensa:</strong> +1 recurso ao recolher</div>
+        <div class="text-xs text-teal-200"><strong>Recompensa:</strong> +1 recurso ao coletar</div>
       </div>
 
       <!-- Diversificador -->
