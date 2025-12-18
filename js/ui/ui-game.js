@@ -595,6 +595,30 @@ export class UIGameManager {
         if (this.actionsLeftEl) {
             this.actionsLeftEl.textContent = `Ações restantes: ${gameState.actionsLeft}`;
         }
+
+        // Ajustes na barra de ações nos celulares
+if (this.isMobile() && this.actionExploreBtn) {
+    // Adicionar contador de ações nos botões
+    const actionBtns = [
+        this.actionExploreBtn,
+        this.actionCollectBtn,
+        this.actionBuildBtn,
+        this.actionNegotiateBtn
+    ];
+    
+    actionBtns.forEach(btn => {
+        if (btn) {
+            btn.dataset.actionsLeft = gameState.actionsLeft;
+            // Mostrar apenas se houver ações
+            btn.style.position = gameState.actionsLeft > 0 ? 'relative' : 'static';
+        }
+    });
+    
+    // Esconder o contador separado
+    if (this.actionsLeftEl) {
+        this.actionsLeftEl.style.display = 'none';
+    }
+}
         
         // Botão Terminar Turno
         if (this.endTurnBtn) {
@@ -879,6 +903,10 @@ export class UIGameManager {
         ] : [255, 255, 255];
     }
 
+    isMobile() {
+    return window.innerWidth <= 768;
+    }
+    
     clearRegionSelection() {
         gameState.selectedRegionId = null;
         document.querySelectorAll('.board-cell').forEach(c => {
