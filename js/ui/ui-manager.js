@@ -16,7 +16,6 @@ import { ModalManager } from '../ui/ui-modals.js';
 import { NegotiationUI } from '../ui/ui-negotiation.js';
 import { UIPlayersManager } from '../ui/ui-players.js';
 import { UIGameManager } from '../ui/ui-game.js';
-import { MobileManager } from '../ui/ui-mobile.js'; // ADICIONAR ESTA LINHA
 
 class UIManager {
     constructor() {
@@ -24,7 +23,6 @@ class UIManager {
         this.negotiation = new NegotiationUI(this);
         this.playersManager = new UIPlayersManager(this);
         this.gameManager = new UIGameManager(this);
-        this.mobileManager = new MobileManager(this); // INICIALIZAR O MOBILE MANAGER
         
         this.cacheElements();
         
@@ -52,7 +50,6 @@ class UIManager {
     initUI() {
         this.playersManager.init();
         this.gameManager.init();
-        this.mobileManager.init(); // INICIALIZAR O MOBILE MANAGER
         this.setupGlobalEventListeners();
     }
 
@@ -73,8 +70,8 @@ class UIManager {
         this.initialScreen.style.visibility = 'hidden';
         this.initialScreen.style.opacity = '0';
         this.initialScreen.style.pointerEvents = 'none';
-        this.initialScreen.style.position = 'absolute';
-        this.initialScreen.style.zIndex = '-1000';
+        this.initialScreen.style.position = 'absolute'; // Remove do fluxo
+        this.initialScreen.style.zIndex = '-1000'; // Coloca atrás de tudo
         this.initialScreen.setAttribute('data-game-started', 'true');
     }
     
@@ -90,7 +87,7 @@ class UIManager {
     gameElements.forEach(el => {
         if (el) {
             el.classList.remove('hidden');
-            el.style.display = '';
+            el.style.display = ''; // Reseta para CSS padrão
             el.style.visibility = 'visible';
             el.style.opacity = '1';
             el.style.pointerEvents = 'auto';
@@ -107,17 +104,12 @@ class UIManager {
         // 5. Inicializar sistema de IA
         this.initializeAISystem();
         
-        // 6. Configurar interface mobile APÓS iniciar o jogo
-        if (this.mobileManager) {
-            this.mobileManager.setupGameInterface();
-        }
-        
-        // 7. Adicionar listener para botão de debug da IA
+        // 6. Adicionar listener para botão de debug da IA
         this.setupAIDebugButton();
         
         this.updateUI();
         
-        // 8. Verificação final - garantir que tela inicial não volte
+        // 7. Verificação final - garantir que tela inicial não volte
         setTimeout(() => {
             if (this.initialScreen && !this.initialScreen.classList.contains('hidden')) {
                 console.warn('⚠️ Tela inicial reapareceu! Forçando ocultação...');
@@ -126,7 +118,7 @@ class UIManager {
             }
         }, 1000);
         
-        // 9. Registrar evento para monitoramento
+        // 8. Registrar evento para monitoramento
         window.addEventListener('resize', () => this.preventInitialScreenReturn());
         
     }, 100);
@@ -161,23 +153,6 @@ preventInitialScreenReturn() {
     });
 }
 
-setupMobileOrientation() {
-    // Configurar evento de mudança de orientação para mobile
-    window.addEventListener('orientationchange', () => {
-        if (this.mobileManager && this.mobileManager.handleOrientationChange) {
-            this.mobileManager.handleOrientationChange();
-        }
-    });
-    
-    window.addEventListener('resize', () => {
-        // Pequeno delay para garantir que o resize tenha terminado
-        setTimeout(() => {
-            if (this.mobileManager && this.mobileManager.handleOrientationChange) {
-                this.mobileManager.handleOrientationChange();
-            }
-        }, 100);
-    });
-}
 
     // ==================== SISTEMA DE IA ====================
 
