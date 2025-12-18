@@ -2,7 +2,6 @@
 
 // ==================== IMPORTAÇÕES DE MÓDULOS ====================
 import { UIManager } from './ui/ui-manager.js';
-import { MobileManager } from './ui/ui-mobile.js';
 import { GameLogic } from './logic/game-logic.js';
 import { Utils } from './utils/utils.js';
 import { AIFactory } from './ai/ai-system.js';
@@ -28,7 +27,8 @@ window.GaiaDominium = {
   state: {},
   utils: null,
   ui: null,
-  logic: null
+  logic: null,
+  mobile: null // ADICIONAR REFERÊNCIA PARA MOBILE MANAGER
 };
 
 // ==================== FUNÇÃO PRINCIPAL DE INICIALIZAÇÃO ====================
@@ -79,15 +79,23 @@ if (introVideo) {
   window.gameLogic = new GameLogic();
   window.GaiaDominium.logic = window.gameLogic;
   
+  // 4. Expor mobile manager globalmente
+  setTimeout(() => {
+    if (window.uiManager && window.uiManager.mobileManager) {
+      window.GaiaDominium.mobile = window.uiManager.mobileManager;
+      console.log('📱 Mobile Manager exposto globalmente');
+    }
+  }, 500);
+  
   // Expor método advancePhase globalmente
   window.advancePhase = () => window.gameLogic.advancePhase();
 
-  // 4. Expor estado do jogo globalmente
+  // 5. Expor estado do jogo globalmente
   window.gameState = gameState;
   window.GaiaDominium.state.game = gameState;
   window.GaiaDominium.state.achievements = achievementsState;
   
-  // 5. Expor funções de estado úteis
+  // 6. Expor funções de estado úteis
   window.getGameState = getGameState;
   window.setGameState = setGameState;
   window.addActivityLog = addActivityLog;
@@ -96,16 +104,16 @@ if (introVideo) {
   window.saveGame = saveGame;
   window.loadGame = loadGame;
   
-  // 6. Configurar elementos da interface
+  // 7. Configurar elementos da interface
   setupInitialUI();
   
-  // 7. Configurar eventos globais
+  // 8. Configurar eventos globais
   setupGlobalEventListeners();
   
-  // 8. Configurar sistemas auxiliares
+  // 9. Configurar sistemas auxiliares
   setupAuxiliarySystems();
   
-  // 9. Configurar modal de vitória
+  // 10. Configurar modal de vitória
     setupVictoryModal();
   
   console.log('✅ Gaia Dominium - Inicialização completa!');
