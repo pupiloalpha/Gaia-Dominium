@@ -2,6 +2,7 @@
 
 // ==================== IMPORTAÇÕES DE MÓDULOS ====================
 import { UIManager } from './ui/ui-manager.js';
+import { MobileManager } from './ui/ui-mobile.js';
 import { GameLogic } from './logic/game-logic.js';
 import { Utils } from './utils/utils.js';
 import { AIFactory } from './ai/ai-system.js';
