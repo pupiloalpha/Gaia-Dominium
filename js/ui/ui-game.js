@@ -517,16 +517,16 @@ export class UIGameManager {
             if (!isActionPhase) {
                 exploreReason = 'Ação permitida apenas na fase de Ações (⚡).';
             } else if (regionId == null) {
-                exploreReason = 'Selecione uma região para Explorar ou Assumir Domínio.';
+                exploreReason = 'Selecione uma região para Explorar ou Dominar.';
             } else if (isNeutral) {
-                // Lógica para Assumir Domínio
+                // Lógica para Dominar
                 const hasEnoughPV = player.victoryPoints >= 2;
                 const canPayBiome = Object.entries(region.resources)
                     .every(([key, value]) => player.resources[key] >= value);
 
                 if (this.actionExploreBtn) {
                     this.actionExploreBtn.disabled = !baseEnabled || !hasEnoughPV || !canPayBiome;
-                    this.actionExploreBtn.textContent = 'Assumir Domínio';
+                    this.actionExploreBtn.textContent = 'Dominar';
                     
                     if (this.actionExploreBtn.disabled) {
                         if (!hasEnoughPV) exploreReason = 'Requer 2 PVs (Pontos de Vitória).';
