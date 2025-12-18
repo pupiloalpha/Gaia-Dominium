@@ -1,16 +1,3 @@
-// main.js - Ponto de entrada modular do Gaia Dominium
-
-/* Estrutura de módulos javascript
-*  1. main.js - Arquivo principal do código javascript
-*  2. game-state.js - Estado do jogo
-*  3. game-config.js - Constantes e configurações
-*  4. ui-manager.js - Renderização da interface (CORE)
-*  5. ui-modals.js - Gerenciamento de todos os modais
-*  6. ui-negotiation.js - Sistema de negociação
-*  7. game-logic.js - Lógica de ações, turnos, eventos
-*  8. utils.js - Funções utilitárias
-*  9. game-manual.js - Manual do jogo */
-
 // main.js - Arquivo principal e inicialização
 
 // ==================== IMPORTAÇÕES DE MÓDULOS ====================
@@ -166,7 +153,7 @@ function setupGlobalEventListeners() {
             window.gameLogic.handleExplore();
           }
           break;
-        case 1: // Tecla 2 - Recolher
+        case 1: // Tecla 2 - Coletar
           if (window.gameLogic && typeof window.gameLogic.handleCollect === 'function') {
             window.gameLogic.handleCollect();
           }
