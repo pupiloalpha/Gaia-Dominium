@@ -535,9 +535,9 @@ const MANUAL_CONTENT = {
         <h5 class="text-sm font-bold text-yellow-300 mb-2">3. Resposta do Alvo</h5>
         <p class="text-xs text-gray-200">
           - No turno do alvo, visualize propostas pendentes.<br>
-          - Aceite: Troca executada imediatamente; ambos ganham +1 PV; log adicionado.<br>
-          - Recuse: Nenhuma mudança; apenas log de recusa.<br>
-          - Validação final: Confirma se ambos ainda possuem os itens (ex.: se uma região foi perdida, invalida).
+          - Aceite: Troca executada imediatamente; ambos ganham +1 PV.<br>
+          - Recuse: Nenhuma mudança.<br>
+          - Validação final: Confirma se ambos ainda possuem os itens (ex.: se uma região foi perdida).
         </p>
       </div>
       
@@ -546,7 +546,7 @@ const MANUAL_CONTENT = {
         <p class="text-xs text-gray-200">
           - Transfere recursos e atualiza controladores de regiões.<br>
           - Afeta conquistas (ex.: total de negociações para "Diplomata").<br>
-          - Notificação e log para ambos os jogadores.
+          - Notificação para ambos os jogadores.
         </p>
       </div>
     </div>
