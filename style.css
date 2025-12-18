@@ -1228,3 +1228,621 @@ input[type="text"]:focus, select:focus, input[type="number"]:focus {
   opacity: 0;
   pointer-events: none;
 }
+
+/* ============================================
+   ESTILOS MOBILE - ADICIONAR AO FINAL DO CSS
+   ============================================ */
+
+/* Dispositivos móveis (até 768px) */
+@media (max-width: 768px) {
+  /* Reset de altura para mobile */
+  html, body {
+    height: auto;
+    min-height: 100vh;
+    overflow-y: auto;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  /* Layout principal em coluna única */
+  #gameContainer {
+    grid-template-columns: 1fr !important;
+    height: auto;
+    margin: 60px 0 120px 0 !important;
+    padding: 0.5rem;
+    gap: 0.5rem;
+  }
+
+  /* Sidebar oculta por padrão, acessível via botão */
+  #sidebar {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 999;
+    background: rgba(15, 23, 42, 0.98);
+    backdrop-filter: blur(20px);
+    max-height: 100vh;
+    padding: 1rem;
+    overflow-y: auto;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 0;
+  }
+
+  #sidebar.active {
+    display: flex;
+    animation: slideInRight 0.3s ease-out;
+  }
+
+  /* Botão de toggle para sidebar */
+  .sidebar-toggle {
+    position: fixed;
+    bottom: 140px;
+    right: 15px;
+    z-index: 1000;
+    width: 52px;
+    height: 52px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #3b82f6, #1d4ed8);
+    border: 2px solid rgba(255, 255, 255, 0.3);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 24px;
+    color: white;
+    box-shadow: 0 4px 20px rgba(59, 130, 246, 0.4);
+    cursor: pointer;
+    transition: all 0.3s ease;
+  }
+
+  .sidebar-toggle:hover {
+    transform: scale(1.1);
+    box-shadow: 0 6px 25px rgba(59, 130, 246, 0.6);
+  }
+
+  /* Ajustes no mapa */
+  #gameMap {
+    min-height: 70vh;
+    border-radius: 12px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+  }
+
+  /* Controles de zoom para mobile */
+  .mobile-zoom-controls {
+    position: absolute;
+    bottom: 15px;
+    right: 15px;
+    z-index: 100;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .mobile-zoom-controls button {
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    background: rgba(0, 0, 0, 0.7);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    color: white;
+    font-size: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.2s ease;
+  }
+
+  .mobile-zoom-controls button:hover {
+    background: rgba(0, 0, 0, 0.9);
+    transform: scale(1.1);
+  }
+
+  /* Reduzir padding das células */
+  .board-cell {
+    padding: 6px 4px;
+    border-radius: 6px;
+  }
+
+  /* Ajustar texto das células */
+  .board-cell .text-xs {
+    font-size: 10px !important;
+    line-height: 1.2;
+  }
+
+  .board-cell .text-\[10px\] {
+    font-size: 9px !important;
+  }
+
+  /* Footer de ações reorganizado */
+  #gameFooter {
+    position: fixed !important;
+    bottom: 0 !important;
+    left: 0 !important;
+    right: 0 !important;
+    transform: none !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    padding: 0.75rem !important;
+    background: rgba(15, 23, 42, 0.95) !important;
+    backdrop-filter: blur(15px) !important;
+    border-top: 1px solid rgba(255, 255, 255, 0.15) !important;
+    border-left: none !important;
+    border-right: none !important;
+    border-radius: 0 !important;
+    z-index: 100 !important;
+    box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.3) !important;
+  }
+
+  #gameFooter .flex {
+    flex-direction: column !important;
+    gap: 0.75rem !important;
+  }
+
+  /* Botões de ação em grid 2x2 */
+  #gameFooter .flex > div:first-child {
+    display: grid !important;
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: 0.5rem !important;
+    width: 100% !important;
+  }
+
+  /* Botões de ação compactos mas tocáveis */
+  .action-btn {
+    padding: 10px 12px !important;
+    font-size: 13px !important;
+    min-height: 46px !important;
+    border-radius: 10px !important;
+    font-weight: 600 !important;
+  }
+
+  /* Botão de turno maior e mais visível */
+  #endTurnBtn {
+    width: 100% !important;
+    padding: 14px !important;
+    font-size: 15px !important;
+    font-weight: 700 !important;
+    border-radius: 10px !important;
+    margin-top: 0.25rem !important;
+  }
+
+  /* Ajustar contador de ações */
+  #actionsLeft {
+    font-size: 13px !important;
+    text-align: center !important;
+    padding: 8px !important;
+    background: rgba(255, 255, 255, 0.1) !important;
+    border-radius: 10px !important;
+    font-weight: 600 !important;
+    margin: 0.5rem 0 !important;
+  }
+
+  /* ============ TELA DE CADASTRO MOBILE ============ */
+  
+  #initialScreen {
+    padding: 1rem !important;
+  }
+
+  .player-modal {
+    padding: 1.5rem !important;
+    border-radius: 16px !important;
+    margin: 0.5rem !important;
+    max-height: 90vh !important;
+    overflow-y: auto !important;
+  }
+
+  /* Layout vertical para os controles */
+  #initialScreen .flex.items-center.gap-4 {
+    flex-direction: column !important;
+    gap: 1rem !important;
+  }
+
+  #initialScreen .flex.items-center.gap-4 > div {
+    width: 100% !important;
+    margin-bottom: 0.5rem !important;
+  }
+
+  /* Inputs full width com fonte legível */
+  #playerName {
+    width: 100% !important;
+    font-size: 16px !important;
+    padding: 14px 16px !important;
+    border-radius: 12px !important;
+  }
+
+  .faction-dropdown {
+    width: 100% !important;
+    font-size: 16px !important;
+    padding: 14px 16px !important;
+    height: 52px !important;
+  }
+
+  /* Botões reorganizados em grid */
+  #initialScreen .flex.gap-3 {
+    display: grid !important;
+    grid-template-columns: 1fr 1fr !important;
+    gap: 0.75rem !important;
+    width: 100% !important;
+    margin-top: 1rem !important;
+  }
+
+  /* Botões de ação maiores para toque */
+  #addPlayerBtn,
+  #cancelEditBtn,
+  #startGameBtn {
+    padding: 16px !important;
+    font-size: 15px !important;
+    min-height: 52px !important;
+    border-radius: 12px !important;
+    font-weight: 600 !important;
+  }
+
+  /* Ícones em grid responsivo */
+  #iconSelection {
+    justify-content: center !important;
+    gap: 8px !important;
+    margin: 1rem 0 !important;
+  }
+
+  .icon-button {
+    width: 48px !important;
+    height: 48px !important;
+    font-size: 22px !important;
+    border-radius: 14px !important;
+  }
+
+  /* Botões de IA em grid 2x2 */
+  #aiButtonsContainer {
+    display: grid !important;
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: 0.75rem !important;
+    margin: 1rem 0 !important;
+  }
+
+  .ai-button-compact {
+    padding: 12px !important;
+    font-size: 12px !important;
+    border-radius: 12px !important;
+    min-height: 48px !important;
+  }
+
+  /* Lista de jogadores em grid 2x2 */
+  #registeredPlayersList {
+    display: grid !important;
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: 0.75rem !important;
+    margin-top: 1rem !important;
+  }
+
+  .player-icon-minimal {
+    width: 100% !important;
+    height: auto !important;
+    aspect-ratio: 1 !important;
+  }
+
+  .player-icon-mini {
+    width: 100% !important;
+    height: 100% !important;
+    font-size: 24px !important;
+    border-radius: 12px !important;
+  }
+
+  /* ============ NAVBAR MOBILE ============ */
+  
+  #gameNavbar {
+    padding: 0.75rem 1rem !important;
+    height: 60px !important;
+  }
+
+  #gameNavbar .max-w-7xl {
+    padding: 0 !important;
+  }
+
+  /* Título compacto */
+  #gameNavbar h1 {
+    font-size: 1.1rem !important;
+    white-space: nowrap !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+    max-width: 150px !important;
+  }
+
+  /* Info de turno compacta */
+  #turnInfo {
+    font-size: 12px !important;
+    white-space: nowrap !important;
+  }
+
+  #phaseIndicator {
+    font-size: 11px !important;
+    padding: 4px 8px !important;
+    background: rgba(251, 191, 36, 0.15) !important;
+    border-radius: 12px !important;
+    border: 1px solid rgba(251, 191, 36, 0.3) !important;
+  }
+
+  /* Ocultar lista de jogadores na navbar mobile */
+  #playerHeaderList {
+    display: none !important;
+  }
+
+  /* Botões da navbar ajustados */
+  #manualIconNavbar,
+  #achievementsNavBtn {
+    padding: 10px !important;
+    min-width: 44px !important;
+    min-height: 44px !important;
+  }
+
+  /* ============ MODAIS MOBILE ============ */
+  
+  .modal-overlay {
+    padding: 0.5rem !important;
+    align-items: flex-start !important;
+    padding-top: 3rem !important;
+    overflow-y: auto !important;
+  }
+
+  .modal-content {
+    width: 95% !important;
+    max-height: 85vh !important;
+    margin: 0 auto !important;
+    border-radius: 16px !important;
+  }
+
+  /* Modal de manual em coluna */
+  #manualModal .flex-col {
+    flex-direction: column !important;
+  }
+
+  #manualModal nav {
+    width: 100% !important;
+    margin-bottom: 1rem !important;
+  }
+
+  #manualTabs {
+    display: flex !important;
+    overflow-x: auto !important;
+    padding-bottom: 0.5rem !important;
+    gap: 0.5rem !important;
+    -webkit-overflow-scrolling: touch !important;
+  }
+
+  .manual-tab {
+    white-space: nowrap !important;
+    padding: 10px 14px !important;
+    font-size: 13px !important;
+    min-width: fit-content !important;
+  }
+
+  /* Modal de negociação em coluna */
+  #negotiationModal .grid-cols-2 {
+    grid-template-columns: 1fr !important;
+  }
+
+  /* Modal de estruturas em coluna única */
+  #structureModal #structureOptions {
+    grid-template-columns: 1fr !important;
+    gap: 0.75rem !important;
+  }
+
+  .structure-option {
+    padding: 1.25rem !important;
+  }
+
+  /* Modal de vitória ajustado */
+  #victoryModal .relative {
+    margin: 1rem !important;
+    padding: 1.5rem !important;
+  }
+
+  #victoryModal .text-8xl {
+    font-size: 4rem !important;
+  }
+
+  #victoryModal .text-4xl {
+    font-size: 2rem !important;
+  }
+
+  #victoryModal .grid-cols-2 {
+    grid-template-columns: 1fr !important;
+    gap: 1rem !important;
+  }
+
+  /* ============ TOOLTIP MOBILE ============ */
+  
+  #regionTooltip {
+    position: fixed !important;
+    bottom: 0 !important;
+    left: 0 !important;
+    right: 0 !important;
+    top: auto !important;
+    max-width: 100% !important;
+    border-radius: 16px 16px 0 0 !important;
+    margin: 0 !important;
+    padding: 1.5rem 1rem 1rem 1rem !important;
+    transform: none !important;
+    animation: slideUp 0.3s ease !important;
+    box-shadow: 0 -4px 30px rgba(0, 0, 0, 0.4) !important;
+    border: 1px solid rgba(255, 255, 255, 0.15) !important;
+    border-bottom: none !important;
+  }
+
+  /* Indicador de arrastar para fechar */
+  #regionTooltip::before {
+    content: '' !important;
+    position: absolute !important;
+    top: 10px !important;
+    left: 50% !important;
+    transform: translateX(-50%) !important;
+    width: 50px !important;
+    height: 5px !important;
+    background: rgba(255, 255, 255, 0.4) !important;
+    border-radius: 3px !important;
+  }
+
+  /* ============ UTILITÁRIOS MOBILE ============ */
+  
+  /* Melhorar toque em botões */
+  button, 
+  .icon-button,
+  .ai-button-compact,
+  .action-btn {
+    min-height: 44px !important;
+    min-width: 44px !important;
+  }
+
+  /* Aumentar área de toque para células */
+  .board-cell {
+    padding: 10px 6px !important;
+  }
+
+  /* Evitar seleção de texto acidental */
+  * {
+    -webkit-touch-callout: none !important;
+    -webkit-user-select: none !important;
+    user-select: none !important;
+  }
+
+  /* Permitir seleção em inputs */
+  input, textarea, select {
+    -webkit-user-select: text !important;
+    user-select: text !important;
+    font-size: 16px !important; /* Prevenir zoom automático do iOS */
+  }
+
+  /* Melhorar scroll no mobile */
+  .modal-content,
+  #sidebar,
+  .player-modal {
+    -webkit-overflow-scrolling: touch !important;
+    scroll-behavior: smooth !important;
+  }
+
+  /* Ajustar fonte para legibilidade */
+  body {
+    font-size: 16px !important;
+  }
+
+  /* Otimizar animações para mobile */
+  @media (prefers-reduced-motion: no-preference) {
+    .board-cell {
+      transition: transform 0.15s ease, background 0.15s ease !important;
+    }
+    
+    .action-btn {
+      transition: all 0.15s ease !important;
+    }
+  }
+}
+
+/* Dispositivos muito pequenos (iPhone SE, etc) */
+@media (max-width: 375px) {
+  #gameContainer {
+    padding: 0.25rem !important;
+  }
+
+  .board-cell {
+    padding: 8px 4px !important;
+  }
+
+  .board-cell .text-xs {
+    font-size: 9px !important;
+  }
+
+  .board-cell .text-\[10px\] {
+    font-size: 8px !important;
+  }
+
+  .action-btn {
+    padding: 8px 10px !important;
+    font-size: 12px !important;
+  }
+
+  #endTurnBtn {
+    padding: 12px !important;
+    font-size: 14px !important;
+  }
+
+  /* Tela de cadastro ainda menor */
+  .player-modal {
+    padding: 1.25rem !important;
+    margin: 0.25rem !important;
+  }
+
+  .icon-button {
+    width: 44px !important;
+    height: 44px !important;
+    font-size: 20px !important;
+  }
+}
+
+/* Tablets em modo paisagem */
+@media (min-width: 769px) and (max-width: 1024px) and (orientation: landscape) {
+  #gameContainer {
+    grid-template-columns: 300px 1fr !important;
+    height: calc(100vh - 140px) !important;
+  }
+
+  #sidebar {
+    display: flex !important;
+  }
+
+  .sidebar-toggle {
+    display: none !important;
+  }
+
+  /* Ajustar células para tablets */
+  .board-cell {
+    padding: 10px !important;
+  }
+
+  .board-cell .text-xs {
+    font-size: 11px !important;
+  }
+}
+
+/* Animações específicas para mobile */
+@keyframes slideUp {
+  from {
+    transform: translateY(100%) !important;
+  }
+  to {
+    transform: translateY(0) !important;
+  }
+}
+
+@keyframes slideInRight {
+  from {
+    transform: translateX(100%) !important;
+  }
+  to {
+    transform: translateX(0) !important;
+  }
+}
+
+/* Classe para modo paisagem */
+body.landscape .board-cell {
+  padding: 8px !important;
+}
+
+body.landscape #gameFooter {
+  padding: 0.5rem !important;
+}
+
+/* Classe para modo retrato */
+body.portrait #gameContainer {
+  margin-bottom: 140px !important;
+}
+
+/* Ajustes para quando o teclado está aberto */
+@media (max-height: 500px) {
+  #gameContainer {
+    margin-bottom: 100px !important;
+  }
+  
+  #gameFooter {
+    padding: 0.5rem !important;
+  }
+}
