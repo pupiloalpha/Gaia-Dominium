@@ -27,42 +27,34 @@ O sistema é modular, com separação clara entre estado, lógica, UI e configur
 2.2 Diagrama textual de dependências
 
 gaia-dominium/  (raiz do repositório)
-├── index.html          (Página principal - deve ficar na raiz para GitHub Pages)
-├── style.css           (Estilos principais - pode ficar na raiz ou mover para /css/)
-├── /js/                (Todos os scripts JavaScript, divididos em subpastas por módulo)
-│   ├── main.js         (Ponto de entrada principal)
-│   ├── /logic/         (Lógica do jogo - ações, turnos, negociação, etc.)
-│   │   ├── game-logic.js
-│   │   ├── logic-actions.js
-│   │   ├── logic-negotiation.js
-│   │   ├── logic-turn.js
-│   │   ├── logic-ai-coordinator.js
-│   │   └── game-logic-old.js  (Versão deprecated - considere renomear ou arquivar em /archive/)
-│   ├── /ai/            (Módulos relacionados à IA)
-│   │   ├── ai-system.js
-│   │   ├── ai-manager.js
-│   ├── /ui/            (Módulos de interface do usuário)
-│   │   ├── ui-manager.js
-│   │   ├── ui-modals.js
-│   │   └── ui-negotiation.js
-│   ├── /state/         (Estado e configurações do jogo)
-│   │   ├── game-state.js
-│   │   └── game-config.js
-│   ├── /utils/         (Utilitários e manuais)
-│   │   ├── utils.js
-│   │   └── game-manual.js
-├── /css/               (Estilos - opcional, se quiser separar do raiz)
-│   └── style.css       (Mover da raiz para aqui, se preferir)
-├── /assets/            (Recursos estáticos como imagens e vídeos)
-│   ├── /images/        (Imagens do jogo)
-│   │   ├── gaia-inicio.png  (Background inicial, mencionado no index.html)
-│   │   ├── icons/      (Subpasta para ícones de jogadores, estruturas, etc. - e.g., player-icons.png)
-│   │   ├── backgrounds/ (Subpasta para fundos - e.g., biomes-floresta.png, savana.png)
-│   │   └── ui/         (Subpasta para elementos UI - e.g., buttons.png, modals-bg.png)
-│   └── /videos/        (Vídeos, se houver - e.g., tutoriais ou animações)
-│       ├── intro.mp4   (Exemplo: vídeo de introdução ao jogo)
-│       └── effects/    (Subpasta para vídeos curtos - e.g., event-rain.mp4 para eventos)
-└── README.md           (Documentação do repositório - já existente, opcional)
+index.html (Página principal)
+style.css (Estilos principais)
+/js/ (Todos os scripts JavaScript, divididos em subpastas por módulo)
+main.js (Ponto de entrada principal)
+/logic/ (Lógica do jogo - ações, turnos, negociação, etc.)
+game-logic.js
+logic-actions.js
+logic-negotiation.js
+logic-turn.js
+logic-ai-coordinator.js
+/ai/ (Módulos relacionados à IA)
+ai-system.js
+ai-manager.js
+/ui/ (Módulos de interface do usuário)
+ui-manager.js
+ui-modals.js
+ui-negotiation.js
+/state/ (Estado e configurações do jogo)
+game-state.js
+game-config.js
+/utils/ (Utilitários e manuais)
+utils.js
+game-manual.js
+/assets/ (Recursos estáticos como imagens e vídeos)
+/images/ (Imagens do jogo)
+gaia-inicio.png
+/videos/ (Vídeos)
+README.md (Documentação do repositório - já existente, opcional)
 
 3. Implantação
 
