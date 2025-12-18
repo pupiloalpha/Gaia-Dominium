@@ -77,18 +77,16 @@ p {
    HIERARQUIA DE Z-INDEX
    ============================================ */
 
-:root {
-  --z-victory-modal: 102;
-  --z-alert-modal: 101;
-  --z-manual-modal: 100;
-  --z-negotiation-modal: 98;
-  --z-event-modal: 95;
-  --z-region-tooltip: 90;
-  --z-game-footer: 45;
-  --z-game-navbar: 40;
-  --z-manual-icon: 60;
-  --z-initial-screen: 50;
-}
+#initialScreen { z-index: 50; }
+#manualIcon { z-index: 60; position: fixed !important; top: 20px !important; right: 20px !important; }
+#gameNavbar { z-index: 40; }
+#gameFooter { z-index: 45; }
+#regionTooltip { z-index: 90; }
+#eventModal { z-index: 95; }
+#negotiationModal, #negResponseModal { z-index: 98; }
+#manualModal { z-index: 100; }
+#alertModal { z-index: 101; }
+#victoryModal { z-index: 102; }
 
 /* ============================================
    UTILITÁRIOS REUTILIZÁVEIS
@@ -111,8 +109,8 @@ p {
   display: none !important;
 }
 
-.visible {
-  display: block !important;
+.show {
+  display: flex !important;
 }
 
 /* Glassmorphism */
@@ -186,6 +184,11 @@ p {
   100% { background-position: 200% 200%; }
 }
 
+@keyframes eventPulse {
+  0%, 100% { opacity: 1; box-shadow: 0 0 15px rgba(255, 255, 255, 0.1); }
+  50% { opacity: 0.95; box-shadow: 0 0 20px rgba(255, 255, 255, 0.2); }
+}
+
 /* Classes de animação */
 .animate-fade-in {
   animation: fadeIn 0.3s ease;
@@ -199,64 +202,12 @@ p {
   animation: slideUp 0.3s ease-out;
 }
 
-/* ============================================
-   COMPONENTES DE FORMULÁRIO
-   ============================================ */
-
-/* Inputs Base */
-.input-base {
-  background: rgba(31, 31, 31, 0.85);
-  color: #EEE;
-  border: 1px solid rgba(255, 255, 255, 0.04);
-  border-radius: 8px;
-  padding: 10px 12px;
-  font-size: 14px;
-  transition: all 0.2s ease;
-}
-
-.input-base:focus {
-  outline: none;
-  border-color: var(--accent);
-  box-shadow: 0 0 0 2px rgba(248, 214, 92, 0.2);
-}
-
-/* Selects */
-.select-base {
-  background-color: rgba(30, 41, 59, 0.8);
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%239ca3af'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E");
-  background-repeat: no-repeat;
-  background-position: right 12px center;
-  background-size: 16px;
-  cursor: pointer;
-}
-
-/* Botões */
-.btn {
-  padding: 8px 16px;
-  border-radius: 8px;
-  font-weight: 500;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  border: 1px solid rgba(255, 255, 255, 0.04);
-}
-
-.btn-primary {
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.02), rgba(0, 0, 0, 0.18));
-  color: #fff;
-}
-
-.btn-primary:hover:not(:disabled) {
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.05), rgba(0, 0, 0, 0.25));
-  border-color: rgba(255, 255, 255, 0.1);
-}
-
-.btn:disabled {
-  opacity: 0.45;
-  cursor: not-allowed;
+.animate-pulse-slow {
+  animation: pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite;
 }
 
 /* ============================================
-   TELA INICIAL
+   TELA DE CADASTRO - PLAYER MODAL
    ============================================ */
 
 .player-modal {
@@ -264,44 +215,89 @@ p {
   border: 1px solid rgba(255, 255, 255, 0.06);
   backdrop-filter: blur(12px) saturate(120%);
   box-shadow: 0 12px 40px rgba(0, 0, 0, 0.6);
+  z-index: 51;
+  position: relative;
 }
 
-/* Seleção de Ícones */
-.icon-grid {
+/* Inputs */
+input[type="text"], select, input[type="number"] {
+  background: rgba(31, 31, 31, 0.85);
+  color: #EEE;
+  border: 1px solid rgba(255, 255, 255, 0.04);
+  border-radius: 8px;
+  padding: 10px 12px;
+  font-size: 14px;
+}
+
+input[type="text"]:focus, select:focus, input[type="number"]:focus {
+  outline: none;
+  border-color: #f8d65c;
+  box-shadow: 0 0 0 2px rgba(248, 214, 92, 0.2);
+}
+
+/* ============================================
+   MANUAL ICON (FLUTUANTE)
+   ============================================ */
+
+#manualIcon {
+  position: fixed !important;
+  top: 20px !important;
+  right: 20px !important;
+  z-index: 60 !important;
+  padding: 12px;
+  border-radius: 50%;
+  background: rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(8px);
+  border: 1px solid rgba(248, 214, 92, 0.3);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  transition: all 0.3s ease;
+  cursor: pointer;
+}
+
+#manualIcon:hover {
+  transform: scale(1.1);
+  border-color: rgba(248, 214, 92, 0.6);
+  box-shadow: 0 6px 20px rgba(248, 214, 92, 0.2);
+}
+
+#manualIcon svg {
+  width: 24px;
+  height: 24px;
+  color: #f8d65c;
+}
+
+/* ============================================
+   SELEÇÃO DE ÍCONES
+   ============================================ */
+
+#iconSelection {
   display: flex;
   gap: 8px;
   flex-wrap: wrap;
 }
 
 .icon-button {
-  width: 48px;
-  height: 48px;
+  min-width: 50px;
+  min-height: 50px;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.02);
   display: flex;
   align-items: center;
   justify-content: center;
-  background: rgba(30, 41, 59, 0.7);
-  border: 2px solid rgba(255, 255, 255, 0.1);
-  border-radius: 12px;
-  font-size: 24px;
+  font-size: 1.5rem;
   cursor: pointer;
-  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: .12s;
 }
 
-.icon-button:hover:not(.disabled) {
-  background: rgba(30, 41, 59, 0.9);
-  border-color: rgba(255, 255, 255, 0.2);
-  transform: translateY(-2px) scale(1.1);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+.icon-button:hover {
+  transform: translateY(-4px);
+  background: rgba(255, 255, 255, 0.05);
 }
 
 .icon-button.selected {
-  background: linear-gradient(135deg, 
-    rgba(248, 214, 92, 0.2) 0%, 
-    rgba(248, 214, 92, 0.1) 100%);
-  border-color: rgba(248, 214, 92, 0.6);
-  transform: scale(1.15);
-  box-shadow: 0 0 0 3px rgba(248, 214, 92, 0.1),
-              0 4px 16px rgba(248, 214, 92, 0.2);
+  border: 2px solid var(--accent);
+  background: rgba(248, 214, 92, 0.06);
+  transform: scale(1.06);
 }
 
 .icon-button.disabled {
@@ -310,13 +306,63 @@ p {
   filter: grayscale(0.7);
 }
 
-/* Dropdown de Facções */
-.faction-dropdown-container {
-  position: relative;
+/* ============================================
+   BOTÕES DE IA COMPACTOS
+   ============================================ */
+
+#aiButtonsContainer {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
 }
 
+.ai-button-compact {
+  padding: 8px 12px;
+  border-radius: 10px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  border: 2px solid transparent;
+  white-space: nowrap;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.02), rgba(0, 0, 0, 0.18));
+  color: #fff;
+}
+
+.ai-button-compact:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+.ai-button-compact.easy {
+  background: linear-gradient(135deg, rgba(34, 197, 94, 0.2), rgba(22, 163, 74, 0.2));
+  color: #86efac;
+  border-color: rgba(34, 197, 94, 0.3);
+}
+
+.ai-button-compact.medium {
+  background: linear-gradient(135deg, rgba(59, 130, 246, 0.2), rgba(37, 99, 235, 0.2));
+  color: #93c5fd;
+  border-color: rgba(59, 130, 246, 0.3);
+}
+
+.ai-button-compact.hard {
+  background: linear-gradient(135deg, rgba(245, 158, 11, 0.2), rgba(217, 119, 6, 0.2));
+  color: #fde68a;
+  border-color: rgba(245, 158, 11, 0.3);
+}
+
+.ai-button-compact.master {
+  background: linear-gradient(135deg, rgba(239, 68, 68, 0.2), rgba(220, 38, 38, 0.2));
+  color: #fca5a5;
+  border-color: rgba(239, 68, 68, 0.3);
+}
+
+/* ============================================
+   DROPDOWN DE FACÇÕES
+   ============================================ */
+
 .faction-dropdown {
-  width: 100%;
   background-color: rgba(17, 24, 39, 0.9) !important;
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%23fbbf24'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E") !important;
   background-repeat: no-repeat !important;
@@ -333,67 +379,61 @@ p {
   color: white !important;
 }
 
+.faction-dropdown:hover {
+  background-color: rgba(30, 41, 59, 0.95) !important;
+  border-color: rgba(251, 191, 36, 0.5) !important;
+  box-shadow: 0 6px 20px rgba(251, 191, 36, 0.15) !important;
+  transform: translateY(-1px) !important;
+}
+
+.faction-dropdown:focus {
+  background-color: rgba(30, 41, 59, 0.95) !important;
+  border-color: rgba(251, 191, 36, 0.7) !important;
+  box-shadow: 0 0 0 3px rgba(251, 191, 36, 0.2), 0 8px 25px rgba(0, 0, 0, 0.3) !important;
+  outline: none !important;
+}
+
 .faction-dropdown option {
   background-color: rgba(17, 24, 39, 0.95) !important;
   color: #f3f4f6 !important;
   padding: 12px 16px !important;
+  font-size: 13px !important;
   border-bottom: 1px solid rgba(255, 255, 255, 0.05) !important;
+  transition: all 0.2s ease !important;
 }
 
-/* Lista de Jogadores */
-.players-list {
-  min-height: 80px;
-  padding: 8px 4px;
-  border-radius: 8px;
-  background: rgba(255, 255, 255, 0.01);
+.faction-dropdown option:checked {
+  background: linear-gradient(135deg, rgba(251, 191, 36, 0.2), rgba(245, 158, 11, 0.1)) !important;
+  color: #fbbf24 !important;
+  font-weight: 600 !important;
 }
 
-.player-icon-minimal {
-  position: relative;
-  width: 44px;
-  height: 44px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  margin: 0;
+/* ============================================
+   TABS DO MANUAL
+   ============================================ */
+
+.manual-tab {
+  color: #cfcfcf;
+  background: transparent;
+  border: 1px solid transparent;
+  transition: all 0.2s ease;
+  width: 100%;
+  text-align: left;
+  padding: 8px 16px;
+  border-radius: 6px;
+  margin-bottom: 4px;
   cursor: pointer;
-  transition: all 0.2s ease;
 }
 
-.player-icon-mini {
-  position: relative;
-  width: 36px;
-  height: 36px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: rgba(30, 41, 59, 0.7);
-  border: 2px solid rgba(255, 255, 255, 0.1);
-  border-radius: 10px;
-  font-size: 18px;
-  transition: all 0.2s ease;
+.manual-tab:hover {
+  color: #fff;
+  background: rgba(255, 255, 255, 0.02);
 }
 
-/* Botões de IA */
-.ai-buttons-container {
-  display: flex;
-  gap: 8px;
-}
-
-.ai-button {
-  padding: 8px 12px;
-  border-radius: 10px;
-  font-size: 12px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  border: 2px solid transparent;
-  white-space: nowrap;
-}
-
-.ai-button:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+.manual-tab.active {
+  color: var(--accent);
+  border-color: rgba(248, 214, 92, 0.12);
+  background: linear-gradient(180deg, rgba(248, 214, 92, 0.03), rgba(255, 255, 255, 0.01));
 }
 
 /* ============================================
@@ -417,7 +457,7 @@ p {
   top: 0;
   left: 0;
   right: 0;
-  z-index: var(--z-game-navbar);
+  z-index: 40;
   background: rgba(0, 0, 0, 0.6);
   backdrop-filter: blur(8px);
   border-bottom: 1px solid rgba(255, 255, 255, 0.06);
@@ -467,7 +507,7 @@ p {
   bottom: 16px;
   left: 50%;
   transform: translateX(-50%);
-  z-index: var(--z-game-footer);
+  z-index: 45;
   width: 100%;
   max-width: 64rem;
   padding: 0 1rem;
@@ -534,37 +574,35 @@ p {
   position: relative;
 }
 
-/* Conteúdo das Células */
-.cell-header {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  margin-bottom: 4px;
-}
-
-.cell-title {
+/* Contraste do Texto nas Células */
+.board-cell .text-xs {
   font-size: 11px;
-  font-weight: 700;
   line-height: 1.3;
+  font-weight: 700;
   color: var(--text-primary);
   text-shadow: 0 1px 3px rgba(0, 0, 0, 0.8);
 }
 
-.cell-subtitle {
+.board-cell .text-\[10px\] {
+  font-size: 10px;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.95);
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.7);
+}
+
+/* Elementos da Célula */
+.board-cell .biome-indicator {
   font-size: 9px;
-  color: rgba(255, 255, 255, 0.7);
+  padding: 2px 6px;
+  border-radius: 10px;
+  background: rgba(0, 0, 0, 0.5);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: rgba(255, 255, 255, 0.95);
+  display: inline-block;
   margin-top: 2px;
 }
 
-.cell-resources {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 4px;
-  margin-top: 4px;
-}
-
-.resource-item {
+.board-cell .resource-item {
   display: flex;
   align-items: center;
   gap: 2px;
@@ -575,13 +613,52 @@ p {
   border: 1px solid rgba(255, 255, 255, 0.08);
 }
 
-.cell-footer {
+.board-cell .resource-value {
+  font-weight: 800;
+  color: var(--text-primary);
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.7);
+}
+
+.board-cell .cell-footer {
   display: flex;
   align-items: center;
   justify-content: space-between;
   margin-top: 8px;
   padding-top: 6px;
   border-top: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.board-cell .controller-info {
+  font-size: 10px;
+  font-weight: 700;
+  color: rgba(255, 255, 255, 0.98);
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.8);
+}
+
+/* ============================================
+   BOTÕES DE AÇÃO
+   ============================================ */
+
+.action-btn {
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.02), rgba(0, 0, 0, 0.18));
+  color: #fff;
+  padding: 8px 12px;
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.04);
+  font-weight: 500;
+  transition: all 0.2s ease;
+  cursor: pointer;
+}
+
+.action-btn:hover:not(:disabled) {
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.05), rgba(0, 0, 0, 0.25));
+  border-color: rgba(255, 255, 255, 0.1);
+}
+
+.action-btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.01), rgba(0, 0, 0, 0.1));
 }
 
 /* ============================================
@@ -602,8 +679,7 @@ p {
   padding: 1rem;
 }
 
-.modal-content {
-  position: relative;
+.modal-overlay .relative {
   background: rgba(17, 24, 39, 0.98) !important;
   backdrop-filter: blur(25px) saturate(180%) !important;
   border: 1px solid rgba(255, 255, 255, 0.15) !important;
@@ -616,8 +692,40 @@ p {
   overflow-y: auto;
 }
 
+/* Títulos e Textos dos Modais */
+.modal-overlay h2, .modal-overlay h3, .modal-overlay h4 {
+  color: #fbbf24 !important;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.7) !important;
+  font-weight: 700 !important;
+  letter-spacing: 0.3px !important;
+}
+
+.modal-overlay p, .modal-overlay span:not(.icon), .modal-overlay div:not(.icon) {
+  color: rgba(255, 255, 255, 0.95) !important;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.7) !important;
+  font-weight: 500 !important;
+}
+
+/* Inputs em Modais */
+.modal-overlay input,
+.modal-overlay select,
+.modal-overlay textarea {
+  background: rgba(30, 41, 59, 0.9) !important;
+  color: var(--text-primary) !important;
+  border: 1px solid rgba(255, 255, 255, 0.2) !important;
+  font-weight: 500 !important;
+}
+
+.modal-overlay input:focus, 
+.modal-overlay select:focus, 
+.modal-overlay textarea:focus {
+  outline: none;
+  border-color: var(--accent) !important;
+  box-shadow: 0 0 0 2px rgba(248, 214, 92, 0.2) !important;
+}
+
 /* Modal de Negociação */
-.negotiation-section {
+#negotiationModal .negotiation-section {
   transition: all 0.2s ease;
   backdrop-filter: blur(4px);
   padding: 1rem;
@@ -625,13 +733,21 @@ p {
   margin-bottom: 1rem;
 }
 
-.negotiation-section:hover {
+#negotiationModal .negotiation-section:hover {
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
   transform: translateY(-2px);
 }
 
+#negotiationModal .negotiation-section:first-child {
+  background: linear-gradient(135deg, rgba(34, 197, 94, 0.1), rgba(22, 163, 74, 0.1));
+}
+
+#negotiationModal .negotiation-section:last-child {
+  background: linear-gradient(135deg, rgba(239, 68, 68, 0.1), rgba(220, 38, 38, 0.1));
+}
+
 /* Modal de Estruturas */
-.structure-option {
+#structureModal .structure-option {
   transition: all 0.2s ease;
   border-width: 2px;
   padding: 1rem;
@@ -639,10 +755,22 @@ p {
   cursor: pointer;
 }
 
-.structure-option:hover:not(.disabled) {
+#structureModal .structure-option:hover:not(.opacity-50) {
   transform: translateY(-4px);
   box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
 }
+
+/* Cores das estruturas */
+.bg-orange-500\/30 { background-color: rgba(249, 115, 22, 0.3); }
+.border-orange-500\/30 { border-color: rgba(249, 115, 22, 0.3); }
+.bg-blue-500\/30 { background-color: rgba(59, 130, 246, 0.3); }
+.border-blue-500\/30 { border-color: rgba(59, 130, 246, 0.3); }
+.bg-yellow-500\/30 { background-color: rgba(234, 179, 8, 0.3); }
+.border-yellow-500\/30 { border-color: rgba(234, 179, 8, 0.3); }
+.bg-purple-500\/30 { background-color: rgba(168, 85, 247, 0.3); }
+.border-purple-500\/30 { border-color: rgba(168, 85, 247, 0.3); }
+.bg-green-500\/30 { background-color: rgba(34, 197, 94, 0.3); }
+.border-green-500\/30 { border-color: rgba(34, 197, 94, 0.3); }
 
 /* ============================================
    TOOLTIP
@@ -650,7 +778,7 @@ p {
 
 #regionTooltip {
   position: fixed !important;
-  z-index: var(--z-region-tooltip);
+  z-index: 90;
   pointer-events: none;
   transition: opacity 0.15s ease, transform 0.15s ease;
   transform-origin: center bottom;
@@ -662,6 +790,17 @@ p {
   border-radius: 0.5rem;
   padding: 0.75rem;
   box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
+}
+
+#regionTooltip.visible {
+  opacity: 1;
+  transform: translateY(0) scale(1);
+}
+
+#regionTooltip.hidden {
+  opacity: 0;
+  transform: translateY(10px) scale(0.95);
+  pointer-events: none;
 }
 
 .tooltip-section {
@@ -677,6 +816,68 @@ p {
 }
 
 /* ============================================
+   BANNER DE EVENTO
+   ============================================ */
+
+#eventBanner {
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(8px);
+  border-width: 2px;
+  border-style: solid;
+  margin-bottom: 12px;
+  padding: 10px;
+  border-radius: 0.5rem;
+}
+
+#eventBanner.animate-pulse-slow {
+  animation: eventPulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+#eventBanner.event-positive {
+  background: linear-gradient(135deg, rgba(34, 197, 94, 0.25), rgba(22, 163, 74, 0.25));
+  border-color: rgba(34, 197, 94, 0.7);
+  box-shadow: 0 0 15px rgba(34, 197, 94, 0.2);
+}
+
+#eventBanner.event-negative {
+  background: linear-gradient(135deg, rgba(239, 68, 68, 0.25), rgba(220, 38, 38, 0.25));
+  border-color: rgba(239, 68, 68, 0.7);
+  box-shadow: 0 0 15px rgba(239, 68, 68, 0.2);
+}
+
+#eventBanner.event-mixed {
+  background: linear-gradient(135deg, rgba(168, 85, 247, 0.25), rgba(147, 51, 234, 0.25));
+  border-color: rgba(168, 85, 247, 0.7);
+  box-shadow: 0 0 15px rgba(168, 85, 247, 0.2);
+}
+
+#eventBanner.event-neutral {
+  background: linear-gradient(135deg, rgba(251, 191, 36, 0.25), rgba(245, 158, 11, 0.25));
+  border-color: rgba(251, 191, 36, 0.7);
+  box-shadow: 0 0 15px rgba(251, 191, 36, 0.2);
+}
+
+/* Texto do banner */
+#eventBanner #eventBannerTitle {
+  color: #ffffff !important;
+  font-weight: 700 !important;
+  font-size: 13px !important;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.8) !important;
+}
+
+#eventBanner #eventBannerEffect {
+  color: rgba(255, 255, 255, 0.95) !important;
+  font-weight: 500 !important;
+  font-size: 11px !important;
+}
+
+#eventBanner #eventBannerTurns {
+  background: rgba(0, 0, 0, 0.6) !important;
+  color: #ffffff !important;
+  font-weight: 600 !important;
+}
+
+/* ============================================
    CONTROLE DE TRANSPARÊNCIA
    ============================================ */
 
@@ -687,6 +888,11 @@ p {
   background: rgba(55, 65, 81, 0.3);
   border-radius: 0.5rem;
   border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.transparency-control:hover {
+  background: rgba(55, 65, 81, 0.5) !important;
+  border-color: rgba(255, 255, 255, 0.1) !important;
 }
 
 .transparency-slider {
@@ -700,6 +906,15 @@ p {
     rgba(255, 255, 255, 0.05) 100%
   );
   outline: none;
+  transition: all 0.2s ease;
+}
+
+.transparency-slider:hover {
+  background: linear-gradient(90deg, 
+    rgba(255, 255, 255, 0.1) 0%, 
+    rgba(255, 255, 255, 0.3) 50%, 
+    rgba(255, 255, 255, 0.1) 100%
+  );
 }
 
 .transparency-slider::-webkit-slider-thumb {
@@ -712,6 +927,12 @@ p {
   cursor: pointer;
   border: 2px solid rgba(0, 0, 0, 0.3);
   box-shadow: 0 2px 8px rgba(248, 214, 92, 0.3);
+  transition: all 0.2s ease;
+}
+
+.transparency-slider::-webkit-slider-thumb:hover {
+  transform: scale(1.1);
+  box-shadow: 0 3px 12px rgba(248, 214, 92, 0.5);
 }
 
 .transparency-slider::-moz-range-thumb {
@@ -722,33 +943,7 @@ p {
   cursor: pointer;
   border: 2px solid rgba(0, 0, 0, 0.3);
   box-shadow: 0 2px 8px rgba(248, 214, 92, 0.3);
-}
-
-/* ============================================
-   BANNER DE EVENTO
-   ============================================ */
-
-.event-banner {
-  background: rgba(0, 0, 0, 0.6);
-  backdrop-filter: blur(8px);
-  border-width: 2px;
-  border-style: solid;
-  margin-bottom: 12px;
-  padding: 10px;
-  border-radius: 0.5rem;
-  animation: eventPulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite;
-}
-
-.event-banner.event-positive {
-  background: linear-gradient(135deg, rgba(34, 197, 94, 0.25), rgba(22, 163, 74, 0.25));
-  border-color: rgba(34, 197, 94, 0.7);
-  box-shadow: 0 0 15px rgba(34, 197, 94, 0.2);
-}
-
-.event-banner.event-negative {
-  background: linear-gradient(135deg, rgba(239, 68, 68, 0.25), rgba(220, 38, 38, 0.25));
-  border-color: rgba(239, 68, 68, 0.7);
-  box-shadow: 0 0 15px rgba(239, 68, 68, 0.2);
+  transition: all 0.2s ease;
 }
 
 /* ============================================
@@ -767,7 +962,7 @@ p {
   border-bottom: none;
 }
 
-.log-filter {
+.log-filter-sidebar {
   transition: all 0.2s ease;
   border: 1px solid transparent;
   cursor: pointer;
@@ -776,15 +971,25 @@ p {
   font-size: 10px;
 }
 
-.log-filter:hover {
+.log-filter-sidebar:hover {
   background: rgba(255, 255, 255, 0.1) !important;
 }
 
-.log-filter.active {
+.log-filter-sidebar.active {
   background: rgba(59, 130, 246, 0.2) !important;
   border-color: rgba(59, 130, 246, 0.4) !important;
   color: #60a5fa !important;
 }
+
+/* Cores dos tipos de log */
+.log-type-action { color: #60a5fa; }
+.log-type-build { color: #f59e0b; }
+.log-type-explore { color: #10b981; }
+.log-type-collect { color: #8b5cf6; }
+.log-type-negotiate { color: #f97316; }
+.log-type-event { color: #ef4444; }
+.log-type-victory { color: #10b981; }
+.log-type-income { color: #22c55e; }
 
 /* ============================================
    CONQUISTAS
@@ -804,13 +1009,29 @@ p {
   background: rgba(255, 255, 255, 0.03);
 }
 
-.achievement.unlocked {
+.achievement-unlocked {
+  opacity: 1;
   animation: achievementUnlock 0.5s ease-out;
 }
 
-.achievement.locked {
+.achievement-locked {
   opacity: 0.5;
   filter: grayscale(0.8);
+}
+
+@keyframes achievementUnlock {
+  0% {
+    transform: scale(1);
+    box-shadow: 0 0 0 rgba(245, 158, 11, 0);
+  }
+  50% {
+    transform: scale(1.05);
+    box-shadow: 0 0 20px rgba(245, 158, 11, 0.5);
+  }
+  100% {
+    transform: scale(1);
+    box-shadow: 0 0 0 rgba(245, 158, 11, 0);
+  }
 }
 
 /* ============================================
@@ -837,7 +1058,7 @@ p {
 .ai-master { background-color: var(--ai-master-color); color: white; }
 
 /* ============================================
-   MANUAL
+   MANUAL - IMAGENS
    ============================================ */
 
 .manual-content img {
@@ -946,12 +1167,12 @@ p {
     padding: 4px;
   }
   
-  .cell-title {
+  .board-cell .text-xs {
     font-size: 10px;
   }
   
-  .cell-subtitle {
-    font-size: 8px;
+  .board-cell .text-\[10px\] {
+    font-size: 9px;
   }
 }
 
@@ -969,7 +1190,7 @@ p {
   }
 }
 
-/* Modo Claro do Sistema (opcional) */
+/* Modo Claro do Sistema */
 @media (prefers-color-scheme: light) {
   body {
     background-color: #f5f5f5;
@@ -980,30 +1201,11 @@ p {
     background: rgba(30, 30, 30, 0.8);
     border: 1px solid rgba(255, 255, 255, 0.1);
   }
-}
-
-/* ============================================
-   ANIMAÇÕES ESPECÍFICAS
-   ============================================ */
-
-@keyframes achievementUnlock {
-  0% {
-    transform: scale(1);
-    box-shadow: 0 0 0 rgba(245, 158, 11, 0);
+  
+  .board-cell.controlled {
+    background: rgba(var(--player-rgb), 0.3) !important;
+    border-left: 6px solid var(--player-color);
   }
-  50% {
-    transform: scale(1.05);
-    box-shadow: 0 0 20px rgba(245, 158, 11, 0.5);
-  }
-  100% {
-    transform: scale(1);
-    box-shadow: 0 0 0 rgba(245, 158, 11, 0);
-  }
-}
-
-@keyframes eventPulse {
-  0%, 100% { opacity: 1; box-shadow: 0 0 15px rgba(255, 255, 255, 0.1); }
-  50% { opacity: 0.95; box-shadow: 0 0 20px rgba(255, 255, 255, 0.2); }
 }
 
 /* ============================================
