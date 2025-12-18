@@ -235,6 +235,89 @@ input[type="text"]:focus, select:focus, input[type="number"]:focus {
   box-shadow: 0 0 0 2px rgba(248, 214, 92, 0.2);
 }
 
+/* Estilos para os novos cartões de jogador */
+.player-card {
+    transition: all 0.2s ease;
+    min-height: 140px;
+    position: relative;
+}
+
+.player-card-inner {
+    height: 100%;
+    transition: all 0.2s ease;
+}
+
+.player-card:hover:not(.empty) .player-card-inner {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+.player-card.editing .player-card-inner {
+    box-shadow: 0 0 0 2px #fbbf24, 0 4px 12px rgba(251, 191, 36, 0.3);
+    animation: pulse 1.5s infinite;
+}
+
+.player-card-icon {
+    position: relative;
+}
+
+.player-card-name {
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.8);
+}
+
+.player-card-actions {
+    opacity: 0;
+    transition: opacity 0.2s ease;
+}
+
+.player-card:hover .player-card-actions {
+    opacity: 1;
+}
+
+.player-card-actions button {
+    padding: 4px 8px;
+    border-radius: 4px;
+    background: rgba(0, 0, 0, 0.5);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    transition: all 0.2s ease;
+}
+
+.player-card-actions button:hover {
+    background: rgba(0, 0, 0, 0.7);
+    transform: scale(1.1);
+}
+
+.player-card-edit:hover {
+    background: rgba(59, 130, 246, 0.5) !important;
+}
+
+.player-card-delete:hover {
+    background: rgba(239, 68, 68, 0.5) !important;
+}
+
+/* Layout responsivo */
+@media (max-width: 768px) {
+    .player-card {
+        min-height: 120px;
+    }
+    
+    .player-card-inner {
+        padding: 12px 8px;
+    }
+    
+    .player-card-icon {
+        font-size: 24px;
+    }
+    
+    .player-card-name {
+        font-size: 12px;
+    }
+    
+    .player-card-faction {
+        font-size: 11px;
+    }
+}
+
 /* ============================================
    MANUAL ICON (FLUTUANTE)
    ============================================ */
