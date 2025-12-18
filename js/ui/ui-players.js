@@ -426,88 +426,149 @@ export class UIPlayersManager {
     // ==================== LISTA DE JOGADORES REGISTRADOS ====================
 
     renderRegisteredPlayersList() {
-        const players = gameState.players;
-        const canEdit = !gameState.gameStarted;
+    const players = gameState.players;
+    const canEdit = !gameState.gameStarted;
+    
+    const container = this.registeredPlayersList;
+    if (!container) return;
+    
+    // Limpar estilos anteriores e aplicar novo layout
+    container.classList.remove('flex-wrap', 'gap-1.5', 'justify-center', 'items-center', 'py-2', 'px-1');
+    container.classList.add('grid', 'grid-cols-4', 'gap-3', 'py-3', 'px-2', 'max-w-full');
+    container.style.minHeight = '120px';
+    
+    if (players.length === 0) {
+        container.innerHTML = `
+            <div class="col-span-4 text-center py-8 text-gray-400">
+                <div class="text-3xl mb-3">👤</div>
+                <p class="text-sm">Nenhum jogador adicionado</p>
+                <p class="text-xs mt-2 text-gray-300">Adicione jogadores para começar a partida</p>
+            </div>
+        `;
+        return;
+    }
+    
+    container.innerHTML = '';
+    
+    // Renderizar cartões dos jogadores existentes
+    players.forEach((player, index) => {
+        const playerCard = this.createPlayerCard(player, index, canEdit);
+        container.appendChild(playerCard);
+    });
+    
+    // Renderizar slots vazios até 4
+    for (let i = players.length; i < 4; i++) {
+        const emptyCard = this.createEmptyPlayerCard(i);
+        container.appendChild(emptyCard);
+    }
+    
+    if (canEdit) {
+        this.setupPlayerActionListeners();
+    }
+}
+
+    createPlayerCard(player, index, canEdit) {
+    const card = document.createElement('div');
+    card.className = `player-card ${index === this.editingIndex ? 'editing' : ''}`;
+    card.dataset.index = index;
+    card.title = `${player.name} • ${player.faction?.name || 'Sem facção'} • ${player.victoryPoints} PV`;
+    
+    const borderColor = player.color || '#9ca3af';
+    const bgColor = this.hexToRgba(player.color || '#9ca3af', 0.08);
+    
+    let actionsHTML = '';
+    if (canEdit) {
+        const editBtn = player.type !== 'ai' && !player.isAI ? 
+            `<button class="player-card-edit" data-index="${index}" title="Editar">
+                <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
+                </svg>
+            </button>` : '';
         
-        const container = this.registeredPlayersList;
-        if (!container) return;
-        
-        if (players.length === 0) {
-            container.innerHTML = `
-                <div class="text-center py-4 text-gray-500">
-                    <div class="text-2xl mb-2">👤</div>
-                    <p class="text-xs">Adicione jogadores</p>
-                </div>
-            `;
-            return;
-        }
-        
-        container.innerHTML = '';
-        
-        players.forEach((player, index) => {
-            const playerEl = document.createElement('div');
-            playerEl.className = `player-icon-minimal ${index === this.editingIndex ? 'editing' : ''}`;
-            playerEl.dataset.index = index;
-            playerEl.title = `${player.name} • ${player.faction?.name || ''} • ${player.victoryPoints} PV`;
+        actionsHTML = `
+            <div class="player-card-actions flex gap-1 justify-center mt-2">
+                ${editBtn}
+                <button class="player-card-delete" data-index="${index}" title="Remover">
+                    <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                    </svg>
+                </button>
+            </div>
+        `;
+    }
+    
+    card.innerHTML = `
+        <div class="player-card-inner flex flex-col items-center justify-between h-full p-3 rounded-lg border-2 transition-all"
+             style="border-color: ${borderColor}; background: ${bgColor};">
+            <!-- Ícone do jogador -->
+            <div class="player-card-icon text-3xl mb-2" style="color: ${borderColor}">
+                ${player.icon}
+                ${player.type === 'ai' || player.isAI ? 
+                    '<span class="absolute -top-1 -right-1 text-xs bg-purple-600 rounded-full p-1">🤖</span>' : 
+                    ''}
+            </div>
             
-            // Ícone principal
-            const iconHTML = `
-                <div class="player-icon-mini" style="color: ${player.color}">
-                    ${player.icon}
-                    ${player.type === 'ai' || player.isAI ? '<span class="ai-dot">🤖</span>' : ''}
-                    <span class="pv-badge">${player.victoryPoints}</span>
-                </div>
-            `;
+            <!-- Pontos de Vitória -->
+            <div class="player-card-pv text-xs font-bold text-yellow-300 mb-1 bg-black/30 px-2 py-0.5 rounded-full">
+                ${player.victoryPoints} PV
+            </div>
             
-            // Ações (somente se pode editar)
-            let actionsHTML = '';
-            if (canEdit) {
-                actionsHTML = `
-                    <div class="player-mini-actions">
-                        ${player.type !== 'ai' ? `
-                            <button class="player-mini-edit" data-index="${index}" title="Editar">
-                                <svg class="w-2.5 h-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
-                                </svg>
-                            </button>
-                        ` : ''}
-                        <button class="player-mini-delete" data-index="${index}" title="Remover">
-                            <svg class="w-2.5 h-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
-                            </svg>
-                        </button>
-                    </div>
-                `;
-            }
+            <!-- Nome do jogador -->
+            <div class="player-card-name text-sm font-bold text-white text-center truncate w-full mb-1">
+                ${player.name}
+            </div>
             
-            playerEl.innerHTML = iconHTML + actionsHTML;
-            container.appendChild(playerEl);
-        });
-        
-        if (canEdit) {
-            this.setupPlayerActionListeners();
-        }
+            <!-- Facção -->
+            <div class="player-card-faction text-xs text-gray-300 text-center truncate w-full">
+                ${player.faction ? `${player.faction.icon || '🏛️'} ${player.faction.name}` : 'Sem facção'}
+            </div>
+            
+            <!-- Ações (se editável) -->
+            ${actionsHTML}
+        </div>
+    `;
+    
+    return card;
+    }
+
+    createEmptyPlayerCard(index) {
+    const card = document.createElement('div');
+    card.className = 'player-card empty';
+    card.dataset.index = `empty-${index}`;
+    card.title = 'Slot vazio - Adicione um jogador';
+    
+    card.innerHTML = `
+        <div class="player-card-inner flex flex-col items-center justify-center h-full p-3 rounded-lg border-2 border-dashed border-gray-600 bg-gray-800/20">
+            <div class="text-2xl text-gray-500 mb-2">👤</div>
+            <div class="text-center">
+                <div class="text-sm font-bold text-gray-500">Vazio</div>
+                <div class="text-xs text-gray-500">Adicione um jogador</div>
+            </div>
+        </div>
+    `;
+    
+    return card;
     }
 
     setupPlayerActionListeners() {
-        // Edit buttons
-        this.registeredPlayersList.querySelectorAll('.player-mini-edit').forEach(btn => {
-            btn.addEventListener('click', (e) => {
-                e.stopPropagation();
-                const index = parseInt(e.currentTarget.dataset.index);
-                this.editPlayer(index);
-            });
+    // Botões de edição
+    this.registeredPlayersList.querySelectorAll('.player-card-edit').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const index = parseInt(e.currentTarget.dataset.index);
+            this.editPlayer(index);
         });
-        
-        // Delete buttons
-        this.registeredPlayersList.querySelectorAll('.player-mini-delete').forEach(btn => {
-            btn.addEventListener('click', (e) => {
-                e.stopPropagation();
-                const index = parseInt(e.currentTarget.dataset.index);
-                this.deletePlayer(index);
-            });
+    });
+    
+    // Botões de remoção
+    this.registeredPlayersList.querySelectorAll('.player-card-delete').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const index = parseInt(e.currentTarget.dataset.index);
+            this.deletePlayer(index);
         });
-    }
+    });
+}
 
     editPlayer(index) {
         if (gameState.gameStarted) {
@@ -558,14 +619,18 @@ export class UIPlayersManager {
     }
 
     highlightPlayerBeingEdited(index) {
-        this.registeredPlayersList.querySelectorAll('.player-icon-minimal').forEach((entry, i) => {
-            if (i === index) {
-                entry.classList.add('editing');
-            } else {
-                entry.classList.remove('editing');
-            }
-        });
-    }
+    this.registeredPlayersList.querySelectorAll('.player-card').forEach((card, i) => {
+        if (i === index) {
+            card.classList.add('editing');
+            card.style.transform = 'scale(1.05)';
+            card.style.zIndex = '10';
+        } else {
+            card.classList.remove('editing');
+            card.style.transform = '';
+            card.style.zIndex = '';
+        }
+    });
+}
 
     cancelEdit() {
         this.addPlayerBtn.textContent = 'Adicionar';
@@ -591,10 +656,12 @@ export class UIPlayersManager {
     }
 
     clearPlayerHighlight() {
-        this.registeredPlayersList.querySelectorAll('.player-icon-minimal').forEach(entry => {
-            entry.classList.remove('editing');
-        });
-    }
+    this.registeredPlayersList.querySelectorAll('.player-card').forEach(card => {
+        card.classList.remove('editing');
+        card.style.transform = '';
+        card.style.zIndex = '';
+    });
+}
 
     async deletePlayer(index) {
         if (gameState.gameStarted) {
@@ -831,5 +898,26 @@ export class UIPlayersManager {
         // Início do jogo
         this.addPlayerBtn?.addEventListener('click', () => this.handleAddPlayer());
         this.cancelEditBtn?.addEventListener('click', () => this.cancelEdit());
+    }
+
+    hexToRgba(hex, alpha) {
+    // Remove o hash se presente
+    hex = hex.replace(/^#/, '');
+    
+    // Parse os valores RGB
+    let r, g, b;
+    if (hex.length === 3) {
+        r = parseInt(hex[0] + hex[0], 16);
+        g = parseInt(hex[1] + hex[1], 16);
+        b = parseInt(hex[2] + hex[2], 16);
+    } else if (hex.length === 6) {
+        r = parseInt(hex.slice(0, 2), 16);
+        g = parseInt(hex.slice(2, 4), 16);
+        b = parseInt(hex.slice(4, 6), 16);
+    } else {
+        return 'rgba(156, 163, 175, 0.08)'; // Fallback
+    }
+    
+    return `rgba(${r}, ${g}, ${b}, ${alpha})`;
     }
 }
