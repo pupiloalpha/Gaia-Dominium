@@ -1487,36 +1487,18 @@ input[type="text"]:focus, select:focus, input[type="number"]:focus {
     display: none !important; /* Remover elemento separado */
   }
 
-  /* 7. ADICIONAR CONTADOR DIRETAMENTE NOS BOTÕES */
-  .action-btn::after {
-    content: attr(data-actions-left);
-    position: absolute;
-    top: -8px;
-    right: -8px;
-    background: #ef4444;
-    color: white;
-    font-size: 10px;
-    font-weight: bold;
-    width: 18px;
-    height: 18px;
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-  }
-
-  /* 8. AJUSTAR O CONTAINER DO JOGO PARA DAR MAIS ESPAÇO */
+  /* 7. AJUSTAR O CONTAINER DO JOGO PARA DAR MAIS ESPAÇO */
   #gameContainer {
     margin-bottom: 100px !important; /* Reduzir espaço para o footer */
   }
 
-  /* 9. MODAIS DEVEM FICAR ACIMA DO FOOTER */
+  /* 8. MODAIS DEVEM FICAR ACIMA DO FOOTER */
   .modal-overlay {
     z-index: 1000 !important;
     padding-bottom: 100px !important; /* Garantir que modais não fiquem atrás */
   }
 
-  /* 10. TOOLTIP AJUSTADA PARA MOBILE */
+  /* 9. TOOLTIP AJUSTADA PARA MOBILE */
   #regionTooltip {
     bottom: 100px !important; /* Acima do footer */
     max-width: 90vw !important;
@@ -1525,7 +1507,7 @@ input[type="text"]:focus, select:focus, input[type="number"]:focus {
     transform: none !important;
   }
 
-  /* 11. BOTÕES ESPECÍFICOS - ÍCONES SEM TEXTO EM TELAS MUITO PEQUENAS */
+  /* 10. BOTÕES ESPECÍFICOS - ÍCONES SEM TEXTO EM TELAS MUITO PEQUENAS */
   @media (max-width: 360px) {
     .action-btn span:not(.icon) {
       display: none !important;
@@ -1543,13 +1525,14 @@ input[type="text"]:focus, select:focus, input[type="number"]:focus {
     }
   }
 
-  /* 12. ESTADO DESABILITADO VISUALMENTE MELHOR */
+  /* 11. ESTADO DESABILITADO VISUALMENTE MELHOR */
   .action-btn:disabled {
     opacity: 0.4 !important;
     transform: scale(0.95) !important;
   }
 }
 
+   /* 12. OCULTAR TOOLTIP QUANDO COLOCAR NA GAMEFOOTER */
    @media (max-width: 768px) {
   #gameFooter {
     z-index: 100 !important;
