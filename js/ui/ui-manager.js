@@ -23,6 +23,11 @@ class UIManager {
         this.negotiation = new NegotiationUI(this);
         this.playersManager = new UIPlayersManager(this);
         this.gameManager = new UIGameManager(this);
+
+        // Inicializar mobile manager se necessário
+        if (window.mobileManager) {
+            window.mobileManager.uiManager = this;
+        }
         
         this.cacheElements();
         
