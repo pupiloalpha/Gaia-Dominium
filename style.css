@@ -1230,7 +1230,7 @@ input[type="text"]:focus, select:focus, input[type="number"]:focus {
 }
 
 /* ============================================
-   ESTILOS MOBILE - ADICIONAR AO FINAL DO CSS
+   ESTILOS MOBILE
    ============================================ */
 
 /* Dispositivos móveis (até 768px) */
@@ -1355,7 +1355,7 @@ input[type="text"]:focus, select:focus, input[type="number"]:focus {
     font-size: 9px !important;
   }
 
-  /* Footer de ações reorganizado */
+  /* ============ FOOTER COMPACTO REORGANIZADO ============ */
   #gameFooter {
     position: fixed !important;
     bottom: 0 !important;
@@ -1364,7 +1364,7 @@ input[type="text"]:focus, select:focus, input[type="number"]:focus {
     transform: none !important;
     width: 100% !important;
     max-width: 100% !important;
-    padding: 0.75rem !important;
+    padding: 0.5rem !important; /* REDUZIDO */
     background: rgba(15, 23, 42, 0.95) !important;
     backdrop-filter: blur(15px) !important;
     border-top: 1px solid rgba(255, 255, 255, 0.15) !important;
@@ -1373,138 +1373,242 @@ input[type="text"]:focus, select:focus, input[type="number"]:focus {
     border-radius: 0 !important;
     z-index: 100 !important;
     box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.3) !important;
+    height: auto !important; /* ALTURA AUTOMÁTICA */
+    min-height: unset !important;
   }
 
-  #gameFooter .flex {
+  /* Container principal do footer em coluna */
+  #gameFooter > div {
+    display: flex !important;
     flex-direction: column !important;
-    gap: 0.75rem !important;
+    gap: 0.5rem !important; /* ESPAÇO REDUZIDO */
+    padding: 0 !important;
   }
 
-  /* Botões de ação em grid 2x2 */
+  /* Linha 1: Botões de ação em grid 4 colunas */
   #gameFooter .flex > div:first-child {
     display: grid !important;
-    grid-template-columns: repeat(2, 1fr) !important;
+    grid-template-columns: repeat(4, 1fr) !important;
+    gap: 0.25rem !important; /* ESPAÇO MINIMO ENTRE BOTÕES */
+    width: 100% !important;
+    margin-bottom: 0 !important;
+  }
+
+  /* Botões de ação compactos */
+  .action-btn {
+    padding: 8px 4px !important; /* MAIS COMPACTO */
+    font-size: 12px !important; /* FONTE MENOR */
+    min-height: 38px !important; /* ALTURA REDUZIDA */
+    border-radius: 8px !important;
+    font-weight: 600 !important;
+    margin: 0 !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    text-align: center !important;
+    line-height: 1.2 !important;
+  }
+
+  /* Linha 2: Ações restantes + Terminar turno */
+  #gameFooter .flex > div:last-child {
+    display: grid !important;
+    grid-template-columns: 1fr auto !important; /* AÇÕES À ESQUERDA, BOTÃO À DIREITA */
     gap: 0.5rem !important;
     width: 100% !important;
+    align-items: center !important;
   }
 
-  /* Botões de ação compactos mas tocáveis */
-  .action-btn {
-    padding: 10px 12px !important;
-    font-size: 13px !important;
-    min-height: 46px !important;
-    border-radius: 10px !important;
-    font-weight: 600 !important;
-  }
-
-  /* Botão de turno maior e mais visível */
-  #endTurnBtn {
-    width: 100% !important;
-    padding: 14px !important;
-    font-size: 15px !important;
-    font-weight: 700 !important;
-    border-radius: 10px !important;
-    margin-top: 0.25rem !important;
-  }
-
-  /* Ajustar contador de ações */
+  /* Contador de ações */
   #actionsLeft {
     font-size: 13px !important;
-    text-align: center !important;
-    padding: 8px !important;
-    background: rgba(255, 255, 255, 0.1) !important;
-    border-radius: 10px !important;
+    text-align: left !important;
+    padding: 8px 0 !important;
+    background: transparent !important; /* SEM FUNDO */
+    border-radius: 0 !important;
     font-weight: 600 !important;
-    margin: 0.5rem 0 !important;
+    margin: 0 !important;
+    white-space: nowrap !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
   }
 
-  /* ============ TELA DE CADASTRO MOBILE ============ */
+  /* Botão de terminar turno */
+  #endTurnBtn {
+    padding: 8px 12px !important; /* COMPACTO */
+    font-size: 13px !important;
+    font-weight: 600 !important;
+    border-radius: 8px !important;
+    margin: 0 !important;
+    min-width: 120px !important; /* LARGURA FIXA */
+    white-space: nowrap !important;
+  }
+
+  /* ============ TELA DE CADASTRO MOBILE REORGANIZADA ============ */
   
   #initialScreen {
     padding: 1rem !important;
+    align-items: flex-start !important; /* ALINHAR AO TOPO */
+    overflow-y: auto !important; /* PERMITIR SCROLL */
   }
 
   .player-modal {
-    padding: 1.5rem !important;
+    padding: 1.25rem !important; /* REDUZIDO */
     border-radius: 16px !important;
-    margin: 0.5rem !important;
+    margin: 0.5rem auto !important; /* CENTRALIZAR */
     max-height: 90vh !important;
     overflow-y: auto !important;
+    width: 100% !important;
+    max-width: 100% !important;
   }
 
   /* Layout vertical para os controles */
   #initialScreen .flex.items-center.gap-4 {
     flex-direction: column !important;
-    gap: 1rem !important;
-  }
-
-  #initialScreen .flex.items-center.gap-4 > div {
+    gap: 0.75rem !important; /* ESPAÇO REDUZIDO */
     width: 100% !important;
-    margin-bottom: 0.5rem !important;
   }
 
   /* Inputs full width com fonte legível */
   #playerName {
     width: 100% !important;
     font-size: 16px !important;
-    padding: 14px 16px !important;
+    padding: 12px 14px !important; /* REDUZIDO */
     border-radius: 12px !important;
+    margin-bottom: 0.5rem !important;
   }
 
   .faction-dropdown {
     width: 100% !important;
     font-size: 16px !important;
-    padding: 14px 16px !important;
-    height: 52px !important;
+    padding: 12px 14px !important; /* REDUZIDO */
+    height: 48px !important; /* REDUZIDO */
+    margin-bottom: 0.5rem !important;
   }
 
-  /* Botões reorganizados em grid */
-  #initialScreen .flex.gap-3 {
+  /* ============ BOTÕES ADICIONAR E INICIAR NA MESMA LINHA ============ */
+  
+  /* Container dos botões principais */
+  #initialScreen .flex.items-center.gap-4 > div:last-child {
     display: grid !important;
-    grid-template-columns: 1fr 1fr !important;
-    gap: 0.75rem !important;
+    grid-template-columns: 1fr 1fr !important; /* DUAS COLUNAS IGUAIS */
+    gap: 0.5rem !important;
     width: 100% !important;
-    margin-top: 1rem !important;
+    margin-top: 0.5rem !important;
   }
 
-  /* Botões de ação maiores para toque */
+  /* Ajustar a div que contém os botões de adicionar/cancelar */
+  #initialScreen .flex.items-center.gap-4 > div:nth-child(3) {
+    display: contents !important; /* REMOVER A DIV PARA USAR O GRID */
+  }
+
+  /* Botões na mesma linha */
   #addPlayerBtn,
   #cancelEditBtn,
   #startGameBtn {
-    padding: 16px !important;
-    font-size: 15px !important;
-    min-height: 52px !important;
-    border-radius: 12px !important;
+    padding: 12px !important; /* REDUZIDO */
+    font-size: 14px !important;
+    min-height: 44px !important; /* REDUZIDO */
+    border-radius: 10px !important;
     font-weight: 600 !important;
+    width: 100% !important;
+    margin: 0 !important;
   }
 
-  /* Ícones em grid responsivo */
+  /* Esconder botão cancelar por padrão */
+  #cancelEditBtn.hidden {
+    display: none !important;
+  }
+
+  /* Botão iniciar jogo ocupa a segunda coluna */
+  #startGameBtn {
+    grid-column: 2 !important;
+    grid-row: 1 !important;
+  }
+
+  /* Botão adicionar ocupa a primeira coluna */
+  #addPlayerBtn {
+    grid-column: 1 !important;
+    grid-row: 1 !important;
+  }
+
+  /* ============ ÍCONES EM GRID 2 OU 3 COLUNAS ============ */
+  
+  /* Container de seleção de ícones */
+  #initialScreen .flex.items-center.justify-between.pt-6 {
+    flex-direction: column !important;
+    gap: 0.75rem !important;
+    border-top: 1px solid rgba(255, 255, 255, 0.1) !important;
+    padding-top: 1rem !important;
+  }
+
+  /* Texto acima dos ícones */
+  #initialScreen .flex.items-center.gap-2.mb-2 {
+    width: 100% !important;
+    margin-bottom: 0.5rem !important;
+  }
+
+  /* Grid de ícones - 3 colunas */
   #iconSelection {
+    display: grid !important;
+    grid-template-columns: repeat(3, 1fr) !important; /* 3 COLUNAS */
+    gap: 6px !important; /* ESPAÇO REDUZIDO */
+    margin: 0.5rem 0 !important;
+    width: 100% !important;
     justify-content: center !important;
-    gap: 8px !important;
-    margin: 1rem 0 !important;
   }
 
+  /* Botões de ícones menores */
   .icon-button {
-    width: 48px !important;
-    height: 48px !important;
-    font-size: 22px !important;
-    border-radius: 14px !important;
+    width: 44px !important; /* REDUZIDO */
+    height: 44px !important; /* REDUZIDO */
+    font-size: 20px !important;
+    border-radius: 12px !important;
+    margin: 0 auto !important; /* CENTRALIZAR */
   }
 
-  /* Botões de IA em grid 2x2 */
+  /* Display do ícone selecionado */
+  #selectedIconDisplay {
+    font-size: 20px !important;
+    margin-left: 8px !important;
+  }
+
+  /* ============ BOTÕES DE IA EM GRID 2x2 ============ */
+  
+  /* Container dos botões de IA */
+  #initialScreen .flex.items-center.justify-between.pt-6 > div:last-child {
+    width: 100% !important;
+    margin-top: 0.5rem !important;
+  }
+
+  /* Texto acima dos botões IA */
+  #initialScreen .flex.items-center.gap-2.mb-2:last-child {
+    margin-bottom: 0.5rem !important;
+  }
+
+  /* Grid 2x2 para botões IA */
   #aiButtonsContainer {
     display: grid !important;
     grid-template-columns: repeat(2, 1fr) !important;
-    gap: 0.75rem !important;
-    margin: 1rem 0 !important;
+    gap: 0.5rem !important;
+    margin: 0.5rem 0 !important;
+    width: 100% !important;
   }
 
+  /* Botões IA compactos */
   .ai-button-compact {
-    padding: 12px !important;
-    font-size: 12px !important;
-    border-radius: 12px !important;
-    min-height: 48px !important;
+    padding: 10px !important; /* REDUZIDO */
+    font-size: 11px !important; /* REDUZIDO */
+    border-radius: 10px !important;
+    min-height: 40px !important; /* REDUZIDO */
+    text-align: center !important;
+    line-height: 1.2 !important;
+  }
+
+  /* ============ LISTA DE JOGADORES REGISTRADOS ============ */
+  
+  /* Texto de contagem */
+  .flex.items-center.justify-between.mb-4 {
+    margin-bottom: 0.75rem !important;
   }
 
   /* Lista de jogadores em grid 2x2 */
@@ -1512,7 +1616,9 @@ input[type="text"]:focus, select:focus, input[type="number"]:focus {
     display: grid !important;
     grid-template-columns: repeat(2, 1fr) !important;
     gap: 0.75rem !important;
-    margin-top: 1rem !important;
+    margin-top: 0.75rem !important;
+    padding: 0.5rem !important;
+    min-height: 120px !important;
   }
 
   .player-icon-minimal {
@@ -1528,11 +1634,18 @@ input[type="text"]:focus, select:focus, input[type="number"]:focus {
     border-radius: 12px !important;
   }
 
+  /* Mensagem quando não há jogadores */
+  #registeredPlayersList .col-span-2 {
+    grid-column: 1 / -1 !important;
+    text-align: center !important;
+    padding: 1rem !important;
+  }
+
   /* ============ NAVBAR MOBILE ============ */
   
   #gameNavbar {
-    padding: 0.75rem 1rem !important;
-    height: 60px !important;
+    padding: 0.5rem 1rem !important; /* REDUZIDO */
+    height: 50px !important; /* REDUZIDO */
   }
 
   #gameNavbar .max-w-7xl {
@@ -1541,24 +1654,24 @@ input[type="text"]:focus, select:focus, input[type="number"]:focus {
 
   /* Título compacto */
   #gameNavbar h1 {
-    font-size: 1.1rem !important;
+    font-size: 1rem !important;
     white-space: nowrap !important;
     overflow: hidden !important;
     text-overflow: ellipsis !important;
-    max-width: 150px !important;
+    max-width: 120px !important;
   }
 
   /* Info de turno compacta */
   #turnInfo {
-    font-size: 12px !important;
+    font-size: 11px !important;
     white-space: nowrap !important;
   }
 
   #phaseIndicator {
-    font-size: 11px !important;
-    padding: 4px 8px !important;
+    font-size: 10px !important;
+    padding: 3px 6px !important;
     background: rgba(251, 191, 36, 0.15) !important;
-    border-radius: 12px !important;
+    border-radius: 10px !important;
     border: 1px solid rgba(251, 191, 36, 0.3) !important;
   }
 
@@ -1570,9 +1683,9 @@ input[type="text"]:focus, select:focus, input[type="number"]:focus {
   /* Botões da navbar ajustados */
   #manualIconNavbar,
   #achievementsNavBtn {
-    padding: 10px !important;
-    min-width: 44px !important;
-    min-height: 44px !important;
+    padding: 8px !important;
+    min-width: 40px !important;
+    min-height: 40px !important;
   }
 
   /* ============ MODAIS MOBILE ============ */
@@ -1580,8 +1693,9 @@ input[type="text"]:focus, select:focus, input[type="number"]:focus {
   .modal-overlay {
     padding: 0.5rem !important;
     align-items: flex-start !important;
-    padding-top: 3rem !important;
+    padding-top: 2rem !important; /* REDUZIDO */
     overflow-y: auto !important;
+    z-index: 1000 !important;
   }
 
   .modal-content {
@@ -1590,6 +1704,17 @@ input[type="text"]:focus, select:focus, input[type="number"]:focus {
     margin: 0 auto !important;
     border-radius: 16px !important;
   }
+
+  /* Ajustar z-index dos modais para ficarem acima do footer */
+  #manualModal { z-index: 1001 !important; }
+  #alertModal { z-index: 1002 !important; }
+  #eventModal { z-index: 1003 !important; }
+  #incomeModal { z-index: 1004 !important; }
+  #saveLoadModal { z-index: 1005 !important; }
+  #negotiationModal { z-index: 1006 !important; }
+  #negResponseModal { z-index: 1007 !important; }
+  #structureModal { z-index: 1008 !important; }
+  #victoryModal { z-index: 1009 !important; }
 
   /* Modal de manual em coluna */
   #manualModal .flex-col {
@@ -1628,7 +1753,7 @@ input[type="text"]:focus, select:focus, input[type="number"]:focus {
   }
 
   .structure-option {
-    padding: 1.25rem !important;
+    padding: 1rem !important; /* REDUZIDO */
   }
 
   /* Modal de vitória ajustado */
@@ -1667,6 +1792,7 @@ input[type="text"]:focus, select:focus, input[type="number"]:focus {
     box-shadow: 0 -4px 30px rgba(0, 0, 0, 0.4) !important;
     border: 1px solid rgba(255, 255, 255, 0.15) !important;
     border-bottom: none !important;
+    z-index: 200 !important; /* ACIMA DO FOOTER */
   }
 
   /* Indicador de arrastar para fechar */
@@ -1689,13 +1815,13 @@ input[type="text"]:focus, select:focus, input[type="number"]:focus {
   .icon-button,
   .ai-button-compact,
   .action-btn {
-    min-height: 44px !important;
-    min-width: 44px !important;
+    min-height: 40px !important; /* REDUZIDO */
+    min-width: 40px !important; /* REDUZIDO */
   }
 
   /* Aumentar área de toque para células */
   .board-cell {
-    padding: 10px 6px !important;
+    padding: 8px 4px !important;
   }
 
   /* Evitar seleção de texto acidental */
@@ -1722,7 +1848,7 @@ input[type="text"]:focus, select:focus, input[type="number"]:focus {
 
   /* Ajustar fonte para legibilidade */
   body {
-    font-size: 16px !important;
+    font-size: 15px !important; /* REDUZIDO */
   }
 
   /* Otimizar animações para mobile */
@@ -1735,6 +1861,22 @@ input[type="text"]:focus, select:focus, input[type="number"]:focus {
       transition: all 0.15s ease !important;
     }
   }
+
+  /* Ajustar divisor vertical para horizontal */
+  #initialScreen .h-12.w-px.bg-white\/10.mx-6 {
+    display: none !important; /* OCULTAR DIVISOR VERTICAL */
+  }
+
+  #initialScreen .flex.items-center.justify-between.border-t.border-white\/10.pt-6 {
+    flex-direction: column !important;
+    gap: 1rem !important;
+    border-top: 1px solid rgba(255, 255, 255, 0.1) !important;
+    padding-top: 1rem !important;
+  }
+
+  #initialScreen .flex.items-center.justify-between.border-t.border-white\/10.pt-6 > div {
+    width: 100% !important;
+  }
 }
 
 /* Dispositivos muito pequenos (iPhone SE, etc) */
@@ -1744,7 +1886,7 @@ input[type="text"]:focus, select:focus, input[type="number"]:focus {
   }
 
   .board-cell {
-    padding: 8px 4px !important;
+    padding: 6px 3px !important;
   }
 
   .board-cell .text-xs {
@@ -1755,26 +1897,38 @@ input[type="text"]:focus, select:focus, input[type="number"]:focus {
     font-size: 8px !important;
   }
 
+  /* Footer ainda mais compacto */
   .action-btn {
-    padding: 8px 10px !important;
-    font-size: 12px !important;
+    padding: 6px 3px !important;
+    font-size: 11px !important;
   }
 
   #endTurnBtn {
-    padding: 12px !important;
-    font-size: 14px !important;
+    padding: 6px 10px !important;
+    font-size: 12px !important;
+    min-width: 100px !important;
   }
 
   /* Tela de cadastro ainda menor */
   .player-modal {
-    padding: 1.25rem !important;
+    padding: 1rem !important;
     margin: 0.25rem !important;
   }
 
   .icon-button {
-    width: 44px !important;
-    height: 44px !important;
-    font-size: 20px !important;
+    width: 40px !important;
+    height: 40px !important;
+    font-size: 18px !important;
+  }
+
+  /* Grid de ícones 2 colunas em telas muito pequenas */
+  #iconSelection {
+    grid-template-columns: repeat(2, 1fr) !important;
+  }
+
+  /* Botões IA em 1 coluna */
+  #aiButtonsContainer {
+    grid-template-columns: 1fr !important;
   }
 }
 
@@ -1801,6 +1955,14 @@ input[type="text"]:focus, select:focus, input[type="number"]:focus {
   .board-cell .text-xs {
     font-size: 11px !important;
   }
+
+  /* Footer compacto para tablet paisagem */
+  #gameFooter {
+    padding: 0.5rem !important;
+    max-width: 80% !important;
+    left: 50% !important;
+    transform: translateX(-50%) !important;
+  }
 }
 
 /* Animações específicas para mobile */
@@ -1818,7 +1980,7 @@ input[type="text"]:focus, select:focus, input[type="number"]:focus {
     transform: translateX(100%) !important;
   }
   to {
-    transform: translateX(0) !important;
+    transform: translateY(0) !important;
   }
 }
 
@@ -1833,16 +1995,27 @@ body.landscape #gameFooter {
 
 /* Classe para modo retrato */
 body.portrait #gameContainer {
-  margin-bottom: 140px !important;
+  margin-bottom: 100px !important; /* REDUZIDO */
 }
 
 /* Ajustes para quando o teclado está aberto */
 @media (max-height: 500px) {
   #gameContainer {
-    margin-bottom: 100px !important;
+    margin-bottom: 80px !important;
   }
   
   #gameFooter {
-    padding: 0.5rem !important;
+    padding: 0.25rem !important;
+  }
+  
+  .action-btn {
+    padding: 4px 2px !important;
+    font-size: 10px !important;
+    min-height: 32px !important;
+  }
+  
+  #endTurnBtn {
+    padding: 4px 8px !important;
+    font-size: 11px !important;
   }
 }
