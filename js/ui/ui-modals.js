@@ -207,6 +207,7 @@ class ModalManager {
       { id: 'tab-acoes', key: 'acoes' },
       { id: 'tab-negociacao', key: 'negociacao' },
       { id: 'tab-estrutura', key: 'estrutura' },
+      { id: 'tab-eventos', key: 'eventos' },
       { id: 'tab-conquistas', key: 'conquistas' }
     ];
     
