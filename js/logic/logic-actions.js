@@ -11,25 +11,25 @@ export class ActionLogic {
   }
 
   // Validação centralizada de fase
-  validateAction(actionType) {
-    if (gameState.actionsLeft <= 0) {
-      this.main.showFeedback('Sem ações restantes neste turno.', 'warning');
-      return false;
-    }
-
-    const currentPhase = gameState.currentPhase;
-    // Ações permitidas apenas na fase de ações
-    const allowedInActions = ['explorar', 'recolher', 'construir'];
-    
-    if (!allowedInActions.includes(actionType) || currentPhase !== 'acoes') {
-      // Se tentar negociar, valida fase negociação
-      if (actionType === 'negociar' && currentPhase === 'negociacao') return true;
-      
-      this.main.showFeedback(`Ação "${actionType}" não permitida na fase atual (${currentPhase}).`, 'warning');
-      return false;
-    }
-    return true;
+validateAction(actionType) {
+  if (gameState.actionsLeft <= 0) {
+    this.main.showFeedback('Sem ações restantes neste turno.', 'warning');
+    return false;
   }
+
+  const currentPhase = gameState.currentPhase;
+  // Adicionar 'disputar' às ações permitidas
+  const allowedInActions = ['explorar', 'recolher', 'construir', 'disputar'];
+  
+  if (!allowedInActions.includes(actionType) || currentPhase !== 'acoes') {
+    // Se tentar negociar, valida fase negociação
+    if (actionType === 'negociar' && currentPhase === 'negociacao') return true;
+    
+    this.main.showFeedback(`Ação "${actionType}" não permitida na fase atual (${currentPhase}).`, 'warning');
+    return false;
+  }
+  return true;
+}
 
   consumeAction() {
     gameState.actionsLeft--;
@@ -89,6 +89,184 @@ export class ActionLogic {
     addActivityLog({ type: 'explore', playerName: player.name, action: 'assumiu domínio de', details: region.name, turn: gameState.turn });
   }
 
+  // Método para disputar territórios
+async handleContest() {
+  if (this.main.preventActionIfModalOpen()) return;
+  if (!this.validateAction('disputar')) return;
+
+  if (gameState.selectedRegionId === null) {
+    this.main.showFeedback('Selecione uma região primeiro.', 'error');
+    return;
+  }
+
+  const region = gameState.regions[gameState.selectedRegionId];
+  const player = getCurrentPlayer();
+
+  // Verificar se a região está sob controle de outro jogador
+  if (region.controller === null) {
+    this.main.showFeedback('Esta região não está dominada por nenhum jogador. Use a ação Explorar para assumir o domínio.', 'error');
+    return;
+  }
+
+  if (region.controller === player.id) {
+    this.main.showFeedback('Você já controla esta região.', 'error');
+    return;
+  }
+
+  const defender = gameState.players[region.controller];
+  
+  // Calcular custo base
+  let cost = { ...GAME_CONFIG.ACTION_DETAILS.disputar.cost };
+  const pvCost = GAME_CONFIG.ACTION_DETAILS.disputar.pv;
+
+  // Aplicar descontos de facção se existirem
+  if (this.main.factionLogic) {
+    cost = this.modifyContestCost(player, cost);
+  }
+
+  // Verificar se pode pagar
+  const canPay = Object.entries(cost).every(([k, v]) => (player.resources[k] || 0) >= v) && 
+                 player.victoryPoints >= pvCost;
+
+  if (!canPay) {
+    this.main.showFeedback('Recursos ou PV insuficientes para disputar território.', 'error');
+    return;
+  }
+
+  // Calcular chance de sucesso
+  const successChance = this.calculateContestSuccessChance(player, defender, region);
+  
+  // Mostrar confirmação com detalhes
+  const confirm = await this.main.showConfirm(
+    'Disputar Território',
+    `Deseja gastar ${JSON.stringify(cost)} recursos e ${pvCost} PV para disputar ${region.name}?\n\n` +
+    `Defensor: ${defender.name}\n` +
+    `Chance de sucesso: ${Math.round(successChance * 100)}%\n` +
+    `Recompensa: ${region.name} + Estruturas (se houver)\n` +
+    `Risco: Perder todos os recursos investidos`
+  );
+
+  if (!confirm) return;
+
+  if (!this.consumeAction()) return;
+
+  // Pagar custos
+  Object.entries(cost).forEach(([k, v]) => player.resources[k] -= v);
+  player.victoryPoints -= pvCost;
+
+  // Determinar sucesso
+  const success = Math.random() < successChance;
+
+  if (success) {
+    // Transferir região
+    this.transferRegionControl(region, player, defender);
+    
+    // Bônus de facção
+    let bonusMsg = '';
+    if (this.main.factionLogic) {
+      const factionBonus = this.main.factionLogic.applyContestBonus(player, region);
+      if (factionBonus) {
+        Object.entries(factionBonus).forEach(([k, v]) => {
+          player.resources[k] = (player.resources[k] || 0) + v;
+          bonusMsg += ` (+${v} ${k} Facção)`;
+        });
+      }
+    }
+
+    this.main.showFeedback(`🏆 Vitória! Você conquistou ${region.name}${bonusMsg}`, 'success');
+    addActivityLog({
+      type: 'contest',
+      playerName: player.name,
+      action: 'conquistou',
+      details: `${region.name} de ${defender.name}`,
+      turn: gameState.turn
+    });
+
+    // Penalidade para o defensor
+    defender.victoryPoints = Math.max(0, defender.victoryPoints - 2);
+    this.main.showFeedback(`${defender.name} perdeu 2 PV pela derrota.`, 'info');
+
+  } else {
+    // Falha na disputa
+    this.main.showFeedback(`❌ Disputa falhou! ${defender.name} manteve o controle de ${region.name}.`, 'error');
+    addActivityLog({
+      type: 'contest',
+      playerName: player.name,
+      action: 'falhou em conquistar',
+      details: `${region.name} de ${defender.name}`,
+      turn: gameState.turn
+    });
+
+    // Bônus de defesa para o defensor
+    defender.victoryPoints += 1;
+    this.main.showFeedback(`${defender.name} ganhou 1 PV pela defesa bem-sucedida.`, 'info');
+  }
+
+  this._finalizeAction();
+}
+
+// Adicionar métodos auxiliares
+calculateContestSuccessChance(attacker, defender, region) {
+  let baseChance = 0.5; // 50% base
+  
+  // Fator 1: Diferença de PV
+  const pvDiff = attacker.victoryPoints - defender.victoryPoints;
+  baseChance += (pvDiff * 0.02); // 2% por PV de diferença
+  
+  // Fator 2: Nível de exploração da região
+  baseChance += (region.explorationLevel * 0.05); // 5% por nível
+  
+  // Fator 3: Presença de estruturas de defesa
+  if (region.structures.includes('Torre de Vigia')) {
+    baseChance -= 0.15; // -15% com torre
+  }
+  
+  // Fator 4: Eventos ativos
+  if (gameState.eventModifiers.disputaBonus) {
+    baseChance += gameState.eventModifiers.disputaBonus;
+  }
+  
+  // Fator 5: Bônus de facção
+  if (this.main.factionLogic) {
+    const factionMod = this.main.factionLogic.getContestChanceModifier(attacker);
+    baseChance += factionMod;
+  }
+  
+  // Limites: 20% a 80%
+  return Math.max(0.2, Math.min(0.8, baseChance));
+}
+
+transferRegionControl(region, newController, oldController) {
+  // Remover região do defensor
+  oldController.regions = oldController.regions.filter(id => id !== region.id);
+  
+  // Adicionar ao atacante
+  region.controller = newController.id;
+  newController.regions.push(region.id);
+  
+  // Manter estruturas (benefício para conquistador)
+  this.main.showFeedback(`Estruturas mantidas: ${region.structures.join(', ') || 'Nenhuma'}`, 'info');
+}
+
+modifyContestCost(player, baseCost) {
+  if (!player.faction) return baseCost;
+  
+  const modifiedCost = { ...baseCost };
+  const faction = player.faction;
+  
+  // Facção com bônus militar
+  if (faction.abilities.contestDiscount) {
+    Object.keys(faction.abilities.contestDiscount).forEach(resource => {
+      const discount = faction.abilities.contestDiscount[resource];
+      if (modifiedCost[resource]) {
+        modifiedCost[resource] = Math.max(0, modifiedCost[resource] - discount);
+      }
+    });
+  }
+  
+  return modifiedCost;
+}
+  
   async _exploreRegion(region, player) {
     // 1. Obter custo base e aplicar descontos de facção (ex: Druidas)
     let cost = { ...GAME_CONFIG.ACTION_DETAILS.explorar.cost };
