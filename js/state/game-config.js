@@ -591,6 +591,25 @@ const FACTION_ABILITIES = {
       // +30% chance de encontrar Ouro ao explorar
       goldExplorationBonus: 0.3
     }
+  },
+
+  // Nova facção bélica (opcional, pode ser adicionada)
+  4: {
+    id: 'warrior_clan',
+    name: 'Clã Guerreiro',
+    color: '#DC2626',
+    icon: '⚔️',
+    description: 'Especialistas em conquista e domínio militar',
+    abilities: {
+      // Bônus permanente em todas as regiões conquistadas
+      conquestBonus: { pv: 1 },
+      // Disputa custa -2 de todos os recursos
+      contestDiscount: { madeira: 2, pedra: 2, ouro: 2, agua: 2 },
+      // +20% chance de sucesso em disputas
+      contestBonus: 0.2,
+      // +1 de cada recurso ao conquistar
+      conquestLoot: 1
+    }
   }
 };
 
