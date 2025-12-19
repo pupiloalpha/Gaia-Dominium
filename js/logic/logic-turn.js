@@ -337,16 +337,36 @@ export class TurnLogic {
     this.main.showFeedback(`Evento: ${ev.name}`, 'info');
   }
 
-  checkVictory() {
-    if (this.gameEnded) return;
+  // Adicionado log extra para disputas
+checkVictory() {
+  if (this.gameEnded) return;
+  
+  const winner = gameState.players.find(p => p.victoryPoints >= GAME_CONFIG.VICTORY_POINTS);
+  if (winner) {
+    console.log(`🎉 Vitória detectada: ${winner.name} com ${winner.victoryPoints} PV`);
     
-    const winner = gameState.players.find(p => p.victoryPoints >= GAME_CONFIG.VICTORY_POINTS);
-    if (winner) {
-      console.log(`🎉 Vitória detectada: ${winner.name} com ${winner.victoryPoints} PV`);
-      this._declareVictory(winner);
-      this._stopGameAfterVictory();
+    // Verificar se a vitória veio de conquistas
+    const conquestCount = gameState.players.reduce((count, p) => {
+      return count + p.regions.filter(r => {
+        const region = gameState.regions[r];
+        return region && region.controller === p.id && region.lastController !== p.id;
+      }).length;
+    }, 0);
+    
+    if (conquestCount > 5) {
+      addActivityLog({
+        type: 'victory',
+        playerName: winner.name,
+        action: '🏆 VENCEU POR DOMÍNIO MILITAR 🏆',
+        details: `Conquistou ${conquestCount} regiões`,
+        turn: gameState.turn
+      });
     }
+    
+    this._declareVictory(winner);
+    this._stopGameAfterVictory();
   }
+}
   
   _declareVictory(winner) {
     this.gameEnded = true;
