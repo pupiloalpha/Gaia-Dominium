@@ -89,7 +89,7 @@ validateAction(actionType) {
     addActivityLog({ type: 'explore', playerName: player.name, action: 'assumiu domínio de', details: region.name, turn: gameState.turn });
   }
 
-  // Método para disputar territórios
+  // Método para disputar território
 async handleContest() {
   if (this.main.preventActionIfModalOpen()) return;
   if (!this.validateAction('disputar')) return;
@@ -115,35 +115,274 @@ async handleContest() {
 
   const defender = gameState.players[region.controller];
   
-  // Calcular custo base
-  let cost = { ...GAME_CONFIG.ACTION_DETAILS.disputar.cost };
-  const pvCost = GAME_CONFIG.ACTION_DETAILS.disputar.pv;
+  // Verificar se tem recursos para disputa padrão
+  const standardCost = { ...GAME_CONFIG.ACTION_DETAILS.disputar.cost };
+  const standardPvCost = GAME_CONFIG.ACTION_DETAILS.disputar.pv;
+  
+  const hasResourcesForStandard = Object.entries(standardCost).every(([k, v]) => 
+    (player.resources[k] || 0) >= v
+  ) && player.victoryPoints >= standardPvCost;
 
-  // Aplicar descontos de facção se existirem
-  if (this.main.factionLogic) {
-    cost = this.modifyContestCost(player, cost);
-  }
+  // Verificar se tem recursos mínimos para dados
+  const diceCost = { ...DICE_SYSTEM.DICE_COST };
+  const dicePvCost = DICE_SYSTEM.DICE_PV_COST;
+  
+  const hasResourcesForDice = Object.entries(diceCost).every(([k, v]) => 
+    (player.resources[k] || 0) >= v
+  ) && player.victoryPoints >= dicePvCost;
 
-  // Verificar se pode pagar
-  const canPay = Object.entries(cost).every(([k, v]) => (player.resources[k] || 0) >= v) && 
-                 player.victoryPoints >= pvCost;
-
-  if (!canPay) {
-    this.main.showFeedback('Recursos ou PV insuficientes para disputar território.', 'error');
+  if (!hasResourcesForStandard && !hasResourcesForDice) {
+    this.main.showFeedback(
+      `Recursos insuficientes para qualquer tipo de disputa.\n` +
+      `Disputa padrão: ${JSON.stringify(standardCost)} + ${standardPvCost} PV\n` +
+      `Disputa com dados: ${JSON.stringify(diceCost)} + ${dicePvCost} PV`,
+      'error'
+    );
     return;
   }
 
-  // Calcular chance de sucesso
-  const successChance = this.calculateContestSuccessChance(player, defender, region);
+  // Oferecer escolha se tiver recursos para ambos
+  let useDiceSystem = !hasResourcesForStandard;
+  
+  if (hasResourcesForStandard && hasResourcesForDice) {
+    const choice = await this.main.showChoice(
+      'Método de Disputa',
+      `Como deseja disputar ${region.name}?\n\n` +
+      `👑 Disputa Estratégica (${JSON.stringify(standardCost)} + ${standardPvCost} PV)\n` +
+      `- Chance baseada em PV, recursos e estratégia\n` +
+      `- Maior controle sobre o resultado\n\n` +
+      `🎲 Disputa de Sorte (${JSON.stringify(diceCost)} + ${dicePvCost} PV)\n` +
+      `- Resolvido com dados virtuais\n` +
+      `- Qualquer um pode vencer, independente de poder\n` +
+      `- Baseado puramente em sorte`,
+      ['estratégia', 'sorte']
+    );
+    
+    if (choice === null) return; // Usuário cancelou
+    useDiceSystem = (choice === 'sorte');
+  }
+
+  if (useDiceSystem) {
+    await this._handleDiceContest(player, defender, region, diceCost, dicePvCost);
+  } else {
+    await this._handleStandardContest(player, defender, region, standardCost, standardPvCost);
+  }
+
+  this._finalizeAction();
+}
+
+async _handleDiceContest(attacker, defender, region, cost, pvCost) {
+  // Calcular bônus para cada jogador
+  const attackerBonus = this.calculateDiceBonus(attacker, true, region);
+  const defenderBonus = this.calculateDiceBonus(defender, false, region);
   
   // Mostrar confirmação com detalhes
   const confirm = await this.main.showConfirm(
-    'Disputar Território',
+    'Disputa de Sorte 🎲',
+    `Deseja gastar ${JSON.stringify(cost)} recursos e ${pvCost} PV para disputar ${region.name} em um lance de dados?\n\n` +
+    `🎯 Atacante (${attacker.name}):\n` +
+    `- Bônus: +${attackerBonus}\n` +
+    `- Regiões: ${attacker.regions.length} (+${attacker.regions.length * DICE_SYSTEM.ATTACKER_DICE_BONUS_PER_REGION})\n\n` +
+    `🛡️ Defensor (${defender.name}):\n` +
+    `- Bônus: +${defenderBonus}\n` +
+    `- Estruturas: ${region.structures.length} (+${region.structures.length * DICE_SYSTEM.DEFENDER_DICE_BONUS_PER_STRUCTURE})\n\n` +
+    `Regras:\n` +
+    `• Cada jogador lança 1d6 (1-6)\n` +
+    `• Adiciona seu bônus ao resultado\n` +
+    `• Maior valor vence a região\n` +
+    `• Empate: ambos lançam novamente`
+  );
+
+  if (!confirm) return;
+  
+  if (!this.consumeAction()) return;
+
+  // Pagar custos
+  Object.entries(cost).forEach(([k, v]) => attacker.resources[k] -= v);
+  attacker.victoryPoints -= pvCost;
+
+  // Rolagem de dados
+  let attackerRoll, defenderRoll;
+  let round = 1;
+  let winner = null;
+  
+  do {
+    // Rolagem base
+    attackerRoll = this.rollDice() + attackerBonus;
+    defenderRoll = this.rollDice() + defenderBonus;
+    
+    // Aplicar modificadores de evento
+    if (gameState.eventModifiers.diceBonus) {
+      attackerRoll += gameState.eventModifiers.diceBonus;
+      defenderRoll += gameState.eventModifiers.diceBonus;
+    }
+    
+    // Aplicar bônus de facção
+    if (this.main.factionLogic) {
+      const attackerFactionBonus = this.main.factionLogic.getDiceBonus(attacker);
+      const defenderFactionBonus = this.main.factionLogic.getDiceBonus(defender);
+      
+      attackerRoll += attackerFactionBonus;
+      defenderRoll += defenderFactionBonus;
+    }
+    
+    // Garantir valores mínimos e máximos
+    attackerRoll = Math.max(1, Math.min(20, attackerRoll));
+    defenderRoll = Math.max(1, Math.min(20, defenderRoll));
+    
+    // Determinar vencedor
+    if (attackerRoll > defenderRoll) {
+      winner = 'attacker';
+    } else if (defenderRoll > attackerRoll) {
+      winner = 'defender';
+    }
+    
+    // Log da rodada
+    const roundMsg = `🎲 Rodada ${round}: ${attacker.name} → ${attackerRoll} | ${defender.name} → ${defenderRoll}`;
+    addActivityLog({
+      type: 'dice',
+      playerName: 'SISTEMA',
+      action: 'rolagem de dados',
+      details: roundMsg,
+      turn: gameState.turn
+    });
+    
+    round++;
+    
+  } while (winner === null && round <= 3); // Máximo de 3 rodadas
+  
+  // Se ainda empatou após 3 rodadas, vence o defensor (vantagem da defesa)
+  if (winner === null) {
+    winner = 'defender';
+    this.main.showFeedback(`🤝 Empate após ${round-1} rodadas! Vantagem para o defensor.`, 'warning');
+  }
+  
+  // Processar resultado
+  if (winner === 'attacker') {
+    // Conquista bem-sucedida
+    this.transferRegionControl(region, attacker, defender);
+    
+    // Bônus especial por vitória com dados
+    const diceVictoryBonus = this.calculateDiceVictoryBonus(attacker, defenderRoll, attackerRoll);
+    if (diceVictoryBonus.pv > 0) {
+      attacker.victoryPoints += diceVictoryBonus.pv;
+    }
+    if (diceVictoryBonus.resources) {
+      Object.entries(diceVictoryBonus.resources).forEach(([k, v]) => {
+        attacker.resources[k] = (attacker.resources[k] || 0) + v;
+      });
+    }
+    
+    this.main.showFeedback(
+      `🎲 VITÓRIA POR SORTE! ${attacker.name} conquistou ${region.name}!\n` +
+      `Resultado: ${attackerRoll} vs ${defenderRoll}\n` +
+      (diceVictoryBonus.pv > 0 ? `+${diceVictoryBonus.pv} PV de bônus!` : ''),
+      'success'
+    );
+    
+    addActivityLog({
+      type: 'contest',
+      playerName: attacker.name,
+      action: 'conquistou via dados',
+      details: `${region.name} (${attackerRoll} vs ${defenderRoll})`,
+      turn: gameState.turn
+    });
+    
+    // Penalidade mínima para defensor (já perdeu a região)
+    defender.victoryPoints = Math.max(0, defender.victoryPoints - 1);
+    
+  } else {
+    // Defesa bem-sucedida
+    this.main.showFeedback(
+      `🛡️ DEFESA BEM-SUCEDIDA! ${defender.name} manteve ${region.name}!\n` +
+      `Resultado: ${attackerRoll} vs ${defenderRoll}`,
+      'info'
+    );
+    
+    addActivityLog({
+      type: 'contest',
+      playerName: attacker.name,
+      action: 'falhou na disputa de dados',
+      details: `${region.name} (${attackerRoll} vs ${defenderRoll})`,
+      turn: gameState.turn
+    });
+    
+    // Bônus de defesa
+    defender.victoryPoints += 2;
+    this.main.showFeedback(`${defender.name} ganhou 2 PV pela defesa heroica!`, 'success');
+    
+    // Penalidade adicional para atacante (perdeu a aposta)
+    attacker.victoryPoints = Math.max(0, attacker.victoryPoints - 1);
+  }
+}
+
+// Métodos auxiliares para o sistema de dados
+rollDice(sides = DICE_SYSTEM.DICE_SIDES) {
+  return Math.floor(Math.random() * sides) + 1;
+}
+
+calculateDiceBonus(player, isAttacker, region = null) {
+  let bonus = 0;
+  
+  // Bônus base por região (para atacante)
+  if (isAttacker) {
+    const regionBonus = player.regions.length * DICE_SYSTEM.ATTACKER_DICE_BONUS_PER_REGION;
+    bonus += Math.min(regionBonus, DICE_SYSTEM.MAX_DICE_BONUS);
+  }
+  
+  // Bônus por estruturas defensivas (para defensor)
+  if (!isAttacker && region && region.structures) {
+    const structureBonus = region.structures.length * DICE_SYSTEM.DEFENDER_DICE_BONUS_PER_STRUCTURE;
+    bonus += Math.min(structureBonus, DICE_SYSTEM.MAX_DICE_BONUS);
+  }
+  
+  // Bônus por PV (menor influência)
+  const pvBonus = player.victoryPoints * 0.01; // 1% por PV
+  bonus += Math.min(pvBonus, 0.1); // Máximo 10%
+  
+  return Math.round(bonus * 10) / 10; // Arredonda para 1 casa decimal
+}
+
+calculateDiceVictoryBonus(winner, loserRoll, winnerRoll) {
+  const bonus = { pv: 0, resources: {} };
+  const difference = winnerRoll - loserRoll;
+  
+  // Bônus por diferença significativa
+  if (difference >= 5) {
+    bonus.pv = 2;
+    bonus.resources = { ouro: 1 };
+    this.main.showFeedback('🎯 Vitória esmagadora! Bônus extra concedido.', 'success');
+  } else if (difference >= 3) {
+    bonus.pv = 1;
+  }
+  
+  // Bônus por "sorte crítica" (rolagem máxima)
+  if (winnerRoll >= 18) {
+    bonus.pv += 1;
+    bonus.resources.madeira = (bonus.resources.madeira || 0) + 1;
+    bonus.resources.pedra = (bonus.resources.pedra || 0) + 1;
+    this.main.showFeedback('✨ SORTE CRÍTICA! Recursos extras encontrados!', 'success');
+  }
+  
+  return bonus;
+}
+
+// Método de disputa padrão (modificado para referência)
+async _handleStandardContest(attacker, defender, region, cost, pvCost) {
+  // Calcular chance de sucesso
+  const successChance = this.calculateContestSuccessChance(attacker, defender, region);
+  
+  // Mostrar confirmação com detalhes
+  const confirm = await this.main.showConfirm(
+    'Disputa Estratégica 👑',
     `Deseja gastar ${JSON.stringify(cost)} recursos e ${pvCost} PV para disputar ${region.name}?\n\n` +
     `Defensor: ${defender.name}\n` +
     `Chance de sucesso: ${Math.round(successChance * 100)}%\n` +
-    `Recompensa: ${region.name} + Estruturas (se houver)\n` +
-    `Risco: Perder todos os recursos investidos`
+    `Fatores considerados:\n` +
+    `• Diferença de PV: ${attacker.victoryPoints - defender.victoryPoints}\n` +
+    `• Nível de exploração: ${region.explorationLevel}\n` +
+    `• Estruturas defensivas: ${region.structures.includes('Torre de Vigia') ? 'Sim' : 'Não'}\n` +
+    `• Eventos ativos: ${gameState.currentEvent ? gameState.currentEvent.name : 'Nenhum'}`
   );
 
   if (!confirm) return;
@@ -151,47 +390,47 @@ async handleContest() {
   if (!this.consumeAction()) return;
 
   // Pagar custos
-  Object.entries(cost).forEach(([k, v]) => player.resources[k] -= v);
-  player.victoryPoints -= pvCost;
+  Object.entries(cost).forEach(([k, v]) => attacker.resources[k] -= v);
+  attacker.victoryPoints -= pvCost;
 
   // Determinar sucesso
   const success = Math.random() < successChance;
 
   if (success) {
     // Transferir região
-    this.transferRegionControl(region, player, defender);
+    this.transferRegionControl(region, attacker, defender);
     
     // Bônus de facção
     let bonusMsg = '';
     if (this.main.factionLogic) {
-      const factionBonus = this.main.factionLogic.applyContestBonus(player, region);
+      const factionBonus = this.main.factionLogic.applyContestBonus(attacker, region);
       if (factionBonus) {
         Object.entries(factionBonus).forEach(([k, v]) => {
-          player.resources[k] = (player.resources[k] || 0) + v;
+          attacker.resources[k] = (attacker.resources[k] || 0) + v;
           bonusMsg += ` (+${v} ${k} Facção)`;
         });
       }
     }
 
-    this.main.showFeedback(`🏆 Vitória! Você conquistou ${region.name}${bonusMsg}`, 'success');
+    this.main.showFeedback(`🏆 Vitória Estratégica! Você conquistou ${region.name}${bonusMsg}`, 'success');
     addActivityLog({
       type: 'contest',
-      playerName: player.name,
-      action: 'conquistou',
+      playerName: attacker.name,
+      action: 'conquistou estrategicamente',
       details: `${region.name} de ${defender.name}`,
       turn: gameState.turn
     });
 
     // Penalidade para o defensor
     defender.victoryPoints = Math.max(0, defender.victoryPoints - 2);
-    this.main.showFeedback(`${defender.name} perdeu 2 PV pela derrota.`, 'info');
+    this.main.showFeedback(`${defender.name} perdeu 2 PV pela derrota estratégica.`, 'info');
 
   } else {
     // Falha na disputa
     this.main.showFeedback(`❌ Disputa falhou! ${defender.name} manteve o controle de ${region.name}.`, 'error');
     addActivityLog({
       type: 'contest',
-      playerName: player.name,
+      playerName: attacker.name,
       action: 'falhou em conquistar',
       details: `${region.name} de ${defender.name}`,
       turn: gameState.turn
@@ -201,10 +440,27 @@ async handleContest() {
     defender.victoryPoints += 1;
     this.main.showFeedback(`${defender.name} ganhou 1 PV pela defesa bem-sucedida.`, 'info');
   }
-
-  this._finalizeAction();
 }
 
+// Atualizar o método transferRegionControl para log apropriado
+transferRegionControl(region, newController, oldController) {
+  // Remover região do defensor
+  oldController.regions = oldController.regions.filter(id => id !== region.id);
+  
+  // Adicionar ao atacante
+  region.controller = newController.id;
+  newController.regions.push(region.id);
+  
+  // Registrar mudança de controle
+  region.lastController = oldController.id;
+  region.conquestTurn = gameState.turn;
+  
+  // Manter estruturas (benefício para conquistador)
+  if (region.structures.length > 0) {
+    this.main.showFeedback(`🏗️ Estruturas mantidas: ${region.structures.join(', ')}`, 'info');
+  }
+}
+  
 // Adicionar métodos auxiliares
 calculateContestSuccessChance(attacker, defender, region) {
   let baseChance = 0.5; // 50% base
