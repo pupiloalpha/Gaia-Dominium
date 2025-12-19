@@ -218,6 +218,19 @@ class ModalManager {
       } else {
         console.warn(`Elemento ${tab.id} não encontrado no DOM.`);
       }
+
+      // Se for a aba de eventos, configurar os filtros
+        if (tab.id === 'tab-eventos') {
+          // Chamar a função de filtros após um pequeno delay
+          setTimeout(() => {
+            if (window.setupEventFilters) {
+              window.setupEventFilters();
+            }
+          }, 100);
+        }
+      } else {
+        console.warn(`Elemento ${tab.id} não encontrado no DOM.`);
+    }
     });
   }
 
