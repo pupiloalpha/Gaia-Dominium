@@ -432,34 +432,109 @@ export class UIPlayersManager {
     const container = this.registeredPlayersList;
     if (!container) return;
     
-    // Limpar estilos anteriores e aplicar novo layout
-    container.classList.remove('flex-wrap', 'gap-1.5', 'justify-center', 'items-center', 'py-2', 'px-1');
-    container.classList.add('grid', 'grid-cols-4', 'gap-3', 'py-3', 'px-2', 'max-w-full');
-    container.style.minHeight = '120px';
-    
+    // Reset para estrutura inicial se não há jogadores
     if (players.length === 0) {
-        container.innerHTML = `
-            <div class="col-span-4 text-center py-8 text-gray-400">
-                <div class="text-3xl mb-3">👤</div>
-                <p class="text-sm">Nenhum jogador adicionado</p>
-                <p class="text-xs mt-2 text-gray-300">Adicione jogadores para começar a partida</p>
-            </div>
-        `;
+        // Mostrar todos os 4 slots vazios
+        for (let i = 0; i < 4; i++) {
+            const slot = container.querySelector(`.player-card[data-index="${i}"]`);
+            if (slot) {
+                slot.dataset.empty = "true";
+                slot.className = "player-card empty";
+                slot.innerHTML = `
+                    <div class="player-card-inner flex flex-col items-center justify-center h-full p-4 rounded-lg border-2 border-dashed border-gray-600 bg-gray-800/20 transition-all hover:border-gray-500">
+                        <div class="text-3xl text-gray-500 mb-2">👤</div>
+                        <div class="text-center">
+                            <div class="text-sm font-bold text-gray-500">Slot Vazio</div>
+                            <div class="text-xs text-gray-500 mt-1">Adicione um jogador</div>
+                        </div>
+                    </div>
+                `;
+            }
+        }
         return;
     }
     
-    container.innerHTML = '';
-    
-    // Renderizar cartões dos jogadores existentes
+    // Atualizar slots com jogadores existentes
     players.forEach((player, index) => {
-        const playerCard = this.createPlayerCard(player, index, canEdit);
-        container.appendChild(playerCard);
+        const slot = container.querySelector(`.player-card[data-index="${index}"]`);
+        if (slot) {
+            slot.dataset.empty = "false";
+            slot.className = `player-card ${index === this.editingIndex ? 'editing' : ''}`;
+            
+            const borderColor = player.color || '#9ca3af';
+            const bgColor = this.hexToRgba(player.color || '#9ca3af', 0.08);
+            
+            let actionsHTML = '';
+            if (canEdit) {
+                const editBtn = player.type !== 'ai' && !player.isAI ? 
+                    `<button class="player-card-edit" data-index="${index}" title="Editar">
+                        <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
+                        </svg>
+                    </button>` : '';
+                
+                actionsHTML = `
+                    <div class="player-card-actions flex gap-1 justify-center mt-2">
+                        ${editBtn}
+                        <button class="player-card-delete" data-index="${index}" title="Remover">
+                            <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                            </svg>
+                        </button>
+                    </div>
+                `;
+            }
+            
+            slot.innerHTML = `
+                <div class="player-card-inner flex flex-col items-center justify-between h-full p-3 rounded-lg border-2 transition-all"
+                     style="border-color: ${borderColor}; background: ${bgColor};">
+                    
+                    <!-- Ícone do jogador -->
+                    <div class="player-card-icon text-3xl mb-2 relative" style="color: ${borderColor}">
+                        ${player.icon}
+                        ${player.type === 'ai' || player.isAI ? 
+                            '<span class="absolute -top-1 -right-1 text-xs bg-purple-600 rounded-full p-1">🤖</span>' : 
+                            ''}
+                    </div>
+                    
+                    <!-- Pontos de Vitória -->
+                    <div class="player-card-pv text-xs font-bold text-yellow-300 mb-1 bg-black/30 px-2 py-0.5 rounded-full">
+                        ${player.victoryPoints} PV
+                    </div>
+                    
+                    <!-- Nome do jogador -->
+                    <div class="player-card-name text-sm font-bold text-white text-center truncate w-full mb-1">
+                        ${player.name}
+                    </div>
+                    
+                    <!-- Facção -->
+                    <div class="player-card-faction text-xs text-gray-300 text-center truncate w-full">
+                        ${player.faction ? `${player.faction.icon || '🏛️'} ${player.faction.name}` : 'Sem facção'}
+                    </div>
+                    
+                    <!-- Ações (se editável) -->
+                    ${actionsHTML}
+                </div>
+            `;
+        }
     });
     
-    // Renderizar slots vazios até 4
+    // Preencher slots restantes como vazios
     for (let i = players.length; i < 4; i++) {
-        const emptyCard = this.createEmptyPlayerCard(i);
-        container.appendChild(emptyCard);
+        const slot = container.querySelector(`.player-card[data-index="${i}"]`);
+        if (slot) {
+            slot.dataset.empty = "true";
+            slot.className = "player-card empty";
+            slot.innerHTML = `
+                <div class="player-card-inner flex flex-col items-center justify-center h-full p-4 rounded-lg border-2 border-dashed border-gray-600 bg-gray-800/20 transition-all hover:border-gray-500">
+                    <div class="text-3xl text-gray-500 mb-2">👤</div>
+                    <div class="text-center">
+                        <div class="text-sm font-bold text-gray-500">Slot Vazio</div>
+                        <div class="text-xs text-gray-500 mt-1">Adicione um jogador</div>
+                    </div>
+                </div>
+            `;
+        }
     }
     
     if (canEdit) {
@@ -467,88 +542,22 @@ export class UIPlayersManager {
     }
 }
 
-    createPlayerCard(player, index, canEdit) {
-    const card = document.createElement('div');
-    card.className = `player-card ${index === this.editingIndex ? 'editing' : ''}`;
-    card.dataset.index = index;
-    card.title = `${player.name} • ${player.faction?.name || 'Sem facção'} • ${player.victoryPoints} PV`;
-    
-    const borderColor = player.color || '#9ca3af';
-    const bgColor = this.hexToRgba(player.color || '#9ca3af', 0.08);
-    
-    let actionsHTML = '';
-    if (canEdit) {
-        const editBtn = player.type !== 'ai' && !player.isAI ? 
-            `<button class="player-card-edit" data-index="${index}" title="Editar">
-                <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
-                </svg>
-            </button>` : '';
-        
-        actionsHTML = `
-            <div class="player-card-actions flex gap-1 justify-center mt-2">
-                ${editBtn}
-                <button class="player-card-delete" data-index="${index}" title="Remover">
-                    <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
-                    </svg>
-                </button>
-            </div>
-        `;
-    }
-    
-    card.innerHTML = `
-        <div class="player-card-inner flex flex-col items-center justify-between h-full p-3 rounded-lg border-2 transition-all"
-             style="border-color: ${borderColor}; background: ${bgColor};">
-            <!-- Ícone do jogador -->
-            <div class="player-card-icon text-3xl mb-2" style="color: ${borderColor}">
-                ${player.icon}
-                ${player.type === 'ai' || player.isAI ? 
-                    '<span class="absolute -top-1 -right-1 text-xs bg-purple-600 rounded-full p-1">🤖</span>' : 
-                    ''}
-            </div>
-            
-            <!-- Pontos de Vitória -->
-            <div class="player-card-pv text-xs font-bold text-yellow-300 mb-1 bg-black/30 px-2 py-0.5 rounded-full">
-                ${player.victoryPoints} PV
-            </div>
-            
-            <!-- Nome do jogador -->
-            <div class="player-card-name text-sm font-bold text-white text-center truncate w-full mb-1">
-                ${player.name}
-            </div>
-            
-            <!-- Facção -->
-            <div class="player-card-faction text-xs text-gray-300 text-center truncate w-full">
-                ${player.faction ? `${player.faction.icon || '🏛️'} ${player.faction.name}` : 'Sem facção'}
-            </div>
-            
-            <!-- Ações (se editável) -->
-            ${actionsHTML}
-        </div>
-    `;
-    
-    return card;
-    }
-
-    createEmptyPlayerCard(index) {
+createEmptyPlayerCard(index) {
     const card = document.createElement('div');
     card.className = 'player-card empty';
-    card.dataset.index = `empty-${index}`;
-    card.title = 'Slot vazio - Adicione um jogador';
-    
+    card.dataset.index = index;
+    card.dataset.empty = "true";
     card.innerHTML = `
-        <div class="player-card-inner flex flex-col items-center justify-center h-full p-3 rounded-lg border-2 border-dashed border-gray-600 bg-gray-800/20">
-            <div class="text-2xl text-gray-500 mb-2">👤</div>
+        <div class="player-card-inner flex flex-col items-center justify-center h-full p-4 rounded-lg border-2 border-dashed border-gray-600 bg-gray-800/20 transition-all hover:border-gray-500">
+            <div class="text-3xl text-gray-500 mb-2">👤</div>
             <div class="text-center">
-                <div class="text-sm font-bold text-gray-500">Vazio</div>
-                <div class="text-xs text-gray-500">Adicione um jogador</div>
+                <div class="text-sm font-bold text-gray-500">Slot Vazio</div>
+                <div class="text-xs text-gray-500 mt-1">Adicione um jogador</div>
             </div>
         </div>
     `;
-    
     return card;
-    }
+}
 
     setupPlayerActionListeners() {
     // Botões de edição
