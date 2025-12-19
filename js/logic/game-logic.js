@@ -130,6 +130,50 @@ class GameLogic {
   handleCollect() { this.actionsLogic.handleCollect(); }
   handleBuild(type) { this.actionsLogic.handleBuild(type); }
   performAction(type) { return this.actionsLogic.consumeAction(); }
+
+  // Adicionar no método canAffordAction
+canAffordAction(actionType) {
+  const player = getCurrentPlayer();
+  let cost = GAME_CONFIG.ACTION_DETAILS[actionType]?.cost || {};
+
+  // Verificar descontos de facção
+  if (actionType === 'explorar') {
+    cost = this.factionLogic.modifyExploreCost(player, cost);
+  } else if (actionType === 'construir') {
+    // Já tratado no handleBuild
+  } else if (actionType === 'negociar') {
+     const negCost = this.factionLogic.modifyNegotiationCost(player);
+     return player.resources.ouro >= negCost;
+  } else if (actionType === 'disputar') {
+    // Aplicar descontos de facção para disputa
+    cost = this.factionLogic.modifyContestCost(player, cost);
+    
+    // Verificar também PV
+    const pvCost = GAME_CONFIG.ACTION_DETAILS.disputar.pv;
+    if (player.victoryPoints < pvCost) return false;
+  }
+
+  return Object.entries(cost).every(([resource, amount]) => {
+    return (player.resources[resource] || 0) >= amount;
+  });
+}
+
+// Adicionar novo método handler
+handleContest() { 
+  this.actionsLogic.handleContest(); 
+}
+
+// Atualizar delegateAction se existir (ou criar)
+delegateAction(type) {
+  switch(type) {
+    case 'explorar': return this.handleExplore();
+    case 'recolher': return this.handleCollect();
+    case 'construir': return () => this.handleBuild('Abrigo');
+    case 'negociar': return this.handleNegotiate();
+    case 'disputar': return this.handleContest();
+    default: return () => console.warn(`Ação ${type} não implementada`);
+  }
+}
   
   // Negociação
   handleNegotiate() { this.negotiationLogic.handleNegotiate(); }
@@ -162,26 +206,6 @@ class GameLogic {
       return await window.uiManager.modals.showConfirm(title, message);
     }
     return confirm(message);
-  }
-  
-  canAffordAction(actionType) {
-    const player = getCurrentPlayer();
-    let cost = GAME_CONFIG.ACTION_DETAILS[actionType]?.cost || {};
-
-    // Verificar descontos de facção
-    if (actionType === 'explorar') {
-      cost = this.factionLogic.modifyExploreCost(player, cost);
-    } else if (actionType === 'construir') {
-      // Nota: Para construção genérica na UI, usamos custo base. 
-      // A verificação real ocorre dentro do handleBuild com o tipo específico.
-    } else if (actionType === 'negociar') {
-       const negCost = this.factionLogic.modifyNegotiationCost(player);
-       return player.resources.ouro >= negCost;
-    }
-
-    return Object.entries(cost).every(([resource, amount]) => {
-      return (player.resources[resource] || 0) >= amount;
-    });
   }
   
   preventActionIfModalOpen() {
