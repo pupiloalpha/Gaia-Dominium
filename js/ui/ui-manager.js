@@ -19,39 +19,18 @@ import { UIGameManager } from '../ui/ui-game.js';
 
 class UIManager {
     constructor() {
-    this.modals = new ModalManager(this);
-    this.negotiation = new NegotiationUI(this);
-    this.playersManager = new UIPlayersManager(this);
-    this.gameManager = new UIGameManager(this);
-    
-    this.cacheElements();
-    
-    // Preload de recursos críticos
-    this.preloadCriticalAssets();
-    
-    // Inicializar após um pequeno delay
-    setTimeout(() => {
-        this.initUI();
-    }, 100);
-}
-
-preloadCriticalAssets() {
-    // Preload de imagens críticas
-    const criticalImages = [
-        './assets/images/gaia-inicio.png',
-        './assets/images/gaia-mapa.png'
-    ];
-    
-    criticalImages.forEach(src => {
-        const img = new Image();
-        img.src = src;
-    });
-    
-    // Preload de vídeo
-    const video = document.createElement('video');
-    video.preload = 'auto';
-    video.src = './assets/videos/gaia-video-inicio.mp4';
-}
+        this.modals = new ModalManager(this);
+        this.negotiation = new NegotiationUI(this);
+        this.playersManager = new UIPlayersManager(this);
+        this.gameManager = new UIGameManager(this);
+        
+        this.cacheElements();
+        
+        // Inicializar após um pequeno delay
+        setTimeout(() => {
+            this.initUI();
+        }, 100);
+    }
 
     cacheElements() {
         console.log("🔄 Cacheando elementos principais...");
