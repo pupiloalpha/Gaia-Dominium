@@ -13,6 +13,7 @@ const GAME_CONFIG = {
     explorar: { cost:{madeira:2, agua:1}, pv:1 },
     construir: { cost:{madeira:3, pedra:2, ouro:1}, pv:2 },
     recolher: { cost:{madeira:1}, pv:1 },
+    disputar: { cost:{madeira:4, pedra:3, ouro:2, agua:2}, pv:4 },
     negociar: { cost:{ouro:1}, pv:1 }
   },
   TURNS_UNTIL_NEXT_EVENT: 4,
@@ -153,6 +154,21 @@ const TURN_PHASES = {
 
 // Sistema de Eventos Aleatórios
 const GAME_EVENTS = [
+// Evento para disputa de regiões
+{
+  id: 'conflito',
+  name: 'Tensão Bélica',
+  icon: '⚔️',
+  description: 'Conflitos aumentam a chance de sucesso em disputas.',
+  effect: '+25% chance de sucesso em disputas',
+  duration: 2,
+  apply: (state) => {
+    state.eventModifiers.disputaBonus = 0.25;
+  },
+  remove: (state) => {
+    delete state.eventModifiers.disputaBonus;
+  }
+}, 
   {
     id: 'seca',
     name: 'Seca',
