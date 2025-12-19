@@ -668,8 +668,170 @@ const MANUAL_CONTENT = {
       </ul>
     </div>
   `,
+
+  // ==================== ABA 9: EVENTOS ====================
+'eventos': `
+    <h3 class="text-xl font-bold text-yellow-300 mb-3">🎴 Eventos de Gaia</h3>
+    
+    <div class="bg-gradient-to-r from-purple-900/30 to-indigo-900/30 border border-purple-500/40 rounded-lg p-4 mb-4">
+      <h4 class="text-base font-bold text-purple-300 mb-2">⚡ O Sistema de Eventos</h4>
+      <p class="text-sm text-gray-200 leading-relaxed text-justify">
+        Gaia é um mundo dinâmico e imprevisível. A cada 4 turnos, um evento global aleatório é ativado, 
+        modificando temporariamente as regras do jogo. Eventos podem ser <strong class="text-green-400">positivos</strong>, 
+        <strong class="text-red-400">negativos</strong> ou <strong class="text-yellow-400">mistos</strong>, 
+        criando oportunidades e desafios únicos para todas as facções.
+      </p>
+      <div class="mt-3 text-xs text-purple-300">
+        <strong>Frequência:</strong> A cada 4 turnos • <strong>Duração:</strong> 1-2 turnos • <strong>Impacto:</strong> Global ou específico
+      </div>
+    </div>
+
+    <h4 class="text-base font-semibold text-green-300 mb-3">📊 Categorias de Eventos</h4>
+    
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-3 mb-4">
+      <div class="bg-gradient-to-r from-green-900/30 to-emerald-900/30 border border-green-500/40 rounded-lg p-3">
+        <h5 class="text-sm font-bold text-green-300 mb-2">🌟 Positivos</h5>
+        <p class="text-xs text-gray-300 mb-2">
+          Eventos que beneficiam todos os jogadores, geralmente aumentando produção ou reduzindo custos.
+        </p>
+        <div class="text-xs text-green-200 space-y-1">
+          <div class="flex items-center gap-1">✅ <span>Primavera Abundante</span></div>
+          <div class="flex items-center gap-1">✅ <span>Mercado Aquecido</span></div>
+          <div class="flex items-center gap-1">✅ <span>Festival da Colheita</span></div>
+        </div>
+      </div>
+
+      <div class="bg-gradient-to-r from-red-900/30 to-orange-900/30 border border-red-500/40 rounded-lg p-3">
+        <h5 class="text-sm font-bold text-red-300 mb-2">🌪️ Negativos</h5>
+        <p class="text-xs text-gray-300 mb-2">
+          Eventos que dificultam o jogo, reduzindo produção ou aumentando custos para todos.
+        </p>
+        <div class="text-xs text-red-200 space-y-1">
+          <div class="flex items-center gap-1">⚠️ <span>Seca</span></div>
+          <div class="flex items-center gap-1">⚠️ <span>Tempestade</span></div>
+          <div class="flex items-center gap-1">⚠️ <span>Inflação</span></div>
+        </div>
+      </div>
+
+      <div class="bg-gradient-to-r from-yellow-900/30 to-amber-900/30 border border-yellow-500/40 rounded-lg p-3">
+        <h5 class="text-sm font-bold text-yellow-300 mb-2">🔄 Mistos</h5>
+        <p class="text-xs text-gray-300 mb-2">
+          Eventos com efeitos variados, beneficiando alguns jogadores enquanto prejudicam outros.
+        </p>
+        <div class="text-xs text-yellow-200 space-y-1">
+          <div class="flex items-center gap-1">⚖️ <span>Descoberta de Jazida</span></div>
+          <div class="flex items-center gap-1">⚖️ <span>Descoberta Arqueológica</span></div>
+          <div class="flex items-center gap-1">⚖️ <span>Boom Tecnológico</span></div>
+        </div>
+      </div>
+    </div>
+
+    <h4 class="text-base font-semibold text-blue-300 mb-3">📜 Catálogo de Eventos</h4>
+
+    <div class="space-y-3 mb-4 max-h-[400px] overflow-y-auto pr-2">
+      <!-- Evento 1 -->
+      <div class="bg-gradient-to-r from-gray-800/50 to-gray-900/50 border border-gray-700/50 rounded-lg p-3">
+        <div class="flex items-start gap-3">
+          <span class="text-2xl">🌵</span>
+          <div class="flex-1">
+            <h5 class="text-sm font-bold text-red-300">Seca</h5>
+            <p class="text-xs text-gray-300 mb-1">Uma seca severa assola Gaia, reduzindo o abastecimento de água.</p>
+            <div class="flex flex-wrap gap-2 mt-2">
+              <span class="text-xs px-2 py-1 bg-red-900/30 text-red-300 rounded">Efeito: -50% Água</span>
+              <span class="text-xs px-2 py-1 bg-gray-800/50 text-gray-300 rounded">Duração: 2 turnos</span>
+              <span class="text-xs px-2 py-1 bg-gray-800/50 text-gray-300 rounded">Tipo: Negativo</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Evento 2 -->
+      <div class="bg-gradient-to-r from-gray-800/50 to-gray-900/50 border border-gray-700/50 rounded-lg p-3">
+        <div class="flex items-start gap-3">
+          <span class="text-2xl">⛏️</span>
+          <div class="flex-1">
+            <h5 class="text-sm font-bold text-yellow-300">Descoberta de Jazida</h5>
+            <p class="text-xs text-gray-300 mb-1">Ricas jazidas de ouro são encontradas nas savanas!</p>
+            <div class="flex flex-wrap gap-2 mt-2">
+              <span class="text-xs px-2 py-1 bg-yellow-900/30 text-yellow-300 rounded">Efeito: +2 Ouro em Savanas</span>
+              <span class="text-xs px-2 py-1 bg-gray-800/50 text-gray-300 rounded">Duração: 2 turnos</span>
+              <span class="text-xs px-2 py-1 bg-yellow-900/30 text-yellow-300 rounded">Tipo: Misto</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Evento 3 -->
+      <div class="bg-gradient-to-r from-gray-800/50 to-gray-900/50 border border-gray-700/50 rounded-lg p-3">
+        <div class="flex items-start gap-3">
+          <span class="text-2xl">🌱</span>
+          <div class="flex-1">
+            <h5 class="text-sm font-bold text-green-300">Primavera Abundante</h5>
+            <p class="text-xs text-gray-300 mb-1">A natureza floresce com vigor renovado!</p>
+            <div class="flex flex-wrap gap-2 mt-2">
+              <span class="text-xs px-2 py-1 bg-green-900/30 text-green-300 rounded">Efeito: +100% Madeira</span>
+              <span class="text-xs px-2 py-1 bg-gray-800/50 text-gray-300 rounded">Duração: 2 turnos</span>
+              <span class="text-xs px-2 py-1 bg-green-900/30 text-green-300 rounded">Tipo: Positivo</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Evento 4 -->
+      <div class="bg-gradient-to-r from-gray-800/50 to-gray-900/50 border border-gray-700/50 rounded-lg p-3">
+        <div class="flex items-start gap-3">
+          <span class="text-2xl">💰</span>
+          <div class="flex-1">
+            <h5 class="text-sm font-bold text-green-300">Mercado Aquecido</h5>
+            <p class="text-xs text-gray-300 mb-1">A economia está em alta, facilitando negociações.</p>
+            <div class="flex flex-wrap gap-2 mt-2">
+              <span class="text-xs px-2 py-1 bg-green-900/30 text-green-300 rounded">Efeito: Negociações Gratuitas</span>
+              <span class="text-xs px-2 py-1 bg-gray-800/50 text-gray-300 rounded">Duração: 2 turnos</span>
+              <span class="text-xs px-2 py-1 bg-green-900/30 text-green-300 rounded">Tipo: Positivo</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Evento 5 -->
+      <div class="bg-gradient-to-r from-gray-800/50 to-gray-900/50 border border-gray-700/50 rounded-lg p-3">
+        <div class="flex items-start gap-3">
+          <span class="text-2xl">🏺</span>
+          <div class="flex-1">
+            <h5 class="text-sm font-bold text-yellow-300">Descoberta Arqueológica</h5>
+            <p class="text-xs text-gray-300 mb-1">Artefatos antigos são encontrados!</p>
+            <div class="flex flex-wrap gap-2 mt-2">
+              <span class="text-xs px-2 py-1 bg-yellow-900/30 text-yellow-300 rounded">Efeito: +3 PV para quem tem mais regiões</span>
+              <span class="text-xs px-2 py-1 bg-gray-800/50 text-gray-300 rounded">Duração: Imediato</span>
+              <span class="text-xs px-2 py-1 bg-yellow-900/30 text-yellow-300 rounded">Tipo: Misto</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="bg-teal-900/20 border border-teal-500/40 rounded-lg p-3 mt-4">
+      <h5 class="text-sm font-bold text-teal-300 mb-2">🎯 Dicas Estratégicas para Eventos</h5>
+      <ul class="text-xs text-gray-200 space-y-1">
+        <li>• <strong>Planeje com antecedência:</strong> Eventos ocorrem a cada 4 turnos. Prepare-se para possíveis mudanças.</li>
+        <li>• <strong>Aproveite eventos positivos:</strong> Em "Mercado Aquecido", negocie mais; em "Primavera Abundante", construa mais.</li>
+        <li>• <strong>Mitigue eventos negativos:</strong> Em "Seca", priorize regiões com água; em "Inflação", economize ouro.</li>
+        <li>• <strong>Adapte sua estratégia:</strong> Eventos mistos podem virar o jogo. Esteja pronto para mudar de tática.</li>
+        <li>• <strong>Observe os biomas:</strong> Alguns eventos afetam biomas específicos. Proteja suas regiões vulneráveis.</li>
+      </ul>
+    </div>
+
+    <div class="bg-purple-900/20 border border-purple-500/40 rounded-lg p-3 mt-3">
+      <h5 class="text-sm font-bold text-purple-300 mb-2">📈 Impacto nos PVs</h5>
+      <p class="text-xs text-gray-300">
+        Eventos não afetam diretamente os Pontos de Vitória, mas alteram drasticamente a economia do jogo. 
+        Um jogador que se adapta melhor aos eventos pode ganhar uma vantagem significativa em recursos, 
+        acelerando sua corrida para os 25 PV.
+      </p>
+    </div>
+  `,
   
-  // ==================== ABA 9: CONQUISTAS ====================
+  // ==================== ABA 10: CONQUISTAS ====================
   'conquistas': `
     <h3 class="text-xl font-bold text-yellow-300 mb-3">🏆 Conquistas</h3>
     
