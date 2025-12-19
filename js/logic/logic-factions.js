@@ -167,7 +167,42 @@ applyContestBonus(player, region) {
   
   return Object.keys(bonus).length > 0 ? bonus : null;
 }
+
+getDiceBonus(player) {
+  if (!player.faction) return 0;
   
+  const faction = player.faction;
+  let bonus = 0;
+  
+  // Facção com bônus em dados
+  if (faction.abilities.diceBonus) {
+    bonus += faction.abilities.diceBonus;
+  }
+  
+  // Facção com amuleto da sorte
+  if (faction.abilities.luckCharm && player.turnBonuses?.luckCharmAvailable) {
+    bonus += 2; // Bônus significativo
+    player.turnBonuses.luckCharmAvailable = false;
+    this.main.showFeedback(`${player.name} usou seu amuleto da sorte! +2 em dados.`, 'success');
+  }
+  
+  return bonus;
+}
+
+// Atualizar resetTurnBonuses para incluir sorte
+resetTurnBonuses(player) {
+  if (!player.faction) return;
+  
+  const faction = player.faction;
+  
+  // Resetar contadores de habilidades por turno
+  player.turnBonuses = {
+    freeNegotiationAvailable: faction.abilities.freeNegotiationPerTurn || 0,
+    buildDiscountUsed: false,
+    luckCharmAvailable: faction.abilities.luckCharm || false
+  };
+}
+
   modifyBuildCost(player, baseCost) {
     if (!player.faction) return baseCost;
     
