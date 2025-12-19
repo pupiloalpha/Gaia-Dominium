@@ -108,6 +108,66 @@ class FactionLogic {
     return modifiedCost;
   }
 
+  // Adicionar métodos na classe FactionLogic
+
+modifyContestCost(player, baseCost) {
+  if (!player.faction) return baseCost;
+  
+  const modifiedCost = { ...baseCost };
+  const faction = player.faction;
+  
+  // Construtores da Montanha: -1 Pedra para disputar
+  if (faction.abilities.contestDiscount) {
+    Object.keys(faction.abilities.contestDiscount).forEach(resource => {
+      const discount = faction.abilities.contestDiscount[resource];
+      if (modifiedCost[resource]) {
+        modifiedCost[resource] = Math.max(0, modifiedCost[resource] - discount);
+      }
+    });
+  }
+  
+  return modifiedCost;
+}
+
+getContestChanceModifier(player) {
+  if (!player.faction) return 0;
+  
+  const faction = player.faction;
+  let modifier = 0;
+  
+  // Guerreiros: +15% chance de sucesso
+  if (faction.abilities.contestBonus) {
+    modifier += faction.abilities.contestBonus;
+  }
+  
+  // Mercadores: -10% chance (menos bélicos)
+  if (faction.abilities.contestPenalty) {
+    modifier -= faction.abilities.contestPenalty;
+  }
+  
+  return modifier;
+}
+
+applyContestBonus(player, region) {
+  if (!player.faction) return null;
+  
+  const faction = player.faction;
+  const bonus = {};
+  
+  // Conquistadores: +1 recurso aleatório da região conquistada
+  if (faction.abilities.conquestLoot && region.resources) {
+    const availableResources = Object.keys(region.resources)
+      .filter(r => region.resources[r] > 0);
+    
+    if (availableResources.length > 0) {
+      const randomResource = availableResources[Math.floor(Math.random() * availableResources.length)];
+      bonus[randomResource] = faction.abilities.conquestLoot;
+    }
+  }
+  
+  return Object.keys(bonus).length > 0 ? bonus : null;
+}
+  
   modifyBuildCost(player, baseCost) {
     if (!player.faction) return baseCost;
     
@@ -154,6 +214,7 @@ class FactionLogic {
   if (player.turnBonuses?.freeNegotiationAvailable > 0) return 0;
   return 1;
 }
+  
 consumeNegotiationCost(player) {
   const cost = this.getNegotiationCost(player);
   if (cost === 0 && player.turnBonuses && player.turnBonuses.freeNegotiationAvailable > 0) {
