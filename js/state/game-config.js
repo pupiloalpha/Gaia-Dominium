@@ -168,7 +168,24 @@ const GAME_EVENTS = [
   remove: (state) => {
     delete state.eventModifiers.disputaBonus;
   }
-}, 
+},
+
+  // Evento relacionado a sorte
+{
+  id: 'sorte',
+  name: 'Bênção da Sorte',
+  icon: '🍀',
+  description: 'A sorte está do seu lado hoje!',
+  effect: '+1 em todos os lançamentos de dados',
+  duration: 2,
+  apply: (state) => {
+    state.eventModifiers.diceBonus = 1;
+  },
+  remove: (state) => {
+    delete state.eventModifiers.diceBonus;
+  }
+},
+  
   {
     id: 'seca',
     name: 'Seca',
@@ -506,6 +523,20 @@ const ACHIEVEMENTS_CONFIG = {
   }
 };
 
+// Uso de dados no jogo durante s disputa
+const DICE_SYSTEM = {
+  MIN_RESOURCES_FOR_STANDARD: { madeira: 2, pedra: 1, ouro: 1, agua: 1 }, // Mínimo para disputa normal
+  DICE_COST: { madeira: 1, pedra: 1, ouro: 1, agua: 1 }, // Custo para tentativa com dados
+  DICE_PV_COST: 2, // Custo de PV para tentativa com dados
+  DICE_SIDES: 6, // Dado de 6 lados
+  ATTACKER_DICE_BONUS_PER_REGION: 0.1, // 10% por região (máx 50%)
+  DEFENDER_DICE_BONUS_PER_STRUCTURE: 0.15, // 15% por estrutura defensiva
+  MAX_DICE_BONUS: 0.5, // Bônus máximo de 50%
+  DRAW_REROLL: true, // Re-rolagem em caso de empate
+  MIN_DICE_VALUE: 1, // Valor mínimo do dado
+  MAX_DICE_VALUE: 6, // Valor máximo do dado
+};
+
 // ==================== HABILIDADES DAS FACÇÕES ====================
 const FACTION_ABILITIES = {
   // Facção Verde - "Guardiões da Floresta"
@@ -525,7 +556,9 @@ const FACTION_ABILITIES = {
       exploreDiscount: { madeira: 1 },
       // +25% produção de Madeira em todas as regiões
       globalProductionMultiplier: { madeira: 0.25 }
-    }
+    },
+diceBonus: 1, // +1 em lançamentos de dados
+luckCharm: true // Permite re-rolar um dado por turno
   },
   
   // Facção Azul - "Mestres das Águas"
@@ -546,7 +579,10 @@ const FACTION_ABILITIES = {
       exploreWaterBonus: true,
       // Coleta em regiões com água dá +1 recurso aleatório
       waterCollectBonus: 1
-    }
+    },
+    
+diceBonus: 1, // +1 em lançamentos de dados
+luckCharm: false // Permite re-rolar um dado por turno
   },
   
   // Facção Vermelha - "Construtores da Montanha"
@@ -567,7 +603,10 @@ const FACTION_ABILITIES = {
       structurePVBonus: 1,
       // +50% produção de Pedra
       globalProductionMultiplier: { pedra: 0.5 }
-    }
+    },
+    
+diceBonus: 0, // +1 em lançamentos de dados
+luckCharm: true // Permite re-rolar um dado por turno
   },
   
   // Facção Amarela - "Barões do Comércio"
@@ -590,7 +629,10 @@ const FACTION_ABILITIES = {
       marketDiscount: 0.5,
       // +30% chance de encontrar Ouro ao explorar
       goldExplorationBonus: 0.3
-    }
+    },
+    
+diceBonus: 0, // +1 em lançamentos de dados
+luckCharm: true // Permite re-rolar um dado por turno
   },
 
   // Nova facção bélica (opcional, pode ser adicionada)
@@ -609,7 +651,10 @@ const FACTION_ABILITIES = {
       contestBonus: 0.2,
       // +1 de cada recurso ao conquistar
       conquestLoot: 1
-    }
+    },
+    
+diceBonus: 2, // +1 em lançamentos de dados
+luckCharm: true // Permite re-rolar um dado por turno
   }
 };
 
