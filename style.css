@@ -1,5 +1,5 @@
 /* ============================================
-   VARIÁVEIS CSS GLOBAIS - SISTEMA DE DESIGN
+   VARIÁVEIS GLOBAIS E RESET
    ============================================ */
 
 :root {
@@ -9,11 +9,11 @@
   --text-primary: #ffffff;
   --text-secondary: rgba(255, 255, 255, 0.8);
   
-  /* Cores do Jogador (mantidas para compatibilidade) */
+  /* Cores do Jogador (dinâmicas) */
   --player-rgb: 255, 255, 255;
   --player-color: #ffffff;
   
-  /* Glassmorphism e Células (mantidas) */
+  /* Glassmorphism e Células */
   --cell-bg: rgba(30, 30, 30, 0.7);
   --cell-border: rgba(255, 255, 255, 0.15);
   --cell-opacity: 0.15;
@@ -23,84 +23,24 @@
   /* Sombras */
   --shadow-intensity: 0.3;
   
-  /* IA (mantidas) */
+  /* IA */
   --ai-easy-color: #10b981;
   --ai-medium-color: #3b82f6;
   --ai-hard-color: #f59e0b;
   --ai-master-color: #ef4444;
   
-  /* Sistema de Cores Expandido */
-  --color-success: #10b981;
-  --color-success-dark: #059669;
-  --color-warning: #f59e0b;
-  --color-warning-dark: #d97706;
-  --color-danger: #ef4444;
-  --color-danger-dark: #dc2626;
-  --color-info: #3b82f6;
-  --color-info-dark: #2563eb;
-  
-  /* Cores para IA com opacidade */
-  --ai-easy-bg: rgba(16, 185, 129, 0.2);
-  --ai-medium-bg: rgba(59, 130, 246, 0.2);
-  --ai-hard-bg: rgba(245, 158, 11, 0.2);
-  --ai-master-bg: rgba(239, 68, 68, 0.2);
-  
-  /* Sistema de Espaçamento */
-  --spacing-xs: 0.25rem;
-  --spacing-sm: 0.5rem;
-  --spacing-md: 1rem;
-  --spacing-lg: 1.5rem;
-  --spacing-xl: 2rem;
-  --spacing-2xl: 3rem;
-  
-  /* Sistema de Bordas */
-  --border-radius-sm: 0.375rem;
-  --border-radius-md: 0.5rem;
-  --border-radius-lg: 0.75rem;
-  --border-radius-xl: 1rem;
-  --border-radius-2xl: 1.5rem;
-  
-  /* Opacidades */
-  --opacity-disabled: 0.4;
-  --opacity-hover: 0.8;
-  --opacity-active: 0.9;
-  
-  /* Gradientes Reutilizáveis */
-  --gradient-primary: linear-gradient(180deg, rgba(255, 255, 255, 0.02), rgba(0, 0, 0, 0.18));
-  --gradient-accent: linear-gradient(135deg, rgba(248, 214, 92, 0.2), rgba(245, 158, 11, 0.2));
-  --gradient-dark: linear-gradient(180deg, rgba(12, 12, 12, 0.56), rgba(8, 8, 8, 0.45));
-  
-  /* Breakpoints (mantidos) */
+  /* Breakpoints */
   --breakpoint-sm: 480px;
   --breakpoint-md: 768px;
   --breakpoint-lg: 1024px;
   --breakpoint-xl: 1280px;
-  
-  /* Transições */
-  --transition-fast: 0.15s ease;
-  --transition-base: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  --transition-slow: 0.5s ease;
-  
-  /* Z-index Base */
-  --z-sidebar: 40;
-  --z-footer: 45;
-  --z-tooltip: 90;
-  --z-modal-low: 97;
-  --z-modal: 100;
-  --z-modal-high: 105;
 }
 
-/* ============================================
-   RESET & BASE STYLES OTIMIZADOS
-   ============================================ */
-
+/* Reset Moderno */
 *, *::before, *::after {
   box-sizing: border-box;
   margin: 0;
   padding: 0;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-  text-rendering: optimizeLegibility;
 }
 
 html {
@@ -118,23 +58,38 @@ body {
   color: var(--text-primary);
   overflow-x: hidden;
   line-height: 1.5;
-  background-image: url('./assets/images/gaia-inicio.png');
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
-/* Otimização de renderização de imagens */
-img, video {
-  max-width: 100%;
-  height: auto;
-  vertical-align: middle;
-  font-style: italic;
-  background-repeat: no-repeat;
-  background-size: cover;
-  image-rendering: -webkit-optimize-contrast;
-  image-rendering: crisp-edges;
+/* Tipografia Consistente */
+h1, h2, h3, h4, h5, h6 {
+  font-weight: 600;
+  line-height: 1.2;
+  margin-bottom: 0.5em;
+}
+
+p {
+  margin-bottom: 1rem;
 }
 
 /* ============================================
-   CLASSES UTILITÁRIAS REUTILIZÁVEIS
+   HIERARQUIA DE Z-INDEX
+   ============================================ */
+
+#initialScreen { z-index: 50; }
+#manualIcon { z-index: 60; position: fixed !important; top: 20px !important; right: 20px !important; }
+#gameNavbar { z-index: 40; }
+#gameFooter { z-index: 45; }
+#regionTooltip { z-index: 90; }
+#eventModal { z-index: 95; }
+#negotiationModal, #negResponseModal { z-index: 98; }
+#manualModal { z-index: 100; }
+#alertModal { z-index: 101; }
+#victoryModal { z-index: 102; }
+
+/* ============================================
+   UTILITÁRIOS REUTILIZÁVEIS
    ============================================ */
 
 /* Layout */
@@ -163,65 +118,34 @@ img, video {
   background: rgba(31, 31, 31, 0.8);
   backdrop-filter: blur(8px);
   border: 1px solid rgba(255, 255, 255, 0.06);
-  border-radius: var(--border-radius-md);
+  border-radius: 10px;
 }
 
 /* Transições */
 .transition-all {
-  transition: all var(--transition-base);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .transition-transform {
-  transition: transform var(--transition-fast) ease;
+  transition: transform 0.2s ease;
 }
 
-/* Bordas */
-.rounded-sm { border-radius: var(--border-radius-sm); }
-.rounded-md { border-radius: var(--border-radius-md); }
-.rounded-lg { border-radius: var(--border-radius-lg); }
-.rounded-xl { border-radius: var(--border-radius-xl); }
-.rounded-2xl { border-radius: var(--border-radius-2xl); }
-
-/* Espaçamento */
-.p-xs { padding: var(--spacing-xs); }
-.p-sm { padding: var(--spacing-sm); }
-.p-md { padding: var(--spacing-md); }
-.p-lg { padding: var(--spacing-lg); }
-.p-xl { padding: var(--spacing-xl); }
-
-.m-xs { margin: var(--spacing-xs); }
-.m-sm { margin: var(--spacing-sm); }
-.m-md { margin: var(--spacing-md); }
-.m-lg { margin: var(--spacing-lg); }
-.m-xl { margin: var(--spacing-xl); }
-
-/* Opacidade */
-.opacity-disabled { opacity: var(--opacity-disabled); }
-.opacity-hover { opacity: var(--opacity-hover); }
-.opacity-active { opacity: var(--opacity-active); }
-
 /* ============================================
-   ANIMAÇÕES OTIMIZADAS PARA PERFORMANCE
+   ANIMAÇÕES CENTRALIZADAS
    ============================================ */
 
 @keyframes fadeIn {
-  from { 
-    opacity: 0;
-    transform: translateZ(0);
-  }
-  to { 
-    opacity: 1;
-    transform: translateZ(0);
-  }
+  from { opacity: 0; }
+  to { opacity: 1; }
 }
 
 @keyframes slideInRight {
   from {
-    transform: translateX(100%) translateZ(0);
+    transform: translateX(100%);
     opacity: 0;
   }
   to {
-    transform: translateX(0) translateZ(0);
+    transform: translateX(0);
     opacity: 1;
   }
 }
@@ -229,22 +153,17 @@ img, video {
 @keyframes slideUp {
   from {
     opacity: 0;
-    transform: translateY(20px) translateZ(0);
+    transform: translateY(20px);
   }
   to {
     opacity: 1;
-    transform: translateY(0) translateZ(0);
+    transform: translateY(0);
   }
 }
 
 @keyframes pulse {
   0%, 100% { opacity: 1; }
   50% { opacity: 0.6; }
-}
-
-@keyframes pulse-subtle {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.85; }
 }
 
 @keyframes regionPulse {
@@ -266,210 +185,137 @@ img, video {
 }
 
 @keyframes eventPulse {
-  0%, 100% { 
-    opacity: 1; 
-    box-shadow: 0 0 15px rgba(255, 255, 255, 0.1); 
-  }
-  50% { 
-    opacity: 0.95; 
-    box-shadow: 0 0 20px rgba(255, 255, 255, 0.2); 
-  }
+  0%, 100% { opacity: 1; box-shadow: 0 0 15px rgba(255, 255, 255, 0.1); }
+  50% { opacity: 0.95; box-shadow: 0 0 20px rgba(255, 255, 255, 0.2); }
 }
 
-/* Classes de animação otimizadas */
+/* Classes de animação */
 .animate-fade-in {
   animation: fadeIn 0.3s ease;
-  will-change: opacity, transform;
-  backface-visibility: hidden;
 }
 
 .animate-slide-in-right {
   animation: slideInRight 0.3s ease-out forwards;
-  will-change: transform, opacity;
-  backface-visibility: hidden;
 }
 
 .animate-slide-up {
   animation: slideUp 0.3s ease-out;
-  will-change: transform, opacity;
-  backface-visibility: hidden;
 }
 
 .animate-pulse-slow {
   animation: pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite;
-  will-change: opacity;
-}
-
-.animate-pulse-subtle {
-  animation: pulse-subtle 2s ease-in-out infinite;
-  animation-timing-function: cubic-bezier(0.4, 0, 0.6, 1);
-  will-change: opacity;
 }
 
 /* ============================================
-   PERFORMANCE & ACCESSIBILITY
-   ============================================ */
-
-/* Reduzir animações quando solicitado */
-@media (prefers-reduced-motion: reduce) {
-  *,
-  *::before,
-  *::after {
-    animation-duration: 0.01ms !important;
-    animation-iteration-count: 1 !important;
-    transition-duration: 0.01ms !important;
-    scroll-behavior: auto !important;
-  }
-  
-  .animate-fade-in,
-  .animate-slide-in-right,
-  .animate-slide-up,
-  .animate-pulse-slow,
-  .animate-pulse-subtle {
-    animation: none !important;
-  }
-}
-
-/* Melhorar foco para navegação por teclado */
-:focus-visible {
-  outline: 2px solid var(--accent);
-  outline-offset: 2px;
-  border-radius: 4px;
-}
-
-/* Otimização de contain para performance */
-#gameContainer {
-  contain: layout style paint;
-}
-
-.board-cell {
-  contain: content;
-}
-
-.modal-overlay .relative {
-  contain: strict;
-}
-
-/* ============================================
-   HIERARQUIA DE Z-INDEX ATUALIZADA
-   ============================================ */
-
-#initialScreen { z-index: 50; }
-#manualIcon { 
-  z-index: 60; 
-  position: fixed !important; 
-  top: 20px !important; 
-  right: 20px !important; 
-}
-#gameNavbar { z-index: var(--z-sidebar); }
-#gameFooter { z-index: var(--z-footer); }
-#regionTooltip { z-index: var(--z-tooltip); }
-
-/* Modais em ordem hierárquica */
-#incomeModal { z-index: var(--z-modal-low); }
-#eventModal { z-index: calc(var(--z-modal-low) + 1); }
-#structureModal { z-index: calc(var(--z-modal-low) + 2); }
-#negotiationModal { z-index: var(--z-modal); }
-#negResponseModal { z-index: calc(var(--z-modal) + 1); }
-#saveLoadModal { z-index: calc(var(--z-modal) + 2); }
-#manualModal { z-index: calc(var(--z-modal) + 3); }
-#alertModal { z-index: calc(var(--z-modal) + 4); }
-#victoryModal { z-index: var(--z-modal-high); }
-
-/* ============================================
-   TELA DE CADASTRO - OTIMIZADA
+   TELA DE CADASTRO - PLAYER MODAL
    ============================================ */
 
 .player-modal {
-  background: var(--gradient-dark);
+  background: linear-gradient(180deg, rgba(12, 12, 12, 0.56), rgba(8, 8, 8, 0.45));
   border: 1px solid rgba(255, 255, 255, 0.06);
   backdrop-filter: blur(12px) saturate(120%);
   box-shadow: 0 12px 40px rgba(0, 0, 0, 0.6);
-  border-radius: var(--border-radius-xl);
+  z-index: 51;
+  position: relative;
 }
 
-/* Controles principais em grid responsivo */
-.initial-controls {
-  display: grid;
-  grid-template-columns: 1fr;
-  gap: var(--spacing-md);
-}
-
-/* Inputs consistentes */
+/* Inputs */
 input[type="text"], select, input[type="number"] {
   background: rgba(31, 31, 31, 0.85);
   color: #EEE;
   border: 1px solid rgba(255, 255, 255, 0.04);
-  border-radius: var(--border-radius-md);
-  padding: var(--spacing-sm) var(--spacing-md);
+  border-radius: 8px;
+  padding: 10px 12px;
   font-size: 14px;
-  transition: border-color var(--transition-fast);
 }
 
-input[type="text"]:focus, 
-select:focus, 
-input[type="number"]:focus {
+input[type="text"]:focus, select:focus, input[type="number"]:focus {
   outline: none;
-  border-color: var(--accent);
+  border-color: #f8d65c;
   box-shadow: 0 0 0 2px rgba(248, 214, 92, 0.2);
 }
 
-/* Cartões de jogador otimizados */
+/* Estilos para os novos cartões de jogador */
 .player-card {
-  aspect-ratio: 3/4;
-  transition: all var(--transition-base);
-  position: relative;
-  overflow: hidden;
+    transition: all 0.2s ease;
+    min-height: 140px;
+    position: relative;
 }
 
 .player-card-inner {
-  position: relative;
-  height: 100%;
-  width: 100%;
-  transition: all 0.25s ease;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  padding: var(--spacing-md);
-  border-radius: var(--border-radius-lg);
+    height: 100%;
+    transition: all 0.2s ease;
 }
 
-.player-card.empty .player-card-inner {
-  border: 2px dashed rgba(255, 255, 255, 0.2);
-  background: rgba(255, 255, 255, 0.03);
-}
-
-.player-card.empty .player-card-inner:hover {
-  border-color: rgba(255, 255, 255, 0.3);
-  transform: translateY(-2px);
-}
-
-.player-card:not(.empty) .player-card-inner {
-  background: var(--gradient-primary);
-  border: 2px solid;
+.player-card:hover:not(.empty) .player-card-inner {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
 }
 
 .player-card.editing .player-card-inner {
-  box-shadow: 0 0 0 2px #fbbf24, 0 4px 12px rgba(251, 191, 36, 0.3);
-  animation: pulse 1.5s infinite;
+    box-shadow: 0 0 0 2px #fbbf24, 0 4px 12px rgba(251, 191, 36, 0.3);
+    animation: pulse 1.5s infinite;
+}
+
+.player-card-icon {
+    position: relative;
+}
+
+.player-card-name {
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.8);
 }
 
 .player-card-actions {
-  opacity: 0;
-  transition: opacity var(--transition-fast) ease;
+    opacity: 0;
+    transition: opacity 0.2s ease;
 }
 
 .player-card:hover .player-card-actions {
-  opacity: 1;
+    opacity: 1;
 }
 
 .player-card-actions button {
-  padding: 4px 8px;
-  border-radius: var(--border-radius-sm);
-  background: rgba(0, 0, 0, 0.5);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  transition: all var(--transition-fast) ease;
+    padding: 4px 8px;
+    border-radius: 4px;
+    background: rgba(0, 0, 0, 0.5);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    transition: all 0.2s ease;
+}
+
+.player-card-actions button:hover {
+    background: rgba(0, 0, 0, 0.7);
+    transform: scale(1.1);
+}
+
+.player-card-edit:hover {
+    background: rgba(59, 130, 246, 0.5) !important;
+}
+
+.player-card-delete:hover {
+    background: rgba(239, 68, 68, 0.5) !important;
+}
+
+/* Layout responsivo */
+@media (max-width: 768px) {
+    .player-card {
+        min-height: 120px;
+    }
+    
+    .player-card-inner {
+        padding: 12px 8px;
+    }
+    
+    .player-card-icon {
+        font-size: 24px;
+    }
+    
+    .player-card-name {
+        font-size: 12px;
+    }
+    
+    .player-card-faction {
+        font-size: 11px;
+    }
 }
 
 /* ============================================
@@ -477,13 +323,17 @@ input[type="number"]:focus {
    ============================================ */
 
 #manualIcon {
+  position: fixed !important;
+  top: 20px !important;
+  right: 20px !important;
+  z-index: 60 !important;
   padding: 12px;
   border-radius: 50%;
   background: rgba(0, 0, 0, 0.5);
   backdrop-filter: blur(8px);
   border: 1px solid rgba(248, 214, 92, 0.3);
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
-  transition: all var(--transition-base);
+  transition: all 0.3s ease;
   cursor: pointer;
 }
 
@@ -496,33 +346,33 @@ input[type="number"]:focus {
 #manualIcon svg {
   width: 24px;
   height: 24px;
-  color: var(--accent);
+  color: #f8d65c;
 }
 
 /* ============================================
-   SELEÇÃO DE ÍCONES - RESPONSIVA
+   SELEÇÃO DE ÍCONES
    ============================================ */
 
 #iconSelection {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: var(--spacing-sm);
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
 }
 
 .icon-button {
-  aspect-ratio: 1;
-  border-radius: var(--border-radius-md);
+  min-width: 50px;
+  min-height: 50px;
+  border-radius: 10px;
   background: rgba(255, 255, 255, 0.02);
   display: flex;
   align-items: center;
   justify-content: center;
   font-size: 1.5rem;
   cursor: pointer;
-  transition: all 0.12s;
-  min-height: 50px;
+  transition: .12s;
 }
 
-.icon-button:hover:not(.disabled) {
+.icon-button:hover {
   transform: translateY(-4px);
   background: rgba(255, 255, 255, 0.05);
 }
@@ -534,7 +384,7 @@ input[type="number"]:focus {
 }
 
 .icon-button.disabled {
-  opacity: var(--opacity-disabled);
+  opacity: 0.4;
   cursor: not-allowed;
   filter: grayscale(0.7);
 }
@@ -545,20 +395,20 @@ input[type="number"]:focus {
 
 #aiButtonsContainer {
   display: flex;
-  gap: var(--spacing-sm);
+  gap: 8px;
   flex-wrap: wrap;
 }
 
 .ai-button-compact {
-  padding: var(--spacing-sm) var(--spacing-md);
-  border-radius: var(--border-radius-md);
+  padding: 8px 12px;
+  border-radius: 10px;
   font-size: 12px;
   font-weight: 600;
   cursor: pointer;
-  transition: all var(--transition-fast) ease;
+  transition: all 0.2s ease;
   border: 2px solid transparent;
   white-space: nowrap;
-  background: var(--gradient-primary);
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.02), rgba(0, 0, 0, 0.18));
   color: #fff;
 }
 
@@ -568,25 +418,25 @@ input[type="number"]:focus {
 }
 
 .ai-button-compact.easy {
-  background: var(--ai-easy-bg);
+  background: linear-gradient(135deg, rgba(34, 197, 94, 0.2), rgba(22, 163, 74, 0.2));
   color: #86efac;
   border-color: rgba(34, 197, 94, 0.3);
 }
 
 .ai-button-compact.medium {
-  background: var(--ai-medium-bg);
+  background: linear-gradient(135deg, rgba(59, 130, 246, 0.2), rgba(37, 99, 235, 0.2));
   color: #93c5fd;
   border-color: rgba(59, 130, 246, 0.3);
 }
 
 .ai-button-compact.hard {
-  background: var(--ai-hard-bg);
+  background: linear-gradient(135deg, rgba(245, 158, 11, 0.2), rgba(217, 119, 6, 0.2));
   color: #fde68a;
   border-color: rgba(245, 158, 11, 0.3);
 }
 
 .ai-button-compact.master {
-  background: var(--ai-master-bg);
+  background: linear-gradient(135deg, rgba(239, 68, 68, 0.2), rgba(220, 38, 38, 0.2));
   color: #fca5a5;
   border-color: rgba(239, 68, 68, 0.3);
 }
@@ -596,50 +446,49 @@ input[type="number"]:focus {
    ============================================ */
 
 .faction-dropdown {
-  background-color: rgba(17, 24, 39, 0.9);
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%23fbbf24'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E");
-  background-repeat: no-repeat;
-  background-position: right 12px center;
-  background-size: 16px;
-  cursor: pointer;
-  transition: all var(--transition-base);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
-  backdrop-filter: blur(8px);
-  height: 48px;
-  border: 1px solid rgba(251, 191, 36, 0.3);
-  border-radius: var(--border-radius-lg);
-  padding: 12px 40px 12px 12px;
-  color: white;
-  appearance: none;
+  background-color: rgba(17, 24, 39, 0.9) !important;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%23fbbf24'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E") !important;
+  background-repeat: no-repeat !important;
+  background-position: right 12px center !important;
+  background-size: 16px !important;
+  cursor: pointer !important;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2) !important;
+  backdrop-filter: blur(8px) !important;
+  height: 48px !important;
+  border: 1px solid rgba(251, 191, 36, 0.3) !important;
+  border-radius: 12px !important;
+  padding: 12px 40px 12px 12px !important;
+  color: white !important;
 }
 
 .faction-dropdown:hover {
-  background-color: rgba(30, 41, 59, 0.95);
-  border-color: rgba(251, 191, 36, 0.5);
-  box-shadow: 0 6px 20px rgba(251, 191, 36, 0.15);
-  transform: translateY(-1px);
+  background-color: rgba(30, 41, 59, 0.95) !important;
+  border-color: rgba(251, 191, 36, 0.5) !important;
+  box-shadow: 0 6px 20px rgba(251, 191, 36, 0.15) !important;
+  transform: translateY(-1px) !important;
 }
 
 .faction-dropdown:focus {
-  background-color: rgba(30, 41, 59, 0.95);
-  border-color: rgba(251, 191, 36, 0.7);
-  box-shadow: 0 0 0 3px rgba(251, 191, 36, 0.2), 0 8px 25px rgba(0, 0, 0, 0.3);
-  outline: none;
+  background-color: rgba(30, 41, 59, 0.95) !important;
+  border-color: rgba(251, 191, 36, 0.7) !important;
+  box-shadow: 0 0 0 3px rgba(251, 191, 36, 0.2), 0 8px 25px rgba(0, 0, 0, 0.3) !important;
+  outline: none !important;
 }
 
 .faction-dropdown option {
-  background-color: rgba(17, 24, 39, 0.95);
-  color: #f3f4f6;
-  padding: 12px 16px;
-  font-size: 13px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
-  transition: all var(--transition-fast) ease;
+  background-color: rgba(17, 24, 39, 0.95) !important;
+  color: #f3f4f6 !important;
+  padding: 12px 16px !important;
+  font-size: 13px !important;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05) !important;
+  transition: all 0.2s ease !important;
 }
 
 .faction-dropdown option:checked {
-  background: linear-gradient(135deg, rgba(251, 191, 36, 0.2), rgba(245, 158, 11, 0.1));
-  color: #fbbf24;
-  font-weight: 600;
+  background: linear-gradient(135deg, rgba(251, 191, 36, 0.2), rgba(245, 158, 11, 0.1)) !important;
+  color: #fbbf24 !important;
+  font-weight: 600 !important;
 }
 
 /* ============================================
@@ -650,11 +499,11 @@ input[type="number"]:focus {
   color: #cfcfcf;
   background: transparent;
   border: 1px solid transparent;
-  transition: all var(--transition-fast) ease;
+  transition: all 0.2s ease;
   width: 100%;
   text-align: left;
-  padding: var(--spacing-sm) var(--spacing-md);
-  border-radius: var(--border-radius-sm);
+  padding: 8px 16px;
+  border-radius: 6px;
   margin-bottom: 4px;
   cursor: pointer;
 }
@@ -671,17 +520,17 @@ input[type="number"]:focus {
 }
 
 /* ============================================
-   LAYOUT DO JOGO OTIMIZADO
+   LAYOUT DO JOGO
    ============================================ */
 
 #gameContainer {
   display: grid;
   grid-template-columns: 1fr;
-  gap: var(--spacing-md);
+  gap: 1rem;
   height: calc(100vh - 180px);
   margin-top: 80px;
   margin-bottom: 80px;
-  padding: 0 var(--spacing-md);
+  padding: 0 1rem;
   overflow: hidden;
 }
 
@@ -691,6 +540,7 @@ input[type="number"]:focus {
   top: 0;
   left: 0;
   right: 0;
+  z-index: 40;
   background: rgba(0, 0, 0, 0.6);
   backdrop-filter: blur(8px);
   border-bottom: 1px solid rgba(255, 255, 255, 0.06);
@@ -706,8 +556,7 @@ input[type="number"]:focus {
   background: rgba(31, 31, 31, 0.8);
   backdrop-filter: blur(8px);
   border: 1px solid rgba(255, 255, 255, 0.06);
-  border-radius: var(--border-radius-md);
-  padding: var(--spacing-md);
+  border-radius: 10px;
 }
 
 /* Mapa */
@@ -716,7 +565,7 @@ input[type="number"]:focus {
   width: 100%;
   height: 100%;
   min-height: 400px;
-  border-radius: var(--border-radius-md);
+  border-radius: 8px;
   overflow: hidden;
   box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
   background: #000;
@@ -729,7 +578,6 @@ input[type="number"]:focus {
   cursor: grab;
   touch-action: none;
   user-select: none;
-  -webkit-user-drag: none;
 }
 
 #mapViewport:active {
@@ -739,16 +587,17 @@ input[type="number"]:focus {
 /* Footer */
 #gameFooter {
   position: fixed;
-  bottom: var(--spacing-lg);
+  bottom: 16px;
   left: 50%;
   transform: translateX(-50%);
+  z-index: 45;
   width: 100%;
   max-width: 64rem;
-  padding: 0 var(--spacing-md);
+  padding: 0 1rem;
 }
 
 /* ============================================
-   CÉLULAS DO TABULEIRO - OTIMIZADAS
+   CÉLULAS DO TABULEIRO
    ============================================ */
 
 .board-cell {
@@ -757,7 +606,7 @@ input[type="number"]:focus {
   background: rgba(15, 15, 15, var(--cell-bg-opacity));
   backdrop-filter: blur(var(--cell-blur));
   border-radius: 4px;
-  transition: all var(--transition-fast) ease;
+  transition: all 0.2s ease;
   display: flex;
   flex-direction: column;
   justify-content: space-between;
@@ -765,14 +614,17 @@ input[type="number"]:focus {
   overflow: hidden;
   cursor: pointer;
   user-select: none;
-  contain: content;
 }
 
 .board-cell::before {
   content: '';
   position: absolute;
   inset: 0;
-  background: linear-gradient(135deg, rgba(255, 255, 255, 0.02) 0%, rgba(255, 255, 255, 0.008) 100%);
+  background: linear-gradient(
+    135deg,
+    rgba(255, 255, 255, 0.02) 0%,
+    rgba(255, 255, 255, 0.008) 100%
+  );
   z-index: -1;
   border-radius: 5px;
 }
@@ -789,19 +641,23 @@ input[type="number"]:focus {
 }
 
 .board-cell.region-selected {
-  border: 2px solid var(--accent);
-  background: rgba(248, 214, 92, calc(var(--cell-bg-opacity) * 3));
-  box-shadow: 0 0 10px rgba(248, 214, 92, 0.3);
-  transform: translateY(-1px);
+  border: 2px solid var(--accent) !important;
+  background: rgba(248, 214, 92, calc(var(--cell-bg-opacity) * 3)) !important;
+  box-shadow: 0 0 10px rgba(248, 214, 92, 0.3) !important;
+  transform: translateY(-1px) !important;
   z-index: 10;
 }
 
 .board-cell.player-owned {
-  border-left-width: 6px;
-  border-left-color: var(--accent);
+  border-left-width: 6px !important;
+  border-left-color: var(--accent) !important;
 }
 
-/* Tipografia das células otimizada */
+.board-cell.action-available {
+  position: relative;
+}
+
+/* Contraste do Texto nas Células */
 .board-cell .text-xs {
   font-size: 11px;
   line-height: 1.3;
@@ -817,7 +673,7 @@ input[type="number"]:focus {
   text-shadow: 0 1px 2px rgba(0, 0, 0, 0.7);
 }
 
-/* Elementos internos das células */
+/* Elementos da Célula */
 .board-cell .biome-indicator {
   font-size: 9px;
   padding: 2px 6px;
@@ -840,6 +696,12 @@ input[type="number"]:focus {
   border: 1px solid rgba(255, 255, 255, 0.08);
 }
 
+.board-cell .resource-value {
+  font-weight: 800;
+  color: var(--text-primary);
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.7);
+}
+
 .board-cell .cell-footer {
   display: flex;
   align-items: center;
@@ -849,51 +711,26 @@ input[type="number"]:focus {
   border-top: 1px solid rgba(255, 255, 255, 0.06);
 }
 
+.board-cell .controller-info {
+  font-size: 10px;
+  font-weight: 700;
+  color: rgba(255, 255, 255, 0.98);
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.8);
+}
+
 /* ============================================
-   SISTEMA DE BOTÕES OTIMIZADO
+   BOTÕES DE AÇÃO
    ============================================ */
 
-/* Classe base para botões */
-.btn {
-  position: relative;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  border: 1px solid transparent;
-  border-radius: var(--border-radius-md);
-  font-weight: 500;
-  font-family: inherit;
-  cursor: pointer;
-  transition: all var(--transition-fast) ease;
-  user-select: none;
-  touch-action: manipulation;
-  min-height: 2.75rem;
-  min-width: 2.75rem;
-  overflow: hidden;
-}
-
-.btn::after {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: -100%;
-  width: 100%;
-  height: 100%;
-  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.1), transparent);
-  transition: left 0.6s ease;
-}
-
-.btn:hover:not(:disabled)::after {
-  left: 100%;
-}
-
-/* Botões de ação específicos */
 .action-btn {
-  composes: btn;
-  background: var(--gradient-primary);
-  color: var(--text-primary);
-  padding: var(--spacing-sm) var(--spacing-md);
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.02), rgba(0, 0, 0, 0.18));
+  color: #fff;
+  padding: 8px 12px;
+  border-radius: 8px;
   border: 1px solid rgba(255, 255, 255, 0.04);
+  font-weight: 500;
+  transition: all 0.2s ease;
+  cursor: pointer;
 }
 
 .action-btn:hover:not(:disabled) {
@@ -902,49 +739,81 @@ input[type="number"]:focus {
 }
 
 .action-btn:disabled {
-  opacity: var(--opacity-disabled);
+  opacity: 0.45;
   cursor: not-allowed;
   background: linear-gradient(180deg, rgba(255, 255, 255, 0.01), rgba(0, 0, 0, 0.1));
 }
 
 /* ============================================
-   MODAIS - SISTEMA UNIFICADO
+   MODAIS
    ============================================ */
 
 .modal-overlay {
-  position: fixed;
+  position: fixed !important;
   inset: 0;
-  width: 100vw;
-  height: 100vh;
+  width: 100vw !important;
+  height: 100vh !important;
   background: rgba(0, 0, 0, 0.8);
   backdrop-filter: blur(4px);
+  z-index: 1000;
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: var(--spacing-md);
+  padding: 1rem;
 }
 
-.modal-content {
-  background: rgba(17, 24, 39, 0.98);
-  backdrop-filter: blur(25px) saturate(180%);
-  border: 1px solid rgba(255, 255, 255, 0.15);
-  border-radius: var(--border-radius-xl);
+.modal-overlay .relative {
+  background: rgba(17, 24, 39, 0.98) !important;
+  backdrop-filter: blur(25px) saturate(180%) !important;
+  border: 1px solid rgba(255, 255, 255, 0.15) !important;
+  border-radius: 1rem;
   box-shadow: 
     0 25px 50px -12px rgba(0, 0, 0, 0.5),
-    inset 0 1px 0 rgba(255, 255, 255, 0.1);
+    inset 0 1px 0 rgba(255, 255, 255, 0.1) !important;
   max-width: 90%;
   max-height: 90vh;
   overflow-y: auto;
-  contain: strict;
+}
+
+/* Títulos e Textos dos Modais */
+.modal-overlay h2, .modal-overlay h3, .modal-overlay h4 {
+  color: #fbbf24 !important;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.7) !important;
+  font-weight: 700 !important;
+  letter-spacing: 0.3px !important;
+}
+
+.modal-overlay p, .modal-overlay span:not(.icon), .modal-overlay div:not(.icon) {
+  color: rgba(255, 255, 255, 0.95) !important;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.7) !important;
+  font-weight: 500 !important;
+}
+
+/* Inputs em Modais */
+.modal-overlay input,
+.modal-overlay select,
+.modal-overlay textarea {
+  background: rgba(30, 41, 59, 0.9) !important;
+  color: var(--text-primary) !important;
+  border: 1px solid rgba(255, 255, 255, 0.2) !important;
+  font-weight: 500 !important;
+}
+
+.modal-overlay input:focus, 
+.modal-overlay select:focus, 
+.modal-overlay textarea:focus {
+  outline: none;
+  border-color: var(--accent) !important;
+  box-shadow: 0 0 0 2px rgba(248, 214, 92, 0.2) !important;
 }
 
 /* Modal de Negociação */
 #negotiationModal .negotiation-section {
-  transition: all var(--transition-fast) ease;
+  transition: all 0.2s ease;
   backdrop-filter: blur(4px);
-  padding: var(--spacing-md);
-  border-radius: var(--border-radius-md);
-  margin-bottom: var(--spacing-md);
+  padding: 1rem;
+  border-radius: 0.5rem;
+  margin-bottom: 1rem;
 }
 
 #negotiationModal .negotiation-section:hover {
@@ -952,12 +821,20 @@ input[type="number"]:focus {
   transform: translateY(-2px);
 }
 
+#negotiationModal .negotiation-section:first-child {
+  background: linear-gradient(135deg, rgba(34, 197, 94, 0.1), rgba(22, 163, 74, 0.1));
+}
+
+#negotiationModal .negotiation-section:last-child {
+  background: linear-gradient(135deg, rgba(239, 68, 68, 0.1), rgba(220, 38, 38, 0.1));
+}
+
 /* Modal de Estruturas */
 #structureModal .structure-option {
-  transition: all var(--transition-fast) ease;
+  transition: all 0.2s ease;
   border-width: 2px;
-  padding: var(--spacing-md);
-  border-radius: var(--border-radius-md);
+  padding: 1rem;
+  border-radius: 0.5rem;
   cursor: pointer;
 }
 
@@ -966,7 +843,7 @@ input[type="number"]:focus {
   box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
 }
 
-/* Cores das estruturas usando variáveis */
+/* Cores das estruturas */
 .bg-orange-500\/30 { background-color: rgba(249, 115, 22, 0.3); }
 .border-orange-500\/30 { border-color: rgba(249, 115, 22, 0.3); }
 .bg-blue-500\/30 { background-color: rgba(59, 130, 246, 0.3); }
@@ -979,11 +856,12 @@ input[type="number"]:focus {
 .border-green-500\/30 { border-color: rgba(34, 197, 94, 0.3); }
 
 /* ============================================
-   TOOLTIP OTIMIZADA
+   TOOLTIP
    ============================================ */
 
 #regionTooltip {
-  position: fixed;
+  position: fixed !important;
+  z-index: 90;
   pointer-events: none;
   transition: opacity 0.15s ease, transform 0.15s ease;
   transform-origin: center bottom;
@@ -992,8 +870,8 @@ input[type="number"]:focus {
   background: rgba(31, 41, 55, 0.95);
   backdrop-filter: blur(8px);
   border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: var(--border-radius-md);
-  padding: var(--spacing-lg);
+  border-radius: 0.5rem;
+  padding: 0.75rem;
   box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
 }
 
@@ -1009,8 +887,8 @@ input[type="number"]:focus {
 }
 
 .tooltip-section {
-  margin-bottom: var(--spacing-sm);
-  padding-bottom: var(--spacing-sm);
+  margin-bottom: 0.5rem;
+  padding-bottom: 0.5rem;
   border-bottom: 1px solid rgba(255, 255, 255, 0.1);
 }
 
@@ -1031,7 +909,7 @@ input[type="number"]:focus {
   border-style: solid;
   margin-bottom: 12px;
   padding: 10px;
-  border-radius: var(--border-radius-md);
+  border-radius: 0.5rem;
 }
 
 #eventBanner.animate-pulse-slow {
@@ -1062,22 +940,42 @@ input[type="number"]:focus {
   box-shadow: 0 0 15px rgba(251, 191, 36, 0.2);
 }
 
+/* Texto do banner */
+#eventBanner #eventBannerTitle {
+  color: #ffffff !important;
+  font-weight: 700 !important;
+  font-size: 13px !important;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.8) !important;
+}
+
+#eventBanner #eventBannerEffect {
+  color: rgba(255, 255, 255, 0.95) !important;
+  font-weight: 500 !important;
+  font-size: 11px !important;
+}
+
+#eventBanner #eventBannerTurns {
+  background: rgba(0, 0, 0, 0.6) !important;
+  color: #ffffff !important;
+  font-weight: 600 !important;
+}
+
 /* ============================================
    CONTROLE DE TRANSPARÊNCIA
    ============================================ */
 
 .transparency-control {
-  transition: all var(--transition-base);
+  transition: all 0.3s ease;
   position: relative;
-  padding: var(--spacing-lg);
+  padding: 0.75rem;
   background: rgba(55, 65, 81, 0.3);
-  border-radius: var(--border-radius-md);
+  border-radius: 0.5rem;
   border: 1px solid rgba(255, 255, 255, 0.05);
 }
 
 .transparency-control:hover {
-  background: rgba(55, 65, 81, 0.5);
-  border-color: rgba(255, 255, 255, 0.1);
+  background: rgba(55, 65, 81, 0.5) !important;
+  border-color: rgba(255, 255, 255, 0.1) !important;
 }
 
 .transparency-slider {
@@ -1091,7 +989,7 @@ input[type="number"]:focus {
     rgba(255, 255, 255, 0.05) 100%
   );
   outline: none;
-  transition: all var(--transition-fast) ease;
+  transition: all 0.2s ease;
 }
 
 .transparency-slider:hover {
@@ -1112,7 +1010,7 @@ input[type="number"]:focus {
   cursor: pointer;
   border: 2px solid rgba(0, 0, 0, 0.3);
   box-shadow: 0 2px 8px rgba(248, 214, 92, 0.3);
-  transition: all var(--transition-fast) ease;
+  transition: all 0.2s ease;
 }
 
 .transparency-slider::-webkit-slider-thumb:hover {
@@ -1128,7 +1026,7 @@ input[type="number"]:focus {
   cursor: pointer;
   border: 2px solid rgba(0, 0, 0, 0.3);
   box-shadow: 0 2px 8px rgba(248, 214, 92, 0.3);
-  transition: all var(--transition-fast) ease;
+  transition: all 0.2s ease;
 }
 
 /* ============================================
@@ -1148,7 +1046,7 @@ input[type="number"]:focus {
 }
 
 .log-filter-sidebar {
-  transition: all var(--transition-fast) ease;
+  transition: all 0.2s ease;
   border: 1px solid transparent;
   cursor: pointer;
   padding: 2px 8px;
@@ -1157,23 +1055,23 @@ input[type="number"]:focus {
 }
 
 .log-filter-sidebar:hover {
-  background: rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.1) !important;
 }
 
 .log-filter-sidebar.active {
-  background: rgba(59, 130, 246, 0.2);
-  border-color: rgba(59, 130, 246, 0.4);
-  color: #60a5fa;
+  background: rgba(59, 130, 246, 0.2) !important;
+  border-color: rgba(59, 130, 246, 0.4) !important;
+  color: #60a5fa !important;
 }
 
-/* Cores dos tipos de log usando variáveis */
-.log-type-action { color: var(--color-info); }
-.log-type-build { color: var(--color-warning); }
-.log-type-explore { color: var(--color-success); }
+/* Cores dos tipos de log */
+.log-type-action { color: #60a5fa; }
+.log-type-build { color: #f59e0b; }
+.log-type-explore { color: #10b981; }
 .log-type-collect { color: #8b5cf6; }
 .log-type-negotiate { color: #f97316; }
-.log-type-event { color: var(--color-danger); }
-.log-type-victory { color: var(--color-success); }
+.log-type-event { color: #ef4444; }
+.log-type-victory { color: #10b981; }
 .log-type-income { color: #22c55e; }
 
 /* ============================================
@@ -1183,11 +1081,11 @@ input[type="number"]:focus {
 .achievement {
   display: flex;
   align-items: center;
-  gap: var(--spacing-sm);
-  padding: var(--spacing-sm);
+  gap: 8px;
+  padding: 8px;
   border-bottom: 1px solid rgba(255, 255, 255, 0.05);
-  border-radius: var(--border-radius-sm);
-  transition: all var(--transition-fast) ease;
+  border-radius: 6px;
+  transition: all 0.2s ease;
 }
 
 .achievement:hover {
@@ -1225,7 +1123,7 @@ input[type="number"]:focus {
 
 .ai-thinking {
   animation: pulse 2s infinite;
-  border-color: #8b5cf6;
+  border-color: #8b5cf6 !important;
 }
 
 .ai-difficulty-badge {
@@ -1237,25 +1135,10 @@ input[type="number"]:focus {
   margin-left: 4px;
 }
 
-.ai-easy { 
-  background-color: var(--ai-easy-color); 
-  color: white; 
-}
-
-.ai-medium { 
-  background-color: var(--ai-medium-color); 
-  color: white; 
-}
-
-.ai-hard { 
-  background-color: var(--ai-hard-color); 
-  color: black; 
-}
-
-.ai-master { 
-  background-color: var(--ai-master-color); 
-  color: white; 
-}
+.ai-easy { background-color: var(--ai-easy-color); color: white; }
+.ai-medium { background-color: var(--ai-medium-color); color: white; }
+.ai-hard { background-color: var(--ai-hard-color); color: black; }
+.ai-master { background-color: var(--ai-master-color); color: white; }
 
 /* ============================================
    MANUAL - IMAGENS
@@ -1264,11 +1147,11 @@ input[type="number"]:focus {
 .manual-content img {
   display: block;
   margin: 2rem auto;
-  background-color: transparent;
-  border: none;
-  box-shadow: none;
-  outline: none;
-  border-radius: 0;
+  background-color: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+  outline: none !important;
+  border-radius: 0 !important;
   -webkit-clip-path: inset(2px round 12px);
   clip-path: inset(2px round 12px);
   filter: drop-shadow(0 15px 25px rgba(0, 0, 0, 0.7));
@@ -1310,6 +1193,105 @@ input[type="number"]:focus {
 }
 
 /* ============================================
+   RESPONSIVIDADE
+   ============================================ */
+
+/* Desktop Grande */
+@media (min-width: 1024px) {
+  #gameContainer {
+    grid-template-columns: 320px 1fr;
+    height: calc(100vh - 160px);
+  }
+}
+
+/* Tablet */
+@media (max-width: 1024px) {
+  #sidebar {
+    display: none;
+  }
+  
+  #gameContainer {
+    grid-template-columns: 1fr;
+    height: calc(100vh - 200px);
+    margin-top: 70px;
+    margin-bottom: 100px;
+  }
+}
+
+/* Mobile Médio */
+@media (max-width: 768px) {
+  #gameContainer {
+    height: calc(100vh - 220px);
+    margin-top: 60px;
+    margin-bottom: 120px;
+    padding: 0.5rem;
+  }
+  
+  .board-cell {
+    padding: 6px;
+  }
+  
+  .action-btn {
+    padding: 6px 8px;
+    font-size: 13px;
+  }
+}
+
+/* Mobile Pequeno */
+@media (max-width: 480px) {
+  #gameContainer {
+    height: calc(100vh - 240px);
+    margin-top: 50px;
+    margin-bottom: 140px;
+    padding: 0.25rem;
+  }
+  
+  .board-cell {
+    padding: 4px;
+  }
+  
+  .board-cell .text-xs {
+    font-size: 10px;
+  }
+  
+  .board-cell .text-\[10px\] {
+    font-size: 9px;
+  }
+}
+
+/* ============================================
+   ACESSIBILIDADE
+   ============================================ */
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* Modo Claro do Sistema */
+@media (prefers-color-scheme: light) {
+  body {
+    background-color: #f5f5f5;
+    color: #333;
+  }
+  
+  .board-cell {
+    background: rgba(30, 30, 30, 0.8);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+  }
+  
+  .board-cell.controlled {
+    background: rgba(var(--player-rgb), 0.3) !important;
+    border-left: 6px solid var(--player-color);
+  }
+}
+
+/* ============================================
    VÍDEO DE ABERTURA
    ============================================ */
 
@@ -1331,271 +1313,29 @@ input[type="number"]:focus {
 }
 
 /* ============================================
-   MEDIA QUERIES CONSOLIDADAS
+   ESTILOS MOBILE - ADICIONAR AO FINAL DO CSS
    ============================================ */
 
-/* Desktop Grande (>= 1024px) */
-@media (min-width: 64rem) {
+/* Dispositivos móveis (até 768px) */
+@media (max-width: 768px) {
+  /* Reset de altura para mobile */
+  html, body {
+    height: auto;
+    min-height: 100vh;
+    overflow-y: auto;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  /* Layout principal em coluna única */
   #gameContainer {
-    grid-template-columns: 320px 1fr;
-    height: calc(100vh - 160px);
+    grid-template-columns: 1fr !important;
+    height: auto;
+    margin: 60px 0 120px 0 !important;
+    padding: 0.5rem;
+    gap: 0.5rem;
   }
-  
-  .initial-controls {
-    grid-template-columns: 2fr 1fr 1fr 1fr;
-    gap: var(--spacing-sm);
-  }
-}
 
-/* Tablet (768px - 1023px) */
-@media (min-width: 48rem) and (max-width: 63.9375rem) {
-  #sidebar {
-    display: none;
-  }
-  
-  #gameContainer {
-    grid-template-columns: 1fr;
-    height: calc(100vh - 200px);
-    margin-top: 70px;
-    margin-bottom: 100px;
-  }
-  
-  .initial-controls {
-    grid-template-columns: repeat(2, 1fr);
-  }
-}
-
-/* Mobile Grande (481px - 767px) */
-@media (min-width: 30.0625rem) and (max-width: 47.9375rem) {
-  #gameContainer {
-    height: calc(100vh - 220px);
-    margin-top: 60px;
-    margin-bottom: 120px;
-    padding: 0 var(--spacing-sm);
-    gap: var(--spacing-sm);
-  }
-  
-  .board-cell {
-    padding: 6px;
-  }
-  
-  .action-btn {
-    padding: 6px 8px;
-    font-size: 13px;
-  }
-  
-  .initial-controls {
-    grid-template-columns: 1fr;
-  }
-  
-  #iconSelection {
-    grid-template-columns: repeat(2, 1fr);
-  }
-  
-  .icon-button {
-    min-height: 56px;
-    font-size: 1.75rem;
-  }
-  
-  .player-card {
-    aspect-ratio: 1;
-  }
-  
-  /* Game Footer Mobile */
-  #gameFooter {
-    padding: var(--spacing-sm);
-    max-height: 90px;
-  }
-  
-  #gameFooter .flex {
-    flex-direction: row;
-    gap: var(--spacing-sm);
-  }
-  
-  #gameFooter .flex > div:first-child {
-    display: grid;
-    grid-template-columns: repeat(2, 1fr);
-    gap: var(--spacing-xs);
-    width: 55%;
-  }
-  
-  .action-btn {
-    padding: 6px 4px;
-    font-size: 11px;
-    min-height: 36px;
-  }
-  
-  #endTurnBtn {
-    padding: 8px 12px;
-    font-size: 12px;
-    min-height: 36px;
-    width: 45%;
-  }
-  
-  #actionsLeft {
-    display: none;
-  }
-}
-
-/* Mobile Pequeno (até 480px) */
-@media (max-width: 30rem) {
-  #gameContainer {
-    height: calc(100vh - 240px);
-    margin-top: 50px;
-    margin-bottom: 140px;
-    padding: 0 var(--spacing-xs);
-  }
-  
-  .board-cell {
-    padding: 4px;
-  }
-  
-  .board-cell .text-xs {
-    font-size: 10px;
-  }
-  
-  .board-cell .text-\[10px\] {
-    font-size: 9px;
-  }
-  
-  .action-btn {
-    padding: 8px 10px;
-    font-size: 12px;
-  }
-  
-  #endTurnBtn {
-    padding: 12px;
-    font-size: 14px;
-  }
-  
-  .player-modal {
-    padding: var(--spacing-lg);
-    margin: var(--spacing-xs);
-  }
-  
-  .icon-button {
-    width: 44px;
-    height: 44px;
-    font-size: 20px;
-  }
-  
-  /* Botões muito pequenos - apenas ícones */
-  @media (max-width: 22.5rem) {
-    .action-btn span:not(.icon) {
-      display: none;
-    }
-    
-    .action-btn {
-      font-size: 16px;
-      min-width: 44px;
-      padding: 8px;
-    }
-    
-    #endTurnBtn {
-      font-size: 11px;
-      padding: 6px 8px;
-    }
-  }
-}
-
-/* Tablets em modo paisagem */
-@media (min-width: 48.0625rem) and (max-width: 64rem) and (orientation: landscape) {
-  #gameContainer {
-    grid-template-columns: 300px 1fr;
-    height: calc(100vh - 140px);
-  }
-  
-  #sidebar {
-    display: flex;
-  }
-  
-  .board-cell {
-    padding: 10px;
-  }
-  
-  .board-cell .text-xs {
-    font-size: 11px;
-  }
-}
-
-/* Ajustes para quando o teclado está aberto */
-@media (max-height: 31.25rem) {
-  #gameContainer {
-    margin-bottom: 100px;
-  }
-  
-  #gameFooter {
-    padding: var(--spacing-sm);
-  }
-}
-
-/* Modo Claro do Sistema (opcional) */
-@media (prefers-color-scheme: light) {
-  body {
-    background-color: #f5f5f5;
-    color: #333;
-  }
-  
-  .board-cell {
-    background: rgba(30, 30, 30, 0.8);
-    border: 1px solid rgba(255, 255, 255, 0.1);
-  }
-  
-  .board-cell.controlled {
-    background: rgba(var(--player-rgb), 0.3);
-    border-left: 6px solid var(--player-color);
-  }
-}
-
-/* ============================================
-   FALLBACKS PARA NAVEGADORES ANTIGOS
-   ============================================ */
-
-/* Fallback para aspect-ratio */
-@supports not (aspect-ratio: 1) {
-  .player-card {
-    height: 0;
-    padding-bottom: 133.33%; /* 4:3 aspect ratio */
-  }
-  
-  .icon-button {
-    height: 0;
-    padding-bottom: 100%;
-  }
-}
-
-/* Fallback para backdrop-filter */
-@supports not (backdrop-filter: blur(8px)) {
-  .glass-effect,
-  #sidebar,
-  .player-modal,
-  .modal-content {
-    background: rgba(31, 31, 31, 0.95);
-  }
-  
-  #manualIcon,
-  #gameNavbar {
-    background: rgba(0, 0, 0, 0.8);
-  }
-}
-
-/* Fallback para contain */
-@supports not (contain: layout) {
-  #gameContainer,
-  .board-cell,
-  .modal-overlay .relative {
-    /* Fallback para isolamento */
-    position: relative;
-    z-index: 1;
-  }
-}
-
-/* ============================================
-   ESTILOS ESPECÍFICOS MOBILE
-   ============================================ */
-
-@media (max-width: 48rem) {
-  /* Sidebar mobile */
+  /* Sidebar oculta por padrão, acessível via botão */
   #sidebar {
     display: none;
     position: fixed;
@@ -1607,17 +1347,17 @@ input[type="number"]:focus {
     background: rgba(15, 23, 42, 0.98);
     backdrop-filter: blur(20px);
     max-height: 100vh;
-    padding: var(--spacing-md);
+    padding: 1rem;
     overflow-y: auto;
     border: 1px solid rgba(255, 255, 255, 0.1);
     border-radius: 0;
   }
-  
+
   #sidebar.active {
     display: flex;
     animation: slideInRight 0.3s ease-out;
   }
-  
+
   /* Botão de toggle para sidebar */
   .sidebar-toggle {
     position: fixed;
@@ -1636,21 +1376,21 @@ input[type="number"]:focus {
     color: white;
     box-shadow: 0 4px 20px rgba(59, 130, 246, 0.4);
     cursor: pointer;
-    transition: all var(--transition-base);
+    transition: all 0.3s ease;
   }
-  
+
   .sidebar-toggle:hover {
     transform: scale(1.1);
     box-shadow: 0 6px 25px rgba(59, 130, 246, 0.6);
   }
-  
-  /* Ajustes no mapa mobile */
+
+  /* Ajustes no mapa */
   #gameMap {
     min-height: 70vh;
-    border-radius: var(--border-radius-lg);
+    border-radius: 12px;
     border: 1px solid rgba(255, 255, 255, 0.1);
   }
-  
+
   /* Controles de zoom para mobile */
   .mobile-zoom-controls {
     position: absolute;
@@ -1661,7 +1401,7 @@ input[type="number"]:focus {
     flex-direction: column;
     gap: 8px;
   }
-  
+
   .mobile-zoom-controls button {
     width: 44px;
     height: 44px;
@@ -1674,274 +1414,565 @@ input[type="number"]:focus {
     align-items: center;
     justify-content: center;
     cursor: pointer;
-    transition: all var(--transition-fast) ease;
+    transition: all 0.2s ease;
   }
-  
+
   .mobile-zoom-controls button:hover {
     background: rgba(0, 0, 0, 0.9);
     transform: scale(1.1);
   }
-  
-  /* Tooltip mobile */
+
+  /* Reduzir padding das células */
+  .board-cell {
+    padding: 6px 4px;
+    border-radius: 6px;
+  }
+
+  /* Ajustar texto das células */
+  .board-cell .text-xs {
+    font-size: 10px !important;
+    line-height: 1.2;
+  }
+
+  .board-cell .text-\[10px\] {
+    font-size: 9px !important;
+  }
+
+  /* ============ GAME FOOTER MOBILE ============ */
+
+@media (max-width: 768px) {
+  /* 1. REDUZIR ALTURA TOTAL DO FOOTER */
+  #gameFooter {
+    padding: 0.5rem !important;
+    min-height: auto !important;
+    max-height: 90px !important; /* Altura fixa máxima */
+  }
+
+  /* 2. LAYOUT MAIS COMPACTO PARA OS BOTÕES */
+  #gameFooter .flex {
+    flex-direction: row !important; /* Linha única */
+    gap: 0.5rem !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+  }
+
+  /* 3. CONTAINER DE AÇÕES EM GRID 2x2 MAS MAIS COMPACTO */
+  #gameFooter .flex > div:first-child {
+    display: grid !important;
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: 0.25rem !important;
+    width: 55% !important; /* Ocupa menos espaço */
+  }
+
+  /* 4. BOTÕES DE AÇÃO SUPER COMPACTOS */
+  .action-btn {
+    padding: 6px 4px !important;
+    font-size: 11px !important;
+    min-height: 36px !important;
+    border-radius: 6px !important;
+    margin: 0 !important;
+  }
+
+  /* 5. BOTÃO DE TÉRMINO DE TURNO MAIS PEQUENO */
+  #endTurnBtn {
+    padding: 8px 12px !important;
+    font-size: 12px !important;
+    min-height: 36px !important;
+    width: 45% !important; /* Ocupa o resto do espaço */
+    margin: 0 !important;
+  }
+
+  /* 6. CONTADOR DE AÇÕES - REMOVER E INTEGRAR NO FOOTER */
+  #actionsLeft {
+    display: none !important; /* Remover elemento separado */
+  }
+
+  /* 7. AJUSTAR O CONTAINER DO JOGO PARA DAR MAIS ESPAÇO */
+  #gameContainer {
+    margin-bottom: 100px !important; /* Reduzir espaço para o footer */
+  }
+
+  /* 8. MODAIS DEVEM FICAR ACIMA DO FOOTER */
+  .modal-overlay {
+    z-index: 1000 !important;
+    padding-bottom: 100px !important; /* Garantir que modais não fiquem atrás */
+  }
+
+  /* 9. TOOLTIP AJUSTADA PARA MOBILE */
   #regionTooltip {
-    bottom: 0;
-    left: 0;
-    right: 0;
-    top: auto;
-    max-width: 100%;
-    border-radius: 16px 16px 0 0;
-    margin: 0;
-    padding: var(--spacing-xl) var(--spacing-md) var(--spacing-md);
-    transform: none;
-    animation: slideUp 0.3s ease;
-    box-shadow: 0 -4px 30px rgba(0, 0, 0, 0.4);
-    border: 1px solid rgba(255, 255, 255, 0.15);
-    border-bottom: none;
+    bottom: 100px !important; /* Acima do footer */
+    max-width: 90vw !important;
+    left: 5vw !important;
+    right: 5vw !important;
+    transform: none !important;
+  }
+
+  /* 10. BOTÕES ESPECÍFICOS - ÍCONES SEM TEXTO EM TELAS MUITO PEQUENAS */
+  @media (max-width: 360px) {
+    .action-btn span:not(.icon) {
+      display: none !important;
+    }
+    
+    .action-btn {
+      font-size: 16px !important;
+      min-width: 44px !important;
+      padding: 8px !important;
+    }
+    
+    #endTurnBtn {
+      font-size: 11px !important;
+      padding: 6px 8px !important;
+    }
+  }
+
+  /* 11. ESTADO DESABILITADO VISUALMENTE MELHOR */
+  .action-btn:disabled {
+    opacity: 0.4 !important;
+    transform: scale(0.95) !important;
+  }
+}
+
+   /* 12. OCULTAR TOOLTIP QUANDO COLOCAR NA GAMEFOOTER */
+   @media (max-width: 768px) {
+  #gameFooter {
+    z-index: 100 !important;
   }
   
-  /* Indicador de arrastar para fechar no mobile */
-  #regionTooltip::before {
-    content: '';
-    position: absolute;
-    top: 10px;
-    left: 50%;
-    transform: translateX(-50%);
-    width: 50px;
-    height: 5px;
-    background: rgba(255, 255, 255, 0.4);
-    border-radius: 3px;
+  #regionTooltip {
+    z-index: 90 !important;
+    pointer-events: none !important;
   }
   
-  /* Tela de cadastro mobile */
+  #regionTooltip > * {
+    pointer-events: auto !important;
+  }
+   }
+
+  /* ============ TELA DE CADASTRO MOBILE ============ */
+  
   #initialScreen {
-    padding: var(--spacing-md);
+    padding: 1rem !important;
   }
-  
+
   .player-modal {
-    padding: var(--spacing-xl);
-    border-radius: var(--border-radius-2xl);
-    margin: var(--spacing-sm);
-    max-height: 90vh;
-    overflow-y: auto;
+    padding: 1.5rem !important;
+    border-radius: 16px !important;
+    margin: 0.5rem !important;
+    max-height: 90vh !important;
+    overflow-y: auto !important;
   }
-  
-  /* Inputs mobile */
+
+  /* Layout vertical para os controles */
+  #initialScreen .flex.items-center.gap-4 {
+    flex-direction: column !important;
+    gap: 1rem !important;
+  }
+
+  #initialScreen .flex.items-center.gap-4 > div {
+    width: 100% !important;
+    margin-bottom: 0.5rem !important;
+  }
+
+  /* Inputs full width com fonte legível */
   #playerName {
-    width: 100%;
-    font-size: 16px;
-    padding: 14px 16px;
-    border-radius: var(--border-radius-lg);
+    width: 100% !important;
+    font-size: 16px !important;
+    padding: 14px 16px !important;
+    border-radius: 12px !important;
   }
-  
+
   .faction-dropdown {
-    width: 100%;
-    font-size: 16px;
-    padding: 14px 16px;
-    height: 52px;
+    width: 100% !important;
+    font-size: 16px !important;
+    padding: 14px 16px !important;
+    height: 52px !important;
   }
-  
-  /* Botões de ação mobile */
+
+  /* Botões reorganizados em grid */
+  #initialScreen .flex.gap-3 {
+    display: grid !important;
+    grid-template-columns: 1fr 1fr !important;
+    gap: 0.75rem !important;
+    width: 100% !important;
+    margin-top: 1rem !important;
+  }
+
+  /* Botões de ação maiores para toque */
   #addPlayerBtn,
   #cancelEditBtn,
   #startGameBtn {
-    padding: 16px;
-    font-size: 15px;
-    min-height: 52px;
-    border-radius: var(--border-radius-lg);
-    font-weight: 600;
+    padding: 16px !important;
+    font-size: 15px !important;
+    min-height: 52px !important;
+    border-radius: 12px !important;
+    font-weight: 600 !important;
   }
-  
-  /* Botões de IA mobile */
+
+  /* Ícones em grid responsivo */
+  #iconSelection {
+    justify-content: center !important;
+    gap: 8px !important;
+    margin: 1rem 0 !important;
+  }
+
+  .icon-button {
+    width: 48px !important;
+    height: 48px !important;
+    font-size: 22px !important;
+    border-radius: 14px !important;
+  }
+
+  /* Botões de IA em grid 2x2 */
   #aiButtonsContainer {
-    display: grid;
-    grid-template-columns: repeat(2, 1fr);
-    gap: var(--spacing-lg);
-    margin: var(--spacing-md) 0;
+    display: grid !important;
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: 0.75rem !important;
+    margin: 1rem 0 !important;
   }
-  
+
   .ai-button-compact {
-    padding: 12px;
-    font-size: 12px;
-    border-radius: var(--border-radius-lg);
-    min-height: 48px;
+    padding: 12px !important;
+    font-size: 12px !important;
+    border-radius: 12px !important;
+    min-height: 48px !important;
   }
-  
-  /* Lista de jogadores mobile */
+
+  /* Lista de jogadores em grid 2x2 */
   #registeredPlayersList {
-    display: grid;
-    grid-template-columns: repeat(2, 1fr);
-    gap: var(--spacing-lg);
-    margin-top: var(--spacing-md);
+    display: grid !important;
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: 0.75rem !important;
+    margin-top: 1rem !important;
   }
+
+  .player-icon-minimal {
+    width: 100% !important;
+    height: auto !important;
+    aspect-ratio: 1 !important;
+  }
+
+  .player-icon-mini {
+    width: 100% !important;
+    height: 100% !important;
+    font-size: 24px !important;
+    border-radius: 12px !important;
+  }
+
+  /* ============ NAVBAR MOBILE ============ */
   
-  /* Navbar mobile */
   #gameNavbar {
-    padding: var(--spacing-lg) var(--spacing-md);
-    height: 60px;
+    padding: 0.75rem 1rem !important;
+    height: 60px !important;
   }
-  
+
   #gameNavbar .max-w-7xl {
-    padding: 0;
+    padding: 0 !important;
   }
-  
+
+  /* Título compacto */
   #gameNavbar h1 {
-    font-size: 1.1rem;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    max-width: 150px;
+    font-size: 1.1rem !important;
+    white-space: nowrap !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+    max-width: 150px !important;
   }
-  
+
+  /* Info de turno compacta */
   #turnInfo {
-    font-size: 12px;
-    white-space: nowrap;
+    font-size: 12px !important;
+    white-space: nowrap !important;
   }
-  
+
   #phaseIndicator {
-    font-size: 11px;
-    padding: 4px 8px;
-    background: rgba(251, 191, 36, 0.15);
-    border-radius: 12px;
-    border: 1px solid rgba(251, 191, 36, 0.3);
+    font-size: 11px !important;
+    padding: 4px 8px !important;
+    background: rgba(251, 191, 36, 0.15) !important;
+    border-radius: 12px !important;
+    border: 1px solid rgba(251, 191, 36, 0.3) !important;
   }
-  
+
+  /* Ocultar lista de jogadores na navbar mobile */
   #playerHeaderList {
-    display: none;
+    display: none !important;
   }
-  
+
+  /* Botões da navbar ajustados */
   #manualIconNavbar,
   #achievementsNavBtn {
-    padding: 10px;
-    min-width: 44px;
-    min-height: 44px;
+    padding: 10px !important;
+    min-width: 44px !important;
+    min-height: 44px !important;
   }
+
+  /* ============ MODAIS MOBILE ============ */
   
-  /* Modais mobile */
   .modal-overlay {
-    padding: var(--spacing-sm);
-    align-items: flex-start;
-    padding-top: 3rem;
-    overflow-y: auto;
+    padding: 0.5rem !important;
+    align-items: flex-start !important;
+    padding-top: 3rem !important;
+    overflow-y: auto !important;
   }
-  
+
   .modal-content {
-    width: 95%;
-    max-height: 85vh;
-    margin: 0 auto;
-    border-radius: var(--border-radius-2xl);
+    width: 95% !important;
+    max-height: 85vh !important;
+    margin: 0 auto !important;
+    border-radius: 16px !important;
   }
-  
-  /* Modal de manual mobile */
+
+  /* Modal de manual em coluna */
   #manualModal .flex-col {
-    flex-direction: column;
+    flex-direction: column !important;
   }
-  
+
   #manualModal nav {
-    width: 100%;
-    margin-bottom: var(--spacing-md);
+    width: 100% !important;
+    margin-bottom: 1rem !important;
   }
-  
+
   #manualTabs {
-    display: flex;
-    overflow-x: auto;
-    padding-bottom: var(--spacing-sm);
-    gap: var(--spacing-sm);
-    -webkit-overflow-scrolling: touch;
+    display: flex !important;
+    overflow-x: auto !important;
+    padding-bottom: 0.5rem !important;
+    gap: 0.5rem !important;
+    -webkit-overflow-scrolling: touch !important;
   }
-  
+
   .manual-tab {
-    white-space: nowrap;
-    padding: 10px 14px;
-    font-size: 13px;
-    min-width: fit-content;
+    white-space: nowrap !important;
+    padding: 10px 14px !important;
+    font-size: 13px !important;
+    min-width: fit-content !important;
   }
-  
-  /* Modal de negociação mobile */
+
+  /* Modal de negociação em coluna */
   #negotiationModal .grid-cols-2 {
-    grid-template-columns: 1fr;
+    grid-template-columns: 1fr !important;
   }
-  
-  /* Modal de estruturas mobile */
+
+  /* Modal de estruturas em coluna única */
   #structureModal #structureOptions {
-    grid-template-columns: 1fr;
-    gap: var(--spacing-lg);
+    grid-template-columns: 1fr !important;
+    gap: 0.75rem !important;
   }
-  
+
   .structure-option {
-    padding: var(--spacing-xl);
+    padding: 1.25rem !important;
   }
-  
-  /* Modal de vitória mobile */
+
+  /* Modal de vitória ajustado */
   #victoryModal .relative {
-    margin: var(--spacing-md);
-    padding: var(--spacing-xl);
+    margin: 1rem !important;
+    padding: 1.5rem !important;
   }
-  
+
   #victoryModal .text-8xl {
-    font-size: 4rem;
+    font-size: 4rem !important;
   }
-  
+
   #victoryModal .text-4xl {
-    font-size: 2rem;
+    font-size: 2rem !important;
   }
-  
+
   #victoryModal .grid-cols-2 {
-    grid-template-columns: 1fr;
-    gap: var(--spacing-md);
+    grid-template-columns: 1fr !important;
+    gap: 1rem !important;
   }
+
+  /* ============ TOOLTIP MOBILE ============ */
   
-  /* Otimização de toque */
+  #regionTooltip {
+    position: fixed !important;
+    bottom: 0 !important;
+    left: 0 !important;
+    right: 0 !important;
+    top: auto !important;
+    max-width: 100% !important;
+    border-radius: 16px 16px 0 0 !important;
+    margin: 0 !important;
+    padding: 1.5rem 1rem 1rem 1rem !important;
+    transform: none !important;
+    animation: slideUp 0.3s ease !important;
+    box-shadow: 0 -4px 30px rgba(0, 0, 0, 0.4) !important;
+    border: 1px solid rgba(255, 255, 255, 0.15) !important;
+    border-bottom: none !important;
+  }
+
+  /* Indicador de arrastar para fechar */
+  #regionTooltip::before {
+    content: '' !important;
+    position: absolute !important;
+    top: 10px !important;
+    left: 50% !important;
+    transform: translateX(-50%) !important;
+    width: 50px !important;
+    height: 5px !important;
+    background: rgba(255, 255, 255, 0.4) !important;
+    border-radius: 3px !important;
+  }
+
+  /* ============ UTILITÁRIOS MOBILE ============ */
+  
+  /* Melhorar toque em botões */
   button, 
   .icon-button,
   .ai-button-compact,
   .action-btn {
-    min-height: 44px;
-    min-width: 44px;
+    min-height: 44px !important;
+    min-width: 44px !important;
   }
-  
+
+  /* Aumentar área de toque para células */
+  .board-cell {
+    padding: 10px 6px !important;
+  }
+
   /* Evitar seleção de texto acidental */
   * {
-    -webkit-touch-callout: none;
-    -webkit-user-select: none;
-    user-select: none;
+    -webkit-touch-callout: none !important;
+    -webkit-user-select: none !important;
+    user-select: none !important;
   }
-  
+
   /* Permitir seleção em inputs */
   input, textarea, select {
-    -webkit-user-select: text;
-    user-select: text;
-    font-size: 16px;
+    -webkit-user-select: text !important;
+    user-select: text !important;
+    font-size: 16px !important; /* Prevenir zoom automático do iOS */
   }
-  
+
   /* Melhorar scroll no mobile */
   .modal-content,
   #sidebar,
   .player-modal {
-    -webkit-overflow-scrolling: touch;
-    scroll-behavior: smooth;
+    -webkit-overflow-scrolling: touch !important;
+    scroll-behavior: smooth !important;
   }
-  
+
   /* Ajustar fonte para legibilidade */
   body {
-    font-size: 16px;
+    font-size: 16px !important;
+  }
+
+  /* Otimizar animações para mobile */
+  @media (prefers-reduced-motion: no-preference) {
+    .board-cell {
+      transition: transform 0.15s ease, background 0.15s ease !important;
+    }
+    
+    .action-btn {
+      transition: all 0.15s ease !important;
+    }
+  }
+}
+
+/* Dispositivos muito pequenos (iPhone SE, etc) */
+@media (max-width: 375px) {
+  #gameContainer {
+    padding: 0.25rem !important;
+  }
+
+  .board-cell {
+    padding: 8px 4px !important;
+  }
+
+  .board-cell .text-xs {
+    font-size: 9px !important;
+  }
+
+  .board-cell .text-\[10px\] {
+    font-size: 8px !important;
+  }
+
+  .action-btn {
+    padding: 8px 10px !important;
+    font-size: 12px !important;
+  }
+
+  #endTurnBtn {
+    padding: 12px !important;
+    font-size: 14px !important;
+  }
+
+  /* Tela de cadastro ainda menor */
+  .player-modal {
+    padding: 1.25rem !important;
+    margin: 0.25rem !important;
+  }
+
+  .icon-button {
+    width: 44px !important;
+    height: 44px !important;
+    font-size: 20px !important;
+  }
+}
+
+/* Tablets em modo paisagem */
+@media (min-width: 769px) and (max-width: 1024px) and (orientation: landscape) {
+  #gameContainer {
+    grid-template-columns: 300px 1fr !important;
+    height: calc(100vh - 140px) !important;
+  }
+
+  #sidebar {
+    display: flex !important;
+  }
+
+  .sidebar-toggle {
+    display: none !important;
+  }
+
+  /* Ajustar células para tablets */
+  .board-cell {
+    padding: 10px !important;
+  }
+
+  .board-cell .text-xs {
+    font-size: 11px !important;
   }
 }
 
 /* Animações específicas para mobile */
-@keyframes slideUpMobile {
+@keyframes slideUp {
   from {
-    transform: translateY(100%);
+    transform: translateY(100%) !important;
   }
   to {
-    transform: translateY(0);
+    transform: translateY(0) !important;
   }
 }
 
-@keyframes slideInRightMobile {
+@keyframes slideInRight {
   from {
-    transform: translateX(100%);
+    transform: translateX(100%) !important;
   }
   to {
-    transform: translateX(0);
+    transform: translateX(0) !important;
+  }
+}
+
+/* Classe para modo paisagem */
+body.landscape .board-cell {
+  padding: 8px !important;
+}
+
+body.landscape #gameFooter {
+  padding: 0.5rem !important;
+}
+
+/* Classe para modo retrato */
+body.portrait #gameContainer {
+  margin-bottom: 140px !important;
+}
+
+/* Ajustes para quando o teclado está aberto */
+@media (max-height: 500px) {
+  #gameContainer {
+    margin-bottom: 100px !important;
+  }
+  
+  #gameFooter {
+    padding: 0.5rem !important;
   }
 }
