@@ -2,17 +2,30 @@
 <html lang="pt-BR">
 <head>
   <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes, viewport-fit=cover">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-  <title>Gaia Dominium</title>
-
+  <meta name="theme-color" content="#0b0d0f">
+  <meta name="description" content="Gaia Dominium - Um jogo estratégico de conquista de territórios">
+  
+  <!-- Preload de recursos críticos -->
+  <link rel="preload" href="./assets/images/gaia-inicio.png" as="image">
+  <link rel="preload" href="./assets/images/gaia-mapa.png" as="image">
+  <link rel="preload" href="./assets/videos/gaia-video-inicio.mp4" as="video" type="video/mp4">
+  
+  <!-- Fontes -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  
   <!-- Tailwind CSS -->
   <script src="https://cdn.tailwindcss.com"></script>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-  <!-- Adicione esta linha ANTES do style.css -->
+  
+  <!-- CSS -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css">
   <link rel="stylesheet" href="style.css">
+  
+  <title>Gaia Dominium</title>
 </head>
 <body class="bg-cover bg-center bg-fixed" style="background-image: url('./assets/images/gaia-inicio.png');">
 
@@ -26,43 +39,44 @@
   <!-- ==================== MODAIS GLOBAIS (Z-INDEX ALTO) ==================== -->
   
 <!-- MANUAL MODAL -->
-  <div id="manualModal" class="hidden fixed inset-0 z-[100] flex items-center justify-center p-6 modal-content-container">
-    <div class="absolute inset-0 bg-black/60"></div>
-    <div class="relative w-full max-w-4xl bg-gray-900/95 backdrop-blur-md border border-white/10 rounded-2xl shadow-xl p-6">
-      <div class="flex justify-between items-center mb-6">
-        <h2 class="text-2xl text-yellow-300 font-semibold">Manual do Jogo — Gaia Dominium</h2>
-        <div class="flex items-center gap-3">
-          <button id="manualCloseBtn" class="text-gray-300 hover:text-white text-xl" aria-label="Fechar manual">✖</button>
-        </div>
+<div id="manualModal" class="hidden fixed inset-0 z-[100] flex items-center justify-center p-6 modal-content-container">
+  <div class="absolute inset-0 bg-black/60"></div>
+  <div class="relative w-full max-w-4xl bg-gray-900/95 backdrop-blur-md border border-white/10 rounded-2xl shadow-xl p-6">
+    <div class="flex justify-between items-center mb-6">
+      <h2 class="text-2xl text-yellow-300 font-semibold">Manual do Jogo — Gaia Dominium</h2>
+      <div class="flex items-center gap-3">
+        <button id="manualCloseBtn" class="text-gray-300 hover:text-white text-xl" aria-label="Fechar manual">✖</button>
       </div>
-      <div class="flex flex-col md:flex-row gap-6">
-        <nav class="w-full md:w-48">
-          <ul id="manualTabs" class="space-y-2">
-            <li><button class="manual-tab w-full text-left px-4 py-2 rounded-md" data-tab="tab-o-jogo">O Jogo</button></li>
-            <li><button class="manual-tab w-full text-left px-4 py-2 rounded-md" data-tab="tab-gaia">Universo Gaia</button></li>
-            <li><button class="manual-tab w-full text-left px-4 py-2 rounded-md" data-tab="tab-regioes">As regiões</button></li>
-            <li><button class="manual-tab w-full text-left px-4 py-2 rounded-md" data-tab="tab-faccoes">As facções</button></li>
-            <li><button class="manual-tab w-full text-left px-4 py-2 rounded-md" data-tab="tab-fases">Fases do Jogo</button></li>
-            <li><button class="manual-tab w-full text-left px-4 py-2 rounded-md" data-tab="tab-acoes">Ações</button></li>
-            <li><button class="manual-tab w-full text-left px-4 py-2 rounded-md" data-tab="tab-negociacao">Negociação</button></li>
-            <li><button class="manual-tab w-full text-left px-4 py-2 rounded-md" data-tab="tab-estrutura">Estruturas</button></li>
-            <li><button class="manual-tab w-full text-left px-4 py-2 rounded-md" data-tab="tab-conquistas">Conquistas</button></li>
-          </ul>
-        </nav>
-        <div class="flex-1 overflow-auto max-h-[60vh]">
-          <section id="tab-o-jogo" class="manual-content p-2"></section>
-          <section id="tab-gaia" class="manual-content hidden p-2"></section>
-          <section id="tab-regioes" class="manual-content hidden p-2"></section>
-          <section id="tab-faccoes" class="manual-content hidden p-2"></section>
-          <section id="tab-fases" class="manual-content hidden p-2"></section>
-          <section id="tab-acoes" class="manual-content hidden p-2"></section>
-          <section id="tab-negociacao" class="manual-content hidden p-2"></section>
-          <section id="tab-estrutura" class="manual-content hidden p-2"></section>
-          <section id="tab-conquistas" class="manual-content hidden p-2"></section>
-        </div>
+    </div>
+    <div class="flex flex-col md:flex-row gap-6">
+      <nav class="w-full md:w-48">
+        <ul id="manualTabs" class="space-y-2">
+          <li><button class="manual-tab w-full text-left px-4 py-2 rounded-md" data-tab="tab-o-jogo">O Jogo</button></li>
+          <li><button class="manual-tab w-full text-left px-4 py-2 rounded-md" data-tab="tab-gaia">Universo Gaia</button></li>
+          <li><button class="manual-tab w-full text-left px-4 py-2 rounded-md" data-tab="tab-regioes">As regiões</button></li>
+          <li><button class="manual-tab w-full text-left px-4 py-2 rounded-md" data-tab="tab-faccoes">As facções</button></li>
+          <li><button class="manual-tab w-full text-left px-4 py-2 rounded-md" data-tab="tab-fases">Fases do Jogo</button></li>
+          <li><button class="manual-tab w-full text-left px-4 py-2 rounded-md" data-tab="tab-acoes">Ações</button></li>
+          <li><button class="manual-tab w-full text-left px-4 py-2 rounded-md" data-tab="tab-negociacao">Negociação</button></li>
+          <li><button class="manual-tab w-full text-left px-4 py-2 rounded-md" data-tab="tab-estrutura">Estruturas</button></li>
+          <li><button class="manual-tab w-full text-left px-4 py-2 rounded-md" data-tab="tab-conquistas">Conquistas</button></li>
+        </ul>
+      </nav>
+      <div class="flex-1 overflow-auto max-h-[60vh]">
+        <section id="tab-o-jogo" class="manual-content p-2"></section>
+        <section id="tab-gaia" class="manual-content hidden p-2"></section>
+        <section id="tab-regioes" class="manual-content hidden p-2"></section>
+        <section id="tab-faccoes" class="manual-content hidden p-2"></section>
+        <section id="tab-fases" class="manual-content hidden p-2"></section>
+        <section id="tab-acoes" class="manual-content hidden p-2"></section>
+        <section id="tab-negociacao" class="manual-content hidden p-2"></section>
+        <section id="tab-estrutura" class="manual-content hidden p-2"></section>
+        <section id="tab-conquistas" class="manual-content hidden p-2"></section>
       </div>
     </div>
   </div>
+</div>
+
   <!-- GLOBAL ALERT / CONFIRM MODAL -->
   <div id="alertModal" class="hidden fixed inset-0 z-[101] flex items-center justify-center p-4">
     <div class="relative w-full max-w-sm bg-gray-900 border border-yellow-500/50 rounded-xl shadow-2xl p-6 transform scale-100 transition-all">
@@ -199,8 +213,6 @@
     <button id="negSendBtn" class="px-4 py-2 bg-green-600 rounded-md text-white disabled:opacity-50 disabled:cursor-not-allowed hover:bg-green-700 transition" disabled>Enviar Proposta (custa 1 🪙)</button>
   </div>
 </div>
-      </div>
-    </div>
   </div>
 
   <!-- NEGOTIATION RESPONSE MODAL (target view) -->
@@ -401,12 +413,49 @@
       
       <div 
         id="registeredPlayersList" 
-        class="flex flex-wrap gap-1.5 justify-center items-center py-2 px-1">
-        <!-- Lista será preenchida por JS -->
-        <div class="col-span-2 text-center py-8 text-gray-400">
-          <div class="text-3xl mb-3">👤</div>
-          <p class="text-sm">Nenhum jogador adicionado</p>
-          <p class="text-xs mt-2 text-gray-300">Adicione jogadores para começar a partida</p>
+        class="grid grid-cols-2 md:grid-cols-4 gap-3 py-3 px-2 max-w-full min-h-[140px]">
+        <!-- Slot 1 -->
+        <div class="player-card empty" data-index="0" data-empty="true">
+          <div class="player-card-inner flex flex-col items-center justify-center h-full p-4 rounded-lg border-2 border-dashed border-gray-600 bg-gray-800/20 transition-all hover:border-gray-500">
+            <div class="text-3xl text-gray-500 mb-2">👤</div>
+            <div class="text-center">
+              <div class="text-sm font-bold text-gray-500">Slot Vazio</div>
+              <div class="text-xs text-gray-500 mt-1">Adicione um jogador</div>
+            </div>
+          </div>
+        </div>
+        
+        <!-- Slot 2 -->
+        <div class="player-card empty" data-index="1" data-empty="true">
+          <div class="player-card-inner flex flex-col items-center justify-center h-full p-4 rounded-lg border-2 border-dashed border-gray-600 bg-gray-800/20 transition-all hover:border-gray-500">
+            <div class="text-3xl text-gray-500 mb-2">👤</div>
+            <div class="text-center">
+              <div class="text-sm font-bold text-gray-500">Slot Vazio</div>
+              <div class="text-xs text-gray-500 mt-1">Adicione um jogador</div>
+            </div>
+          </div>
+        </div>
+        
+        <!-- Slot 3 -->
+        <div class="player-card empty" data-index="2" data-empty="true">
+          <div class="player-card-inner flex flex-col items-center justify-center h-full p-4 rounded-lg border-2 border-dashed border-gray-600 bg-gray-800/20 transition-all hover:border-gray-500">
+            <div class="text-3xl text-gray-500 mb-2">👤</div>
+            <div class="text-center">
+              <div class="text-sm font-bold text-gray-500">Slot Vazio</div>
+              <div class="text-xs text-gray-500 mt-1">Adicione um jogador</div>
+            </div>
+          </div>
+        </div>
+        
+        <!-- Slot 4 -->
+        <div class="player-card empty" data-index="3" data-empty="true">
+          <div class="player-card-inner flex flex-col items-center justify-center h-full p-4 rounded-lg border-2 border-dashed border-gray-600 bg-gray-800/20 transition-all hover:border-gray-500">
+            <div class="text-3xl text-gray-500 mb-2">👤</div>
+            <div class="text-center">
+              <div class="text-sm font-bold text-gray-500">Slot Vazio</div>
+              <div class="text-xs text-gray-500 mt-1">Adicione um jogador</div>
+            </div>
+          </div>
         </div>
       </div>
     </div>

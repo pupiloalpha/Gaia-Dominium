@@ -83,10 +83,14 @@ p {
 #gameFooter { z-index: 45; }
 #regionTooltip { z-index: 90; }
 #eventModal { z-index: 95; }
-#negotiationModal, #negResponseModal { z-index: 98; }
+#incomeModal { z-index: 96; }
+#structureModal { z-index: 97; }
+#negotiationModal { z-index: 98; }
+#negResponseModal { z-index: 99; }
 #manualModal { z-index: 100; }
 #alertModal { z-index: 101; }
 #victoryModal { z-index: 102; }
+#saveLoadModal { z-index: 103; }
 
 /* ============================================
    UTILITÁRIOS REUTILIZÁVEIS
@@ -235,10 +239,9 @@ input[type="text"]:focus, select:focus, input[type="number"]:focus {
   box-shadow: 0 0 0 2px rgba(248, 214, 92, 0.2);
 }
 
-/* Estilos para os novos cartões de jogador */
+/* Estilos para os cartões de jogador */
 .player-card {
     transition: all 0.2s ease;
-    min-height: 140px;
     position: relative;
 }
 
@@ -748,21 +751,20 @@ input[type="text"]:focus, select:focus, input[type="number"]:focus {
    MODAIS
    ============================================ */
 
-.modal-overlay {
-  position: fixed !important;
-  inset: 0;
-  width: 100vw !important;
-  height: 100vh !important;
-  background: rgba(0, 0, 0, 0.8);
-  backdrop-filter: blur(4px);
-  z-index: 1000;
+.modal-content-container {
+  position: relative;
+  width: 100%;
+  height: 100%;
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 1rem;
 }
 
-.modal-overlay .relative {
+.modal-content-container > .absolute {
+  z-index: -1;
+}
+
+.modal-content-container > .relative {
   background: rgba(17, 24, 39, 0.98) !important;
   backdrop-filter: blur(25px) saturate(180%) !important;
   border: 1px solid rgba(255, 255, 255, 0.15) !important;
@@ -776,32 +778,36 @@ input[type="text"]:focus, select:focus, input[type="number"]:focus {
 }
 
 /* Títulos e Textos dos Modais */
-.modal-overlay h2, .modal-overlay h3, .modal-overlay h4 {
+.modal-content-container h2, 
+.modal-content-container h3, 
+.modal-content-container h4 {
   color: #fbbf24 !important;
   text-shadow: 0 2px 4px rgba(0, 0, 0, 0.7) !important;
   font-weight: 700 !important;
   letter-spacing: 0.3px !important;
 }
 
-.modal-overlay p, .modal-overlay span:not(.icon), .modal-overlay div:not(.icon) {
+.modal-content-container p, 
+.modal-content-container span:not(.icon), 
+.modal-content-container div:not(.icon) {
   color: rgba(255, 255, 255, 0.95) !important;
   text-shadow: 0 1px 2px rgba(0, 0, 0, 0.7) !important;
   font-weight: 500 !important;
 }
 
 /* Inputs em Modais */
-.modal-overlay input,
-.modal-overlay select,
-.modal-overlay textarea {
+.modal-content-container input,
+.modal-content-container select,
+.modal-content-container textarea {
   background: rgba(30, 41, 59, 0.9) !important;
   color: var(--text-primary) !important;
   border: 1px solid rgba(255, 255, 255, 0.2) !important;
   font-weight: 500 !important;
 }
 
-.modal-overlay input:focus, 
-.modal-overlay select:focus, 
-.modal-overlay textarea:focus {
+.modal-content-container input:focus, 
+.modal-content-container select:focus, 
+.modal-content-container textarea:focus {
   outline: none;
   border-color: var(--accent) !important;
   box-shadow: 0 0 0 2px rgba(248, 214, 92, 0.2) !important;
@@ -1193,6 +1199,27 @@ input[type="text"]:focus, select:focus, input[type="number"]:focus {
 }
 
 /* ============================================
+   VÍDEO DE ABERTURA
+   ============================================ */
+
+#introVideo {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  z-index: 9999;
+  background-color: black;
+  transition: opacity 0.5s ease-out;
+}
+
+#introVideo.hidden {
+  opacity: 0;
+  pointer-events: none;
+}
+
+/* ============================================
    RESPONSIVIDADE
    ============================================ */
 
@@ -1260,63 +1287,9 @@ input[type="text"]:focus, select:focus, input[type="number"]:focus {
 }
 
 /* ============================================
-   ACESSIBILIDADE
+   MOBILE ESPECÍFICO
    ============================================ */
 
-@media (prefers-reduced-motion: reduce) {
-  *,
-  *::before,
-  *::after {
-    animation-duration: 0.01ms !important;
-    animation-iteration-count: 1 !important;
-    transition-duration: 0.01ms !important;
-  }
-}
-
-/* Modo Claro do Sistema */
-@media (prefers-color-scheme: light) {
-  body {
-    background-color: #f5f5f5;
-    color: #333;
-  }
-  
-  .board-cell {
-    background: rgba(30, 30, 30, 0.8);
-    border: 1px solid rgba(255, 255, 255, 0.1);
-  }
-  
-  .board-cell.controlled {
-    background: rgba(var(--player-rgb), 0.3) !important;
-    border-left: 6px solid var(--player-color);
-  }
-}
-
-/* ============================================
-   VÍDEO DE ABERTURA
-   ============================================ */
-
-#introVideo {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  z-index: 9999;
-  background-color: black;
-  transition: opacity 0.5s ease-out;
-}
-
-#introVideo.hidden {
-  opacity: 0;
-  pointer-events: none;
-}
-
-/* ============================================
-   ESTILOS MOBILE - ADICIONAR AO FINAL DO CSS
-   ============================================ */
-
-/* Dispositivos móveis (até 768px) */
 @media (max-width: 768px) {
   /* Reset de altura para mobile */
   html, body {
@@ -1438,33 +1411,27 @@ input[type="text"]:focus, select:focus, input[type="number"]:focus {
     font-size: 9px !important;
   }
 
-  /* ============ GAME FOOTER MOBILE ============ */
-
-@media (max-width: 768px) {
-  /* 1. REDUZIR ALTURA TOTAL DO FOOTER */
+  /* Game Footer Mobile */
   #gameFooter {
     padding: 0.5rem !important;
     min-height: auto !important;
-    max-height: 90px !important; /* Altura fixa máxima */
+    max-height: 90px !important;
   }
 
-  /* 2. LAYOUT MAIS COMPACTO PARA OS BOTÕES */
   #gameFooter .flex {
-    flex-direction: row !important; /* Linha única */
+    flex-direction: row !important;
     gap: 0.5rem !important;
     align-items: center !important;
     justify-content: space-between !important;
   }
 
-  /* 3. CONTAINER DE AÇÕES EM GRID 2x2 MAS MAIS COMPACTO */
   #gameFooter .flex > div:first-child {
     display: grid !important;
     grid-template-columns: repeat(2, 1fr) !important;
     gap: 0.25rem !important;
-    width: 55% !important; /* Ocupa menos espaço */
+    width: 55% !important;
   }
 
-  /* 4. BOTÕES DE AÇÃO SUPER COMPACTOS */
   .action-btn {
     padding: 6px 4px !important;
     font-size: 11px !important;
@@ -1473,41 +1440,36 @@ input[type="text"]:focus, select:focus, input[type="number"]:focus {
     margin: 0 !important;
   }
 
-  /* 5. BOTÃO DE TÉRMINO DE TURNO MAIS PEQUENO */
   #endTurnBtn {
     padding: 8px 12px !important;
     font-size: 12px !important;
     min-height: 36px !important;
-    width: 45% !important; /* Ocupa o resto do espaço */
+    width: 45% !important;
     margin: 0 !important;
   }
 
-  /* 6. CONTADOR DE AÇÕES - REMOVER E INTEGRAR NO FOOTER */
   #actionsLeft {
-    display: none !important; /* Remover elemento separado */
+    display: none !important;
   }
 
-  /* 7. AJUSTAR O CONTAINER DO JOGO PARA DAR MAIS ESPAÇO */
   #gameContainer {
-    margin-bottom: 100px !important; /* Reduzir espaço para o footer */
+    margin-bottom: 100px !important;
   }
 
-  /* 8. MODAIS DEVEM FICAR ACIMA DO FOOTER */
-  .modal-overlay {
+  .modal-content-container {
     z-index: 1000 !important;
-    padding-bottom: 100px !important; /* Garantir que modais não fiquem atrás */
+    padding-bottom: 100px !important;
   }
 
-  /* 9. TOOLTIP AJUSTADA PARA MOBILE */
   #regionTooltip {
-    bottom: 100px !important; /* Acima do footer */
+    bottom: 100px !important;
     max-width: 90vw !important;
     left: 5vw !important;
     right: 5vw !important;
     transform: none !important;
   }
 
-  /* 10. BOTÕES ESPECÍFICOS - ÍCONES SEM TEXTO EM TELAS MUITO PEQUENAS */
+  /* Botões muito pequenos */
   @media (max-width: 360px) {
     .action-btn span:not(.icon) {
       display: none !important;
@@ -1525,31 +1487,13 @@ input[type="text"]:focus, select:focus, input[type="number"]:focus {
     }
   }
 
-  /* 11. ESTADO DESABILITADO VISUALMENTE MELHOR */
+  /* Estado desabilitado melhorado */
   .action-btn:disabled {
     opacity: 0.4 !important;
     transform: scale(0.95) !important;
   }
-}
-
-   /* 12. OCULTAR TOOLTIP QUANDO COLOCAR NA GAMEFOOTER */
-   @media (max-width: 768px) {
-  #gameFooter {
-    z-index: 100 !important;
-  }
   
-  #regionTooltip {
-    z-index: 90 !important;
-    pointer-events: none !important;
-  }
-  
-  #regionTooltip > * {
-    pointer-events: auto !important;
-  }
-   }
-
-  /* ============ TELA DE CADASTRO MOBILE ============ */
-  
+  /* Tela de cadastro mobile */
   #initialScreen {
     padding: 1rem !important;
   }
@@ -1562,7 +1506,6 @@ input[type="text"]:focus, select:focus, input[type="number"]:focus {
     overflow-y: auto !important;
   }
 
-  /* Layout vertical para os controles */
   #initialScreen .flex.items-center.gap-4 {
     flex-direction: column !important;
     gap: 1rem !important;
@@ -1573,7 +1516,6 @@ input[type="text"]:focus, select:focus, input[type="number"]:focus {
     margin-bottom: 0.5rem !important;
   }
 
-  /* Inputs full width com fonte legível */
   #playerName {
     width: 100% !important;
     font-size: 16px !important;
@@ -1588,7 +1530,6 @@ input[type="text"]:focus, select:focus, input[type="number"]:focus {
     height: 52px !important;
   }
 
-  /* Botões reorganizados em grid */
   #initialScreen .flex.gap-3 {
     display: grid !important;
     grid-template-columns: 1fr 1fr !important;
@@ -1597,7 +1538,6 @@ input[type="text"]:focus, select:focus, input[type="number"]:focus {
     margin-top: 1rem !important;
   }
 
-  /* Botões de ação maiores para toque */
   #addPlayerBtn,
   #cancelEditBtn,
   #startGameBtn {
@@ -1608,7 +1548,6 @@ input[type="text"]:focus, select:focus, input[type="number"]:focus {
     font-weight: 600 !important;
   }
 
-  /* Ícones em grid responsivo */
   #iconSelection {
     justify-content: center !important;
     gap: 8px !important;
@@ -1622,7 +1561,6 @@ input[type="text"]:focus, select:focus, input[type="number"]:focus {
     border-radius: 14px !important;
   }
 
-  /* Botões de IA em grid 2x2 */
   #aiButtonsContainer {
     display: grid !important;
     grid-template-columns: repeat(2, 1fr) !important;
@@ -1637,7 +1575,6 @@ input[type="text"]:focus, select:focus, input[type="number"]:focus {
     min-height: 48px !important;
   }
 
-  /* Lista de jogadores em grid 2x2 */
   #registeredPlayersList {
     display: grid !important;
     grid-template-columns: repeat(2, 1fr) !important;
@@ -1645,21 +1582,7 @@ input[type="text"]:focus, select:focus, input[type="number"]:focus {
     margin-top: 1rem !important;
   }
 
-  .player-icon-minimal {
-    width: 100% !important;
-    height: auto !important;
-    aspect-ratio: 1 !important;
-  }
-
-  .player-icon-mini {
-    width: 100% !important;
-    height: 100% !important;
-    font-size: 24px !important;
-    border-radius: 12px !important;
-  }
-
-  /* ============ NAVBAR MOBILE ============ */
-  
+  /* Navbar mobile */
   #gameNavbar {
     padding: 0.75rem 1rem !important;
     height: 60px !important;
@@ -1669,7 +1592,6 @@ input[type="text"]:focus, select:focus, input[type="number"]:focus {
     padding: 0 !important;
   }
 
-  /* Título compacto */
   #gameNavbar h1 {
     font-size: 1.1rem !important;
     white-space: nowrap !important;
@@ -1678,7 +1600,6 @@ input[type="text"]:focus, select:focus, input[type="number"]:focus {
     max-width: 150px !important;
   }
 
-  /* Info de turno compacta */
   #turnInfo {
     font-size: 12px !important;
     white-space: nowrap !important;
@@ -1692,12 +1613,10 @@ input[type="text"]:focus, select:focus, input[type="number"]:focus {
     border: 1px solid rgba(251, 191, 36, 0.3) !important;
   }
 
-  /* Ocultar lista de jogadores na navbar mobile */
   #playerHeaderList {
     display: none !important;
   }
 
-  /* Botões da navbar ajustados */
   #manualIconNavbar,
   #achievementsNavBtn {
     padding: 10px !important;
@@ -1705,23 +1624,22 @@ input[type="text"]:focus, select:focus, input[type="number"]:focus {
     min-height: 44px !important;
   }
 
-  /* ============ MODAIS MOBILE ============ */
-  
-  .modal-overlay {
+  /* Modais mobile */
+  .modal-content-container {
     padding: 0.5rem !important;
     align-items: flex-start !important;
     padding-top: 3rem !important;
     overflow-y: auto !important;
   }
 
-  .modal-content {
+  .modal-content-container > .relative {
     width: 95% !important;
     max-height: 85vh !important;
     margin: 0 auto !important;
     border-radius: 16px !important;
   }
 
-  /* Modal de manual em coluna */
+  /* Modal de manual mobile */
   #manualModal .flex-col {
     flex-direction: column !important;
   }
@@ -1746,12 +1664,12 @@ input[type="text"]:focus, select:focus, input[type="number"]:focus {
     min-width: fit-content !important;
   }
 
-  /* Modal de negociação em coluna */
+  /* Modal de negociação mobile */
   #negotiationModal .grid-cols-2 {
     grid-template-columns: 1fr !important;
   }
 
-  /* Modal de estruturas em coluna única */
+  /* Modal de estruturas mobile */
   #structureModal #structureOptions {
     grid-template-columns: 1fr !important;
     gap: 0.75rem !important;
@@ -1761,7 +1679,7 @@ input[type="text"]:focus, select:focus, input[type="number"]:focus {
     padding: 1.25rem !important;
   }
 
-  /* Modal de vitória ajustado */
+  /* Modal de vitória mobile */
   #victoryModal .relative {
     margin: 1rem !important;
     padding: 1.5rem !important;
@@ -1780,10 +1698,8 @@ input[type="text"]:focus, select:focus, input[type="number"]:focus {
     gap: 1rem !important;
   }
 
-  /* ============ TOOLTIP MOBILE ============ */
-  
+  /* Tooltip mobile */
   #regionTooltip {
-    position: fixed !important;
     bottom: 0 !important;
     left: 0 !important;
     right: 0 !important;
@@ -1799,7 +1715,6 @@ input[type="text"]:focus, select:focus, input[type="number"]:focus {
     border-bottom: none !important;
   }
 
-  /* Indicador de arrastar para fechar */
   #regionTooltip::before {
     content: '' !important;
     position: absolute !important;
@@ -1812,8 +1727,6 @@ input[type="text"]:focus, select:focus, input[type="number"]:focus {
     border-radius: 3px !important;
   }
 
-  /* ============ UTILITÁRIOS MOBILE ============ */
-  
   /* Melhorar toque em botões */
   button, 
   .icon-button,
@@ -1839,11 +1752,11 @@ input[type="text"]:focus, select:focus, input[type="number"]:focus {
   input, textarea, select {
     -webkit-user-select: text !important;
     user-select: text !important;
-    font-size: 16px !important; /* Prevenir zoom automático do iOS */
+    font-size: 16px !important;
   }
 
   /* Melhorar scroll no mobile */
-  .modal-content,
+  .modal-content-container > .relative,
   #sidebar,
   .player-modal {
     -webkit-overflow-scrolling: touch !important;
@@ -1974,5 +1887,34 @@ body.portrait #gameContainer {
   
   #gameFooter {
     padding: 0.5rem !important;
+  }
+}
+
+/* ACESSIBILIDADE */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* Modo Claro do Sistema */
+@media (prefers-color-scheme: light) {
+  body {
+    background-color: #f5f5f5;
+    color: #333;
+  }
+  
+  .board-cell {
+    background: rgba(30, 30, 30, 0.8);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+  }
+  
+  .board-cell.controlled {
+    background: rgba(var(--player-rgb), 0.3) !important;
+    border-left: 6px solid var(--player-color);
   }
 }
