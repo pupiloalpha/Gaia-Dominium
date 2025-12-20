@@ -130,91 +130,6 @@ class GameLogic {
   handleCollect() { this.actionsLogic.handleCollect(); }
   handleBuild(type) { this.actionsLogic.handleBuild(type); }
   performAction(type) { return this.actionsLogic.consumeAction(); }
-
-async showChoice(title, message, options) {
-  if (window.uiManager?.modals?.showChoice) {
-    return await window.uiManager.modals.showChoice(title, message, options);
-  }
-  
-  // Fallback simples usando confirm
-  const optionText = options.map((opt, i) => `${i+1}. ${opt}`).join('\n');
-  const fullMessage = `${message}\n\n${optionText}\n\nDigite 1 para "${options[0]}" ou 2 para "${options[1]}"`;
-  
-  // Para mais de 2 opções, precisaríamos de um modal personalizado
-  if (options.length === 2) {
-    const choice = confirm(`${title}\n\n${fullMessage}\n\nOK para "${options[0]}", Cancelar para "${options[1]}"`);
-    return choice ? options[0] : options[1];
-  }
-  
-  // Fallback para múltiplas opções (usando prompt)
-  const input = prompt(`${title}\n\n${fullMessage}`);
-  const index = parseInt(input) - 1;
-  
-  if (index >= 0 && index < options.length) {
-    return options[index];
-  }
-  
-  return null;
-}
-
-canAffordAction(actionType) {
-  const player = getCurrentPlayer();
-  
-  if (actionType === 'disputar') {
-    // Verificar ambos os sistemas
-    const standardCost = GAME_CONFIG.ACTION_DETAILS.disputar.cost;
-    const standardPvCost = GAME_CONFIG.ACTION_DETAILS.disputar.pv;
-    
-    const diceCost = DICE_SYSTEM.DICE_COST;
-    const dicePvCost = DICE_SYSTEM.DICE_PV_COST;
-    
-    // Verificar sistema padrão
-    const canStandard = Object.entries(standardCost).every(([resource, amount]) => {
-      return (player.resources[resource] || 0) >= amount;
-    }) && player.victoryPoints >= standardPvCost;
-    
-    // Verificar sistema de dados
-    const canDice = Object.entries(diceCost).every(([resource, amount]) => {
-      return (player.resources[resource] || 0) >= amount;
-    }) && player.victoryPoints >= dicePvCost;
-    
-    return canStandard || canDice;
-  }
-  
-  // Resto do método existente...
-  let cost = GAME_CONFIG.ACTION_DETAILS[actionType]?.cost || {};
-
-  // Verificar descontos de facção
-  if (actionType === 'explorar') {
-    cost = this.factionLogic.modifyExploreCost(player, cost);
-  } else if (actionType === 'construir') {
-    // Já tratado no handleBuild
-  } else if (actionType === 'negociar') {
-     const negCost = this.factionLogic.modifyNegotiationCost(player);
-     return player.resources.ouro >= negCost;
-  }
-
-  return Object.entries(cost).every(([resource, amount]) => {
-    return (player.resources[resource] || 0) >= amount;
-  });
-}
-
-// Adicionar novo método handler
-handleContest() { 
-  this.actionsLogic.handleContest(); 
-}
-
-// Atualizar delegateAction se existir (ou criar)
-delegateAction(type) {
-  switch(type) {
-    case 'explorar': return this.handleExplore();
-    case 'recolher': return this.handleCollect();
-    case 'construir': return () => this.handleBuild('Abrigo');
-    case 'negociar': return this.handleNegotiate();
-    case 'disputar': return this.handleContest();
-    default: return () => console.warn(`Ação ${type} não implementada`);
-  }
-}
   
   // Negociação
   handleNegotiate() { this.negotiationLogic.handleNegotiate(); }
@@ -247,6 +162,26 @@ delegateAction(type) {
       return await window.uiManager.modals.showConfirm(title, message);
     }
     return confirm(message);
+  }
+  
+  canAffordAction(actionType) {
+    const player = getCurrentPlayer();
+    let cost = GAME_CONFIG.ACTION_DETAILS[actionType]?.cost || {};
+
+    // Verificar descontos de facção
+    if (actionType === 'explorar') {
+      cost = this.factionLogic.modifyExploreCost(player, cost);
+    } else if (actionType === 'construir') {
+      // Nota: Para construção genérica na UI, usamos custo base. 
+      // A verificação real ocorre dentro do handleBuild com o tipo específico.
+    } else if (actionType === 'negociar') {
+       const negCost = this.factionLogic.modifyNegotiationCost(player);
+       return player.resources.ouro >= negCost;
+    }
+
+    return Object.entries(cost).every(([resource, amount]) => {
+      return (player.resources[resource] || 0) >= amount;
+    });
   }
   
   preventActionIfModalOpen() {
