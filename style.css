@@ -2094,3 +2094,72 @@ body.portrait #gameContainer {
     border-left: 6px solid var(--player-color);
   }
 }
+
+/* ============================================
+   FIX PARA EMOJIS EM COMPUTADORES
+   ============================================ */
+
+/* Forçar uso de fontes de emoji modernas */
+@font-face {
+  font-family: 'Twemoji Mozilla';
+  src: local('Apple Color Emoji'), 
+       local('Segoe UI Emoji'), 
+       local('Segoe UI Symbol'), 
+       local('Noto Color Emoji'), 
+       local('Android Emoji'),
+       local('EmojiSymbols');
+  unicode-range: U+1F000-1F644, U+203C-3299;
+}
+
+/* Aplicar a todos os elementos que mostram emojis */
+body * {
+  font-feature-settings: "emoji";
+}
+
+/* Garantir que os emojis sejam renderizados */
+.resource-item,
+.resource-value,
+#offerResourcesInfo,
+#requestResourcesInfo,
+#negotiationSummary,
+#incomeResources,
+#resourceList,
+#controlledRegions,
+#actionsLeft,
+.board-cell .text-xs,
+.board-cell .text-\[10px\] {
+  font-family: "Twemoji Mozilla", "Segoe UI Emoji", "Apple Color Emoji", "Noto Color Emoji", "EmojiSymbols", "Symbola", sans-serif;
+  font-size: 1.1em;
+  line-height: 1;
+}
+
+/* Fallback visual para emojis faltantes */
+.resource-emoji {
+  position: relative;
+  display: inline-block;
+  min-width: 1.2em;
+  min-height: 1.2em;
+}
+
+.resource-emoji::after {
+  content: attr(title);
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  font-size: 0.7em;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  transition: opacity 0.2s;
+  background: rgba(0,0,0,0.8);
+  color: white;
+  border-radius: 3px;
+  padding: 2px;
+}
+
+.resource-emoji:hover::after {
+  opacity: 1;
+}
