@@ -17,12 +17,14 @@
   /* Glassmorphism e Células */
   --cell-bg: rgba(30, 30, 30, 0.7);
   --cell-border: rgba(255, 255, 255, 0.15);
-  --cell-opacity: 0.15;
-  --cell-blur: 1px;
+  --cell-opacity: 0.25;
+  --cell-blur: 2px;
   --cell-bg-opacity: 0.15;
+  --cell-hover-opacity: 0.35;
+  --cell-selected-opacity: 0.45;
   
   /* Sombras */
-  --shadow-intensity: 0.3;
+  --shadow-intensity: 0.5;
   
   /* IA */
   --ai-easy-color: #10b981;
@@ -209,6 +211,44 @@ p {
 
 .animate-pulse-slow {
   animation: pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+@keyframes cellPulse {
+  0%, 100% {
+    opacity: 0.3;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.6;
+    transform: scale(1.02);
+  }
+}
+
+@keyframes actionPulse {
+  0%, 100% {
+    box-shadow: 
+      0 0 15px rgba(248, 214, 92, 0.4),
+      0 4px 12px rgba(248, 214, 92, 0.2);
+  }
+  50% {
+    box-shadow: 
+      0 0 25px rgba(248, 214, 92, 0.6),
+      0 8px 20px rgba(248, 214, 92, 0.3);
+  }
+}
+
+@keyframes glowPulse {
+  0%, 100% {
+    filter: brightness(1);
+  }
+  50% {
+    filter: brightness(1.2);
+  }
+}
+
+/* Adicione também ao .animate-glow-pulse */
+.animate-glow-pulse {
+  animation: glowPulse 2s ease-in-out infinite;
 }
 
 /* ============================================
@@ -608,125 +648,235 @@ input[type="text"]:focus, select:focus, input[type="number"]:focus {
 }
 
 /* ============================================
-   CÉLULAS DO TABULEIRO
+   CÉLULAS DO TABULEIRO - VERSÃO MELHORADA
    ============================================ */
 
 .board-cell {
   position: relative;
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  background: rgba(15, 15, 15, var(--cell-bg-opacity));
-  backdrop-filter: blur(var(--cell-blur));
-  border-radius: 4px;
-  transition: all 0.2s ease;
+  border: 1.5px solid rgba(255, 255, 255, 0.12);
+  background: linear-gradient(
+    145deg,
+    rgba(20, 20, 20, var(--cell-bg-opacity)) 0%,
+    rgba(25, 25, 25, var(--cell-bg-opacity)) 100%
+  );
+  backdrop-filter: blur(var(--cell-blur)) saturate(180%);
+  border-radius: 8px;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   display: flex;
   flex-direction: column;
   justify-content: space-between;
-  padding: 6px;
+  padding: 8px;
   overflow: hidden;
   cursor: pointer;
   user-select: none;
+  box-shadow: 
+    0 4px 12px rgba(0, 0, 0, calc(var(--shadow-intensity) * 0.5)),
+    inset 0 1px 0 rgba(255, 255, 255, 0.05);
 }
 
+/* Efeito de brilho interno */
 .board-cell::before {
   content: '';
   position: absolute;
   inset: 0;
   background: linear-gradient(
     135deg,
-    rgba(255, 255, 255, 0.02) 0%,
-    rgba(255, 255, 255, 0.008) 100%
+    rgba(255, 255, 255, 0.03) 0%,
+    rgba(255, 255, 255, 0.01) 50%,
+    rgba(255, 255, 255, 0.02) 100%
   );
   z-index: -1;
-  border-radius: 5px;
+  border-radius: 7px;
+  pointer-events: none;
+}
+
+/* Efeito de brilho externo para células importantes */
+.board-cell::after {
+  content: '';
+  position: absolute;
+  inset: -1px;
+  background: radial-gradient(
+    circle at center,
+    rgba(255, 255, 255, 0.04) 0%,
+    transparent 70%
+  );
+  border-radius: 9px;
+  z-index: -2;
+  opacity: 0;
+  transition: opacity 0.3s ease;
 }
 
 /* Estados das Células */
 .board-cell.controlled {
-  border-left: 4px solid var(--player-color);
-  background: rgba(var(--player-rgb), calc(var(--cell-bg-opacity) * 2));
+  border-left: 8px solid var(--player-color) !important;
+  background: linear-gradient(
+    145deg,
+    rgba(var(--player-rgb), 0.3) 0%,
+    rgba(var(--player-rgb), 0.2) 100%
+  ) !important;
+  box-shadow: 
+    0 6px 20px rgba(var(--player-rgb), 0.2),
+    0 0 0 1px rgba(var(--player-rgb), 0.15),
+    inset 0 1px 0 rgba(255, 255, 255, 0.1) !important;
+  transform: translateY(-1px);
+}
+
+/* Efeito de pulso para células controladas */
+.board-cell.controlled::after {
+  opacity: 1;
+  background: radial-gradient(
+    circle at center,
+    rgba(var(--player-rgb), 0.15) 0%,
+    transparent 70%
+  );
+  animation: cellPulse 3s ease-in-out infinite;
 }
 
 .board-cell.neutral {
-  border: 1px dashed rgba(255, 255, 255, 0.05);
-  background: rgba(15, 15, 15, calc(var(--cell-bg-opacity) * 0.8));
+  border: 1.5px dashed rgba(255, 255, 255, 0.08);
+  background: linear-gradient(
+    145deg,
+    rgba(15, 15, 15, 0.2) 0%,
+    rgba(20, 20, 20, 0.2) 100%
+  );
+  backdrop-filter: blur(1px);
 }
 
 .board-cell.region-selected {
-  border: 2px solid var(--accent) !important;
-  background: rgba(248, 214, 92, calc(var(--cell-bg-opacity) * 3)) !important;
-  box-shadow: 0 0 10px rgba(248, 214, 92, 0.3) !important;
-  transform: translateY(-1px) !important;
+  border: 3px solid var(--accent) !important;
+  background: linear-gradient(
+    145deg,
+    rgba(248, 214, 92, 0.25) 0%,
+    rgba(248, 214, 92, 0.15) 100%
+  ) !important;
+  box-shadow: 
+    0 0 25px rgba(248, 214, 92, 0.4),
+    0 8px 25px rgba(248, 214, 92, 0.2),
+    inset 0 1px 0 rgba(255, 255, 255, 0.2) !important;
+  transform: translateY(-2px) scale(1.02) !important;
   z-index: 10;
+  animation: regionPulse 2s infinite !important;
 }
 
 .board-cell.player-owned {
-  border-left-width: 6px !important;
+  border-left-width: 10px !important;
   border-left-color: var(--accent) !important;
+  background: linear-gradient(
+    145deg,
+    rgba(248, 214, 92, 0.25) 0%,
+    rgba(248, 214, 92, 0.15) 100%
+  ) !important;
+  box-shadow: 
+    0 8px 25px rgba(248, 214, 92, 0.25),
+    inset 0 1px 0 rgba(255, 255, 255, 0.15) !important;
 }
 
 .board-cell.action-available {
   position: relative;
+  border: 2px solid rgba(248, 214, 92, 0.6) !important;
+  box-shadow: 
+    0 0 20px rgba(248, 214, 92, 0.3),
+    0 4px 15px rgba(248, 214, 92, 0.2) !important;
+  animation: actionPulse 1.5s infinite !important;
 }
 
-/* Contraste do Texto nas Células */
+/* Efeitos hover */
+.board-cell:hover:not(.region-selected) {
+  background: linear-gradient(
+    145deg,
+    rgba(30, 30, 30, 0.35) 0%,
+    rgba(35, 35, 35, 0.35) 100%
+  ) !important;
+  border-color: rgba(255, 255, 255, 0.2) !important;
+  transform: translateY(-1px);
+  box-shadow: 
+    0 8px 25px rgba(0, 0, 0, 0.4),
+    inset 0 1px 0 rgba(255, 255, 255, 0.1) !important;
+}
+
+.board-cell.controlled:hover {
+  background: linear-gradient(
+    145deg,
+    rgba(var(--player-rgb), 0.35) 0%,
+    rgba(var(--player-rgb), 0.25) 100%
+  ) !important;
+  border-color: rgba(var(--player-rgb), 0.8) !important;
+}
+
+/* Contraste do Texto nas Células - MELHORADO */
 .board-cell .text-xs {
   font-size: 11px;
   line-height: 1.3;
-  font-weight: 700;
-  color: var(--text-primary);
-  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.8);
+  font-weight: 800; /* Mais negrito */
+  color: rgba(255, 255, 255, 0.98) !important;
+  text-shadow: 
+    0 1px 3px rgba(0, 0, 0, 0.9),
+    0 0 10px rgba(0, 0, 0, 0.5) !important;
 }
 
 .board-cell .text-\[10px\] {
   font-size: 10px;
-  font-weight: 600;
-  color: rgba(255, 255, 255, 0.95);
-  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.7);
+  font-weight: 700; /* Mais negrito */
+  color: rgba(255, 255, 255, 0.95) !important;
+  text-shadow: 
+    0 1px 2px rgba(0, 0, 0, 0.9),
+    0 0 8px rgba(0, 0, 0, 0.4) !important;
 }
 
-/* Elementos da Célula */
+/* Elementos da Célula - MELHOR CONTRASTE */
 .board-cell .biome-indicator {
   font-size: 9px;
-  padding: 2px 6px;
-  border-radius: 10px;
-  background: rgba(0, 0, 0, 0.5);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  color: rgba(255, 255, 255, 0.95);
+  padding: 3px 8px;
+  border-radius: 12px;
+  background: rgba(0, 0, 0, 0.7) !important;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  color: rgba(255, 255, 255, 0.95) !important;
   display: inline-block;
   margin-top: 2px;
+  font-weight: 700;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.8);
 }
 
 .board-cell .resource-item {
   display: flex;
   align-items: center;
-  gap: 2px;
+  gap: 4px;
   font-size: 12px;
-  padding: 2px 6px;
-  border-radius: 4px;
-  background: rgba(0, 0, 0, 0.45);
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  padding: 4px 8px;
+  border-radius: 6px;
+  background: rgba(0, 0, 0, 0.65) !important;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  backdrop-filter: blur(4px);
 }
 
 .board-cell .resource-value {
-  font-weight: 800;
-  color: var(--text-primary);
-  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.7);
+  font-weight: 900; /* Mais negrito */
+  color: rgba(255, 255, 255, 0.98) !important;
+  text-shadow: 
+    0 1px 3px rgba(0, 0, 0, 1),
+    0 0 10px rgba(0, 0, 0, 0.6) !important;
 }
 
 .board-cell .cell-footer {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-top: 8px;
-  padding-top: 6px;
-  border-top: 1px solid rgba(255, 255, 255, 0.06);
+  margin-top: 10px;
+  padding-top: 8px;
+  border-top: 1.5px solid rgba(255, 255, 255, 0.1);
 }
 
 .board-cell .controller-info {
   font-size: 10px;
-  font-weight: 700;
-  color: rgba(255, 255, 255, 0.98);
-  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.8);
+  font-weight: 800; /* Mais negrito */
+  color: rgba(255, 255, 255, 0.98) !important;
+  text-shadow: 
+    0 1px 3px rgba(0, 0, 0, 1),
+    0 0 8px rgba(0, 0, 0, 0.5) !important;
+  padding: 2px 6px;
+  border-radius: 4px;
+  background: rgba(0, 0, 0, 0.5);
+  border: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 /* ============================================
