@@ -1317,78 +1317,84 @@ input[type="text"]:focus, select:focus, input[type="number"]:focus {
   z-index: 10;
 }
 
-/* ============================================
-   MANUAL - FILTRO DE EVENTOS (HÍBRIDO)
-   ============================================ */
+/* ==================== FILTROS DE EVENTOS ==================== */
 
-/* Botões de filtro - estados */
+/* Botões de filtro - ESTADO BASE */
 .event-filter-btn {
-  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  transition: all 0.2s ease;
+  border: 2px solid transparent;
   font-weight: 600;
-  letter-spacing: 0.025em;
+  padding: 8px 16px;
+  border-radius: 9999px;
+  cursor: pointer;
+  outline: none;
 }
 
+/* Estado INATIVO (deve ser muito específico) */
 .event-filter-btn:not(.active) {
-  background-color: rgba(31, 41, 55, 0.7) !important; /* bg-gray-800 com opacidade */
-  color: rgba(209, 213, 219, 0.9) !important; /* text-gray-300 */
-  border-color: rgba(255, 255, 255, 0.05);
+  background-color: #374151 !important; /* gray-700 */
+  color: #d1d5db !important; /* gray-300 */
+  border-color: #4b5563 !important; /* gray-600 */
 }
 
-.event-filter-btn:not(.active):hover {
-  background-color: rgba(55, 65, 81, 0.9) !important; /* bg-gray-700 */
-  color: rgba(243, 244, 246, 1) !important; /* text-gray-100 */
-  transform: translateY(-1px);
-  border-color: rgba(255, 255, 255, 0.1);
-}
-
+/* Estado ATIVO (classes serão adicionadas via JavaScript) */
 .event-filter-btn.active {
   transform: translateY(-2px);
-  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.25);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
   font-weight: 700;
-  border-width: 2px;
-  border-color: rgba(255, 255, 255, 0.3);
+  border-color: rgba(255, 255, 255, 0.5) !important;
 }
 
-#filterAll.active {
-  box-shadow: 0 6px 20px rgba(37, 99, 235, 0.4);
-  border-color: rgba(96, 165, 250, 0.5);
+/* Cores específicas para botões ativos (sobrescrevem o estado inativo) */
+.event-filter-btn.active#filterAll {
+  background-color: #2563eb !important; /* blue-600 */
+  color: white !important;
 }
 
-#filterPositive.active {
-  box-shadow: 0 6px 20px rgba(5, 150, 105, 0.4);
-  border-color: rgba(52, 211, 153, 0.5);
+.event-filter-btn.active#filterPositive {
+  background-color: #059669 !important; /* green-600 */
+  color: white !important;
 }
 
-#filterNegative.active {
-  box-shadow: 0 6px 20px rgba(220, 38, 38, 0.4);
-  border-color: rgba(248, 113, 113, 0.5);
+.event-filter-btn.active#filterNegative {
+  background-color: #dc2626 !important; /* red-600 */
+  color: white !important;
 }
 
-#filterMixed.active {
-  box-shadow: 0 6px 20px rgba(217, 119, 6, 0.4);
-  border-color: rgba(251, 191, 36, 0.5);
+.event-filter-btn.active#filterMixed {
+  background-color: #d97706 !important; /* yellow-600 */
+  color: white !important;
 }
 
-/* Animações para os cards */
+/* Hover apenas para botões inativos */
+.event-filter-btn:not(.active):hover {
+  background-color: #4b5563 !important; /* gray-600 */
+  color: #f3f4f6 !important; /* gray-100 */
+  transform: translateY(-1px);
+}
+
+/* Cards de evento */
 .event-card {
-  transition: opacity 0.4s ease, transform 0.4s ease, display 0.4s ease;
+  transition: opacity 0.3s ease;
+  animation: fadeIn 0.5s ease forwards;
   opacity: 0;
-  transform: translateY(10px);
-  animation: cardAppear 0.5s ease forwards;
 }
 
-@keyframes cardAppear {
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
+@keyframes fadeIn {
+  to { opacity: 1; }
 }
 
-.event-card.filtered-out {
-  opacity: 0;
-  transform: scale(0.95);
-  pointer-events: none;
+/* Indicadores visuais para categorias */
+.category-positive {
+  border-left: 4px solid #10b981;
+}
+
+.category-negative {
+  border-left: 4px solid #ef4444;
+}
+
+.category-mixed {
+  border-left: 4px solid #f59e0b;
 }
 
 /* ============================================
