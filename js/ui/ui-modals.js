@@ -215,10 +215,7 @@ class ModalManager {
       const element = document.getElementById(tab.id);
       if (element) {
         element.innerHTML = manualContent[tab.key] || '<p class="text-gray-400">Conteúdo não disponível</p>';
-      } else {
-        console.warn(`Elemento ${tab.id} não encontrado no DOM.`);
-      }
-
+      
       // Se for a aba de eventos, configurar os filtros
         if (tab.id === 'tab-eventos') {
           // Chamar a função de filtros após um pequeno delay
