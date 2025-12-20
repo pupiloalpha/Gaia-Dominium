@@ -598,6 +598,13 @@ input[type="text"]:focus, select:focus, input[type="number"]:focus {
   width: 100%;
   max-width: 64rem;
   padding: 0 1rem;
+   background: rgba(11, 13, 15, 0.95) !important; /* Cor sólida com opacidade */
+  backdrop-filter: blur(20px) saturate(180%) !important; /* Efeito glass */
+  border: 1px solid rgba(255, 255, 255, 0.1) !important;
+  border-radius: 16px !important;
+  box-shadow: 
+    0 10px 40px rgba(0, 0, 0, 0.6),
+    0 0 0 1px rgba(255, 255, 255, 0.05) inset !important;
 }
 
 /* ============================================
