@@ -13,7 +13,6 @@ const GAME_CONFIG = {
     explorar: { cost:{madeira:2, agua:1}, pv:1 },
     construir: { cost:{madeira:3, pedra:2, ouro:1}, pv:2 },
     recolher: { cost:{madeira:1}, pv:1 },
-    disputar: { cost:{madeira:4, pedra:3, ouro:2, agua:2}, pv:4 },
     negociar: { cost:{ouro:1}, pv:1 }
   },
   TURNS_UNTIL_NEXT_EVENT: 4,
@@ -154,38 +153,6 @@ const TURN_PHASES = {
 
 // Sistema de Eventos Aleatórios
 const GAME_EVENTS = [
-// Evento para disputa de regiões
-{
-  id: 'conflito',
-  name: 'Tensão Bélica',
-  icon: '⚔️',
-  description: 'Conflitos aumentam a chance de sucesso em disputas.',
-  effect: '+25% chance de sucesso em disputas',
-  duration: 2,
-  apply: (state) => {
-    state.eventModifiers.disputaBonus = 0.25;
-  },
-  remove: (state) => {
-    delete state.eventModifiers.disputaBonus;
-  }
-},
-
-  // Evento relacionado a sorte
-{
-  id: 'sorte',
-  name: 'Bênção da Sorte',
-  icon: '🍀',
-  description: 'A sorte está do seu lado hoje!',
-  effect: '+1 em todos os lançamentos de dados',
-  duration: 2,
-  apply: (state) => {
-    state.eventModifiers.diceBonus = 1;
-  },
-  remove: (state) => {
-    delete state.eventModifiers.diceBonus;
-  }
-},
-  
   {
     id: 'seca',
     name: 'Seca',
@@ -523,20 +490,6 @@ const ACHIEVEMENTS_CONFIG = {
   }
 };
 
-// Uso de dados no jogo durante s disputa
-const DICE_SYSTEM = {
-  MIN_RESOURCES_FOR_STANDARD: { madeira: 2, pedra: 1, ouro: 1, agua: 1 }, // Mínimo para disputa normal
-  DICE_COST: { madeira: 1, pedra: 1, ouro: 1, agua: 1 }, // Custo para tentativa com dados
-  DICE_PV_COST: 2, // Custo de PV para tentativa com dados
-  DICE_SIDES: 6, // Dado de 6 lados
-  ATTACKER_DICE_BONUS_PER_REGION: 0.1, // 10% por região (máx 50%)
-  DEFENDER_DICE_BONUS_PER_STRUCTURE: 0.15, // 15% por estrutura defensiva
-  MAX_DICE_BONUS: 0.5, // Bônus máximo de 50%
-  DRAW_REROLL: true, // Re-rolagem em caso de empate
-  MIN_DICE_VALUE: 1, // Valor mínimo do dado
-  MAX_DICE_VALUE: 6, // Valor máximo do dado
-};
-
 // ==================== HABILIDADES DAS FACÇÕES ====================
 const FACTION_ABILITIES = {
   // Facção Verde - "Guardiões da Floresta"
@@ -556,9 +509,7 @@ const FACTION_ABILITIES = {
       exploreDiscount: { madeira: 1 },
       // +25% produção de Madeira em todas as regiões
       globalProductionMultiplier: { madeira: 0.25 }
-    },
-diceBonus: 1, // +1 em lançamentos de dados
-luckCharm: true // Permite re-rolar um dado por turno
+    }
   },
   
   // Facção Azul - "Mestres das Águas"
@@ -579,10 +530,7 @@ luckCharm: true // Permite re-rolar um dado por turno
       exploreWaterBonus: true,
       // Coleta em regiões com água dá +1 recurso aleatório
       waterCollectBonus: 1
-    },
-    
-diceBonus: 1, // +1 em lançamentos de dados
-luckCharm: false // Permite re-rolar um dado por turno
+    }
   },
   
   // Facção Vermelha - "Construtores da Montanha"
@@ -603,10 +551,7 @@ luckCharm: false // Permite re-rolar um dado por turno
       structurePVBonus: 1,
       // +50% produção de Pedra
       globalProductionMultiplier: { pedra: 0.5 }
-    },
-    
-diceBonus: 0, // +1 em lançamentos de dados
-luckCharm: true // Permite re-rolar um dado por turno
+    }
   },
   
   // Facção Amarela - "Barões do Comércio"
@@ -629,32 +574,7 @@ luckCharm: true // Permite re-rolar um dado por turno
       marketDiscount: 0.5,
       // +30% chance de encontrar Ouro ao explorar
       goldExplorationBonus: 0.3
-    },
-    
-diceBonus: 0, // +1 em lançamentos de dados
-luckCharm: true // Permite re-rolar um dado por turno
-  },
-
-  // Nova facção bélica (opcional, pode ser adicionada)
-  4: {
-    id: 'warrior_clan',
-    name: 'Clã Guerreiro',
-    color: '#DC2626',
-    icon: '⚔️',
-    description: 'Especialistas em conquista e domínio militar',
-    abilities: {
-      // Bônus permanente em todas as regiões conquistadas
-      conquestBonus: { pv: 1 },
-      // Disputa custa -2 de todos os recursos
-      contestDiscount: { madeira: 2, pedra: 2, ouro: 2, agua: 2 },
-      // +20% chance de sucesso em disputas
-      contestBonus: 0.2,
-      // +1 de cada recurso ao conquistar
-      conquestLoot: 1
-    },
-    
-diceBonus: 2, // +1 em lançamentos de dados
-luckCharm: true // Permite re-rolar um dado por turno
+    }
   }
 };
 
@@ -676,6 +596,5 @@ export {
   GAME_EVENTS,
   ACHIEVEMENTS,
   EVENT_CATEGORIES,
-  FACTION_ABILITIES,
-  DICE_SYSTEM
+  FACTION_ABILITIES
 };
