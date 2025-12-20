@@ -230,7 +230,7 @@ class ModalManager {
         }
       } else {
         console.warn(`Elemento ${tab.id} não encontrado no DOM.`);
-    }
+    
     });
   }
 
