@@ -196,33 +196,12 @@ class ModalManager {
   
   // Se for a aba de eventos, garantir que os filtros estão configurados
   if (tabId === 'tab-eventos') {
-    console.log('🎴 Aba de eventos aberta, verificando filtros...');
+    console.log('🎴 Aba de eventos aberta, configurando filtros...');
     
-    // Pequeno delay para garantir que o conteúdo está visível
+    // Pequeno delay para garantir que o conteúdo está carregado
     setTimeout(() => {
-      const eventsGrid = document.getElementById('eventsGrid');
-      const filterButtons = document.querySelectorAll('.event-filter-btn');
-      
-      if (eventsGrid && filterButtons.length > 0) {
-        // Verificar se os filtros já estão configurados
-        const allBtn = document.getElementById('filterAll');
-        const hasListener = allBtn?.hasAttribute('data-filter-initialized');
-        
-        if (!hasListener) {
-          console.log('🎴 Configurando filtros (aba recém-aberta)...');
-          this.setupEventFilters();
-          
-          // Marcar como inicializado
-          if (allBtn) {
-            allBtn.setAttribute('data-filter-initialized', 'true');
-          }
-        } else {
-          console.log('🎴 Filtros já configurados');
-        }
-      } else {
-        console.log('🔄 Elementos de filtro não encontrados, tentando novamente...');
-        setTimeout(() => this.setupEventFilters(), 300);
-      }
+      // Forçar reconfiguração dos filtros
+      this.setupEventFilters();
     }, 200);
   }
 }
@@ -305,69 +284,115 @@ setupEventFilters() {
     console.log(`✅ ${filterButtons.length} botões de filtro encontrados`);
     console.log(`✅ ${eventCards.length} cards de evento encontrados`);
     
+    // Remover event listeners antigos (se houver)
+    filterButtons.forEach(btn => {
+      btn.replaceWith(btn.cloneNode(true));
+    });
+    
+    // Obter novos referências após clonagem
+    const refreshedButtons = document.querySelectorAll('.event-filter-btn');
+    
     // Função para aplicar filtro
     const applyFilter = (filterType) => {
       eventCards.forEach(card => {
         if (filterType === 'all') {
           card.style.display = 'block';
-          card.style.opacity = '1';
+          setTimeout(() => {
+            card.style.opacity = '1';
+            card.style.transform = 'scale(1)';
+          }, 10);
         } else {
           const hasCategory = card.classList.contains(`category-${filterType}`);
           if (hasCategory) {
             card.style.display = 'block';
-            card.style.opacity = '1';
+            setTimeout(() => {
+              card.style.opacity = '1';
+              card.style.transform = 'scale(1)';
+            }, 10);
           } else {
-            card.style.display = 'none';
             card.style.opacity = '0';
+            card.style.transform = 'scale(0.95)';
+            setTimeout(() => {
+              card.style.display = 'none';
+            }, 300);
           }
         }
-      });
-      
-      // Animação de transição
-      eventCards.forEach(card => {
-        card.style.transition = 'opacity 0.3s ease, transform 0.3s ease';
       });
     };
     
     // Configurar listeners para cada botão
-    filterButtons.forEach(btn => {
-      // Remover listeners antigos
-      const newBtn = btn.cloneNode(true);
-      btn.parentNode.replaceChild(newBtn, btn);
-      
-      // Configurar novo listener
-      newBtn.addEventListener('click', () => {
-        // Remover classe 'active' de todos os botões
-        filterButtons.forEach(b => {
-          b.classList.remove('active');
-          b.classList.remove('bg-blue-600');
-          b.classList.add('bg-gray-800');
+    refreshedButtons.forEach(btn => {
+      btn.addEventListener('click', () => {
+        // Remover classe 'active' e resetar estilos de TODOS os botões
+        refreshedButtons.forEach(b => {
+          b.classList.remove('active', 'bg-blue-600', 'text-white');
+          b.classList.add('bg-gray-800', 'text-gray-300');
+          
+          // Resetar estilos inline
+          b.style.backgroundColor = '';
+          b.style.color = '';
+          b.style.boxShadow = '';
+          b.style.transform = '';
         });
         
-        // Adicionar classe 'active' ao botão clicado
-        newBtn.classList.add('active');
-        newBtn.classList.add('bg-blue-600');
-        newBtn.classList.remove('bg-gray-800');
+        // Adicionar classe 'active' e estilos ao botão clicado
+        btn.classList.add('active');
+        btn.classList.remove('bg-gray-800', 'text-gray-300');
+        
+        // Aplicar estilos específicos baseados no tipo
+        const filterType = btn.id.replace('filter', '').toLowerCase();
+        switch(filterType) {
+          case 'positive':
+            btn.classList.add('bg-green-600', 'text-white');
+            break;
+          case 'negative':
+            btn.classList.add('bg-red-600', 'text-white');
+            break;
+          case 'mixed':
+            btn.classList.add('bg-yellow-600', 'text-white');
+            break;
+          default: // 'all'
+            btn.classList.add('bg-blue-600', 'text-white');
+        }
+        
+        // Efeitos visuais
+        btn.style.transform = 'translateY(-2px)';
+        btn.style.boxShadow = '0 4px 12px rgba(0, 0, 0, 0.3)';
         
         // Aplicar filtro
-        const filterType = newBtn.id.replace('filter', '').toLowerCase();
         console.log(`🎯 Aplicando filtro: ${filterType}`);
         applyFilter(filterType);
         
-        // Feedback visual
-        newBtn.classList.add('animate-pulse');
+        // Feedback visual de clique
+        const originalTransform = btn.style.transform;
+        btn.style.transform = 'translateY(0px)';
         setTimeout(() => {
-          newBtn.classList.remove('animate-pulse');
-        }, 300);
+          btn.style.transform = originalTransform;
+        }, 150);
+        
+        // Salvar filtro ativo no localStorage (opcional)
+        localStorage.setItem('gaia_manual_event_filter', filterType);
       });
     });
     
-    // Inicializar com filtro "all" ativo
-    const allBtn = document.getElementById('filterAll');
-    if (allBtn) {
-      allBtn.classList.add('active', 'bg-blue-600');
-      allBtn.classList.remove('bg-gray-800');
-      applyFilter('all');
+    // Inicializar com filtro salvo ou "all" por padrão
+    const savedFilter = localStorage.getItem('gaia_manual_event_filter') || 'all';
+    const initialBtn = document.getElementById(`filter${savedFilter.charAt(0).toUpperCase() + savedFilter.slice(1)}`) 
+                      || document.getElementById('filterAll');
+    
+    if (initialBtn) {
+      // Simular clique no botão inicial
+      setTimeout(() => {
+        initialBtn.click();
+      }, 100);
+    } else {
+      // Fallback: configurar manualmente
+      const allBtn = document.getElementById('filterAll');
+      if (allBtn) {
+        allBtn.classList.add('active', 'bg-blue-600', 'text-white');
+        allBtn.classList.remove('bg-gray-800', 'text-gray-300');
+        applyFilter('all');
+      }
     }
     
     console.log('✅ Filtros de eventos configurados com sucesso');
