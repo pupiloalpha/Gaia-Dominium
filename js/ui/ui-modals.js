@@ -227,10 +227,9 @@ class ModalManager {
               window.setupEventFilters();
             }
           }, 100);
-        }
-      } else {
+        } else {
         console.warn(`Elemento ${tab.id} não encontrado no DOM.`);
-    
+    }
     });
   }
 
