@@ -1161,9 +1161,6 @@ const MANUAL_CONTENT = {
   `
 };
 
-// Exporte a função também
-export { setupEventFilters };
-
 // Função para obter conteúdo de uma aba específica
 function getManualContent(tabId) {
   return MANUAL_CONTENT[tabId] || '<p class="text-gray-400">Conteúdo não disponível</p>';
