@@ -270,36 +270,63 @@ class ModalManager {
   // ==================== FILTROS DE EVENTOS NO MANUAL ====================
 
 setupEventFilters() {
-  // Esta função será chamada quando a aba de eventos for aberta
+  console.log('🎴 Inicializando filtros de eventos...');
+  
   const setupFilters = () => {
     const filterButtons = document.querySelectorAll('.event-filter-btn');
     const eventCards = document.querySelectorAll('.event-card');
     
     if (filterButtons.length === 0 || eventCards.length === 0) {
-      console.log('🔄 Elementos de filtro ainda não carregados, tentando novamente...');
+      console.log('🔄 Aguardando elementos de filtro...');
       setTimeout(setupFilters, 100);
       return;
     }
     
-    console.log(`✅ ${filterButtons.length} botões de filtro encontrados`);
-    console.log(`✅ ${eventCards.length} cards de evento encontrados`);
+    console.log(`✅ Encontrados: ${filterButtons.length} botões, ${eventCards.length} cards`);
     
-    // Remover event listeners antigos (se houver)
+    // REMOVER TODOS OS EVENT LISTENERS EXISTENTES (abordagem limpa)
     filterButtons.forEach(btn => {
-      btn.replaceWith(btn.cloneNode(true));
+      // Criar um novo botão idêntico (isso remove listeners antigos)
+      const newBtn = btn.cloneNode(true);
+      btn.parentNode.replaceChild(newBtn, btn);
     });
     
-    // Obter novos referências após clonagem
+    // Obter novas referências
     const refreshedButtons = document.querySelectorAll('.event-filter-btn');
+    
+    // Função para resetar todos os botões ao estado INATIVO
+    const resetAllButtons = () => {
+      refreshedButtons.forEach(btn => {
+        // Remover TODAS as classes de estilo
+        btn.classList.remove(
+          'active', 
+          'bg-blue-600', 'bg-green-600', 'bg-red-600', 'bg-yellow-600',
+          'text-white'
+        );
+        
+        // Adicionar classe base para botões inativos
+        btn.classList.add('bg-gray-800', 'text-gray-300');
+        
+        // Remover estilos inline
+        btn.style.backgroundColor = '';
+        btn.style.color = '';
+        btn.style.transform = '';
+        btn.style.boxShadow = '';
+        btn.style.borderColor = '';
+      });
+    };
     
     // Função para aplicar filtro
     const applyFilter = (filterType) => {
+      console.log(`🔘 Aplicando filtro: ${filterType}`);
+      
       eventCards.forEach(card => {
+        card.style.transition = 'opacity 0.3s ease';
+        
         if (filterType === 'all') {
           card.style.display = 'block';
           setTimeout(() => {
             card.style.opacity = '1';
-            card.style.transform = 'scale(1)';
           }, 10);
         } else {
           const hasCategory = card.classList.contains(`category-${filterType}`);
@@ -307,11 +334,9 @@ setupEventFilters() {
             card.style.display = 'block';
             setTimeout(() => {
               card.style.opacity = '1';
-              card.style.transform = 'scale(1)';
             }, 10);
           } else {
             card.style.opacity = '0';
-            card.style.transform = 'scale(0.95)';
             setTimeout(() => {
               card.style.display = 'none';
             }, 300);
@@ -320,86 +345,69 @@ setupEventFilters() {
       });
     };
     
-    // Configurar listeners para cada botão
+    // Adicionar event listeners aos botões REFRESHED
     refreshedButtons.forEach(btn => {
-      btn.addEventListener('click', () => {
-        // Remover classe 'active' e resetar estilos de TODOS os botões
-        refreshedButtons.forEach(b => {
-          b.classList.remove('active', 'bg-blue-600', 'text-white');
-          b.classList.add('bg-gray-800', 'text-gray-300');
-          
-          // Resetar estilos inline
-          b.style.backgroundColor = '';
-          b.style.color = '';
-          b.style.boxShadow = '';
-          b.style.transform = '';
-        });
+      btn.addEventListener('click', function() {
+        console.log(`🖱️ Botão clicado: ${this.id}`);
         
-        // Adicionar classe 'active' e estilos ao botão clicado
-        btn.classList.add('active');
-        btn.classList.remove('bg-gray-800', 'text-gray-300');
+        // 1. Resetar TODOS os botões
+        resetAllButtons();
         
-        // Aplicar estilos específicos baseados no tipo
-        const filterType = btn.id.replace('filter', '').toLowerCase();
-        switch(filterType) {
-          case 'positive':
-            btn.classList.add('bg-green-600', 'text-white');
+        // 2. Marcar ESTE botão como ativo
+        this.classList.remove('bg-gray-800', 'text-gray-300');
+        
+        // Adicionar classes específicas baseadas no ID
+        switch(this.id) {
+          case 'filterAll':
+            this.classList.add('bg-blue-600', 'text-white');
             break;
-          case 'negative':
-            btn.classList.add('bg-red-600', 'text-white');
+          case 'filterPositive':
+            this.classList.add('bg-green-600', 'text-white');
             break;
-          case 'mixed':
-            btn.classList.add('bg-yellow-600', 'text-white');
+          case 'filterNegative':
+            this.classList.add('bg-red-600', 'text-white');
             break;
-          default: // 'all'
-            btn.classList.add('bg-blue-600', 'text-white');
+          case 'filterMixed':
+            this.classList.add('bg-yellow-600', 'text-white');
+            break;
         }
         
-        // Efeitos visuais
-        btn.style.transform = 'translateY(-2px)';
-        btn.style.boxShadow = '0 4px 12px rgba(0, 0, 0, 0.3)';
+        // Marcar como ativo
+        this.classList.add('active');
         
-        // Aplicar filtro
-        console.log(`🎯 Aplicando filtro: ${filterType}`);
+        // 3. Aplicar filtro correspondente
+        const filterType = this.id.replace('filter', '').toLowerCase();
         applyFilter(filterType);
         
-        // Feedback visual de clique
-        const originalTransform = btn.style.transform;
-        btn.style.transform = 'translateY(0px)';
+        // 4. Efeito visual de clique
+        this.style.transform = 'scale(0.95)';
         setTimeout(() => {
-          btn.style.transform = originalTransform;
+          this.style.transform = 'scale(1)';
         }, 150);
-        
-        // Salvar filtro ativo no localStorage (opcional)
-        localStorage.setItem('gaia_manual_event_filter', filterType);
       });
     });
     
-    // Inicializar com filtro salvo ou "all" por padrão
-    const savedFilter = localStorage.getItem('gaia_manual_event_filter') || 'all';
-    const initialBtn = document.getElementById(`filter${savedFilter.charAt(0).toUpperCase() + savedFilter.slice(1)}`) 
-                      || document.getElementById('filterAll');
-    
-    if (initialBtn) {
-      // Simular clique no botão inicial
-      setTimeout(() => {
-        initialBtn.click();
-      }, 100);
-    } else {
-      // Fallback: configurar manualmente
-      const allBtn = document.getElementById('filterAll');
-      if (allBtn) {
-        allBtn.classList.add('active', 'bg-blue-600', 'text-white');
-        allBtn.classList.remove('bg-gray-800', 'text-gray-300');
-        applyFilter('all');
-      }
+    // Inicializar com filtro "all"
+    const allBtn = document.getElementById('filterAll');
+    if (allBtn) {
+      console.log('🚀 Inicializando com filtro "all"');
+      
+      // Forçar reset primeiro
+      resetAllButtons();
+      
+      // Aplicar estilo ao botão "all"
+      allBtn.classList.remove('bg-gray-800', 'text-gray-300');
+      allBtn.classList.add('bg-blue-600', 'text-white', 'active');
+      
+      // Aplicar filtro
+      applyFilter('all');
     }
     
-    console.log('✅ Filtros de eventos configurados com sucesso');
+    console.log('✅ Filtros configurados com sucesso!');
   };
   
-  // Executar após um pequeno delay para garantir que o DOM está pronto
-  setTimeout(setupFilters, 300);
+  // Executar com um pequeno delay
+  setTimeout(setupFilters, 200);
 }
   
   // ==================== MODAL DE EVENTOS ====================
