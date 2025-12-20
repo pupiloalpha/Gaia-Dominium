@@ -1321,49 +1321,74 @@ input[type="text"]:focus, select:focus, input[type="number"]:focus {
    MANUAL - FILTRO DE EVENTOS (HÍBRIDO)
    ============================================ */
 
+/* Botões de filtro - estados */
 .event-filter-btn {
-  transition: all 0.3s ease;
-  border: 1px solid transparent;
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  font-weight: 600;
+  letter-spacing: 0.025em;
+}
+
+.event-filter-btn:not(.active) {
+  background-color: rgba(31, 41, 55, 0.7) !important; /* bg-gray-800 com opacidade */
+  color: rgba(209, 213, 219, 0.9) !important; /* text-gray-300 */
+  border-color: rgba(255, 255, 255, 0.05);
+}
+
+.event-filter-btn:not(.active):hover {
+  background-color: rgba(55, 65, 81, 0.9) !important; /* bg-gray-700 */
+  color: rgba(243, 244, 246, 1) !important; /* text-gray-100 */
+  transform: translateY(-1px);
+  border-color: rgba(255, 255, 255, 0.1);
 }
 
 .event-filter-btn.active {
   transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.4);
-  border-color: rgba(59, 130, 246, 0.5);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.25);
+  font-weight: 700;
+  border-width: 2px;
+  border-color: rgba(255, 255, 255, 0.3);
 }
 
+#filterAll.active {
+  box-shadow: 0 6px 20px rgba(37, 99, 235, 0.4);
+  border-color: rgba(96, 165, 250, 0.5);
+}
+
+#filterPositive.active {
+  box-shadow: 0 6px 20px rgba(5, 150, 105, 0.4);
+  border-color: rgba(52, 211, 153, 0.5);
+}
+
+#filterNegative.active {
+  box-shadow: 0 6px 20px rgba(220, 38, 38, 0.4);
+  border-color: rgba(248, 113, 113, 0.5);
+}
+
+#filterMixed.active {
+  box-shadow: 0 6px 20px rgba(217, 119, 6, 0.4);
+  border-color: rgba(251, 191, 36, 0.5);
+}
+
+/* Animações para os cards */
 .event-card {
-  transition: all 0.4s ease;
-  animation: fadeIn 0.5s ease forwards;
+  transition: opacity 0.4s ease, transform 0.4s ease, display 0.4s ease;
+  opacity: 0;
+  transform: translateY(10px);
+  animation: cardAppear 0.5s ease forwards;
 }
 
-@keyframes fadeIn {
-  from {
-    opacity: 0;
-    transform: translateY(10px);
-  }
+@keyframes cardAppear {
   to {
     opacity: 1;
     transform: translateY(0);
   }
 }
 
-.event-card:hover {
-  transform: translateY(-5px);
-  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
-}
-
-/* Estilos específicos para cada categoria */
-.category-positive {
-  border-left: 4px solid #10b981;
-}
-
-.category-negative {
-  border-left: 4px solid #ef4444;
-}
-
-.category-mixed {
-  border-left: 4px solid #f59e0b;
+.event-card.filtered-out {
+  opacity: 0;
+  transform: scale(0.95);
+  pointer-events: none;
 }
 
 /* ============================================
