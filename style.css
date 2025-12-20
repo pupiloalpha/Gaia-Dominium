@@ -1321,17 +1321,49 @@ input[type="text"]:focus, select:focus, input[type="number"]:focus {
    MANUAL - FILTRO DE EVENTOS (HÍBRIDO)
    ============================================ */
 
+.event-filter-btn {
+  transition: all 0.3s ease;
+  border: 1px solid transparent;
+}
+
 .event-filter-btn.active {
-  box-shadow: 0 0 10px rgba(59, 130, 246, 0.5);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.4);
+  border-color: rgba(59, 130, 246, 0.5);
 }
 
 .event-card {
-  transition: transform 0.2s, opacity 0.3s;
+  transition: all 0.4s ease;
+  animation: fadeIn 0.5s ease forwards;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 .event-card:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  transform: translateY(-5px);
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
+}
+
+/* Estilos específicos para cada categoria */
+.category-positive {
+  border-left: 4px solid #10b981;
+}
+
+.category-negative {
+  border-left: 4px solid #ef4444;
+}
+
+.category-mixed {
+  border-left: 4px solid #f59e0b;
 }
 
 /* ============================================
