@@ -1161,36 +1161,6 @@ const MANUAL_CONTENT = {
   `
 };
 
-// Função para habilitar os filtros de eventos
-function setupEventFilters() {
-  setTimeout(() => {
-    const filterButtons = document.querySelectorAll('.event-filter-btn');
-    const eventCards = document.querySelectorAll('.event-card');
-    
-    if (filterButtons.length > 0 && eventCards.length > 0) {
-      filterButtons.forEach(btn => {
-        btn.addEventListener('click', () => {
-          // Remover classe active de todos os botões
-          filterButtons.forEach(b => b.classList.remove('active', 'bg-blue-600'));
-          // Adicionar classe active ao botão clicado
-          btn.classList.add('active', 'bg-blue-600');
-          
-          const filter = btn.id.replace('filter', '').toLowerCase();
-          
-          eventCards.forEach(card => {
-            if (filter === 'all') {
-              card.style.display = 'block';
-            } else {
-              const category = card.classList.contains(`category-${filter}`) ? filter : '';
-              card.style.display = category ? 'block' : 'none';
-            }
-          });
-        });
-      });
-    }
-  }, 500); // Delay para garantir que o DOM está pronto
-}
-
 // Exporte a função também
 export { setupEventFilters };
 
