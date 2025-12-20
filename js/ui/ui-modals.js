@@ -184,10 +184,48 @@ class ModalManager {
   }
 
   handleManualTabClick(e) {
-    this.manualTabs.forEach(t => t.classList.remove('active'));
-    e.currentTarget.classList.add('active');
-    this.showManualTab(e.currentTarget.dataset.tab);
+  // Remover classe active de todas as abas
+  this.manualTabs.forEach(t => t.classList.remove('active'));
+  
+  // Adicionar classe active à aba clicada
+  e.currentTarget.classList.add('active');
+  
+  // Mostrar o conteúdo da aba
+  const tabId = e.currentTarget.dataset.tab;
+  this.showManualTab(tabId);
+  
+  // Se for a aba de eventos, garantir que os filtros estão configurados
+  if (tabId === 'tab-eventos') {
+    console.log('🎴 Aba de eventos aberta, verificando filtros...');
+    
+    // Pequeno delay para garantir que o conteúdo está visível
+    setTimeout(() => {
+      const eventsGrid = document.getElementById('eventsGrid');
+      const filterButtons = document.querySelectorAll('.event-filter-btn');
+      
+      if (eventsGrid && filterButtons.length > 0) {
+        // Verificar se os filtros já estão configurados
+        const allBtn = document.getElementById('filterAll');
+        const hasListener = allBtn?.hasAttribute('data-filter-initialized');
+        
+        if (!hasListener) {
+          console.log('🎴 Configurando filtros (aba recém-aberta)...');
+          this.setupEventFilters();
+          
+          // Marcar como inicializado
+          if (allBtn) {
+            allBtn.setAttribute('data-filter-initialized', 'true');
+          }
+        } else {
+          console.log('🎴 Filtros já configurados');
+        }
+      } else {
+        console.log('🔄 Elementos de filtro não encontrados, tentando novamente...');
+        setTimeout(() => this.setupEventFilters(), 300);
+      }
+    }, 200);
   }
+}
 
   showManualTab(tabId) {
     this.manualContents.forEach(c => c.classList.add('hidden'));
@@ -196,41 +234,149 @@ class ModalManager {
   }
 
   renderManualFromText() {
-    const manualContent = getAllManualContent();
-    
-    const tabs = [
-      { id: 'tab-o-jogo', key: 'o-jogo' },
-      { id: 'tab-gaia', key: 'gaia' },
-      { id: 'tab-regioes', key: 'regioes' },
-      { id: 'tab-faccoes', key: 'faccoes' },
-      { id: 'tab-fases', key: 'fases' },
-      { id: 'tab-acoes', key: 'acoes' },
-      { id: 'tab-negociacao', key: 'negociacao' },
-      { id: 'tab-estrutura', key: 'estrutura' },
-      { id: 'tab-eventos', key: 'eventos' },
-      { id: 'tab-conquistas', key: 'conquistas' }
-    ];
-    
-    tabs.forEach(tab => {
-      const element = document.getElementById(tab.id);
-      if (element) {
-        element.innerHTML = manualContent[tab.key] || '<p class="text-gray-400">Conteúdo não disponível</p>';
+  const manualContent = getAllManualContent();
+  
+  const tabs = [
+    { id: 'tab-o-jogo', key: 'o-jogo' },
+    { id: 'tab-gaia', key: 'gaia' },
+    { id: 'tab-regioes', key: 'regioes' },
+    { id: 'tab-faccoes', key: 'faccoes' },
+    { id: 'tab-fases', key: 'fases' },
+    { id: 'tab-acoes', key: 'acoes' },
+    { id: 'tab-negociacao', key: 'negociacao' },
+    { id: 'tab-estrutura', key: 'estrutura' },
+    { id: 'tab-eventos', key: 'eventos' },
+    { id: 'tab-conquistas', key: 'conquistas' }
+  ];
+  
+  tabs.forEach(tab => {
+    const element = document.getElementById(tab.id);
+    if (element) {
+      element.innerHTML = manualContent[tab.key] || '<p class="text-gray-400">Conteúdo não disponível</p>';
       
       // Se for a aba de eventos, configurar os filtros
-        if (tab.id === 'tab-eventos') {
-          // Chamar a função de filtros após um pequeno delay
-          setTimeout(() => {
-            if (window.setupEventFilters) {
-              window.setupEventFilters();
+      if (tab.id === 'tab-eventos') {
+        // Usar MutationObserver para detectar quando o conteúdo é inserido
+        const observer = new MutationObserver((mutations) => {
+          mutations.forEach((mutation) => {
+            if (mutation.addedNodes.length > 0) {
+              // Verificar se o grid de eventos foi adicionado
+              const eventsGrid = element.querySelector('#eventsGrid');
+              if (eventsGrid) {
+                console.log('🎴 Grid de eventos detectado, configurando filtros...');
+                this.setupEventFilters();
+                observer.disconnect(); // Parar de observar
+              }
             }
-          }, 100);
-        }
+          });
+        });
+        
+        // Iniciar observação
+        observer.observe(element, { childList: true, subtree: true });
+        
+        // Fallback: configurar após timeout
+        setTimeout(() => {
+          if (element.querySelector('#eventsGrid')) {
+            console.log('🎴 Configurando filtros (fallback)...');
+            this.setupEventFilters();
+          }
+        }, 500);
+      }
     } else {
-        console.warn(`Elemento ${tab.id} não encontrado no DOM.`);
+      console.warn(`Elemento ${tab.id} não encontrado no DOM.`);
     }
-    });
-  }
+  });
+}
 
+  // ==================== FILTROS DE EVENTOS NO MANUAL ====================
+
+setupEventFilters() {
+  // Esta função será chamada quando a aba de eventos for aberta
+  const setupFilters = () => {
+    const filterButtons = document.querySelectorAll('.event-filter-btn');
+    const eventCards = document.querySelectorAll('.event-card');
+    
+    if (filterButtons.length === 0 || eventCards.length === 0) {
+      console.log('🔄 Elementos de filtro ainda não carregados, tentando novamente...');
+      setTimeout(setupFilters, 100);
+      return;
+    }
+    
+    console.log(`✅ ${filterButtons.length} botões de filtro encontrados`);
+    console.log(`✅ ${eventCards.length} cards de evento encontrados`);
+    
+    // Função para aplicar filtro
+    const applyFilter = (filterType) => {
+      eventCards.forEach(card => {
+        if (filterType === 'all') {
+          card.style.display = 'block';
+          card.style.opacity = '1';
+        } else {
+          const hasCategory = card.classList.contains(`category-${filterType}`);
+          if (hasCategory) {
+            card.style.display = 'block';
+            card.style.opacity = '1';
+          } else {
+            card.style.display = 'none';
+            card.style.opacity = '0';
+          }
+        }
+      });
+      
+      // Animação de transição
+      eventCards.forEach(card => {
+        card.style.transition = 'opacity 0.3s ease, transform 0.3s ease';
+      });
+    };
+    
+    // Configurar listeners para cada botão
+    filterButtons.forEach(btn => {
+      // Remover listeners antigos
+      const newBtn = btn.cloneNode(true);
+      btn.parentNode.replaceChild(newBtn, btn);
+      
+      // Configurar novo listener
+      newBtn.addEventListener('click', () => {
+        // Remover classe 'active' de todos os botões
+        filterButtons.forEach(b => {
+          b.classList.remove('active');
+          b.classList.remove('bg-blue-600');
+          b.classList.add('bg-gray-800');
+        });
+        
+        // Adicionar classe 'active' ao botão clicado
+        newBtn.classList.add('active');
+        newBtn.classList.add('bg-blue-600');
+        newBtn.classList.remove('bg-gray-800');
+        
+        // Aplicar filtro
+        const filterType = newBtn.id.replace('filter', '').toLowerCase();
+        console.log(`🎯 Aplicando filtro: ${filterType}`);
+        applyFilter(filterType);
+        
+        // Feedback visual
+        newBtn.classList.add('animate-pulse');
+        setTimeout(() => {
+          newBtn.classList.remove('animate-pulse');
+        }, 300);
+      });
+    });
+    
+    // Inicializar com filtro "all" ativo
+    const allBtn = document.getElementById('filterAll');
+    if (allBtn) {
+      allBtn.classList.add('active', 'bg-blue-600');
+      allBtn.classList.remove('bg-gray-800');
+      applyFilter('all');
+    }
+    
+    console.log('✅ Filtros de eventos configurados com sucesso');
+  };
+  
+  // Executar após um pequeno delay para garantir que o DOM está pronto
+  setTimeout(setupFilters, 300);
+}
+  
   // ==================== MODAL DE EVENTOS ====================
   openEventModal(event) {
     if (!event) return;
