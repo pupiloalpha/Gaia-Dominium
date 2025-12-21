@@ -1,23 +1,5 @@
 /* ============================================
-   ESTRUTURA DE ARQUIVO CSS OTIMIZADA
-   ============================================ 
-
-   1.  VARIÁVEIS GLOBAIS
-   2.  RESET & BASE
-   3.  HIERARQUIA DE Z-INDEX
-   4.  TIPOGRAFIA
-   5.  UTILITÁRIOS
-   6.  ANIMAÇÕES
-   7.  LAYOUT PRINCIPAL
-   8.  COMPONENTES DE JOGO
-   9.  MÓDULOS ESPECÍFICOS
-   10. MODAIS
-   11. EFEITOS VISUAIS
-
-   ============================================ */
-
-/* ============================================
-   1. VARIÁVEIS GLOBAIS
+   VARIÁVEIS GLOBAIS E RESET - VERSÃO HÍBRIDA OTIMIZADA
    ============================================ */
 
 :root {
@@ -31,7 +13,7 @@
   --player-rgb: 255, 255, 255;
   --player-color: #ffffff;
   
-  /* Glassmorphism e Células */
+  /* Glassmorphism e Células - VALORES OTIMIZADOS */
   --cell-bg: rgba(30, 30, 30, 0.7);
   --cell-border: rgba(255, 255, 255, 0.15);
   --cell-opacity: 0.25;
@@ -49,16 +31,14 @@
   --ai-hard-color: #f59e0b;
   --ai-master-color: #ef4444;
   
-  /* Breakpoints Desktop */
-  --breakpoint-desktop-lg: 1920px;
-  --breakpoint-desktop: 1366px;
-  --breakpoint-desktop-sm: 1024px;
+  /* Breakpoints */
+  --breakpoint-sm: 480px;
+  --breakpoint-md: 768px;
+  --breakpoint-lg: 1024px;
+  --breakpoint-xl: 1280px;
 }
 
-/* ============================================
-   2. RESET & BASE
-   ============================================ */
-
+/* Reset Moderno */
 *, *::before, *::after {
   box-sizing: border-box;
   margin: 0;
@@ -72,9 +52,9 @@ html {
 }
 
 body {
-  min-height: 100vh;
+  min-height: 100%;
   font-family: 'Inter', system-ui, -apple-system, sans-serif;
-  background: var(--bg) fixed;
+  background-attachment: fixed;
   background-size: cover;
   background-position: center;
   color: var(--text-primary);
@@ -84,12 +64,23 @@ body {
   -moz-osx-font-smoothing: grayscale;
 }
 
+/* Tipografia Consistente */
+h1, h2, h3, h4, h5, h6 {
+  font-weight: 600;
+  line-height: 1.2;
+  margin-bottom: 0.5em;
+}
+
+p {
+  margin-bottom: 1rem;
+}
+
 /* ============================================
-   3. HIERARQUIA DE Z-INDEX
+   HIERARQUIA DE Z-INDEX - UNIFICADA
    ============================================ */
 
 #initialScreen { z-index: 50; }
-#manualIcon { z-index: 60; }
+#manualIcon { z-index: 60; position: fixed !important; top: 20px !important; right: 20px !important; }
 #gameNavbar { z-index: 40; }
 #gameFooter { z-index: 45; }
 #regionTooltip { z-index: 90; }
@@ -104,37 +95,7 @@ body {
 #saveLoadModal { z-index: 103; }
 
 /* ============================================
-   4. TIPOGRAFIA
-   ============================================ */
-
-h1, h2, h3, h4, h5, h6 {
-  font-weight: 600;
-  line-height: 1.2;
-  margin-bottom: 0.5em;
-}
-
-p {
-  margin-bottom: 1rem;
-}
-
-/* Fontes para emojis */
-@font-face {
-  font-family: 'Twemoji Mozilla';
-  src: local('Apple Color Emoji'), 
-       local('Segoe UI Emoji'), 
-       local('Segoe UI Symbol'), 
-       local('Noto Color Emoji'), 
-       local('Android Emoji'),
-       local('EmojiSymbols');
-  unicode-range: U+1F000-1F644, U+203C-3299;
-}
-
-body * {
-  font-feature-settings: "emoji";
-}
-
-/* ============================================
-   5. UTILITÁRIOS
+   UTILITÁRIOS REUTILIZÁVEIS - HÍBRIDOS
    ============================================ */
 
 /* Layout */
@@ -175,75 +136,8 @@ body * {
   transition: transform 0.2s ease;
 }
 
-/* Badges */
-.badge {
-  display: inline-block;
-  padding: 4px 8px;
-  border-radius: 999px;
-  font-size: 12px;
-  background: rgba(255,255,255,0.03);
-  color: #fff;
-  font-weight: 500;
-}
-
-.current-turn-badge {
-  animation: pulse 2s ease-in-out infinite;
-}
-
-/* Scrollbar */
-.custom-scrollbar {
-  scrollbar-width: thin;
-  scrollbar-color: rgba(251, 191, 36, 0.5) rgba(30, 41, 59, 0.3);
-}
-
-.custom-scrollbar::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
-}
-
-.custom-scrollbar::-webkit-scrollbar-track {
-  background: rgba(30, 41, 59, 0.3);
-  border-radius: 4px;
-}
-
-.custom-scrollbar::-webkit-scrollbar-thumb {
-  background: rgba(251, 191, 36, 0.5);
-  border-radius: 4px;
-}
-
-.custom-scrollbar::-webkit-scrollbar-thumb:hover {
-  background: rgba(251, 191, 36, 0.7);
-}
-
-/* Classes de espaçamento */
-.gap-0\.5 { gap: 0.125rem; }
-.gap-1\.5 { gap: 0.375rem; }
-
-/* Texto */
-.text-\[10px\] { font-size: 10px; }
-.leading-tight { line-height: 1.25; }
-
-/* Cores de texto */
-.text-orange-300 { color: #fdba74; }
-.text-blue-300 { color: #93c5fd; }
-.text-yellow-300 { color: #fde047; }
-.text-purple-300 { color: #d8b4fe; }
-.text-green-300 { color: #86efac; }
-
-/* Cores de fundo e bordas */
-.bg-orange-500\/30 { background-color: rgba(249, 115, 22, 0.3); }
-.border-orange-500\/30 { border-color: rgba(249, 115, 22, 0.3); }
-.bg-blue-500\/30 { background-color: rgba(59, 130, 246, 0.3); }
-.border-blue-500\/30 { border-color: rgba(59, 130, 246, 0.3); }
-.bg-yellow-500\/30 { background-color: rgba(234, 179, 8, 0.3); }
-.border-yellow-500\/30 { border-color: rgba(234, 179, 8, 0.3); }
-.bg-purple-500\/30 { background-color: rgba(168, 85, 247, 0.3); }
-.border-purple-500\/30 { border-color: rgba(168, 85, 247, 0.3); }
-.bg-green-500\/30 { background-color: rgba(34, 197, 94, 0.3); }
-.border-green-500\/30 { border-color: rgba(34, 197, 94, 0.3); }
-
 /* ============================================
-   6. ANIMAÇÕES
+   ANIMAÇÕES COMPLETAS - TODAS AS VERSÕES
    ============================================ */
 
 @keyframes fadeIn {
@@ -252,13 +146,25 @@ body * {
 }
 
 @keyframes slideInRight {
-  from { transform: translateX(100%); opacity: 0; }
-  to { transform: translateX(0); opacity: 1; }
+  from {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
 }
 
 @keyframes slideUp {
-  from { opacity: 0; transform: translateY(20px); }
-  to { opacity: 1; transform: translateY(0); }
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 @keyframes pulse {
@@ -325,8 +231,14 @@ body * {
 }
 
 @keyframes slideOutRight {
-  from { transform: translateX(0); opacity: 1; }
-  to { transform: translateX(100%); opacity: 0; }
+  from {
+    transform: translateX(0);
+    opacity: 1;
+  }
+  to {
+    transform: translateX(100%);
+    opacity: 0;
+  }
 }
 
 @keyframes pulseBorder {
@@ -335,18 +247,36 @@ body * {
 }
 
 @keyframes incomeModalAppear {
-  from { opacity: 0; transform: translateY(-20px) scale(0.95); }
-  to { opacity: 1; transform: translateY(0) scale(1); }
+  from {
+    opacity: 0;
+    transform: translateY(-20px) scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
 }
 
 @keyframes modalSlideIn {
-  from { opacity: 0; transform: translateY(-20px) scale(0.95); }
-  to { opacity: 1; transform: translateY(0) scale(1); }
+  from {
+    opacity: 0;
+    transform: translateY(-20px) scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
 }
 
 @keyframes cellPulse {
-  0%, 100% { opacity: 0.3; transform: scale(1); }
-  50% { opacity: 0.6; transform: scale(1.02); }
+  0%, 100% {
+    opacity: 0.3;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.6;
+    transform: scale(1.02);
+  }
 }
 
 @keyframes actionPulse {
@@ -368,9 +298,18 @@ body * {
 }
 
 @keyframes achievementUnlock {
-  0% { transform: scale(1); box-shadow: 0 0 0 rgba(245, 158, 11, 0); }
-  50% { transform: scale(1.05); box-shadow: 0 0 20px rgba(245, 158, 11, 0.5); }
-  100% { transform: scale(1); box-shadow: 0 0 0 rgba(245, 158, 11, 0); }
+  0% {
+    transform: scale(1);
+    box-shadow: 0 0 0 rgba(245, 158, 11, 0);
+  }
+  50% {
+    transform: scale(1.05);
+    box-shadow: 0 0 20px rgba(245, 158, 11, 0.5);
+  }
+  100% {
+    transform: scale(1);
+    box-shadow: 0 0 0 rgba(245, 158, 11, 0);
+  }
 }
 
 @keyframes factionSelected {
@@ -389,408 +328,16 @@ body * {
 .event-banner-pulse { animation: eventPulse 2s ease-in-out infinite; }
 
 /* ============================================
-   7. LAYOUT PRINCIPAL
+   TELA DE CADASTRO - PLAYER MODAL (HÍBRIDO)
    ============================================ */
 
-#gameContainer {
-  display: grid;
-  grid-template-columns: 320px 1fr;
-  gap: 1.5rem;
-  height: calc(100vh - 180px);
-  margin: 80px auto 80px;
-  padding: 0 2rem;
-  max-width: 1600px;
-  overflow: hidden;
-}
-
-/* Navbar */
-#gameNavbar {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: 80px;
-  z-index: 40;
-  background: rgba(0, 0, 0, 0.6);
-  backdrop-filter: blur(8px);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
-  padding: 0 2rem;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-}
-
-/* Sidebar */
-#sidebar {
-  display: flex;
-  flex-direction: column;
-  height: 100%;
-  max-height: calc(100vh - 200px);
-  overflow-y: auto;
-  background: rgba(31, 31, 31, 0.8);
-  backdrop-filter: blur(8px);
-  border: 1px solid rgba(255, 255, 255, 0.06);
-  border-radius: 12px;
-  padding: 1rem;
-}
-
-/* Mapa do Jogo */
-#gameMap {
-  position: relative;
-  width: 100%;
-  height: 100%;
-  min-height: 600px;
-  border-radius: 12px;
-  overflow: hidden;
-  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
-  background: #000;
-}
-
-#mapViewport {
-  width: 100%;
-  height: 100%;
-  overflow: hidden;
-  cursor: grab;
-  touch-action: none;
-  user-select: none;
-}
-
-#mapViewport:active {
-  cursor: grabbing;
-}
-
-/* Footer */
-#gameFooter {
-  position: fixed;
-  bottom: 20px;
-  left: 50%;
-  transform: translateX(-50%);
-  z-index: 45;
-  width: 90%;
-  max-width: 1200px;
-  padding: 1rem 2rem;
-  background: rgba(11, 13, 15, 0.95) !important;
-  backdrop-filter: blur(20px) saturate(180%) !important;
-  border: 1px solid rgba(255, 255, 255, 0.1) !important;
-  border-radius: 16px !important;
-  box-shadow: 
-    0 20px 60px rgba(0, 0, 0, 0.6),
-    0 0 0 1px rgba(255, 255, 255, 0.05) inset !important;
-}
-
-/* ============================================
-   8. COMPONENTES DE JOGO
-   ============================================ */
-
-/* ========== CÉLULAS DO TABULEIRO ========== */
-.board-cell {
-  position: relative;
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  background: rgba(15, 15, 15, var(--cell-bg-opacity));
-  backdrop-filter: blur(var(--cell-blur));
-  border-radius: 6px;
-  transition: all 0.2s ease;
-  display: flex;
-  flex-direction: column;
-  justify-content: space-between;
-  padding: 10px;
-  overflow: hidden;
-  cursor: pointer;
-  user-select: none;
-  min-height: 120px;
-}
-
-/* Efeito de vidro fosco */
-.board-cell::before {
-  content: '';
-  position: absolute;
-  inset: 0;
-  background: linear-gradient(
-    135deg,
-    rgba(255, 255, 255, 0.02) 0%,
-    rgba(255, 255, 255, 0.008) 100%
-  );
-  z-index: -1;
-  border-radius: 6px;
-}
-
-.board-cell:hover {
-  background: rgba(25, 25, 25, calc(var(--cell-bg-opacity) + 0.1));
-  border-color: rgba(255, 255, 255, 0.15);
-  transform: translateY(-2px);
-  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.3);
-}
-
-/* Estados das células */
-.board-cell.controlled {
-  border-left: 6px solid var(--player-color) !important;
-  background: rgba(var(--player-rgb), calc(var(--cell-bg-opacity) * 2)) !important;
-}
-
-.board-cell.controlled::after {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: 2px;
-  background: linear-gradient(90deg, 
-    transparent 0%,
-    var(--player-color) 50%,
-    transparent 100%);
-  opacity: 0.4;
-}
-
-.board-cell.neutral {
-  border: 1px dashed rgba(255, 255, 255, 0.05) !important;
-  background: rgba(15, 15, 15, calc(var(--cell-bg-opacity) * 0.8)) !important;
-}
-
-/* Células selecionadas */
-.board-cell.neutral.region-selected,
-.board-cell.controlled.region-selected,
-.board-cell.region-selected {
-  border: 2px solid var(--accent) !important;
-  box-shadow: 0 0 15px rgba(248, 214, 92, 0.4) !important;
-  transform: translateY(-2px) !important;
-  z-index: 10;
-  animation: regionSelectedPulse 2s infinite !important;
-}
-
-.board-cell.neutral.region-selected {
-  background: rgba(15, 15, 15, var(--cell-bg-opacity)) !important;
-}
-
-.board-cell.controlled.region-selected {
-  background: rgba(var(--player-rgb), calc(var(--cell-bg-opacity) * 2)) !important;
-}
-
-.board-cell.region-selected {
-  background: rgba(248, 214, 92, calc(var(--cell-bg-opacity) * 3)) !important;
-}
-
-/* Efeito de pulso para células controladas */
-.board-cell.controlled::after {
-  opacity: 1;
-  background: radial-gradient(
-    circle at center,
-    rgba(var(--player-rgb), 0.15) 0%,
-    transparent 70%
-  );
-  animation: cellPulse 3s ease-in-out infinite;
-}
-
-.board-cell.player-owned {
-  border-left-width: 6px !important;
-  border-left-color: var(--accent) !important;
-  background: rgba(248, 214, 92, calc(var(--cell-bg-opacity) * 3)) !important;
-  box-shadow: 0 8px 25px rgba(248, 214, 92, 0.25) !important;
-}
-
-.board-cell.action-available {
-  position: relative;
-  border: 2px solid rgba(248, 214, 92, 0.6) !important;
-  box-shadow: 
-    0 0 20px rgba(248, 214, 92, 0.3),
-    0 4px 15px rgba(248, 214, 92, 0.2) !important;
-  animation: actionPulse 1.5s infinite !important;
-}
-
-/* Efeito shimmer */
-.board-cell.action-available::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  border-radius: 6px;
-  background: linear-gradient(
-    45deg,
-    transparent 30%,
-    rgba(255, 255, 255, 0.05) 50%,
-    transparent 70%
-  );
-  background-size: 200% 200%;
-  animation: shimmer 3s infinite;
-  pointer-events: none;
-}
-
-/* Contador de ações */
-.board-cell .action-counter {
-  position: absolute;
-  top: 8px;
-  right: 8px;
-  background: rgba(0, 0, 0, 0.7);
-  color: var(--text-primary);
-  font-size: 11px;
-  padding: 3px 8px;
-  border-radius: 12px;
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  font-weight: bold;
-  z-index: 2;
-}
-
-/* Outros estados */
-.board-cell.neutral-available {
-  border: 2px dashed rgba(255, 255, 255, 0.4) !important;
-  background: rgba(255, 255, 255, 0.05) !important;
-}
-
-/* Indicador de clique */
-.board-cell.clickable::after {
-  content: '👆';
-  position: absolute;
-  top: -10px;
-  right: -10px;
-  font-size: 14px;
-  background: rgba(0, 0, 0, 0.7);
-  border-radius: 50%;
-  width: 24px;
-  height: 24px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  animation: clickableBounce 2s infinite;
-  z-index: 3;
-}
-
-/* Estilos de texto */
-.board-cell .text-xs {
-  font-size: 12px;
-  line-height: 1.3;
-  font-weight: 700;
-  color: #ffffff;
-  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.8);
-}
-
-.board-cell .text-\[10px\] {
-  font-size: 11px;
-  font-weight: 600;
-  color: rgba(255, 255, 255, 0.95);
-  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.7);
-}
-
-/* Elementos da Célula */
-.board-cell .biome-indicator {
-  font-size: 10px;
-  padding: 3px 8px;
-  border-radius: 12px;
-  background: rgba(0, 0, 0, 0.5) !important;
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  color: rgba(255, 255, 255, 0.95) !important;
-  display: inline-block;
-  margin-top: 4px;
-}
-
-.board-cell .resource-item {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  font-size: 13px;
-  padding: 3px 8px;
-  border-radius: 6px;
-  background: rgba(0, 0, 0, 0.45) !important;
-  border: 1px solid rgba(255, 255, 255, 0.08);
-}
-
-.board-cell .resource-value {
-  font-weight: 800;
-  color: #ffffff !important;
-  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.7);
-}
-
-.board-cell .cell-footer {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-top: 10px;
-  padding-top: 8px;
-  border-top: 1px solid rgba(255, 255, 255, 0.06);
-}
-
-.board-cell .controller-info {
-  font-size: 11px;
-  font-weight: 700;
-  color: rgba(255, 255, 255, 0.98) !important;
-  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.8);
-  padding: 3px 8px;
-  border-radius: 6px;
-  background: rgba(0, 0, 0, 0.5);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-}
-
-.board-cell .structure-display {
-  display: flex;
-  gap: 4px;
-  font-size: 16px;
-  filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.5));
-}
-
-/* ========== BOTÕES DE AÇÃO ========== */
-.action-btn {
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.02), rgba(0, 0, 0, 0.18));
-  color: #fff;
-  padding: 10px 16px;
-  border-radius: 10px;
-  border: 1px solid rgba(255, 255, 255, 0.04);
-  font-weight: 500;
-  font-size: 14px;
-  transition: all 0.2s ease;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  gap: 6px;
-}
-
-.action-btn:hover:not(:disabled) {
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.05), rgba(0, 0, 0, 0.25));
-  border-color: rgba(255, 255, 255, 0.1);
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
-}
-
-.action-btn:disabled {
-  opacity: 0.45;
-  cursor: not-allowed;
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.01), rgba(0, 0, 0, 0.1));
-  transform: none !important;
-  box-shadow: none !important;
-}
-
-#endTurnBtn {
-  transition: all 0.3s ease;
-  font-weight: bold;
-  padding: 12px 24px;
-  font-size: 15px;
-}
-
-#endTurnBtn:disabled {
-  opacity: 0.6;
-  cursor: not-allowed;
-}
-
-#endTurnBtn.bg-blue-600:hover {
-  background-color: #2563eb !important;
-  transform: translateY(-2px);
-}
-
-#endTurnBtn.bg-green-600:hover {
-  background-color: #16a34a !important;
-  transform: translateY(-2px);
-}
-
-/* ========== TELA DE CADASTRO ========== */
 .player-modal {
   background: linear-gradient(180deg, rgba(12, 12, 12, 0.56), rgba(8, 8, 8, 0.45));
   border: 1px solid rgba(255, 255, 255, 0.06);
   backdrop-filter: blur(12px) saturate(120%);
   box-shadow: 0 12px 40px rgba(0, 0, 0, 0.6);
-  border-radius: 16px;
-  padding: 2rem;
-  max-width: 800px;
-  width: 90%;
   z-index: 51;
+  position: relative;
 }
 
 /* Inputs */
@@ -799,66 +346,48 @@ input[type="text"], select, input[type="number"] {
   color: #EEE;
   border: 1px solid rgba(255, 255, 255, 0.04);
   border-radius: 8px;
-  padding: 12px 16px;
+  padding: 10px 12px;
   font-size: 14px;
-  width: 100%;
-  transition: all 0.2s ease;
 }
 
 input[type="text"]:focus, select:focus, input[type="number"]:focus {
   outline: none;
   border-color: #f8d65c;
-  box-shadow: 0 0 0 3px rgba(248, 214, 92, 0.2);
+  box-shadow: 0 0 0 2px rgba(248, 214, 92, 0.2);
 }
 
-/* Cartões de jogador */
+/* Estilos para os cartões de jogador */
 .player-card {
   transition: all 0.2s ease;
   position: relative;
-  border-radius: 12px;
-  overflow: hidden;
 }
 
 .player-card-inner {
   height: 100%;
   transition: all 0.2s ease;
-  padding: 1rem;
-  background: rgba(31, 31, 31, 0.7);
-  border: 1px solid rgba(255, 255, 255, 0.06);
-  border-radius: 10px;
 }
 
 .player-card:hover:not(.empty) .player-card-inner {
-  transform: translateY(-4px);
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
 }
 
 .player-card.editing .player-card-inner {
-  box-shadow: 0 0 0 3px #fbbf24, 0 8px 24px rgba(251, 191, 36, 0.3);
+  box-shadow: 0 0 0 2px #fbbf24, 0 4px 12px rgba(251, 191, 36, 0.3);
   animation: pulse 1.5s infinite;
 }
 
 .player-card-icon {
   position: relative;
-  font-size: 2rem;
-  margin-bottom: 0.5rem;
 }
 
 .player-card-name {
   text-shadow: 0 1px 2px rgba(0, 0, 0, 0.8);
-  font-size: 1.1rem;
-  font-weight: 600;
-  margin-bottom: 0.25rem;
 }
 
 .player-card-actions {
   opacity: 0;
   transition: opacity 0.2s ease;
-  position: absolute;
-  top: 10px;
-  right: 10px;
-  display: flex;
-  gap: 4px;
 }
 
 .player-card:hover .player-card-actions {
@@ -866,13 +395,11 @@ input[type="text"]:focus, select:focus, input[type="number"]:focus {
 }
 
 .player-card-actions button {
-  padding: 6px 10px;
-  border-radius: 6px;
+  padding: 4px 8px;
+  border-radius: 4px;
   background: rgba(0, 0, 0, 0.5);
   border: 1px solid rgba(255, 255, 255, 0.1);
   transition: all 0.2s ease;
-  color: white;
-  cursor: pointer;
 }
 
 .player-card-actions button:hover {
@@ -888,38 +415,61 @@ input[type="text"]:focus, select:focus, input[type="number"]:focus {
   background: rgba(239, 68, 68, 0.5) !important;
 }
 
-/* ========== SELEÇÃO DE ÍCONES ========== */
+/* Layout responsivo */
+@media (max-width: 768px) {
+  .player-card {
+    min-height: 120px;
+  }
+  
+  .player-card-inner {
+    padding: 12px 8px;
+  }
+  
+  .player-card-icon {
+    font-size: 24px;
+  }
+  
+  .player-card-name {
+    font-size: 12px;
+  }
+  
+  .player-card-faction {
+    font-size: 11px;
+  }
+}
+
+/* ============================================
+   SELEÇÃO DE ÍCONES (HÍBRIDO)
+   ============================================ */
+
 #iconSelection {
   display: flex;
-  gap: 12px;
+  gap: 8px;
   flex-wrap: wrap;
-  justify-content: center;
 }
 
 .icon-button {
-  min-width: 60px;
-  min-height: 60px;
-  border-radius: 12px;
+  min-width: 50px;
+  min-height: 50px;
+  border-radius: 10px;
   background: rgba(255, 255, 255, 0.02);
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 1.8rem;
+  font-size: 1.5rem;
   cursor: pointer;
-  transition: all 0.2s ease;
-  border: 2px solid transparent;
+  transition: .12s;
 }
 
 .icon-button:hover {
   transform: translateY(-4px);
   background: rgba(255, 255, 255, 0.05);
-  border-color: rgba(255, 255, 255, 0.1);
 }
 
 .icon-button.selected {
-  border: 3px solid var(--accent);
+  border: 2px solid var(--accent);
   background: rgba(248, 214, 92, 0.06);
-  transform: scale(1.1);
+  transform: scale(1.06);
   animation: iconPulse 1.5s infinite;
 }
 
@@ -927,21 +477,22 @@ input[type="text"]:focus, select:focus, input[type="number"]:focus {
   opacity: 0.4;
   cursor: not-allowed;
   filter: grayscale(0.7);
-  transform: none !important;
 }
 
-/* ========== BOTÕES DE IA ========== */
+/* ============================================
+   BOTÕES DE IA COMPACTOS (HÍBRIDO)
+   ============================================ */
+
 #aiButtonsContainer {
   display: flex;
-  gap: 12px;
+  gap: 8px;
   flex-wrap: wrap;
-  justify-content: center;
 }
 
 .ai-button-compact {
-  padding: 10px 16px;
-  border-radius: 12px;
-  font-size: 14px;
+  padding: 8px 12px;
+  border-radius: 10px;
+  font-size: 12px;
   font-weight: 600;
   cursor: pointer;
   transition: all 0.2s ease;
@@ -949,12 +500,11 @@ input[type="text"]:focus, select:focus, input[type="number"]:focus {
   white-space: nowrap;
   background: linear-gradient(180deg, rgba(255, 255, 255, 0.02), rgba(0, 0, 0, 0.18));
   color: #fff;
-  min-width: 120px;
 }
 
 .ai-button-compact:hover {
-  transform: translateY(-3px);
-  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.4);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
 }
 
 .ai-button-compact.easy {
@@ -981,45 +531,46 @@ input[type="text"]:focus, select:focus, input[type="number"]:focus {
   border-color: rgba(239, 68, 68, 0.3);
 }
 
-/* ========== DROPDOWN DE FACÇÕES ========== */
+/* ============================================
+   DROPDOWN DE FACÇÕES (HÍBRIDO)
+   ============================================ */
+
 .faction-dropdown {
   background-color: rgba(17, 24, 39, 0.9) !important;
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%23fbbf24'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E") !important;
   background-repeat: no-repeat !important;
-  background-position: right 16px center !important;
-  background-size: 20px !important;
+  background-position: right 12px center !important;
+  background-size: 16px !important;
   cursor: pointer !important;
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
-  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.2) !important;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2) !important;
   backdrop-filter: blur(8px) !important;
-  height: 56px !important;
+  height: 48px !important;
   border: 1px solid rgba(251, 191, 36, 0.3) !important;
-  border-radius: 14px !important;
-  padding: 16px 48px 16px 16px !important;
+  border-radius: 12px !important;
+  padding: 12px 40px 12px 12px !important;
   color: white !important;
-  font-size: 15px !important;
-  width: 100% !important;
 }
 
 .faction-dropdown:hover {
   background-color: rgba(30, 41, 59, 0.95) !important;
   border-color: rgba(251, 191, 36, 0.5) !important;
-  box-shadow: 0 8px 25px rgba(251, 191, 36, 0.15) !important;
-  transform: translateY(-2px) !important;
+  box-shadow: 0 6px 20px rgba(251, 191, 36, 0.15) !important;
+  transform: translateY(-1px) !important;
 }
 
 .faction-dropdown:focus {
   background-color: rgba(30, 41, 59, 0.95) !important;
   border-color: rgba(251, 191, 36, 0.7) !important;
-  box-shadow: 0 0 0 3px rgba(251, 191, 36, 0.2), 0 10px 30px rgba(0, 0, 0, 0.4) !important;
+  box-shadow: 0 0 0 3px rgba(251, 191, 36, 0.2), 0 8px 25px rgba(0, 0, 0, 0.3) !important;
   outline: none !important;
 }
 
 .faction-dropdown option {
   background-color: rgba(17, 24, 39, 0.95) !important;
   color: #f3f4f6 !important;
-  padding: 14px 20px !important;
-  font-size: 14px !important;
+  padding: 12px 16px !important;
+  font-size: 13px !important;
   border-bottom: 1px solid rgba(255, 255, 255, 0.05) !important;
   transition: all 0.2s ease !important;
 }
@@ -1031,24 +582,465 @@ input[type="text"]:focus, select:focus, input[type="number"]:focus {
 }
 
 /* ============================================
-   9. MÓDULOS ESPECÍFICOS
+   LAYOUT DO JOGO (HÍBRIDO)
    ============================================ */
 
-/* ========== TOOLTIP DE REGIÃO ========== */
+#gameContainer {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1rem;
+  height: calc(100vh - 180px);
+  margin-top: 80px;
+  margin-bottom: 80px;
+  padding: 0 1rem;
+  overflow: hidden;
+}
+
+/* Navbar */
+#gameNavbar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 40;
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(8px);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+/* Sidebar */
+#sidebar {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  max-height: calc(100vh - 200px);
+  overflow-y: auto;
+  background: rgba(31, 31, 31, 0.8);
+  backdrop-filter: blur(8px);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 10px;
+}
+
+/* Mapa */
+#gameMap {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  min-height: 400px;
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+  background: #000;
+}
+
+#mapViewport {
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  cursor: grab;
+  touch-action: none;
+  user-select: none;
+}
+
+#mapViewport:active {
+  cursor: grabbing;
+}
+
+/* Footer */
+#gameFooter {
+  position: fixed;
+  bottom: 16px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 45;
+  width: 100%;
+  max-width: 64rem;
+  padding: 0 1rem;
+  background: rgba(11, 13, 15, 0.95) !important;
+  backdrop-filter: blur(20px) saturate(180%) !important;
+  border: 1px solid rgba(255, 255, 255, 0.1) !important;
+  border-radius: 16px !important;
+  box-shadow: 
+    0 10px 40px rgba(0, 0, 0, 0.6),
+    0 0 0 1px rgba(255, 255, 255, 0.05) inset !important;
+}
+
+/* ============================================
+   CÉLULAS DO TABULEIRO - VERSÃO RESTAURADA COMPLETA
+   ============================================ */
+
+.board-cell {
+  position: relative;
+  border: 1px solid rgba(255, 255, 255, 0.08); /* VERSÃO ANTIGA */
+  background: rgba(15, 15, 15, var(--cell-bg-opacity)); /* VERSÃO ANTIGA */
+  backdrop-filter: blur(var(--cell-blur));
+  border-radius: 4px; /* VERSÃO ANTIGA */
+  transition: all 0.2s ease; /* VERSÃO ANTIGA */
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  padding: 6px; /* VERSÃO ANTIGA */
+  overflow: hidden;
+  cursor: pointer;
+  user-select: none;
+}
+
+/* Efeito de vidro fosco - VERSÃO ANTIGA */
+.board-cell::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    135deg,
+    rgba(255, 255, 255, 0.02) 0%,
+    rgba(255, 255, 255, 0.008) 100%
+  );
+  z-index: -1;
+  border-radius: 5px;
+}
+
+.board-cell:hover {
+  background: rgba(25, 25, 25, calc(var(--cell-bg-opacity) + 0.1)); /* VERSÃO ANTIGA */
+  border-color: rgba(255, 255, 255, 0.15);
+  transform: translateY(-1px);
+}
+
+/* Estados das células - RESTAURADOS DA VERSÃO ANTIGA */
+.board-cell.controlled {
+  border-left: 4px solid var(--player-color) !important;
+  background: rgba(var(--player-rgb), calc(var(--cell-bg-opacity) * 2)) !important;
+}
+
+.board-cell.controlled::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: linear-gradient(90deg, 
+    transparent 0%,
+    var(--player-color) 50%,
+    transparent 100%);
+  opacity: 0.4;
+}
+
+.board-cell.neutral {
+  border: 1px dashed rgba(255, 255, 255, 0.05) !important;
+  background: rgba(15, 15, 15, calc(var(--cell-bg-opacity) * 0.8)) !important;
+}
+
+/* Células selecionadas - VERSÃO ANTIGA */
+.board-cell.neutral.region-selected {
+  border: 2px solid var(--accent) !important;
+  background: rgba(15, 15, 15, var(--cell-bg-opacity)) !important;
+  box-shadow: 0 0 10px rgba(248, 214, 92, 0.3) !important;
+  transform: translateY(-1px) !important;
+  z-index: 10;
+}
+
+.board-cell.controlled.region-selected {
+  border: 2px solid var(--accent) !important;
+  background: rgba(var(--player-rgb), calc(var(--cell-bg-opacity) * 2)) !important;
+  box-shadow: 0 0 10px rgba(248, 214, 92, 0.3) !important;
+  transform: translateY(-1px) !important;
+  z-index: 10;
+}
+
+.board-cell.region-selected {
+  border: 2px solid var(--accent) !important;
+  background: rgba(248, 214, 92, calc(var(--cell-bg-opacity) * 3)) !important;
+  box-shadow: 0 0 10px rgba(248, 214, 92, 0.3) !important;
+  transform: translateY(-1px) !important;
+  z-index: 10;
+  animation: regionSelectedPulse 2s infinite !important;
+}
+
+/* Efeito de pulso da nova versão */
+.board-cell.controlled::after {
+  opacity: 1;
+  background: radial-gradient(
+    circle at center,
+    rgba(var(--player-rgb), 0.15) 0%,
+    transparent 70%
+  );
+  animation: cellPulse 3s ease-in-out infinite;
+}
+
+.board-cell.player-owned {
+  border-left-width: 6px !important;
+  border-left-color: var(--accent) !important;
+  background: rgba(248, 214, 92, calc(var(--cell-bg-opacity) * 3)) !important;
+  box-shadow: 0 8px 25px rgba(248, 214, 92, 0.25) !important;
+}
+
+.board-cell.action-available {
+  position: relative;
+  border: 2px solid rgba(248, 214, 92, 0.6) !important;
+  box-shadow: 
+    0 0 20px rgba(248, 214, 92, 0.3),
+    0 4px 15px rgba(248, 214, 92, 0.2) !important;
+  animation: actionPulse 1.5s infinite !important;
+}
+
+/* Efeito shimmer - VERSÃO ANTIGA */
+.board-cell.action-available::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  border-radius: 4px;
+  background: linear-gradient(
+    45deg,
+    transparent 30%,
+    rgba(255, 255, 255, 0.05) 50%,
+    transparent 70%
+  );
+  background-size: 200% 200%;
+  animation: shimmer 3s infinite;
+  pointer-events: none;
+}
+
+/* Contador de ações - VERSÃO ANTIGA */
+.board-cell .action-counter {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  background: rgba(0, 0, 0, 0.7);
+  color: var(--text-primary);
+  font-size: 10px;
+  padding: 2px 6px;
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  font-weight: bold;
+}
+
+/* Outros estados - VERSÃO ANTIGA */
+.board-cell.neutral-available {
+  border: 2px dashed rgba(255, 255, 255, 0.4) !important;
+  background: rgba(255, 255, 255, 0.05) !important;
+}
+
+/* Indicador de clique - VERSÃO ANTIGA */
+.board-cell.clickable::after {
+  content: '👆';
+  position: absolute;
+  top: -8px;
+  right: -8px;
+  font-size: 12px;
+  background: rgba(0, 0, 0, 0.7);
+  border-radius: 50%;
+  width: 20px;
+  height: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  animation: clickableBounce 2s infinite;
+}
+
+/* Estilos de texto RESTAURADOS DA VERSÃO ANTIGA */
+.board-cell .text-xs {
+  font-size: 11px;
+  line-height: 1.3;
+  font-weight: 700;
+  color: #ffffff;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.8);
+}
+
+.board-cell .text-\[10px\] {
+  font-size: 10px;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.95);
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.7);
+}
+
+/* Elementos da Célula RESTAURADOS */
+.board-cell .biome-indicator {
+  font-size: 9px;
+  padding: 2px 6px;
+  border-radius: 10px;
+  background: rgba(0, 0, 0, 0.5) !important;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: rgba(255, 255, 255, 0.95) !important;
+  display: inline-block;
+  margin-top: 2px;
+}
+
+.board-cell .resource-item {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  font-size: 12px;
+  padding: 2px 6px;
+  border-radius: 4px;
+  background: rgba(0, 0, 0, 0.45) !important;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.board-cell .resource-value {
+  font-weight: 800;
+  color: #ffffff !important;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.7);
+}
+
+.board-cell .cell-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 8px;
+  padding-top: 6px;
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.board-cell .controller-info {
+  font-size: 10px;
+  font-weight: 700;
+  color: rgba(255, 255, 255, 0.98) !important;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.8);
+  padding: 2px 6px;
+  border-radius: 4px;
+  background: rgba(0, 0, 0, 0.5);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.board-cell .structure-display {
+  display: flex;
+  gap: 2px;
+  font-size: 14px;
+  filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.5));
+}
+
+/* ============================================
+   MODAIS COMPLETOS (HÍBRIDO)
+   ============================================ */
+
+.modal-content-container {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.modal-content-container > .relative {
+  background: rgba(17, 24, 39, 0.98) !important;
+  backdrop-filter: blur(25px) saturate(180%) !important;
+  border: 1px solid rgba(255, 255, 255, 0.15) !important;
+  border-radius: 1rem;
+  box-shadow: 
+    0 25px 50px -12px rgba(0, 0, 0, 0.5),
+    inset 0 1px 0 rgba(255, 255, 255, 0.1) !important;
+  max-width: 90%;
+  max-height: 90vh;
+  overflow-y: auto;
+  animation: modalSlideIn 0.3s ease-out;
+}
+
+/* Títulos e Textos dos Modais */
+.modal-content-container h2, 
+.modal-content-container h3, 
+.modal-content-container h4 {
+  color: #fbbf24 !important;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.7) !important;
+  font-weight: 700 !important;
+  letter-spacing: 0.3px !important;
+}
+
+.modal-content-container p, 
+.modal-content-container span:not(.icon), 
+.modal-content-container div:not(.icon) {
+  color: rgba(255, 255, 255, 0.95) !important;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.7) !important;
+  font-weight: 500 !important;
+}
+
+/* Inputs em Modais */
+.modal-content-container input,
+.modal-content-container select,
+.modal-content-container textarea {
+  background: rgba(30, 41, 59, 0.9) !important;
+  color: var(--text-primary) !important;
+  border: 1px solid rgba(255, 255, 255, 0.2) !important;
+  font-weight: 500 !important;
+}
+
+.modal-content-container input:focus, 
+.modal-content-container select:focus, 
+.modal-content-container textarea:focus {
+  outline: none;
+  border-color: var(--accent) !important;
+  box-shadow: 0 0 0 2px rgba(248, 214, 92, 0.2) !important;
+}
+
+/* Modal de Negociação */
+#negotiationModal .negotiation-section {
+  transition: all 0.2s ease;
+  backdrop-filter: blur(4px);
+  padding: 1rem;
+  border-radius: 0.5rem;
+  margin-bottom: 1rem;
+}
+
+#negotiationModal .negotiation-section:hover {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  transform: translateY(-2px);
+}
+
+#negotiationModal .negotiation-section:first-child {
+  background: linear-gradient(135deg, rgba(34, 197, 94, 0.1), rgba(22, 163, 74, 0.1));
+}
+
+#negotiationModal .negotiation-section:last-child {
+  background: linear-gradient(135deg, rgba(239, 68, 68, 0.1), rgba(220, 38, 38, 0.1));
+}
+
+/* Modal de Estruturas */
+#structureModal .structure-option {
+  transition: all 0.2s ease;
+  border-width: 2px;
+  padding: 1rem;
+  border-radius: 0.5rem;
+  cursor: pointer;
+}
+
+#structureModal .structure-option:hover:not(.opacity-50) {
+  transform: translateY(-4px);
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
+}
+
+/* Cores das estruturas */
+.bg-orange-500\/30 { background-color: rgba(249, 115, 22, 0.3); }
+.border-orange-500\/30 { border-color: rgba(249, 115, 22, 0.3); }
+.bg-blue-500\/30 { background-color: rgba(59, 130, 246, 0.3); }
+.border-blue-500\/30 { border-color: rgba(59, 130, 246, 0.3); }
+.bg-yellow-500\/30 { background-color: rgba(234, 179, 8, 0.3); }
+.border-yellow-500\/30 { border-color: rgba(234, 179, 8, 0.3); }
+.bg-purple-500\/30 { background-color: rgba(168, 85, 247, 0.3); }
+.border-purple-500\/30 { border-color: rgba(168, 85, 247, 0.3); }
+.bg-green-500\/30 { background-color: rgba(34, 197, 94, 0.3); }
+.border-green-500\/30 { border-color: rgba(34, 197, 94, 0.3); }
+
+/* ============================================
+   TOOLTIP (HÍBRIDO)
+   ============================================ */
+
 #regionTooltip {
   position: fixed !important;
   z-index: 90;
   pointer-events: none;
   transition: opacity 0.15s ease, transform 0.15s ease;
   transform-origin: center bottom;
-  max-width: 350px;
-  min-width: 250px;
+  max-width: 300px;
+  min-width: 200px;
   background: rgba(31, 41, 55, 0.95);
-  backdrop-filter: blur(12px);
-  border: 1px solid rgba(255, 255, 255, 0.15);
-  border-radius: 10px;
-  padding: 1rem;
-  box-shadow: 0 15px 35px rgba(0, 0, 0, 0.4);
+  backdrop-filter: blur(8px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 0.5rem;
+  padding: 0.75rem;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
 }
 
 #regionTooltip.visible {
@@ -1063,8 +1055,8 @@ input[type="text"]:focus, select:focus, input[type="number"]:focus {
 }
 
 .tooltip-section {
-  margin-bottom: 0.75rem;
-  padding-bottom: 0.75rem;
+  margin-bottom: 0.5rem;
+  padding-bottom: 0.5rem;
   border-bottom: 1px solid rgba(255, 255, 255, 0.1);
 }
 
@@ -1074,80 +1066,79 @@ input[type="text"]:focus, select:focus, input[type="number"]:focus {
   border-bottom: none;
 }
 
-/* ========== BANNER DE EVENTO ========== */
+/* ============================================
+   BANNER DE EVENTO (HÍBRIDO)
+   ============================================ */
+
 #eventBanner {
   background: rgba(0, 0, 0, 0.6);
-  backdrop-filter: blur(12px);
+  backdrop-filter: blur(8px);
   border-width: 2px;
   border-style: solid;
-  margin-bottom: 1rem;
-  padding: 1rem;
-  border-radius: 12px;
-  transition: all 0.3s ease;
+  margin-bottom: 12px;
+  padding: 10px;
+  border-radius: 0.5rem;
 }
 
 #eventBanner.animate-pulse-slow {
   animation: eventPulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite;
 }
 
-/* Cores dos banners */
 #eventBanner.event-positive {
   background: linear-gradient(135deg, rgba(34, 197, 94, 0.25), rgba(22, 163, 74, 0.25));
   border-color: rgba(34, 197, 94, 0.7);
-  box-shadow: 0 0 20px rgba(34, 197, 94, 0.2);
+  box-shadow: 0 0 15px rgba(34, 197, 94, 0.2);
 }
 
 #eventBanner.event-negative {
   background: linear-gradient(135deg, rgba(239, 68, 68, 0.25), rgba(220, 38, 38, 0.25));
   border-color: rgba(239, 68, 68, 0.7);
-  box-shadow: 0 0 20px rgba(239, 68, 68, 0.2);
+  box-shadow: 0 0 15px rgba(239, 68, 68, 0.2);
 }
 
 #eventBanner.event-mixed {
   background: linear-gradient(135deg, rgba(168, 85, 247, 0.25), rgba(147, 51, 234, 0.25));
   border-color: rgba(168, 85, 247, 0.7);
-  box-shadow: 0 0 20px rgba(168, 85, 247, 0.2);
+  box-shadow: 0 0 15px rgba(168, 85, 247, 0.2);
 }
 
 #eventBanner.event-neutral {
   background: linear-gradient(135deg, rgba(251, 191, 36, 0.25), rgba(245, 158, 11, 0.25));
   border-color: rgba(251, 191, 36, 0.7);
-  box-shadow: 0 0 20px rgba(251, 191, 36, 0.2);
+  box-shadow: 0 0 15px rgba(251, 191, 36, 0.2);
 }
 
 /* Texto do banner */
 #eventBanner #eventBannerTitle {
   color: #ffffff !important;
   font-weight: 700 !important;
-  font-size: 15px !important;
+  font-size: 13px !important;
   text-shadow: 0 1px 3px rgba(0, 0, 0, 0.8) !important;
-  margin-bottom: 0.25rem;
 }
 
 #eventBanner #eventBannerEffect {
   color: rgba(255, 255, 255, 0.95) !important;
   font-weight: 500 !important;
-  font-size: 13px !important;
+  font-size: 11px !important;
 }
 
 #eventBanner #eventBannerTurns {
   background: rgba(0, 0, 0, 0.6) !important;
   color: #ffffff !important;
   font-weight: 600 !important;
-  padding: 4px 10px;
-  border-radius: 20px;
-  font-size: 12px;
 }
 
-/* ========== CONTROLE DE TRANSPARÊNCIA ========== */
+/* ============================================
+   CONTROLE DE TRANSPARÊNCIA (HÍBRIDO)
+   ============================================ */
+
 .transparency-control {
   transition: all 0.3s ease;
   position: relative;
-  padding: 1rem;
+  padding: 0.75rem;
   background: rgba(55, 65, 81, 0.3);
-  border-radius: 10px;
+  border-radius: 0.5rem;
   border: 1px solid rgba(255, 255, 255, 0.05);
-  margin-bottom: 1rem;
 }
 
 .transparency-control:hover {
@@ -1158,8 +1149,8 @@ input[type="text"]:focus, select:focus, input[type="number"]:focus {
 .transparency-slider {
   -webkit-appearance: none;
   width: 100%;
-  height: 8px;
-  border-radius: 4px;
+  height: 6px;
+  border-radius: 3px;
   background: linear-gradient(90deg, 
     rgba(255, 255, 255, 0.05) 0%, 
     rgba(255, 255, 255, 0.2) 50%, 
@@ -1167,7 +1158,6 @@ input[type="text"]:focus, select:focus, input[type="number"]:focus {
   );
   outline: none;
   transition: all 0.2s ease;
-  margin-top: 0.5rem;
 }
 
 .transparency-slider:hover {
@@ -1181,49 +1171,42 @@ input[type="text"]:focus, select:focus, input[type="number"]:focus {
 .transparency-slider::-webkit-slider-thumb {
   -webkit-appearance: none;
   appearance: none;
-  width: 24px;
-  height: 24px;
+  width: 20px;
+  height: 20px;
   border-radius: 50%;
   background: var(--accent);
   cursor: pointer;
   border: 2px solid rgba(0, 0, 0, 0.3);
-  box-shadow: 0 3px 12px rgba(248, 214, 92, 0.3);
+  box-shadow: 0 2px 8px rgba(248, 214, 92, 0.3);
   transition: all 0.2s ease;
 }
 
 .transparency-slider::-webkit-slider-thumb:hover {
   transform: scale(1.1);
-  box-shadow: 0 4px 16px rgba(248, 214, 92, 0.5);
+  box-shadow: 0 3px 12px rgba(248, 214, 92, 0.5);
 }
 
 .transparency-slider::-moz-range-thumb {
-  width: 24px;
-  height: 24px;
+  width: 20px;
+  height: 20px;
   border-radius: 50%;
   background: var(--accent);
   cursor: pointer;
   border: 2px solid rgba(0, 0, 0, 0.3);
-  box-shadow: 0 3px 12px rgba(248, 214, 92, 0.3);
+  box-shadow: 0 2px 8px rgba(248, 214, 92, 0.3);
   transition: all 0.2s ease;
 }
 
-/* ========== LOG DE ATIVIDADES ========== */
+/* ============================================
+   LOG DE ATIVIDADES (HÍBRIDO)
+   ============================================ */
+
 .log-entry {
   display: flex;
   align-items: center;
-  gap: 8px;
-  padding: 8px 0;
+  gap: 6px;
+  padding: 4px 0;
   border-bottom: 1px solid rgba(255, 255, 255, 0.05);
-  transition: background-color 0.2s ease;
-}
-
-.log-entry:hover {
-  background-color: rgba(255, 255, 255, 0.02);
-  border-radius: 6px;
-  padding-left: 8px;
-  padding-right: 8px;
-  margin-left: -8px;
-  margin-right: -8px;
 }
 
 .log-entry:last-child {
@@ -1234,10 +1217,9 @@ input[type="text"]:focus, select:focus, input[type="number"]:focus {
   transition: all 0.2s ease;
   border: 1px solid transparent;
   cursor: pointer;
-  padding: 6px 12px;
-  border-radius: 6px;
-  font-size: 12px;
-  background: rgba(255, 255, 255, 0.02);
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 10px;
 }
 
 .log-filter-sidebar:hover {
@@ -1248,7 +1230,6 @@ input[type="text"]:focus, select:focus, input[type="number"]:focus {
   background: rgba(59, 130, 246, 0.2) !important;
   border-color: rgba(59, 130, 246, 0.4) !important;
   color: #60a5fa !important;
-  font-weight: 600;
 }
 
 /* Cores dos tipos de log */
@@ -1261,21 +1242,22 @@ input[type="text"]:focus, select:focus, input[type="number"]:focus {
 .log-type-victory { color: #10b981; }
 .log-type-income { color: #22c55e; }
 
-/* ========== CONQUISTAS ========== */
+/* ============================================
+   CONQUISTAS (HÍBRIDO)
+   ============================================ */
+
 .achievement {
   display: flex;
   align-items: center;
-  gap: 12px;
-  padding: 12px;
+  gap: 8px;
+  padding: 8px;
   border-bottom: 1px solid rgba(255, 255, 255, 0.05);
-  border-radius: 10px;
+  border-radius: 6px;
   transition: all 0.2s ease;
-  background: rgba(255, 255, 255, 0.01);
 }
 
 .achievement:hover {
   background: rgba(255, 255, 255, 0.03);
-  transform: translateX(4px);
 }
 
 .achievement-unlocked {
@@ -1288,57 +1270,22 @@ input[type="text"]:focus, select:focus, input[type="number"]:focus {
   filter: grayscale(0.8);
 }
 
-.achievement-icon {
-  font-size: 1.8rem;
-  min-width: 40px;
-  text-align: center;
-}
+/* ============================================
+   ESTILOS PARA IA (HÍBRIDO)
+   ============================================ */
 
-.achievement-info {
-  flex: 1;
-}
-
-.achievement-title {
-  font-weight: 600;
-  font-size: 14px;
-  margin-bottom: 2px;
-}
-
-.achievement-desc {
-  font-size: 12px;
-  color: rgba(255, 255, 255, 0.7);
-}
-
-/* ========== ESTILOS PARA IA ========== */
 .ai-thinking {
   animation: pulse 2s infinite;
   border-color: #8b5cf6 !important;
-  position: relative;
-}
-
-.ai-thinking::after {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  border-radius: inherit;
-  background: linear-gradient(45deg, transparent, rgba(139, 92, 246, 0.1), transparent);
-  background-size: 200% 200%;
-  animation: shimmer 2s infinite;
-  pointer-events: none;
 }
 
 .ai-difficulty-badge {
   display: inline-block;
-  padding: 4px 10px;
-  border-radius: 12px;
-  font-size: 12px;
+  padding: 2px 6px;
+  border-radius: 10px;
+  font-size: 0.7rem;
   font-weight: bold;
-  margin-left: 8px;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
+  margin-left: 4px;
 }
 
 .ai-easy { background-color: var(--ai-easy-color); color: white; }
@@ -1346,77 +1293,95 @@ input[type="text"]:focus, select:focus, input[type="number"]:focus {
 .ai-hard { background-color: var(--ai-hard-color); color: black; }
 .ai-master { background-color: var(--ai-master-color); color: white; }
 
-/* ========== FILTROS DE EVENTOS ========== */
+/* ============================================
+   MANUAL - IMAGENS (HÍBRIDO)
+   ============================================ */
+
+.manual-content img {
+  display: block;
+  margin: 2rem auto;
+  background-color: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+  outline: none !important;
+  border-radius: 0 !important;
+  -webkit-clip-path: inset(2px round 12px);
+  clip-path: inset(2px round 12px);
+  filter: drop-shadow(0 15px 25px rgba(0, 0, 0, 0.7));
+  transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1), filter 0.3s ease;
+}
+
+.manual-content img:hover {
+  transform: scale(1.03) translateY(-5px);
+  filter: drop-shadow(0 20px 35px rgba(0, 0, 0, 0.85));
+  z-index: 10;
+}
+
+/* ==================== FILTROS DE EVENTOS ==================== */
+
+/* Botões de filtro - ESTADO BASE */
 .event-filter-btn {
   transition: all 0.2s ease;
   border: 2px solid transparent;
   font-weight: 600;
-  padding: 10px 20px;
+  padding: 8px 16px;
   border-radius: 9999px;
   cursor: pointer;
   outline: none;
-  font-size: 14px;
 }
 
-/* Estado INATIVO */
+/* Estado INATIVO (deve ser muito específico) */
 .event-filter-btn:not(.active) {
-  background-color: #374151 !important;
-  color: #d1d5db !important;
-  border-color: #4b5563 !important;
+  background-color: #374151 !important; /* gray-700 */
+  color: #d1d5db !important; /* gray-300 */
+  border-color: #4b5563 !important; /* gray-600 */
 }
 
-/* Estado ATIVO */
+/* Estado ATIVO (classes serão adicionadas via JavaScript) */
 .event-filter-btn.active {
   transform: translateY(-2px);
-  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.4);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
   font-weight: 700;
   border-color: rgba(255, 255, 255, 0.5) !important;
 }
 
-/* Cores específicas para botões ativos */
+/* Cores específicas para botões ativos (sobrescrevem o estado inativo) */
 .event-filter-btn.active#filterAll {
-  background-color: #2563eb !important;
+  background-color: #2563eb !important; /* blue-600 */
   color: white !important;
 }
 
 .event-filter-btn.active#filterPositive {
-  background-color: #059669 !important;
+  background-color: #059669 !important; /* green-600 */
   color: white !important;
 }
 
 .event-filter-btn.active#filterNegative {
-  background-color: #dc2626 !important;
+  background-color: #dc2626 !important; /* red-600 */
   color: white !important;
 }
 
 .event-filter-btn.active#filterMixed {
-  background-color: #d97706 !important;
+  background-color: #d97706 !important; /* yellow-600 */
   color: white !important;
 }
 
 /* Hover apenas para botões inativos */
 .event-filter-btn:not(.active):hover {
-  background-color: #4b5563 !important;
-  color: #f3f4f6 !important;
+  background-color: #4b5563 !important; /* gray-600 */
+  color: #f3f4f6 !important; /* gray-100 */
   transform: translateY(-1px);
 }
 
 /* Cards de evento */
 .event-card {
-  transition: opacity 0.3s ease, transform 0.2s ease;
+  transition: opacity 0.3s ease;
   animation: fadeIn 0.5s ease forwards;
   opacity: 0;
-  padding: 1rem;
-  border-radius: 10px;
-  background: rgba(255, 255, 255, 0.02);
-  border: 1px solid rgba(255, 255, 255, 0.05);
-  margin-bottom: 0.5rem;
 }
 
-.event-card:hover {
-  transform: translateY(-2px);
-  background: rgba(255, 255, 255, 0.04);
-  border-color: rgba(255, 255, 255, 0.1);
+@keyframes fadeIn {
+  to { opacity: 1; }
 }
 
 /* Indicadores visuais para categorias */
@@ -1433,323 +1398,37 @@ input[type="text"]:focus, select:focus, input[type="number"]:focus {
 }
 
 /* ============================================
-   10. MODAIS
+   SCROLLBAR PERSONALIZADA (HÍBRIDO)
    ============================================ */
 
-/* Container de Modal Base */
-.modal-content-container {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 1000;
-  padding: 2rem;
+.custom-scrollbar {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(251, 191, 36, 0.5) rgba(30, 41, 59, 0.3);
 }
 
-.modal-content-container > .relative {
-  background: rgba(17, 24, 39, 0.98) !important;
-  backdrop-filter: blur(25px) saturate(180%) !important;
-  border: 1px solid rgba(255, 255, 255, 0.15) !important;
-  border-radius: 20px;
-  box-shadow: 
-    0 30px 60px -12px rgba(0, 0, 0, 0.5),
-    inset 0 1px 0 rgba(255, 255, 255, 0.1) !important;
-  max-width: 800px;
-  width: 100%;
-  max-height: 85vh;
-  overflow-y: auto;
-  animation: modalSlideIn 0.3s ease-out;
-  padding: 2rem;
+.custom-scrollbar::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
 }
 
-/* Títulos e Textos dos Modais */
-.modal-content-container h2, 
-.modal-content-container h3, 
-.modal-content-container h4 {
-  color: #fbbf24 !important;
-  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.7) !important;
-  font-weight: 700 !important;
-  letter-spacing: 0.3px !important;
-  margin-bottom: 1rem;
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: rgba(30, 41, 59, 0.3);
+  border-radius: 4px;
 }
 
-.modal-content-container p, 
-.modal-content-container span:not(.icon), 
-.modal-content-container div:not(.icon) {
-  color: rgba(255, 255, 255, 0.95) !important;
-  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.7) !important;
-  font-weight: 500 !important;
-  line-height: 1.6;
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: rgba(251, 191, 36, 0.5);
+  border-radius: 4px;
 }
 
-/* Inputs em Modais */
-.modal-content-container input,
-.modal-content-container select,
-.modal-content-container textarea {
-  background: rgba(30, 41, 59, 0.9) !important;
-  color: var(--text-primary) !important;
-  border: 1px solid rgba(255, 255, 255, 0.2) !important;
-  font-weight: 500 !important;
-  border-radius: 10px;
-  padding: 12px 16px;
-  font-size: 15px;
-  width: 100%;
-  transition: all 0.2s ease;
-}
-
-.modal-content-container input:focus, 
-.modal-content-container select:focus, 
-.modal-content-container textarea:focus {
-  outline: none;
-  border-color: var(--accent) !important;
-  box-shadow: 0 0 0 3px rgba(248, 214, 92, 0.2) !important;
-}
-
-/* ========== MODAL DE NEGOCIAÇÃO ========== */
-#negotiationModal .negotiation-section {
-  transition: all 0.2s ease;
-  backdrop-filter: blur(4px);
-  padding: 1.5rem;
-  border-radius: 12px;
-  margin-bottom: 1.5rem;
-  border: 1px solid rgba(255, 255, 255, 0.05);
-}
-
-#negotiationModal .negotiation-section:hover {
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
-  transform: translateY(-2px);
-  border-color: rgba(255, 255, 255, 0.1);
-}
-
-#negotiationModal .negotiation-section:first-child {
-  background: linear-gradient(135deg, rgba(34, 197, 94, 0.1), rgba(22, 163, 74, 0.1));
-}
-
-#negotiationModal .negotiation-section:last-child {
-  background: linear-gradient(135deg, rgba(239, 68, 68, 0.1), rgba(220, 38, 38, 0.1));
-}
-
-/* ========== MODAL DE ESTRUTURAS ========== */
-#structureModal .structure-option {
-  transition: all 0.2s ease;
-  border-width: 2px;
-  padding: 1.5rem;
-  border-radius: 12px;
-  cursor: pointer;
-  background: rgba(255, 255, 255, 0.02);
-  border: 2px solid transparent;
-}
-
-#structureModal .structure-option:hover:not(.opacity-50) {
-  transform: translateY(-4px);
-  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.4);
-  background: rgba(255, 255, 255, 0.04);
-}
-
-#structureModal .structure-option.selected {
-  border-color: var(--accent) !important;
-  background: rgba(248, 214, 92, 0.05) !important;
-  animation: pulse 2s infinite;
-}
-
-/* ========== MODAL DE ALERTA ========== */
-#alertModal .modal-content-container > .relative {
-  background: rgba(17, 24, 39, 0.98) !important;
-  backdrop-filter: blur(25px) saturate(180%) !important;
-  border: 1px solid rgba(239, 68, 68, 0.3) !important;
-  max-width: 500px;
-}
-
-#alertModal h2 {
-  color: #ef4444 !important;
-}
-
-/* ========== MODAIS DE RESPOSTA ========== */
-#negResponseModal .modal-content-container > .relative,
-#negotiationModal .modal-content-container > .relative {
-  background: rgba(17, 24, 39, 0.98) !important;
-  backdrop-filter: blur(25px) saturate(180%) !important;
-  border: 1px solid rgba(59, 130, 246, 0.3) !important;
-}
-
-/* ========== MODAL DE EVENTO ========== */
-#eventModal .relative.event-positive {
-  background: linear-gradient(135deg, rgba(34, 197, 94, 0.15), rgba(22, 163, 74, 0.15)) !important;
-  border-color: rgba(34, 197, 94, 0.4) !important;
-  backdrop-filter: blur(12px);
-}
-
-#eventModal .relative.event-negative {
-  background: linear-gradient(135deg, rgba(239, 68, 68, 0.15), rgba(220, 38, 38, 0.15)) !important;
-  border-color: rgba(239, 68, 68, 0.4) !important;
-  backdrop-filter: blur(12px);
-}
-
-#eventModal .relative.event-mixed {
-  background: linear-gradient(135deg, rgba(168, 85, 247, 0.15), rgba(147, 51, 234, 0.15)) !important;
-  border-color: rgba(168, 85, 247, 0.4) !important;
-  backdrop-filter: blur(12px);
-}
-
-#eventModal .relative.event-neutral {
-  background: linear-gradient(135deg, rgba(251, 191, 36, 0.15), rgba(245, 158, 11, 0.15)) !important;
-  border-color: rgba(251, 191, 36, 0.4) !important;
-  backdrop-filter: blur(12px);
-}
-
-/* ========== OVERLAY DOS MODAIS ========== */
-body.modal-open {
-  overflow: hidden !important;
-}
-
-body.modal-open #gameContainer,
-body.modal-open #gameMap,
-body.modal-open #sidebar {
-  filter: blur(2px) brightness(0.7);
-  transition: filter 0.3s ease;
-  pointer-events: none;
-}
-
-/* Overlay escuro para todos os modais */
-#negotiationModal::before,
-#negResponseModal::before,
-#alertModal::before,
-#eventModal::before,
-#incomeModal::before,
-#structureModal::before,
-#manualModal::before,
-#victoryModal::before,
-#saveLoadModal::before {
-  content: '';
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: rgba(0, 0, 0, 0.85) !important;
-  backdrop-filter: blur(8px) !important;
-  z-index: 999;
-  pointer-events: none;
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: rgba(251, 191, 36, 0.7);
 }
 
 /* ============================================
-   11. EFEITOS VISUAIS
+   VÍDEO DE ABERTURA (HÍBRIDO)
    ============================================ */
 
-/* ========== MANUAL - IMAGENS ========== */
-.manual-content img {
-  display: block;
-  margin: 2rem auto;
-  background-color: transparent !important;
-  border: none !important;
-  box-shadow: none !important;
-  outline: none !important;
-  border-radius: 12px !important;
-  -webkit-clip-path: inset(2px round 12px);
-  clip-path: inset(2px round 12px);
-  filter: drop-shadow(0 15px 25px rgba(0, 0, 0, 0.7));
-  transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1), filter 0.3s ease;
-  max-width: 90%;
-  height: auto;
-}
-
-.manual-content img:hover {
-  transform: scale(1.03) translateY(-5px);
-  filter: drop-shadow(0 20px 35px rgba(0, 0, 0, 0.85));
-  z-index: 10;
-}
-
-/* ========== MANUAL - TABS ========== */
-.manual-tab {
-  color: #cfcfcf;
-  background: transparent;
-  border: 1px solid transparent;
-  transition: all 0.2s ease;
-  width: 100%;
-  text-align: left;
-  padding: 12px 20px;
-  border-radius: 8px;
-  margin-bottom: 6px;
-  cursor: pointer;
-  font-size: 14px;
-  font-weight: 500;
-}
-
-.manual-tab:hover {
-  color: #fff;
-  background: rgba(255, 255, 255, 0.02);
-  border-color: rgba(255, 255, 255, 0.05);
-}
-
-.manual-tab.active {
-  color: var(--accent);
-  border-color: rgba(248, 214, 92, 0.12);
-  background: linear-gradient(180deg, rgba(248, 214, 92, 0.03), rgba(255, 255, 255, 0.01));
-  font-weight: 600;
-}
-
-/* ========== EFEITOS DE EDIÇÃO ========== */
-.editing-mode {
-  animation: pulseBorder 2s infinite;
-  position: relative;
-}
-
-.player-card.editing::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: 3px;
-  background: linear-gradient(90deg, #3b82f6, #8b5cf6);
-  animation: editingGlow 2s infinite;
-  z-index: 2;
-}
-
-.player-actions {
-  transition: opacity 0.2s ease;
-}
-
-.player-actions button {
-  transition: all 0.2s ease;
-}
-
-.player-actions button:hover {
-  transform: scale(1.1);
-}
-
-/* Botão de adição/edição dinâmico */
-#addPlayerBtn.bg-green-600 {
-  background-color: #059669;
-  transition: all 0.2s ease;
-}
-
-#addPlayerBtn.bg-blue-600 {
-  background-color: #2563eb;
-  transition: all 0.2s ease;
-}
-
-#addPlayerBtn.bg-green-600:hover {
-  background-color: #047857;
-  transform: translateY(-2px);
-}
-
-#addPlayerBtn.bg-blue-600:hover {
-  background-color: #1d4ed8;
-  transform: translateY(-2px);
-}
-
-/* Indicador visual para edição em andamento */
-.editing-mode .player-name-input {
-  border-color: #3b82f6 !important;
-  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2) !important;
-}
-
-/* ========== VÍDEO DE ABERTURA ========== */
 #introVideo {
   position: fixed;
   top: 0;
@@ -1767,58 +1446,421 @@ body.modal-open #sidebar {
   pointer-events: none;
 }
 
-/* ========== MANUAL ICON FLUTUANTE ========== */
-#manualIcon {
-  position: fixed !important;
-  top: 100px !important;
-  right: 30px !important;
-  z-index: 60 !important;
-  padding: 14px;
-  border-radius: 50%;
-  background: rgba(0, 0, 0, 0.5);
-  backdrop-filter: blur(12px);
-  border: 1px solid rgba(248, 214, 92, 0.3);
-  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.4);
-  transition: all 0.3s ease;
-  cursor: pointer;
-  width: 56px;
-  height: 56px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-#manualIcon:hover {
-  transform: scale(1.1) rotate(5deg);
-  border-color: rgba(248, 214, 92, 0.6);
-  box-shadow: 0 8px 25px rgba(248, 214, 92, 0.2);
-  background: rgba(0, 0, 0, 0.6);
-}
-
-#manualIcon svg {
-  width: 28px;
-  height: 28px;
-  color: #f8d65c;
-}
-
 /* ============================================
-   12. ACESSIBILIDADE
+   RESPONSIVIDADE COMPLETA (HÍBRIDO)
    ============================================ */
 
-/* Redução de movimento */
-@media (prefers-reduced-motion: reduce) {
-  *,
-  *::before,
-  *::after {
-    animation-duration: 0.01ms !important;
-    animation-iteration-count: 1 !important;
-    transition-duration: 0.01ms !important;
+/* Desktop Grande */
+@media (min-width: 1024px) {
+  #gameContainer {
+    grid-template-columns: 320px 1fr;
+    height: calc(100vh - 160px);
+  }
+}
+
+/* Tablet */
+@media (max-width: 1024px) {
+  #sidebar {
+    display: none;
+  }
+  
+  #gameContainer {
+    grid-template-columns: 1fr;
+    height: calc(100vh - 200px);
+    margin-top: 70px;
+    margin-bottom: 100px;
+  }
+}
+
+/* Mobile Médio */
+@media (max-width: 768px) {
+  #gameContainer {
+    height: calc(100vh - 220px);
+    margin-top: 60px;
+    margin-bottom: 120px;
+    padding: 0.5rem;
+  }
+  
+  .board-cell {
+    padding: 6px;
+  }
+  
+  .action-btn {
+    padding: 6px 8px;
+    font-size: 13px;
+  }
+}
+
+/* Mobile Pequeno */
+@media (max-width: 480px) {
+  #gameContainer {
+    height: calc(100vh - 240px);
+    margin-top: 50px;
+    margin-bottom: 140px;
+    padding: 0.25rem;
+  }
+  
+  .board-cell {
+    padding: 4px;
+  }
+  
+  .board-cell .text-xs {
+    font-size: 10px;
+  }
+  
+  .board-cell .text-\[10px\] {
+    font-size: 9px;
   }
 }
 
 /* ============================================
-   EFEITOS ESPECIAIS E DETALHES
+   MOBILE ESPECÍFICO (HÍBRIDO)
    ============================================ */
+
+@media (max-width: 768px) {
+  /* Reset de altura para mobile */
+  html, body {
+    height: auto;
+    min-height: 100vh;
+    overflow-y: auto;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  /* Layout principal em coluna única */
+  #gameContainer {
+    grid-template-columns: 1fr !important;
+    height: auto;
+    margin: 60px 0 120px 0 !important;
+    padding: 0.5rem;
+    gap: 0.5rem;
+  }
+
+  /* Sidebar oculta por padrão, acessível via botão */
+  #sidebar {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 999;
+    background: rgba(15, 23, 42, 0.98);
+    backdrop-filter: blur(20px);
+    max-height: 100vh;
+    padding: 1rem;
+    overflow-y: auto;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 0;
+  }
+
+  #sidebar.active {
+    display: flex;
+    animation: slideInRight 0.3s ease-out;
+  }
+
+  /* Botão de toggle para sidebar */
+  .sidebar-toggle {
+    position: fixed;
+    bottom: 140px;
+    right: 15px;
+    z-index: 1000;
+    width: 52px;
+    height: 52px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #3b82f6, #1d4ed8);
+    border: 2px solid rgba(255, 255, 255, 0.3);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 24px;
+    color: white;
+    box-shadow: 0 4px 20px rgba(59, 130, 246, 0.4);
+    cursor: pointer;
+    transition: all 0.3s ease;
+  }
+
+  .sidebar-toggle:hover {
+    transform: scale(1.1);
+    box-shadow: 0 6px 25px rgba(59, 130, 246, 0.6);
+  }
+
+  /* Ajustes no mapa */
+  #gameMap {
+    min-height: 70vh;
+    border-radius: 12px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+  }
+
+  /* Controles de zoom para mobile */
+  .mobile-zoom-controls {
+    position: absolute;
+    bottom: 15px;
+    right: 15px;
+    z-index: 100;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .mobile-zoom-controls button {
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    background: rgba(0, 0, 0, 0.7);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    color: white;
+    font-size: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.2s ease;
+  }
+
+  .mobile-zoom-controls button:hover {
+    background: rgba(0, 0, 0, 0.9);
+    transform: scale(1.1);
+  }
+
+  /* Game Footer Mobile */
+  #gameFooter {
+    padding: 0.5rem !important;
+    min-height: auto !important;
+    max-height: 90px !important;
+  }
+
+  #gameFooter .flex {
+    flex-direction: row !important;
+    gap: 0.5rem !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+  }
+
+  #gameFooter .flex > div:first-child {
+    display: grid !important;
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: 0.25rem !important;
+    width: 55% !important;
+  }
+
+  .action-btn {
+    padding: 6px 4px !important;
+    font-size: 11px !important;
+    min-height: 36px !important;
+    border-radius: 6px !important;
+    margin: 0 !important;
+  }
+
+  #endTurnBtn {
+    padding: 8px 12px !important;
+    font-size: 12px !important;
+    min-height: 36px !important;
+    width: 45% !important;
+    margin: 0 !important;
+  }
+
+  #actionsLeft {
+    display: none !important;
+  }
+
+  /* Botões muito pequenos */
+  @media (max-width: 360px) {
+    .action-btn span:not(.icon) {
+      display: none !important;
+    }
+    
+    .action-btn {
+      font-size: 16px !important;
+      min-width: 44px !important;
+      padding: 8px !important;
+    }
+    
+    #endTurnBtn {
+      font-size: 11px !important;
+      padding: 6px 8px !important;
+    }
+  }
+
+  /* Estado desabilitado melhorado */
+  .action-btn:disabled {
+    opacity: 0.4 !important;
+    transform: scale(0.95) !important;
+  }
+}
+
+/* ============================================
+   BOTÕES DE AÇÃO (HÍBRIDO)
+   ============================================ */
+
+.action-btn {
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.02), rgba(0, 0, 0, 0.18));
+  color: #fff;
+  padding: 8px 12px;
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.04);
+  font-weight: 500;
+  transition: all 0.2s ease;
+  cursor: pointer;
+}
+
+.action-btn:hover:not(:disabled) {
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.05), rgba(0, 0, 0, 0.25));
+  border-color: rgba(255, 255, 255, 0.1);
+}
+
+.action-btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.01), rgba(0, 0, 0, 0.1));
+}
+
+#endTurnBtn {
+  transition: all 0.3s ease;
+  font-weight: bold;
+}
+
+#endTurnBtn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+#endTurnBtn.bg-blue-600:hover {
+  background-color: #2563eb !important;
+  transform: translateY(-2px);
+}
+
+#endTurnBtn.bg-green-600:hover {
+  background-color: #16a34a !important;
+  transform: translateY(-2px);
+}
+
+/* ============================================
+   EFEITOS DE EDIÇÃO (RESTAURADOS DA VERSÃO ANTIGA)
+   ============================================ */
+
+.editing-mode {
+  animation: pulseBorder 2s infinite;
+}
+
+.player-card.editing::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: linear-gradient(90deg, #3b82f6, #8b5cf6);
+  animation: editingGlow 2s infinite;
+}
+
+.player-actions {
+  transition: opacity 0.2s ease;
+}
+
+.player-actions button {
+  transition: all 0.2s ease;
+}
+
+.player-actions button:hover {
+  transform: scale(1.1);
+}
+
+/* Botão de adição/edição dinâmico */
+#addPlayerBtn.bg-green-600 {
+  background-color: #059669;
+}
+
+#addPlayerBtn.bg-blue-600 {
+  background-color: #2563eb;
+}
+
+#addPlayerBtn.bg-green-600:hover {
+  background-color: #047857;
+}
+
+#addPlayerBtn.bg-blue-600:hover {
+  background-color: #1d4ed8;
+}
+
+/* Modal de save/load */
+#saveLoadModal .relative {
+  animation: modalSlideIn 0.3s ease-out;
+}
+
+#saveLoadYesBtn {
+  background: linear-gradient(135deg, #059669, #047857);
+}
+
+#saveLoadNoBtn {
+  background: rgba(55, 65, 81, 0.8);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+#saveLoadDeleteBtn:hover {
+  color: #ef4444;
+}
+
+/* Indicador visual para edição em andamento */
+.editing-mode .player-name-input {
+  border-color: #3b82f6 !important;
+  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2);
+}
+
+/* ============================================
+   BADGES (RESTAURADOS)
+   ============================================ */
+
+.badge {
+  display: inline-block;
+  padding: 4px 8px;
+  border-radius: 999px;
+  font-size: 12px;
+  background: rgba(255,255,255,0.03);
+  color: #fff;
+  font-weight: 500;
+}
+
+.current-turn-badge {
+  animation: pulse 2s ease-in-out infinite;
+}
+
+/* ============================================
+   ESTILOS PARA EMOJIS (HÍBRIDO)
+   ============================================ */
+
+/* Forçar uso de fontes de emoji modernas */
+@font-face {
+  font-family: 'Twemoji Mozilla';
+  src: local('Apple Color Emoji'), 
+       local('Segoe UI Emoji'), 
+       local('Segoe UI Symbol'), 
+       local('Noto Color Emoji'), 
+       local('Android Emoji'),
+       local('EmojiSymbols');
+  unicode-range: U+1F000-1F644, U+203C-3299;
+}
+
+/* Aplicar a todos os elementos que mostram emojis */
+body * {
+  font-feature-settings: "emoji";
+}
+
+/* Garantir que os emojis sejam renderizados */
+.resource-item,
+.resource-value,
+#offerResourcesInfo,
+#requestResourcesInfo,
+#negotiationSummary,
+#incomeResources,
+#resourceList,
+#controlledRegions,
+#actionsLeft,
+.board-cell .text-xs,
+.board-cell .text-\[10px\] {
+  font-family: "Twemoji Mozilla", "Segoe UI Emoji", "Apple Color Emoji", "Noto Color Emoji", "EmojiSymbols", "Symbola", sans-serif;
+  font-size: 1.1em;
+  line-height: 1;
+}
 
 /* Fallback visual para emojis faltantes */
 .resource-emoji {
@@ -1851,6 +1893,142 @@ body.modal-open #sidebar {
   opacity: 1;
 }
 
+/* ============================================
+   MANUAL - TABS (HÍBRIDO)
+   ============================================ */
+
+.manual-tab {
+  color: #cfcfcf;
+  background: transparent;
+  border: 1px solid transparent;
+  transition: all 0.2s ease;
+  width: 100%;
+  text-align: left;
+  padding: 8px 16px;
+  border-radius: 6px;
+  margin-bottom: 4px;
+  cursor: pointer;
+}
+
+.manual-tab:hover {
+  color: #fff;
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.manual-tab.active {
+  color: var(--accent);
+  border-color: rgba(248, 214, 92, 0.12);
+  background: linear-gradient(180deg, rgba(248, 214, 92, 0.03), rgba(255, 255, 255, 0.01));
+}
+
+/* ============================================
+   ACESSIBILIDADE E MODOS DE COR
+   ============================================ */
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* Modo Claro do Sistema */
+@media (prefers-color-scheme: light) {
+  body {
+    background-color: #f5f5f5;
+    color: #333;
+  }
+  
+  .board-cell {
+    background: rgba(30, 30, 30, 0.8);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+  }
+  
+  .board-cell.controlled {
+    background: rgba(var(--player-rgb), 0.3) !important;
+    border-left: 6px solid var(--player-color);
+  }
+  
+  .board-cell.neutral {
+    border-color: rgba(255,255,255,0.3);
+  }
+  
+  .board-cell:hover::before {
+    opacity: 0.8;
+  }
+  
+  .board-cell.region-selected::before {
+    opacity: 0.65;
+    filter: saturate(1.05) contrast(1.02);
+  }
+}
+
+/* ============================================
+   MANUAL ICON (FLUTUANTE)
+   ============================================ */
+
+#manualIcon {
+  position: fixed !important;
+  top: 20px !important;
+  right: 20px !important;
+  z-index: 60 !important;
+  padding: 12px;
+  border-radius: 50%;
+  background: rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(8px);
+  border: 1px solid rgba(248, 214, 92, 0.3);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  transition: all 0.3s ease;
+  cursor: pointer;
+}
+
+#manualIcon:hover {
+  transform: scale(1.1);
+  border-color: rgba(248, 214, 92, 0.6);
+  box-shadow: 0 6px 20px rgba(248, 214, 92, 0.2);
+}
+
+#manualIcon svg {
+  width: 24px;
+  height: 24px;
+  color: #f8d65c;
+}
+
+/* ============================================
+   ESTILOS ADICIONAIS PARA MODAIS DE EVENTO
+   ============================================ */
+
+#eventModal .relative.event-positive {
+  background: linear-gradient(135deg, rgba(34, 197, 94, 0.15), rgba(22, 163, 74, 0.15)) !important;
+  border-color: rgba(34, 197, 94, 0.4) !important;
+  backdrop-filter: blur(12px);
+}
+
+#eventModal .relative.event-negative {
+  background: linear-gradient(135deg, rgba(239, 68, 68, 0.15), rgba(220, 38, 38, 0.15)) !important;
+  border-color: rgba(239, 68, 68, 0.4) !important;
+  backdrop-filter: blur(12px);
+}
+
+#eventModal .relative.event-mixed {
+  background: linear-gradient(135deg, rgba(168, 85, 247, 0.15), rgba(147, 51, 234, 0.15)) !important;
+  border-color: rgba(168, 85, 247, 0.4) !important;
+  backdrop-filter: blur(12px);
+}
+
+#eventModal .relative.event-neutral {
+  background: linear-gradient(135deg, rgba(251, 191, 36, 0.15), rgba(245, 158, 11, 0.15)) !important;
+  border-color: rgba(251, 191, 36, 0.4) !important;
+  backdrop-filter: blur(12px);
+}
+
+/* ============================================
+   FINAL DO ARQUIVO - VERSÃO COMPLETA HÍBRIDA
+   ============================================ */
+
 /* Estilos para modais sobrepostos */
 body.modal-open #boardContainer,
 body.modal-open .board-cell {
@@ -1872,50 +2050,140 @@ body.modal-open .board-cell {
   z-index: 1000 !important;
 }
 
-/* Modal de save/load */
-#saveLoadModal .relative {
-  animation: modalSlideIn 0.3s ease-out;
-  max-width: 600px;
+/* Estilos de Texto colorido para estruturas */
+.text-orange-300 { color: #fdba74; }
+.text-blue-300 { color: #93c5fd; }
+.text-yellow-300 { color: #fde047; }
+.text-purple-300 { color: #d8b4fe; }
+.text-green-300 { color: #86efac; }
+
+/* Classes utilitárias */
+.gap-0\.5 { gap: 0.125rem; }
+.gap-1\.5 { gap: 0.375rem; }
+.text-\[10px\] { font-size: 10px; }
+.leading-tight { line-height: 1.25; }
+
+/* Scrollbar global */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
 }
 
-#saveLoadYesBtn {
-  background: linear-gradient(135deg, #059669, #047857);
-  padding: 12px 24px;
-  font-weight: 600;
+::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.03);
+  border-radius: 4px;
 }
 
-#saveLoadNoBtn {
-  background: rgba(55, 65, 81, 0.8);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  padding: 12px 24px;
-  font-weight: 600;
+::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 4px;
 }
 
-#saveLoadDeleteBtn:hover {
-  color: #ef4444;
-  transform: scale(1.05);
-}
-
-/* ============================================
-   AJUSTES DE PERFORMANCE
-   ============================================ */
-
-/* Otimização de renderização para elementos complexos */
-#gameMap,
-.board-cell,
-.modal-content-container > .relative {
-  will-change: transform, opacity;
-  transform: translateZ(0);
-}
-
-/* Otimização de animações */
-.animate-pulse-slow,
-.animate-fade-in,
-.animate-slide-in-right {
-  backface-visibility: hidden;
-  perspective: 1000px;
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.15);
 }
 
 /* ============================================
-   FINAL DO ARQUIVO - VERSÃO DESKTOP OTIMIZADA
+   CORREÇÃO PARA FUNDO DOS MODAIS - OVERLAY ESCURO
    ============================================ */
+
+/* Overlay principal para todos os modais */
+#negotiationModal::before,
+#negResponseModal::before,
+#alertModal::before,
+#eventModal::before,
+#incomeModal::before,
+#structureModal::before,
+#manualModal::before,
+#victoryModal::before,
+#saveLoadModal::before {
+  content: '';
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.85) !important;
+  backdrop-filter: blur(8px) !important;
+  z-index: -1;
+  pointer-events: none;
+}
+
+/* Garantir que os containers dos modais tenham posicionamento correto */
+#negotiationModal .modal-content-container,
+#negResponseModal .modal-content-container,
+#alertModal .modal-content-container,
+#eventModal .modal-content-container,
+#incomeModal .modal-content-container,
+#structureModal .modal-content-container,
+#manualModal .modal-content-container,
+#victoryModal .modal-content-container,
+#saveLoadModal .modal-content-container {
+  position: relative;
+  z-index: 1;
+}
+
+/* Remover qualquer overlay transparente existente */
+.modal-content-container > .absolute,
+.modal-overlay {
+  background: transparent !important;
+  backdrop-filter: none !important;
+}
+
+/* Ajustar específicamente para modal de alerta */
+#alertModal .modal-content-container > .relative {
+  background: rgba(17, 24, 39, 0.98) !important;
+  backdrop-filter: blur(25px) saturate(180%) !important;
+  border: 1px solid rgba(239, 68, 68, 0.3) !important;
+}
+
+/* Ajustar específicamente para modal de proposta pendente/negociação */
+#negResponseModal .modal-content-container > .relative,
+#negotiationModal .modal-content-container > .relative {
+  background: rgba(17, 24, 39, 0.98) !important;
+  backdrop-filter: blur(25px) saturate(180%) !important;
+  border: 1px solid rgba(59, 130, 246, 0.3) !important;
+}
+
+/* Garantir que o texto seja legível */
+#alertModal h2,
+#alertModal h3,
+#alertModal h4,
+#negResponseModal h2,
+#negResponseModal h3,
+#negResponseModal h4,
+#negotiationModal h2,
+#negotiationModal h3,
+#negotiationModal h4 {
+  color: #fbbf24 !important;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.7) !important;
+}
+
+/* Ajustar para mobile */
+@media (max-width: 768px) {
+  #negotiationModal::before,
+  #negResponseModal::before,
+  #alertModal::before {
+    background: rgba(0, 0, 0, 0.9) !important;
+    backdrop-filter: blur(12px) !important;
+  }
+  
+  #alertModal .modal-content-container > .relative,
+  #negResponseModal .modal-content-container > .relative,
+  #negotiationModal .modal-content-container > .relative {
+    background: rgba(17, 24, 39, 0.99) !important;
+    backdrop-filter: blur(30px) saturate(200%) !important;
+  }
+}
+
+/* Correção adicional para garantir visibilidade */
+body.modal-open {
+  overflow: hidden !important;
+}
+
+body.modal-open #gameContainer,
+body.modal-open #gameMap,
+body.modal-open #sidebar {
+  filter: blur(2px) brightness(0.7);
+  transition: filter 0.3s ease;
+}
