@@ -26,35 +26,35 @@ O sistema é modular, com separação clara entre estado, lógica, UI e configur
 
 2.2 Diagrama textual de dependências
 
-gaia-dominium/  (raiz do repositório)
+gaia-dominium (raiz do repositório)
 index.html (Página principal)
 style.css (Estilos principais)
-/js/ (Todos os scripts JavaScript, divididos em subpastas por módulo)
+js (Todos os scripts JavaScript, divididos em subpastas por módulo)
 main.js (Ponto de entrada principal)
-/logic/ (Lógica do jogo - ações, turnos, negociação, etc.)
+logic (Lógica do jogo - ações, turnos, negociação, etc.)
 game-logic.js
 logic-actions.js
 logic-negotiation.js
 logic-turn.js
 logic-ai-coordinator.js
-/ai/ (Módulos relacionados à IA)
+ai (Módulos relacionados à IA)
 ai-system.js
 ai-manager.js
-/ui/ (Módulos de interface do usuário)
+ui (Módulos de interface do usuário)
 ui-manager.js
 ui-modals.js
 ui-negotiation.js
-/state/ (Estado e configurações do jogo)
+state (Estado e configurações do jogo)
 game-state.js
 game-config.js
-/utils/ (Utilitários e manuais)
+utils (Utilitários e manuais)
 utils.js
 game-manual.js
-/assets/ (Recursos estáticos como imagens e vídeos)
-/images/ (Imagens do jogo)
+assets (Recursos estáticos como imagens e vídeos)
+images (Imagens do jogo)
 gaia-inicio.png
-/videos/ (Vídeos)
-README.md (Documentação do repositório - já existente, opcional)
+videos (Vídeos)
+README.md (Documentação do repositório)
 
 3. Implantação
 
