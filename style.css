@@ -2082,3 +2082,108 @@ body.modal-open .board-cell {
 ::-webkit-scrollbar-thumb:hover {
   background: rgba(255, 255, 255, 0.15);
 }
+
+/* ============================================
+   CORREÇÃO PARA FUNDO DOS MODAIS - OVERLAY ESCURO
+   ============================================ */
+
+/* Overlay principal para todos os modais */
+#negotiationModal::before,
+#negResponseModal::before,
+#alertModal::before,
+#eventModal::before,
+#incomeModal::before,
+#structureModal::before,
+#manualModal::before,
+#victoryModal::before,
+#saveLoadModal::before {
+  content: '';
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.85) !important;
+  backdrop-filter: blur(8px) !important;
+  z-index: -1;
+  pointer-events: none;
+}
+
+/* Garantir que os containers dos modais tenham posicionamento correto */
+#negotiationModal .modal-content-container,
+#negResponseModal .modal-content-container,
+#alertModal .modal-content-container,
+#eventModal .modal-content-container,
+#incomeModal .modal-content-container,
+#structureModal .modal-content-container,
+#manualModal .modal-content-container,
+#victoryModal .modal-content-container,
+#saveLoadModal .modal-content-container {
+  position: relative;
+  z-index: 1;
+}
+
+/* Remover qualquer overlay transparente existente */
+.modal-content-container > .absolute,
+.modal-overlay {
+  background: transparent !important;
+  backdrop-filter: none !important;
+}
+
+/* Ajustar específicamente para modal de alerta */
+#alertModal .modal-content-container > .relative {
+  background: rgba(17, 24, 39, 0.98) !important;
+  backdrop-filter: blur(25px) saturate(180%) !important;
+  border: 1px solid rgba(239, 68, 68, 0.3) !important;
+}
+
+/* Ajustar específicamente para modal de proposta pendente/negociação */
+#negResponseModal .modal-content-container > .relative,
+#negotiationModal .modal-content-container > .relative {
+  background: rgba(17, 24, 39, 0.98) !important;
+  backdrop-filter: blur(25px) saturate(180%) !important;
+  border: 1px solid rgba(59, 130, 246, 0.3) !important;
+}
+
+/* Garantir que o texto seja legível */
+#alertModal h2,
+#alertModal h3,
+#alertModal h4,
+#negResponseModal h2,
+#negResponseModal h3,
+#negResponseModal h4,
+#negotiationModal h2,
+#negotiationModal h3,
+#negotiationModal h4 {
+  color: #fbbf24 !important;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.7) !important;
+}
+
+/* Ajustar para mobile */
+@media (max-width: 768px) {
+  #negotiationModal::before,
+  #negResponseModal::before,
+  #alertModal::before {
+    background: rgba(0, 0, 0, 0.9) !important;
+    backdrop-filter: blur(12px) !important;
+  }
+  
+  #alertModal .modal-content-container > .relative,
+  #negResponseModal .modal-content-container > .relative,
+  #negotiationModal .modal-content-container > .relative {
+    background: rgba(17, 24, 39, 0.99) !important;
+    backdrop-filter: blur(30px) saturate(200%) !important;
+  }
+}
+
+/* Correção adicional para garantir visibilidade */
+body.modal-open {
+  overflow: hidden !important;
+}
+
+body.modal-open #gameContainer,
+body.modal-open #gameMap,
+body.modal-open #sidebar {
+  filter: blur(2px) brightness(0.7);
+  transition: filter 0.3s ease;
+}
