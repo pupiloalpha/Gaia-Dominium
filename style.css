@@ -1800,13 +1800,6 @@ body.modal-open .board-cell {
    RESPONSIVIDADE PARA LAYOUT DO JOGO
    ============================================ */
 
-/* Remover o hidden inicial da sidebar, mapa e container */
-#sidebar,
-#gameMap,
-#gameContainer {
-  display: flex !important;
-}
-
 /* Layout principal para desktop - Sidebar à ESQUERDA, Mapa à DIREITA */
 @media (min-width: 1024px) {
   #gameContainer {
