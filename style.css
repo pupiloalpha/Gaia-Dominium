@@ -76,23 +76,23 @@ p {
 }
 
 /* ============================================
-   HIERARQUIA DE Z-INDEX - CORRIGIDA
+   HIERARQUIA DE Z-INDEX - UNIFICADA
    ============================================ */
 
-#initialScreen { z-index: 1000; }
-#manualIcon { z-index: 60; }
+#initialScreen { z-index: 50; }
+#manualIcon { z-index: 60; position: fixed !important; top: 20px !important; right: 20px !important; }
 #gameNavbar { z-index: 40; }
 #gameFooter { z-index: 45; }
 #regionTooltip { z-index: 90; }
-#eventModal { z-index: 110; }
-#incomeModal { z-index: 111; }
-#structureModal { z-index: 112; }
-#negotiationModal { z-index: 113; }
-#negResponseModal { z-index: 114; }
-#manualModal { z-index: 115; }
-#alertModal { z-index: 116; }
-#victoryModal { z-index: 117; }
-#saveLoadModal { z-index: 118; }
+#eventModal { z-index: 95; }
+#incomeModal { z-index: 96; }
+#structureModal { z-index: 97; }
+#negotiationModal { z-index: 98; }
+#negResponseModal { z-index: 99; }
+#manualModal { z-index: 100; }
+#alertModal { z-index: 101; }
+#victoryModal { z-index: 102; }
+#saveLoadModal { z-index: 103; }
 
 /* ============================================
    UTILITÁRIOS REUTILIZÁVEIS - HÍBRIDOS
