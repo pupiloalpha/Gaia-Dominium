@@ -2087,7 +2087,7 @@ body.modal-open .board-cell {
 }
 
 /* ============================================
-   CORREÇÃO ESPECÍFICA PARA MODAIS DE NEGOCIAÇÃO
+   CORREÇÃO ESPECÍFICA PARA MODAIS
    ============================================ */
 
 /* 1. Remover qualquer backdrop-filter residual */
@@ -2121,3 +2121,10 @@ body.modal-open .board-cell {
 #pending-negotiations-summary {
   background: rgba(30, 41, 59, 0.98) !important;
 }
+
+#aiDebugPanel {
+  backdrop-filter: none !important;
+  background: rgba(30, 41, 59, 0.95) !important;
+  border: 1px solid rgba(168, 85, 247, 0.5) !important;
+}
+
