@@ -1893,3 +1893,176 @@ body.modal-open #sidebar {
   filter: blur(2px) brightness(0.7);
   transition: filter 0.3s ease;
 }
+
+/* ============================================
+   CORREÇÕES ESPECÍFICAS PARA RESPONSIVIDADE
+   ============================================ */
+
+/* 1. REMOVER CONFLITOS DE VISIBILIDADE */
+/* As classes .hidden do HTML serão respeitadas pelo JavaScript */
+/* Não sobrescreva com CSS a menos que seja para responsividade */
+
+/* 2. CORRIGIR CONTAINER DO JOGO PARA DESKTOP/TABLET */
+@media (min-width: 768px) {
+  /* Forçar grid com sidebar visível */
+  #gameContainer:not(.hidden) {
+    grid-template-columns: 320px 1fr !important;
+    display: grid !important;
+  }
+  
+  /* Garantir que sidebar seja visível em desktop/tablet */
+  #sidebar:not(.hidden) {
+    display: block !important;
+    height: auto;
+    max-height: calc(100vh - 180px);
+  }
+  
+  /* Garantir que mapa seja visível */
+  #gameMap:not(.hidden) {
+    display: block !important;
+  }
+}
+
+/* 3. CORRIGIR PARA MOBILE (CELULAR) */
+@media (max-width: 767px) {
+  /* Em mobile: ocultar sidebar, mostrar apenas mapa */
+  #gameContainer:not(.hidden) {
+    grid-template-columns: 1fr !important;
+  }
+  
+  /* Sidebar oculta em mobile */
+  #sidebar {
+    display: none !important;
+  }
+  
+  /* Mapa ocupa toda a largura */
+  #gameMap:not(.hidden) {
+    display: block !important;
+    width: 100%;
+  }
+}
+
+/* 4. CORREÇÃO PARA TABLET ESPECÍFICO */
+@media (min-width: 768px) and (max-width: 1024px) {
+  #gameContainer:not(.hidden) {
+    grid-template-columns: 280px 1fr !important;
+  }
+}
+
+/* 5. REMOVER ESTILOS CONFLITANTES DA VERSÃO ANTIGA */
+/* Estes estilos estavam causando problemas: */
+
+/* Remover esta regra problemática: */
+#sidebar.hidden {
+  /* Não defina display: none aqui - deixe o JavaScript controlar */
+}
+
+#gameMap.hidden {
+  /* Não defina display: none aqui - deixe o JavaScript controlar */
+}
+
+/* 6. GARANTIR QUE O GRID FUNCIONE CORRETAMENTE */
+#gameContainer {
+  /* Remover qualquer grid-template-columns fixo */
+  /* Será controlado pelas media queries acima */
+}
+
+/* 7. CORREÇÃO DE ALTURA PARA EVITAR QUEBRAS */
+#gameContainer:not(.hidden) {
+  min-height: 500px;
+  height: calc(100vh - 180px);
+}
+
+/* 8. REMOVER EFEITOS QUE PODEM CAUSAR PROBLEMAS */
+/* Esta regra estava causando conflito: */
+body.modal-open #gameContainer,
+body.modal-open #gameMap,
+body.modal-open #sidebar {
+  /* Remover filter que pode quebrar layout */
+  filter: none !important;
+}
+
+/* 9. GARANTIR QUE O FOOTER E NAVBAR SEJAM MOSTRADOS CORRETAMENTE */
+#gameNavbar:not(.hidden),
+#gameFooter:not(.hidden) {
+  display: block !important;
+}
+
+/* 10. CORREÇÃO PARA TELAS DE CADASTRO - NÃO AFETAR O JOGO */
+/* Garantir que a tela inicial não interfira no layout do jogo */
+#initialScreen:not(.hidden) ~ #gameContainer,
+#initialScreen:not(.hidden) ~ #gameNavbar,
+#initialScreen:not(.hidden) ~ #gameFooter {
+  display: none !important;
+}
+
+/* 11. RESET DE ESTILOS PARA ELEMENTOS DO JOGO QUANDO HIDDEN */
+/* Quando o JavaScript adicionar .hidden, respeitar */
+#gameContainer.hidden,
+#gameNavbar.hidden,
+#gameFooter.hidden,
+#sidebar.hidden,
+#gameMap.hidden {
+  display: none !important;
+}
+
+/* 12. GARANTIR QUE O MAPA TENHA TAMANHO ADEQUADO */
+#gameMap {
+  position: relative;
+  width: 100%;
+}
+
+/* 13. REMOVER CONFLITOS DE ANIMAÇÃO */
+.board-cell {
+  /* Garantir que animações não quebrem layout */
+  transform: none !important;
+  transition: all 0.2s ease !important;
+}
+
+/* 14. CORREÇÃO PARA O MAPVIEWPORT NÃO QUEBRAR */
+#mapViewport {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  overflow: hidden;
+}
+
+/* 15. GARANTIR QUE O BACKGROUND DO MAPA SEJA VISÍVEL */
+#gameMap img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+/* 16. AJUSTES FINAIS PARA RESPONSIVIDADE */
+@media (max-width: 767px) {
+  /* Ajustes mobile */
+  #gameContainer:not(.hidden) {
+    padding: 0.5rem;
+    gap: 0.5rem;
+  }
+  
+  #gameFooter {
+    bottom: 0.5rem;
+    padding: 0 0.5rem;
+  }
+}
+
+@media (min-width: 768px) and (max-width: 1024px) {
+  /* Ajustes tablet */
+  #gameContainer:not(.hidden) {
+    padding: 1rem;
+    gap: 1rem;
+  }
+}
+
+@media (min-width: 1025px) {
+  /* Ajustes desktop */
+  #gameContainer:not(.hidden) {
+    max-width: 1400px;
+    margin-left: auto;
+    margin-right: auto;
+  }
+}
