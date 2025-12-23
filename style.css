@@ -2085,3 +2085,39 @@ body.modal-open .board-cell {
   background-color: rgb(17, 24, 39) !important;
   border: 1px solid rgba(245, 158, 11, 0.3) !important;
 }
+
+/* ============================================
+   CORREÇÃO ESPECÍFICA PARA MODAIS DE NEGOCIAÇÃO
+   ============================================ */
+
+/* 1. Remover qualquer backdrop-filter residual */
+#negotiationModal .relative,
+#negResponseModal .relative,
+[id^="negotiation-notification-"],
+#pending-negotiations-summary {
+  backdrop-filter: none !important;
+}
+
+/* 2. Garantir fundo sólido nos modais de negociação */
+#negResponseModal .relative {
+  background: rgba(17, 24, 39, 0.99) !important;
+}
+
+/* 3. Garantir legibilidade do texto */
+#negResponseTitle {
+  color: #fbbf24 !important;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
+}
+
+#negResponseBody {
+  color: rgba(255, 255, 255, 0.95) !important;
+}
+
+/* 4. Notificações com fundo sólido */
+[id^="negotiation-notification-"] {
+  background: rgba(17, 24, 39, 0.98) !important;
+}
+
+#pending-negotiations-summary {
+  background: rgba(30, 41, 59, 0.98) !important;
+}
