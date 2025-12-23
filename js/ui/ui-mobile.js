@@ -17,78 +17,135 @@ export class UIMobileManager {
     }
 
     init() {
-        if (!this.isMobile) return;
+    if (!this.isMobile) return;
 
-        console.log("📱 Modo Mobile Detectado: Inicializando adaptações completas...");
+    console.log("📱 Modo Mobile Detectado: Inicializando adaptações completas...");
+    console.log("📱 Largura da tela:", window.innerWidth, "px");
 
-        // 1. Injetar CSS global (serve para Setup e Jogo)
-        this.injectMobileStyles();
+    // 1. Aguardar um pouco para garantir que o DOM está pronto
+    setTimeout(() => {
+        try {
+            // 2. Injetar CSS global
+            this.injectMobileStyles();
 
-        // 2. Criar estrutura base do jogo (Sheets, Overlay)
-        // Criamos isso cedo para estar pronto quando o jogo começar
-        this.createMobileElements();
+            // 3. Criar estrutura base (sheets, overlay)
+            this.createMobileElements();
 
-        // 3. Verificar qual tela está ativa e adaptar
-        this.checkAndAdaptCurrentScreen();
+            // 4. Verificar qual tela está ativa
+            this.checkAndAdaptCurrentScreen();
 
-        // 4. Ouvinte para mudança de fase (Setup -> Jogo)
-        // Monitoramos o botão de iniciar para aplicar correções finais
-        const startBtn = document.getElementById('startGameBtn');
-        if (startBtn) {
-            startBtn.addEventListener('click', () => {
-                setTimeout(() => this.adaptGameScreen(), 500);
-            });
+            // 5. Configurar listener para o botão iniciar
+            const startBtn = document.getElementById('startGameBtn');
+            if (startBtn) {
+                console.log("📱 Botão iniciar encontrado, configurando listener...");
+                startBtn.addEventListener('click', () => {
+                    setTimeout(() => {
+                        console.log("📱 Botão iniciar clicado, adaptando jogo...");
+                        this.adaptGameScreen();
+                    }, 500);
+                });
+            } else {
+                console.warn("📱 Botão iniciar NÃO encontrado!");
+            }
+        } catch (error) {
+            console.error("📱 ERRO na inicialização mobile:", error);
         }
-    }
+    }, 300); // Aguarda 300ms para garantir que o DOM esteja pronto
+}
 
+    // Adicione este método na classe
+waitForElement(selector, timeout = 3000) {
+    return new Promise((resolve, reject) => {
+        const startTime = Date.now();
+        
+        const check = () => {
+            const element = document.querySelector(selector);
+            if (element) {
+                console.log(`📱 Elemento ${selector} encontrado após ${Date.now() - startTime}ms`);
+                resolve(element);
+                return;
+            }
+            
+            if (Date.now() - startTime > timeout) {
+                console.warn(`📱 Timeout aguardando ${selector}`);
+                resolve(null);
+                return;
+            }
+            
+            requestAnimationFrame(check);
+        };
+        
+        check();
+    });
+}
+    
     checkAndAdaptCurrentScreen() {
-        const setupScreen = document.getElementById('setupScreen');
-        const gameContainer = document.getElementById('gameContainer');
+    const initialScreen = document.getElementById('initialScreen');
+    const gameContainer = document.getElementById('gameContainer');
 
-        if (setupScreen && !setupScreen.classList.contains('hidden')) {
-            this.adaptSetupScreen();
-        } else if (gameContainer && !gameContainer.classList.contains('hidden')) {
-            this.adaptGameScreen();
-        }
+    console.log("📱 Verificando telas:", {
+        initialScreen: !!initialScreen,
+        gameContainer: !!gameContainer,
+        initialScreenHidden: initialScreen?.classList?.contains('hidden'),
+        gameContainerHidden: gameContainer?.classList?.contains('hidden')
+    });
+
+    if (initialScreen && !initialScreen.classList.contains('hidden')) {
+        console.log("📱 Tela de cadastro ativa");
+        this.adaptSetupScreen();
+    } else if (gameContainer && !gameContainer.classList.contains('hidden')) {
+        console.log("📱 Tela de jogo ativa");
+        this.adaptGameScreen();
+    } else {
+        console.log("📱 Nenhuma tela visível detectada");
     }
+}
 
     // =========================================================================
     // 🎨 GESTÃO DA TELA DE CADASTRO (SETUP)
     // =========================================================================
 
     adaptSetupScreen() {
-        console.log("📱 Adaptando Tela de Cadastro...");
-        
-        // Ajustar container principal para não cortar conteúdo
-        const setupContainer = document.querySelector('#setupScreen .bg-gray-800');
-        if (setupContainer) {
-            setupContainer.classList.remove('max-w-4xl');
-            setupContainer.classList.add('w-full', 'min-h-screen', 'rounded-none', 'flex', 'flex-col');
-            // Remove bordas e arredondamentos para parecer app nativo
-            setupContainer.style.border = 'none';
-            setupContainer.style.borderRadius = '0';
-        }
-
-        // Ajustar Grid de Ícones para ser responsivo e scrollável horizontalmente ou grid menor
-        const iconSelection = document.getElementById('iconSelection');
-        if (iconSelection) {
-            iconSelection.classList.remove('grid-cols-6', 'gap-4');
-            iconSelection.classList.add('grid-cols-4', 'gap-2', 'overflow-y-auto', 'max-h-40', 'p-1');
-        }
-
-        // Ajustar botões de dificuldade de IA para grid
-        const aiButtonsContainer = document.querySelector('.flex.gap-2.mb-4'); // Onde os botões de IA são injetados
-        if (aiButtonsContainer) {
-            aiButtonsContainer.classList.remove('flex', 'flex-row');
-            aiButtonsContainer.classList.add('grid', 'grid-cols-3', 'gap-2');
-        }
-
-        // Ajustar Inputs para evitar zoom automático do iOS (font-size 16px)
-        const inputs = document.querySelectorAll('input, select');
-        inputs.forEach(input => {
-            input.style.fontSize = '16px'; // Previne zoom no iPhone
-        });
+    console.log("📱 Adaptando Tela de Cadastro...");
+    
+    // Ajustar container principal (correto)
+    const setupContainer = document.querySelector('#initialScreen .player-modal');
+    if (setupContainer) {
+        console.log("📱 Container de setup encontrado");
+        setupContainer.classList.remove('max-w-4xl');
+        setupContainer.classList.add('w-full', 'min-h-screen', 'rounded-none', 'flex', 'flex-col');
+        setupContainer.style.border = 'none';
+        setupContainer.style.borderRadius = '0';
+    } else {
+        console.warn("📱 Container de setup NÃO encontrado!");
     }
+
+    // Ajustar Grid de Ícones
+    const iconSelection = document.getElementById('iconSelection');
+    if (iconSelection) {
+        console.log("📱 Ícones encontrados");
+        iconSelection.classList.remove('grid-cols-6', 'gap-4');
+        iconSelection.classList.add('grid-cols-4', 'gap-2', 'overflow-y-auto', 'max-h-40', 'p-1');
+    }
+
+    // Ajustar botões de IA (pode não existir ainda)
+    const aiButtonsContainer = document.getElementById('aiButtonsContainer');
+    if (aiButtonsContainer) {
+        console.log("📱 Botões IA encontrados");
+        // Só ajustar se estiver em layout horizontal
+        if (aiButtonsContainer.classList.contains('flex')) {
+            aiButtonsContainer.classList.remove('flex', 'flex-row');
+            aiButtonsContainer.classList.add('grid', 'grid-cols-2', 'gap-2');
+        }
+    }
+
+    // Ajustar Inputs para iOS
+    const inputs = document.querySelectorAll('#initialScreen input, #initialScreen select');
+    console.log(`📱 ${inputs.length} inputs encontrados`);
+    inputs.forEach(input => {
+        input.style.fontSize = '16px';
+    });
+}
 
     // =========================================================================
     // 🎮 GESTÃO DA TELA DE JOGO
@@ -188,16 +245,25 @@ export class UIMobileManager {
     }
 
     createMobileElements() {
-        // Evita criar duplicado
-        if (document.getElementById('mobile-bottom-sheet')) return;
-
+    // Verificar se já existem
+    if (document.getElementById('mobile-bottom-sheet')) {
+        console.log("📱 Elementos mobile já criados");
+        this.bottomSheet = document.getElementById('mobile-bottom-sheet');
+        this.mobileOverlay = document.getElementById('mobile-overlay');
+        this.sheetContent = document.getElementById('mobile-sheet-content');
+        return;
+    }
+    
+    console.log("📱 Criando elementos mobile...");
+    
+    try {
         // Overlay
         this.mobileOverlay = document.createElement('div');
         this.mobileOverlay.id = 'mobile-overlay';
         this.mobileOverlay.className = 'fixed inset-0 bg-black/70 z-[90] hidden opacity-0';
         this.mobileOverlay.addEventListener('click', () => this.closeSheet());
         document.body.appendChild(this.mobileOverlay);
-
+        console.log("📱 Overlay criado");
         // Bottom Sheet
         this.bottomSheet = document.createElement('div');
         this.bottomSheet.id = 'mobile-bottom-sheet';
@@ -237,6 +303,10 @@ export class UIMobileManager {
             }
         });
         observer.observe(document.body, { attributes: true, subtree: true, attributeFilter: ['class'] });
+       
+    } catch (error) {
+        console.error("📱 Erro ao criar elementos:", error);
+    }
     }
 
     // =========================================================================
