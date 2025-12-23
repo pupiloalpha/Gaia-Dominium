@@ -1796,3 +1796,140 @@ body.modal-open .board-cell {
   background: rgba(255, 255, 255, 0.15);
 }
 
+/* ============================================
+   CORREÇÃO PARA SIDEBAR E LAYOUT
+   ============================================ */
+
+/* Remover a classe hidden inicial da sidebar */
+#sidebar {
+  display: flex !important;
+}
+
+/* Ajustar o container principal para desktop */
+@media (min-width: 1024px) {
+  #gameContainer {
+    grid-template-columns: 320px 1fr !important;
+    gap: 1rem !important;
+  }
+}
+
+/* Ajustar para telas menores */
+@media (max-width: 1023px) {
+  #gameContainer {
+    grid-template-columns: 1fr !important;
+  }
+  
+  #sidebar {
+    order: 2; /* Coloca a sidebar depois do mapa em mobile */
+    margin-top: 1rem;
+  }
+  
+  #gameMap {
+    order: 1;
+  }
+}
+
+/* Garantir que a sidebar tenha altura adequada */
+#sidebar {
+  height: fit-content;
+  max-height: calc(100vh - 200px);
+  overflow-y: auto;
+}
+
+/* ============================================
+   CORREÇÃO PARA MODAIS DE FEEDBACK
+   ============================================ */
+
+/* Ajustar o overlay dos modais para menos escuro */
+#alertModal .absolute.inset-0,
+#eventModal .absolute.inset-0,
+#incomeModal .absolute.inset-0,
+#structureModal .absolute.inset-0,
+#negotiationModal .absolute.inset-0,
+#negResponseModal .absolute.inset-0,
+#manualModal .absolute.inset-0,
+#victoryModal .absolute.inset-0,
+#saveLoadModal .absolute.inset-0 {
+  background: rgba(0, 0, 0, 0.55) !important;
+  backdrop-filter: blur(2px) !important;
+}
+
+/* Melhorar visibilidade do conteúdo dos modais */
+#alertModal .relative,
+#eventModal .relative,
+#incomeModal .relative,
+#structureModal .relative,
+#negotiationModal .relative,
+#negResponseModal .relative,
+#manualModal .relative,
+#victoryModal .relative,
+#saveLoadModal .relative {
+  background: rgba(17, 24, 39, 0.97) !important;
+  backdrop-filter: blur(20px) saturate(180%) !important;
+  border: 1px solid rgba(255, 255, 255, 0.15) !important;
+}
+
+/* Ajustar especificamente o modal de alerta (feedback) */
+#alertModal .relative {
+  background: rgba(30, 41, 59, 0.98) !important;
+  border: 1px solid rgba(251, 191, 36, 0.3) !important;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.4) !important;
+}
+
+/* Melhorar contraste do texto nos modais */
+.modal-content-container h2,
+.modal-content-container h3,
+.modal-content-container h4,
+.modal-content-container p,
+.modal-content-container span,
+.modal-content-container div:not(.icon) {
+  color: rgba(255, 255, 255, 0.95) !important;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.8) !important;
+}
+
+/* ============================================
+   AJUSTES PARA VIEWPORT DE CELULAR
+   ============================================ */
+
+/* Forçar largura adequada mesmo em modo desktop mobile */
+@media (max-width: 767px) {
+  #gameContainer {
+    width: 100vw !important;
+    max-width: 100vw !important;
+    padding: 0.5rem !important;
+    margin-left: 0 !important;
+    margin-right: 0 !important;
+  }
+  
+  /* Ajustar grid para mobile */
+  #gameContainer {
+    display: flex !important;
+    flex-direction: column !important;
+  }
+  
+  #sidebar {
+    width: 100% !important;
+    max-width: 100% !important;
+    margin-top: 1rem;
+  }
+  
+  #gameMap {
+    min-height: 60vh !important;
+  }
+  
+  /* Ajustar footer de ações para mobile */
+  #gameFooter {
+    bottom: 10px !important;
+    padding: 0 0.5rem !important;
+  }
+  
+  #gameFooter .flex {
+    flex-wrap: wrap;
+    gap: 0.5rem;
+  }
+  
+  .action-btn {
+    padding: 6px 8px !important;
+    font-size: 0.8rem !important;
+  }
+}
