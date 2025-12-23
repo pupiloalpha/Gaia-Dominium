@@ -2128,3 +2128,22 @@ body.modal-open .board-cell {
   border: 1px solid rgba(168, 85, 247, 0.5) !important;
 }
 
+/* Otimizações Mobile */
+@media (max-width: 768px) {
+  .board-cell {
+    /* Evita o highlight azul padrão do toque no Android/iOS */
+    -webkit-tap-highlight-color: transparent;
+    touch-action: manipulation;
+  }
+  
+  /* Melhora performance de animações no mobile */
+  .animate-pulse, .animate-bounce {
+    will-change: transform, opacity;
+  }
+  
+  /* Garante que modais usem toda a largura */
+  .modal-content-container > .relative {
+    width: 95% !important;
+    max-height: 85vh !important;
+  }
+}
