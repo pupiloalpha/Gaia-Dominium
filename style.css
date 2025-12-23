@@ -1800,67 +1800,58 @@ body.modal-open .board-cell {
    RESPONSIVIDADE PARA LAYOUT DO JOGO
    ============================================ */
 
-/* Layout principal para desktop - Sidebar à ESQUERDA, Mapa à DIREITA */
-@media (min-width: 1024px) {
-  #gameContainer {
-    display: grid !important;
-    grid-template-columns: 320px 1fr !important;
-    grid-template-areas: "sidebar map" !important;
-    gap: 1.5rem !important;
-    align-items: start !important;
-  }
-  
-  #sidebar {
-    grid-area: sidebar !important;
-    height: calc(100vh - 220px) !important;
-    position: sticky !important;
-    top: 100px !important;
-    order: 1 !important;
-    margin-top: 0 !important;
-  }
-  
-  #gameMap {
-    grid-area: map !important;
-    height: calc(100vh - 220px) !important;
-    order: 2 !important;
-  }
+/* Layout principal do jogo - APENAS quando estiver visível */
+#gameContainer:not(.hidden) {
+  display: grid !important;
+  grid-template-columns: 320px 1fr !important;
+  gap: 1rem !important;
+  height: calc(100vh - 180px) !important;
+  margin-top: 80px !important;
+  margin-bottom: 80px !important;
 }
 
-/* Para telas menores (mobile) - Empilhar verticalmente */
+/* Sidebar - lado esquerdo */
+#sidebar:not(.hidden) {
+  display: flex !important;
+  flex-direction: column !important;
+  height: 100% !important;
+  max-height: calc(100vh - 200px) !important;
+  overflow-y: auto !important;
+  background: rgba(31, 31, 31, 0.8) !important;
+  backdrop-filter: blur(8px) !important;
+  border: 1px solid rgba(255, 255, 255, 0.06) !important;
+  border-radius: 10px !important;
+}
+
+/* Mapa - lado direito */
+#gameMap:not(.hidden) {
+  display: block !important;
+  height: 100% !important;
+  min-height: 500px !important;
+  border-radius: 8px !important;
+  overflow: hidden !important;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5) !important;
+  background: #000 !important;
+}
+
+/* Para telas menores (mobile) - empilhar verticalmente */
 @media (max-width: 1023px) {
-  #gameContainer {
-    display: flex !important;
-    flex-direction: column !important;
+  #gameContainer:not(.hidden) {
+    grid-template-columns: 1fr !important;
+    grid-template-rows: auto auto !important;
+    height: auto !important;
   }
   
-  #sidebar {
+  #sidebar:not(.hidden) {
     order: 2 !important;
     margin-top: 1rem !important;
-    width: 100% !important;
+    max-height: 400px !important;
   }
   
-  #gameMap {
+  #gameMap:not(.hidden) {
     order: 1 !important;
-    min-height: 50vh !important;
+    min-height: 400px !important;
   }
-}
-
-/* Correção específica para o mapa */
-#gameMap {
-  flex: 1;
-  min-height: 500px;
-  position: relative;
-}
-
-/* Ajustes de altura e rolagem para sidebar */
-#sidebar {
-  background: rgba(31, 31, 31, 0.9) !important;
-  backdrop-filter: blur(10px) !important;
-  border: 1px solid rgba(255, 255, 255, 0.1) !important;
-  border-radius: 12px;
-  padding: 1rem;
-  overflow-y: auto;
-  max-height: 80vh;
 }
 
 /* ============================================
@@ -1913,4 +1904,3 @@ body.modal-open .board-cell {
   color: rgba(255, 255, 255, 0.95) !important;
   text-shadow: 0 1px 3px rgba(0, 0, 0, 0.8) !important;
 }
-
