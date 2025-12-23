@@ -239,29 +239,62 @@ export class UIMobileManager {
         observer.observe(document.body, { attributes: true, subtree: true, attributeFilter: ['class'] });
     }
 
-    overrideGameBehaviors() {
-        const gameMgr = this.uiManager.gameManager;
+    // =========================================================================
+// 🎮 SOBRESCRITA DE COMPORTAMENTOS (CORRIGIDO)
+// =========================================================================
 
-        // Desativar Tooltip nativo
-        gameMgr.showRegionTooltip = () => {};
+overrideGameBehaviors() {
+    const gameMgr = this.uiManager.gameManager;
+
+    // Desativar Tooltip nativo apenas em mobile
+    gameMgr.showRegionTooltip = () => {};
+    
+    // REMOVER O EVENT LISTENER GLOBAL PROBLEMÁTICO
+    // Em vez disso, vamos modificar o comportamento das células existentes
+    
+    // Aguardar o board ser renderizado
+    setTimeout(() => {
+        const boardCells = document.querySelectorAll('.board-cell');
         
-        // Intercepta cliques no mapa
-        document.addEventListener('click', (e) => {
-            const cell = e.target.closest('.board-cell');
-            if (cell && cell.dataset.regionId && this.isMobile) {
-                // Impede propagação imediata se necessário, ou apenas abre o sheet
-                const region = gameState.regions[parseInt(cell.dataset.regionId)];
-                setTimeout(() => this.openRegionSheet(region), 50);
-            }
+        boardCells.forEach(cell => {
+            // Salvar o listener original
+            const originalClick = cell.onclick;
+            
+            // Substituir por nossa versão mobile-friendly
+            cell.addEventListener('click', (e) => {
+                e.stopPropagation();
+                
+                // Primeiro, executar o comportamento original (se existir)
+                if (originalClick && typeof originalClick === 'function') {
+                    originalClick.call(cell, e);
+                }
+                
+                // Depois, abrir o sheet mobile (se não for um modal ou ação)
+                const regionId = cell.dataset.regionId;
+                if (regionId && !e.target.closest('[id$="Modal"]')) {
+                    const region = gameState.regions[parseInt(regionId)];
+                    if (region) {
+                        setTimeout(() => this.openRegionSheet(region), 100);
+                    }
+                }
+            }, { once: false }); // Permitir múltiplos handlers
         });
-    }
+    }, 1000); // Aguardar o jogo inicializar
+    
+    // Otimizar performance no mobile
+    this.setupTouchOptimization();
+}
 
     // =========================================================================
     // 📄 CONTEÚDO DOS SHEETS (Igual à versão anterior)
     // =========================================================================
 
     openRegionSheet(region) {
-        if (!region) return;
+        // VERIFICAÇÃO DE SEGURANÇA
+    if (!region || !this.activeBottomSheet) {
+        console.warn("📱 Tentativa de abrir sheet inválida ou já aberta");
+        return;
+    }
 
         const ownerPlayer = region.controller !== null ? gameState.players[region.controller] : null;
         const ownerName = ownerPlayer ? ownerPlayer.name : 'Neutro';
@@ -400,15 +433,20 @@ export class UIMobileManager {
     }
 
     closeSheet() {
-        if (!this.bottomSheet) return;
-        this.bottomSheet.classList.remove('sheet-open');
-        this.bottomSheet.classList.add('sheet-closed');
-        this.mobileOverlay.classList.add('opacity-0');
-        setTimeout(() => {
-            this.mobileOverlay.classList.add('hidden');
-            this.activeBottomSheet = false;
-        }, 300);
-    }
+    if (!this.bottomSheet) return;
+    
+    // Fechar animação
+    this.bottomSheet.classList.remove('sheet-open');
+    this.bottomSheet.classList.add('sheet-closed');
+    this.mobileOverlay.classList.add('opacity-0');
+    
+    // Resetar estado após animação
+    setTimeout(() => {
+        this.mobileOverlay.classList.add('hidden');
+        this.activeBottomSheet = false;
+        this.sheetContent.innerHTML = ''; // Limpar conteúdo
+    }, 300);
+}
 
     setupTouchOptimization() {
         const map = document.getElementById('gameMap');
