@@ -1,611 +1,282 @@
-// ui-mobile.js - Gerenciador de Interface Mobile Otimizado
-export class MobileManager {
+// ui-mobile.js - Gerenciador de Experiência Mobile
+import { gameState } from '../state/game-state.js';
+import { RESOURCE_ICONS } from '../state/game-config.js';
+
+export class UIMobileManager {
     constructor(uiManager) {
         this.uiManager = uiManager;
-        this.isMobile = this.detectMobile();
-        this.sidebarVisible = false;
-        this.initialScreenVisible = true;
+        this.isMobile = window.innerWidth <= 768;
+        this.activeBottomSheet = null;
         
-        // Bind methods
-        this.toggleSidebar = this.toggleSidebar.bind(this);
-        this.setupMobileGestures = this.setupMobileGestures.bind(this);
-        this.addSidebarToggleButton = this.addSidebarToggleButton.bind(this);
-    }
-
-    detectMobile() {
-        // Detecção mais precisa de dispositivos móveis
-        const userAgent = navigator.userAgent || navigator.vendor || window.opera;
-        const isTouchDevice = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
-        
-        const mobileRegex = /iPhone|iPad|iPod|Android|webOS|BlackBerry|IEMobile|Opera Mini/i;
-        const isMobileUserAgent = mobileRegex.test(userAgent);
-        const isSmallScreen = window.innerWidth <= 768;
-        
-        return (isMobileUserAgent || (isTouchDevice && isSmallScreen));
+        // Elementos Mobile Específicos
+        this.mobileOverlay = null;
+        this.bottomSheet = null;
     }
 
     init() {
         if (!this.isMobile) return;
 
-        console.log("📱 Inicializando gerenciador mobile otimizado...");
-        
-        // Apenas ajustes iniciais, não adicionar botão de sidebar ainda
-        this.adjustUIForMobile();
-        
-        // Configurar gestos para o mapa (se já existir)
-        if (document.getElementById('mapViewport')) {
-            this.setupMobileGestures();
-        }
-        
-        // Prevenir zoom com double-tap
-        this.preventDoubleTapZoom();
-        
-        // Configurar event listeners específicos para mobile
-        this.setupMobileEventListeners();
-        
-        // Configurar orientação
-        this.setupOrientationHandling();
+        console.log("📱 Inicializando Modo Mobile...");
+        this.injectMobileStyles();
+        this.createMobileStructure();
+        this.setupTouchEvents();
+        this.reorganizeLayout();
+        this.overrideTooltipBehavior();
     }
 
-    setupOrientationHandling() {
-        // Debounce para evitar múltiplas execuções
-        let orientationTimeout;
-        const handleOrientationChange = () => {
-            clearTimeout(orientationTimeout);
-            orientationTimeout = setTimeout(() => {
-                this.handleOrientationChange();
-            }, 250);
+    // Cria a estrutura base para Bottom Sheets e overlays
+    createMobileStructure() {
+        // Overlay escuro para quando abrir menus
+        this.mobileOverlay = document.createElement('div');
+        this.mobileOverlay.id = 'mobile-overlay';
+        this.mobileOverlay.className = 'hidden fixed inset-0 bg-black/60 z-[60] backdrop-blur-sm transition-opacity duration-300 opacity-0';
+        this.mobileOverlay.addEventListener('click', () => this.closeAllSheets());
+        document.body.appendChild(this.mobileOverlay);
+
+        // Container Genérico de Bottom Sheet
+        this.bottomSheet = document.createElement('div');
+        this.bottomSheet.id = 'mobile-bottom-sheet';
+        this.bottomSheet.className = 'fixed bottom-0 left-0 right-0 bg-gray-900 border-t border-yellow-500/30 rounded-t-2xl z-[70] transform translate-y-full transition-transform duration-300 p-4 shadow-[0_-10px_40px_rgba(0,0,0,0.8)] max-h-[80vh] overflow-y-auto';
+        this.bottomSheet.innerHTML = `
+            <div class="w-12 h-1.5 bg-gray-700 rounded-full mx-auto mb-4"></div>
+            <div id="mobile-sheet-content"></div>
+        `;
+        document.body.appendChild(this.bottomSheet);
+
+        // Botão Flutuante de Menu (Substitui Sidebar)
+        const menuFab = document.createElement('button');
+        menuFab.id = 'mobile-menu-fab';
+        menuFab.className = 'fixed top-20 right-4 z-40 w-12 h-12 bg-gray-800 border border-white/20 rounded-full shadow-lg flex items-center justify-center text-xl text-yellow-400 active:scale-95 transition-transform';
+        menuFab.innerHTML = '☰';
+        menuFab.onclick = () => this.openSidebarAsSheet();
+        document.body.appendChild(menuFab);
+    }
+
+    // Move elementos do DOM original para posições mobile-friendly
+    reorganizeLayout() {
+        // Mover o Navbar para ser menos intrusivo ou fixo
+        const navbar = document.getElementById('gameNavbar');
+        if (navbar) {
+            navbar.classList.add('mobile-compact-nav');
+        }
+
+        // Ajustar Footer para ser sticky bottom real
+        const footer = document.getElementById('gameFooter');
+        if (footer) {
+            footer.classList.remove('bottom-4', 'rounded-lg', 'left-1/2', '-translate-x-1/2', 'max-w-4xl');
+            footer.classList.add('bottom-0', 'left-0', 'right-0', 'rounded-t-xl', 'border-t', 'border-white/10', 'bg-gray-900/95');
+            // Remove bordas laterais e inferiores para colar na tela
+            footer.style.width = '100%';
+            footer.style.maxWidth = '100%';
+        }
+    }
+
+    // Intercepta a lógica de tooltip do ui-game.js
+    overrideTooltipBehavior() {
+        // Monkey patch no método showRegionTooltip do gameManager
+        const originalShowTooltip = this.uiManager.gameManager.showRegionTooltip.bind(this.uiManager.gameManager);
+        
+        // Substituímos o método original
+        this.uiManager.gameManager.showRegionTooltip = (region, targetEl) => {
+            if (this.isMobile) {
+                // Em mobile, abrimos o Bottom Sheet em vez do tooltip flutuante
+                this.showRegionDetailsSheet(region);
+            } else {
+                // Em desktop, mantém comportamento normal
+                originalShowTooltip(region, targetEl);
+            }
         };
-        
-        window.addEventListener('resize', handleOrientationChange);
-        window.addEventListener('orientationchange', handleOrientationChange);
-        
-        // Executar inicialmente
-        setTimeout(() => this.handleOrientationChange(), 100);
+
+        // Desativa o hideRegionTooltip no mobile para não fechar o sheet acidentalmente
+        const originalHideTooltip = this.uiManager.gameManager.hideRegionTooltip.bind(this.uiManager.gameManager);
+        this.uiManager.gameManager.hideRegionTooltip = () => {
+            if (!this.isMobile) originalHideTooltip();
+        };
     }
 
-    handleOrientationChange() {
-        if (!this.isMobile) return;
+    // Exibe detalhes da região no Bottom Sheet
+    showRegionDetailsSheet(region) {
+        const owner = region.controller !== null 
+            ? `${gameState.players[region.controller].icon} ${gameState.players[region.controller].name}`
+            : '<span class="text-gray-400">Neutro</span>';
         
-        const isPortrait = window.innerHeight > window.innerWidth;
-        const body = document.body;
-        
-        // Remover classes anteriores
-        body.classList.remove('mobile-landscape', 'mobile-portrait');
-        
-        // Adicionar classe apropriada
-        if (isPortrait) {
-            body.classList.add('mobile-portrait');
-            console.log("📱 Modo retrato ativado");
-        } else {
-            body.classList.add('mobile-landscape');
-            console.log("📱 Modo paisagem ativado");
-        }
-        
-        // Ajustar interface específica
-        this.adjustUIForMobile();
-        
-        // Ajustar footer para orientação
-        this.adjustFooterForOrientation();
-    }
+        const resourcesHtml = Object.entries(region.resources)
+            .filter(([_, val]) => val > 0)
+            .map(([key, val]) => `
+                <div class="flex flex-col items-center p-2 bg-gray-800 rounded border border-white/5">
+                    <span class="text-xl mb-1">${RESOURCE_ICONS[key]}</span>
+                    <span class="font-bold text-white">${val}</span>
+                    <span class="text-[10px] text-gray-400 uppercase">${key}</span>
+                </div>
+            `).join('');
 
-    adjustFooterForOrientation() {
-        const footer = document.getElementById('gameFooter');
-        if (!footer) return;
-        
-        const isPortrait = window.innerHeight > window.innerWidth;
-        
-        if (isPortrait) {
-            // Modo retrato: footer mais compacto
-            footer.classList.add('mobile-portrait');
-            footer.classList.remove('mobile-landscape');
-        } else {
-            // Modo paisagem: footer pode ser mais largo
-            footer.classList.add('mobile-landscape');
-            footer.classList.remove('mobile-portrait');
-        }
-    }
+        const content = `
+            <div class="flex justify-between items-start mb-4">
+                <div>
+                    <h3 class="text-xl font-bold text-yellow-400">${region.name}</h3>
+                    <p class="text-sm text-gray-400">${region.biome}</p>
+                </div>
+                <div class="bg-gray-800 px-3 py-1 rounded-full text-sm border border-white/10">
+                    ${owner}
+                </div>
+            </div>
 
-    setupGameInterface() {
-        console.log("🎮 Configurando interface mobile para jogo...");
-        
-        // Agora sim, adicionar botão de toggle para a sidebar
-        this.addSidebarToggleButton();
-        
-        // Reconfigurar gestos para o mapa (agora o mapa deve existir)
-        this.setupMobileGestures();
-        
-        // Configurar footer para mobile
-        this.setupMobileFooter();
-        
-        // Marcar que a tela inicial não está mais visível
-        this.initialScreenVisible = false;
-    }
+            <div class="grid grid-cols-2 gap-4 mb-4">
+                <div class="bg-gray-800/50 p-3 rounded-lg">
+                    <div class="text-xs text-gray-500 mb-1">Exploração</div>
+                    <div class="text-lg font-bold text-white flex items-center gap-1">
+                        ${region.explorationLevel} <span class="text-yellow-500">⭐</span>
+                    </div>
+                </div>
+                <div class="bg-gray-800/50 p-3 rounded-lg">
+                    <div class="text-xs text-gray-500 mb-1">Estruturas</div>
+                    <div class="text-sm font-medium text-white">
+                        ${region.structures.length ? region.structures.join(', ') : 'Nenhuma'}
+                    </div>
+                </div>
+            </div>
 
-    addSidebarToggleButton() {
-        // Verificar se o botão já existe
-        if (document.getElementById('mobileSidebarToggle')) return;
-        
-        // Verificar se estamos na tela do jogo
-        const gameContainer = document.getElementById('gameContainer');
-        if (!gameContainer || gameContainer.classList.contains('hidden')) {
-            console.log("⚠️ Não adicionando botão de sidebar - jogo não iniciado");
-            return;
-        }
+            <div class="mb-6">
+                <h4 class="text-sm font-bold text-gray-300 mb-2">Recursos Disponíveis</h4>
+                <div class="grid grid-cols-4 gap-2">
+                    ${resourcesHtml || '<p class="text-gray-500 text-sm col-span-4">Sem recursos</p>'}
+                </div>
+            </div>
 
-        // Criar botão para mostrar/ocultar a sidebar
-        const toggleButton = document.createElement('button');
-        toggleButton.id = 'mobileSidebarToggle';
-        toggleButton.className = 'mobile-sidebar-toggle';
-        toggleButton.innerHTML = '📊';
-        toggleButton.title = 'Mostrar/ocultar painel lateral';
-        toggleButton.setAttribute('aria-label', 'Alternar painel lateral');
-        
-        // Posicionar no canto superior direito
-        toggleButton.style.cssText = `
-            position: fixed;
-            top: 20px;
-            right: 20px;
-            z-index: 1000;
-            width: 48px;
-            height: 48px;
-            border-radius: 50%;
-            background: linear-gradient(135deg, #3b82f6, #1d4ed8);
-            border: 2px solid rgba(255, 255, 255, 0.3);
-            color: white;
-            font-size: 22px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            box-shadow: 0 4px 20px rgba(59, 130, 246, 0.4);
-            cursor: pointer;
-            transition: all 0.3s ease;
+            <div class="grid grid-cols-2 gap-3">
+                <button onclick="window.gameLogic.handleExplore()" class="py-3 bg-blue-600 rounded-lg text-white font-bold shadow-lg active:scale-95 transition-transform">
+                    Explorar / Dominar
+                </button>
+                <button onclick="window.gameLogic.handleCollect()" class="py-3 bg-green-600 rounded-lg text-white font-bold shadow-lg active:scale-95 transition-transform">
+                    Coletar
+                </button>
+            </div>
+            <div class="mt-2 text-center text-xs text-gray-500">
+                Toque fora para fechar
+            </div>
         `;
 
-        // Adicionar ao body
-        document.body.appendChild(toggleButton);
-
-        // Adicionar evento de clique
-        toggleButton.addEventListener('click', this.toggleSidebar);
-
-        // Fechar a sidebar ao clicar fora
-        document.addEventListener('click', (e) => {
-            const sidebar = document.getElementById('sidebar');
-            if (this.sidebarVisible && 
-                sidebar && 
-                !sidebar.contains(e.target) && 
-                !e.target.closest('#mobileSidebarToggle')) {
-                this.hideSidebar();
-            }
-        });
-        
-        console.log("✅ Botão de sidebar mobile adicionado");
+        this.openSheet(content);
     }
 
-    toggleSidebar() {
-        const sidebar = document.getElementById('sidebar');
-        if (!sidebar) return;
+    // Abre o conteúdo da Sidebar (Recursos, Logs) no Sheet
+    openSidebarAsSheet() {
+        // Clona os elementos da sidebar original para não quebrar referências de eventos
+        const resourceList = document.getElementById('resourceList').cloneNode(true);
+        const logEntries = document.getElementById('logEntriesSidebar').cloneNode(true);
+        const achievements = document.getElementById('achievementsList').cloneNode(true);
+        const playerInfo = document.getElementById('sidebarPlayerHeader').innerHTML;
 
-        if (this.sidebarVisible) {
-            this.hideSidebar();
-        } else {
-            this.showSidebar();
-        }
-    }
+        const content = `
+            <div class="mb-4 border-b border-white/10 pb-4">
+                ${playerInfo}
+            </div>
+            
+            <div class="mb-6">
+                <h4 class="text-yellow-400 font-bold mb-2 text-lg">Seus Recursos</h4>
+                <ul class="grid grid-cols-2 gap-2 text-sm">
+                    ${resourceList.innerHTML}
+                </ul>
+            </div>
 
-    showSidebar() {
-        const sidebar = document.getElementById('sidebar');
-        if (!sidebar) return;
-        
-        sidebar.classList.add('active');
-        this.sidebarVisible = true;
-        
-        // Adicionar overlay para fechar ao tocar fora
-        this.addSidebarOverlay();
-        
-        // Atualizar conteúdo da sidebar
-        if (this.uiManager.gameManager) {
-            this.uiManager.gameManager.renderSidebar();
-        }
-        
-        console.log("📊 Sidebar mobile mostrada");
-    }
+            <div class="mb-6">
+                <h4 class="text-gray-300 font-bold mb-2">Histórico Recente</h4>
+                <div class="bg-gray-800 rounded p-2 max-h-40 overflow-y-auto">
+                    ${logEntries.innerHTML}
+                </div>
+            </div>
 
-    hideSidebar() {
-        const sidebar = document.getElementById('sidebar');
-        if (!sidebar) return;
-        
-        sidebar.classList.remove('active');
-        this.sidebarVisible = false;
-        this.removeSidebarOverlay();
-        
-        console.log("📊 Sidebar mobile ocultada");
-    }
-
-    addSidebarOverlay() {
-        // Remover overlay existente
-        this.removeSidebarOverlay();
-        
-        // Criar overlay
-        const overlay = document.createElement('div');
-        overlay.id = 'mobileSidebarOverlay';
-        overlay.style.cssText = `
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: rgba(0, 0, 0, 0.5);
-            backdrop-filter: blur(2px);
-            z-index: 998;
-            animation: fadeIn 0.3s ease;
-        `;
-        
-        // Fechar sidebar ao clicar no overlay
-        overlay.addEventListener('click', () => this.hideSidebar());
-        
-        document.body.appendChild(overlay);
-    }
-
-    removeSidebarOverlay() {
-        const overlay = document.getElementById('mobileSidebarOverlay');
-        if (overlay) {
-            overlay.remove();
-        }
-    }
-
-    setupMobileGestures() {
-        const mapViewport = document.getElementById('mapViewport');
-        const mapTransform = document.getElementById('mapTransform');
-
-        if (!mapViewport || !mapTransform) {
-            console.log("⚠️ Elementos do mapa não encontrados para gestos");
-            return;
-        }
-
-        console.log("👆 Configurando gestos mobile para o mapa");
-
-        let startX = 0, startY = 0;
-        let currentX = 0, currentY = 0;
-        let scale = 1;
-        let lastTouchDistance = 0;
-        let isPinching = false;
-
-        // Configurar eventos de toque
-        mapViewport.addEventListener('touchstart', (e) => {
-            if (e.touches.length === 2) {
-                // Dois dedos: iniciar zoom
-                isPinching = true;
-                const touch1 = e.touches[0];
-                const touch2 = e.touches[1];
-                lastTouchDistance = Math.sqrt(
-                    Math.pow(touch2.clientX - touch1.clientX, 2) +
-                    Math.pow(touch2.clientY - touch1.clientY, 2)
-                );
-            } else if (e.touches.length === 1 && !isPinching) {
-                // Um dedo: iniciar pan
-                startX = e.touches[0].clientX - currentX;
-                startY = e.touches[0].clientY - currentY;
-            }
-        }, { passive: true });
-
-        mapViewport.addEventListener('touchmove', (e) => {
-            if (e.touches.length === 2) {
-                // Zoom com pinch
-                e.preventDefault();
-                const touch1 = e.touches[0];
-                const touch2 = e.touches[1];
-                const touchDistance = Math.sqrt(
-                    Math.pow(touch2.clientX - touch1.clientX, 2) +
-                    Math.pow(touch2.clientY - touch1.clientY, 2)
-                );
-
-                if (lastTouchDistance > 0) {
-                    const scaleChange = touchDistance / lastTouchDistance;
-                    scale = Math.min(Math.max(scale * scaleChange, 0.5), 3);
-                    mapTransform.style.transform = `translate(${currentX}px, ${currentY}px) scale(${scale})`;
-                }
-
-                lastTouchDistance = touchDistance;
-            } else if (e.touches.length === 1 && !isPinching) {
-                // Pan
-                e.preventDefault();
-                currentX = e.touches[0].clientX - startX;
-                currentY = e.touches[0].clientY - startY;
-                mapTransform.style.transform = `translate(${currentX}px, ${currentY}px) scale(${scale})`;
-            }
-        }, { passive: false });
-
-        mapViewport.addEventListener('touchend', (e) => {
-            if (e.touches.length < 2) {
-                isPinching = false;
-                lastTouchDistance = 0;
-            }
-        }, { passive: true });
-
-        // Adicionar controles de zoom (botões) apenas se não existirem
-        if (!document.querySelector('.mobile-zoom-controls')) {
-            this.addZoomControls();
-        }
-    }
-
-    addZoomControls() {
-        const controls = document.createElement('div');
-        controls.className = 'mobile-zoom-controls';
-        controls.innerHTML = `
-            <button class="zoom-in" aria-label="Zoom In">➕</button>
-            <button class="zoom-out" aria-label="Zoom Out">➖</button>
-            <button class="zoom-reset" aria-label="Reset Zoom">🔄</button>
+            <div class="mb-4">
+                <h4 class="text-gray-300 font-bold mb-2">Conquistas</h4>
+                <div class="space-y-2">
+                    ${achievements.innerHTML}
+                </div>
+            </div>
         `;
 
-        const gameMap = document.getElementById('gameMap');
-        if (gameMap) {
-            gameMap.appendChild(controls);
+        this.openSheet(content);
+    }
 
-            // Adicionar eventos
-            controls.querySelector('.zoom-in').addEventListener('click', () => {
-                this.adjustZoom(1.2);
+    openSheet(htmlContent) {
+        const contentContainer = document.getElementById('mobile-sheet-content');
+        if (contentContainer) {
+            contentContainer.innerHTML = htmlContent;
+            this.bottomSheet.classList.remove('translate-y-full');
+            
+            this.mobileOverlay.classList.remove('hidden');
+            // Pequeno delay para permitir a transição de opacidade
+            requestAnimationFrame(() => {
+                this.mobileOverlay.classList.remove('opacity-0');
             });
-
-            controls.querySelector('.zoom-out').addEventListener('click', () => {
-                this.adjustZoom(0.8);
-            });
-
-            controls.querySelector('.zoom-reset').addEventListener('click', () => {
-                this.resetZoom();
-            });
+            
+            this.activeBottomSheet = true;
         }
     }
 
-    adjustZoom(factor) {
-        const mapTransform = document.getElementById('mapTransform');
-        if (!mapTransform) return;
-
-        // Obter a escala atual
-        const transform = mapTransform.style.transform;
-        let scale = 1;
-        let translateX = 0, translateY = 0;
-
-        // Extrair valores de translate e scale
-        const scaleMatch = transform.match(/scale\(([^)]+)\)/);
-        const translateMatch = transform.match(/translate\(([^)]+)\)/);
-
-        if (scaleMatch) scale = parseFloat(scaleMatch[1]);
-        if (translateMatch) {
-            const [x, y] = translateMatch[1].split(',').map(v => parseFloat(v));
-            translateX = x || 0;
-            translateY = y || 0;
-        }
-
-        // Aplicar novo scale
-        scale *= factor;
-        scale = Math.min(Math.max(scale, 0.5), 3);
-
-        mapTransform.style.transform = `translate(${translateX}px, ${translateY}px) scale(${scale})`;
+    closeAllSheets() {
+        if (!this.bottomSheet) return;
+        
+        this.bottomSheet.classList.add('translate-y-full');
+        this.mobileOverlay.classList.add('opacity-0');
+        
+        setTimeout(() => {
+            this.mobileOverlay.classList.add('hidden');
+        }, 300);
+        
+        this.activeBottomSheet = false;
+        
+        // Limpar seleção visual no mapa se desejar
+        // this.uiManager.gameManager.clearRegionSelection();
     }
 
-    resetZoom() {
-        const mapTransform = document.getElementById('mapTransform');
-        if (mapTransform) {
-            mapTransform.style.transform = 'translate(0px, 0px) scale(1)';
+    setupTouchEvents() {
+        // Melhorar resposta ao toque no mapa
+        const map = document.getElementById('gameMap');
+        if(map) {
+            map.style.touchAction = 'none'; // Previne scroll do browser ao arrastar mapa
+            // Implementação futura: lógica de Pan/Zoom customizada com touch events
         }
     }
 
-    adjustUIForMobile() {
-        if (!this.isMobile) return;
-        
-        console.log("📱 Ajustando UI para mobile...");
-        
-        // Adicionar classe mobile ao body
-        document.body.classList.add('mobile-device');
-        
-        // Ajustar a tela inicial para mobile
-        this.adjustInitialScreenForMobile();
-        
-        // Ajustar modais
-        this.setupModalsForMobile();
-    }
-
-    adjustInitialScreenForMobile() {
-        const initialScreen = document.getElementById('initialScreen');
-        if (!initialScreen) return;
-        
-        console.log("🎨 Ajustando tela inicial para mobile");
-        
-        // Adicionar classe específica
-        initialScreen.classList.add('mobile-initial-screen');
-        
-        // Reorganizar layout da tela inicial
-        this.rearrangeInitialScreenLayout();
-    }
-
-    rearrangeInitialScreenLayout() {
-        // 1. Ícones em grid 3 colunas (sempre)
-        const iconSelection = document.getElementById('iconSelection');
-        if (iconSelection) {
-            iconSelection.style.display = 'grid';
-            iconSelection.style.gridTemplateColumns = 'repeat(3, 1fr)';
-            iconSelection.style.gap = '8px';
-            iconSelection.style.margin = '8px 0';
-        }
-        
-        // 2. Botões em linha (3 botões)
-        const addPlayerBtn = document.getElementById('addPlayerBtn');
-        const cancelEditBtn = document.getElementById('cancelEditBtn');
-        const startGameBtn = document.getElementById('startGameBtn');
-        
-        if (addPlayerBtn && startGameBtn) {
-            // Encontrar o container dos botões
-            const buttonContainer = addPlayerBtn.parentElement;
-            if (buttonContainer) {
-                buttonContainer.style.display = 'flex';
-                buttonContainer.style.flexDirection = 'row';
-                buttonContainer.style.gap = '8px';
-                buttonContainer.style.width = '100%';
-                buttonContainer.style.marginTop = '8px';
-                
-                // Ajustar largura dos botões
-                addPlayerBtn.style.flex = '1';
-                startGameBtn.style.flex = '1';
-                
-                if (cancelEditBtn) {
-                    cancelEditBtn.style.flex = '1';
-                }
+    injectMobileStyles() {
+        const style = document.createElement('style');
+        style.textContent = `
+            /* Ajustes Mobile Injetados */
+            .mobile-compact-nav {
+                padding: 0.5rem !important;
             }
-        }
-        
-        // 3. Botões de IA em linha
-        const aiButtonsContainer = document.getElementById('aiButtonsContainer');
-        if (aiButtonsContainer) {
-            aiButtonsContainer.style.display = 'flex';
-            aiButtonsContainer.style.flexWrap = 'wrap';
-            aiButtonsContainer.style.gap = '6px';
-            aiButtonsContainer.style.justifyContent = 'center';
-        }
-    }
-
-    setupMobileFooter() {
-        const footer = document.getElementById('gameFooter');
-        if (!footer) return;
-        
-        console.log("👣 Configurando footer mobile");
-        
-        // Adicionar classe específica
-        footer.classList.add('mobile-footer');
-        
-        // Reorganizar footer para mobile
-        this.rearrangeFooterForMobile();
-    }
-
-    rearrangeFooterForMobile() {
-        const footer = document.getElementById('gameFooter');
-        if (!footer) return;
-        
-        // Encontrar o container de ações
-        const actionContainer = footer.querySelector('div:first-child');
-        if (!actionContainer) return;
-        
-        // Reorganizar para scroll horizontal
-        actionContainer.style.display = 'flex';
-        actionContainer.style.flexDirection = 'row';
-        actionContainer.style.overflowX = 'auto';
-        actionContainer.style.overflowY = 'hidden';
-        actionContainer.style.gap = '8px';
-        actionContainer.style.padding = '8px';
-        actionContainer.style.scrollbarWidth = 'thin';
-        actionContainer.style.scrollbarColor = 'rgba(251, 191, 36, 0.5) rgba(30, 41, 59, 0.3)';
-        
-        // Garantir que os botões não quebrem linha
-        const actionButtons = actionContainer.querySelectorAll('.action-btn');
-        actionButtons.forEach(btn => {
-            btn.style.flexShrink = '0';
-            btn.style.whiteSpace = 'nowrap';
-        });
-        
-        // Ajustar container de ações restantes e botão de término
-        const bottomContainer = footer.querySelector('div:last-child');
-        if (bottomContainer) {
-            bottomContainer.style.display = 'flex';
-            bottomContainer.style.justifyContent = 'space-between';
-            bottomContainer.style.alignItems = 'center';
-            bottomContainer.style.padding = '8px';
-            bottomContainer.style.borderTop = '1px solid rgba(255, 255, 255, 0.1)';
-        }
-        
-        // Ajustar botão de término
-        const endTurnBtn = document.getElementById('endTurnBtn');
-        if (endTurnBtn) {
-            endTurnBtn.style.padding = '8px 16px';
-            endTurnBtn.style.fontSize = '14px';
-            endTurnBtn.style.whiteSpace = 'nowrap';
-        }
-    }
-
-    setupModalsForMobile() {
-        // Fechar modais ao tocar no overlay
-        document.querySelectorAll('.modal-overlay').forEach(overlay => {
-            overlay.addEventListener('touchstart', (e) => {
-                if (e.target === overlay) {
-                    overlay.classList.add('hidden');
-                }
-            }, { passive: true });
-        });
-        
-        // Ajustar modais para mobile
-        document.querySelectorAll('.modal-content-container').forEach(modal => {
-            modal.classList.add('mobile-modal');
-        });
-    }
-
-    preventDoubleTapZoom() {
-        let lastTouchEnd = 0;
-        document.addEventListener('touchend', (e) => {
-            const now = Date.now();
-            if (now - lastTouchEnd <= 300) {
-                e.preventDefault();
+            .mobile-compact-nav h1 {
+                font-size: 1rem !important;
             }
-            lastTouchEnd = now;
-        }, { passive: false });
-    }
+            
+            /* Ajuste de células do grid para toque */
+            .board-cell {
+                min-height: 80px !important; /* Mais alto para caber o dedo */
+            }
+            
+            /* Esconder scrollbar no sheet */
+            #mobile-bottom-sheet::-webkit-scrollbar {
+                width: 4px;
+            }
+            #mobile-bottom-sheet::-webkit-scrollbar-thumb {
+                background-color: rgba(255,255,255,0.2);
+                border-radius: 4px;
+            }
 
-    setupMobileEventListeners() {
-        // Redirecionar eventos de hover para clique em mobile
-        document.querySelectorAll('.board-cell').forEach(cell => {
-            cell.addEventListener('touchstart', (e) => {
-                if (e.cancelable) {
-                    e.preventDefault();
-                }
-                // Simular clique após um pequeno delay para evitar conflitos
-                setTimeout(() => {
-                    cell.click();
-                }, 50);
-            }, { passive: false });
-        });
-
-        // Melhorar a experiência de entrada em formulários
-        document.querySelectorAll('input, select, textarea').forEach(input => {
-            input.addEventListener('focus', () => {
-                // Scroll suave para o campo de entrada
-                setTimeout(() => {
-                    input.scrollIntoView({ 
-                        behavior: 'smooth', 
-                        block: 'center',
-                        inline: 'nearest'
-                    });
-                }, 300);
-            });
-        });
-        
-        // Prevenir bounce/scrolling em modais
-        document.querySelectorAll('.modal-content').forEach(modal => {
-            modal.addEventListener('touchmove', (e) => {
-                if (modal.scrollHeight <= modal.clientHeight) {
-                    e.preventDefault();
-                }
-            }, { passive: false });
-        });
-    }
-
-    // Método para limpar/remover elementos mobile quando necessário
-    cleanup() {
-        // Remover botão de sidebar
-        const sidebarToggle = document.getElementById('mobileSidebarToggle');
-        if (sidebarToggle) {
-            sidebarToggle.remove();
-        }
-        
-        // Remover overlay
-        this.removeSidebarOverlay();
-        
-        // Remover controles de zoom
-        const zoomControls = document.querySelector('.mobile-zoom-controls');
-        if (zoomControls) {
-            zoomControls.remove();
-        }
-        
-        // Remover classes mobile
-        document.body.classList.remove('mobile-device', 'mobile-landscape', 'mobile-portrait');
-        
-        console.log("🧹 Mobile Manager limpo");
+            /* Ajustes no Footer Mobile */
+            #gameFooter .action-btn {
+                flex: 1;
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                justify-content: center;
+                font-size: 0.7rem !important;
+                padding: 8px 2px !important;
+                height: 50px;
+            }
+            
+            /* Ícones SVG para os botões do footer (opcional, via CSS content) */
+        `;
+        document.head.appendChild(style);
     }
 }
