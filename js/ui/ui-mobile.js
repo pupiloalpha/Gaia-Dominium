@@ -1,282 +1,418 @@
-// ui-mobile.js - Gerenciador de Experiência Mobile
-import { gameState } from '../state/game-state.js';
+// ui-mobile.js - Gerenciador de Experiência Mobile (UX/UI Decorator)
+import { gameState, getCurrentPlayer } from '../state/game-state.js';
 import { RESOURCE_ICONS } from '../state/game-config.js';
 
 export class UIMobileManager {
     constructor(uiManager) {
         this.uiManager = uiManager;
+        // Detecção simples de mobile (largura < 768px)
         this.isMobile = window.innerWidth <= 768;
-        this.activeBottomSheet = null;
         
-        // Elementos Mobile Específicos
+        // Estado local
+        this.activeBottomSheet = false;
+        
+        // Referências aos elementos criados
         this.mobileOverlay = null;
         this.bottomSheet = null;
+        this.sheetContent = null;
     }
 
+    /**
+     * Inicializa o sistema mobile apenas se estiver em tela pequena
+     */
     init() {
         if (!this.isMobile) return;
 
-        console.log("📱 Inicializando Modo Mobile...");
+        console.log("📱 Modo Mobile Detectado: Inicializando adaptações...");
+
+        // 1. Injetar CSS específico para mobile
         this.injectMobileStyles();
-        this.createMobileStructure();
-        this.setupTouchEvents();
-        this.reorganizeLayout();
-        this.overrideTooltipBehavior();
+
+        // 2. Criar estrutura do DOM (Bottom Sheet, Overlay, FAB)
+        this.createMobileElements();
+
+        // 3. Reorganizar layout existente
+        this.adaptExistingLayout();
+
+        // 4. Substituir comportamentos de Desktop (Tooltips -> Sheets)
+        this.overrideDesktopBehaviors();
+
+        // 5. Configurar eventos de toque
+        this.setupTouchOptimization();
     }
 
-    // Cria a estrutura base para Bottom Sheets e overlays
-    createMobileStructure() {
-        // Overlay escuro para quando abrir menus
+    /**
+     * Injeta estilos CSS críticos para a interface mobile
+     * Evita ter que editar o style.css massivo
+     */
+    injectMobileStyles() {
+        const styleId = 'gaia-mobile-styles';
+        if (document.getElementById(styleId)) return;
+
+        const css = `
+            /* --- Mobile Overlay & Sheet --- */
+            #mobile-overlay {
+                transition: opacity 0.3s ease;
+                backdrop-filter: blur(4px);
+                -webkit-backdrop-filter: blur(4px);
+            }
+            
+            #mobile-bottom-sheet {
+                box-shadow: 0 -5px 25px rgba(0,0,0,0.8);
+                transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+                padding-bottom: env(safe-area-inset-bottom, 20px);
+            }
+
+            .sheet-open {
+                transform: translateY(0) !important;
+            }
+
+            .sheet-closed {
+                transform: translateY(100%) !important;
+            }
+
+            /* --- Adaptações de Layout --- */
+            .mobile-navbar-compact {
+                padding: 0.5rem !important;
+            }
+            .mobile-navbar-compact h1 {
+                font-size: 1rem !important;
+            }
+
+            /* Esconder elementos desktop */
+            @media (max-width: 768px) {
+                #sidebar { display: none !important; }
+                #regionTooltip { display: none !important; }
+                
+                /* Melhorar área de toque */
+                .board-cell { min-height: 80px; }
+                
+                /* Footer fixo e colado */
+                #gameFooter {
+                    bottom: 0 !important;
+                    left: 0 !important;
+                    transform: none !important;
+                    width: 100% !important;
+                    max-width: 100% !important;
+                    border-radius: 12px 12px 0 0 !important;
+                    border-left: 0 !important;
+                    border-right: 0 !important;
+                    border-bottom: 0 !important;
+                    padding-bottom: env(safe-area-inset-bottom, 10px) !important;
+                    z-index: 80 !important; /* Acima do mapa, abaixo do sheet */
+                }
+                
+                .action-btn {
+                    flex-direction: column;
+                    gap: 2px;
+                    font-size: 0.7rem !important;
+                    padding: 8px 4px !important;
+                }
+            }
+        `;
+
+        const style = document.createElement('style');
+        style.id = styleId;
+        style.textContent = css;
+        document.head.appendChild(style);
+    }
+
+    /**
+     * Cria os elementos DOM necessários para a UI Mobile
+     */
+    createMobileElements() {
+        // Overlay (Fundo escuro)
         this.mobileOverlay = document.createElement('div');
         this.mobileOverlay.id = 'mobile-overlay';
-        this.mobileOverlay.className = 'hidden fixed inset-0 bg-black/60 z-[60] backdrop-blur-sm transition-opacity duration-300 opacity-0';
-        this.mobileOverlay.addEventListener('click', () => this.closeAllSheets());
+        this.mobileOverlay.className = 'fixed inset-0 bg-black/70 z-[90] hidden opacity-0';
+        this.mobileOverlay.addEventListener('click', () => this.closeSheet());
         document.body.appendChild(this.mobileOverlay);
 
-        // Container Genérico de Bottom Sheet
+        // Bottom Sheet (Painel deslizante)
         this.bottomSheet = document.createElement('div');
         this.bottomSheet.id = 'mobile-bottom-sheet';
-        this.bottomSheet.className = 'fixed bottom-0 left-0 right-0 bg-gray-900 border-t border-yellow-500/30 rounded-t-2xl z-[70] transform translate-y-full transition-transform duration-300 p-4 shadow-[0_-10px_40px_rgba(0,0,0,0.8)] max-h-[80vh] overflow-y-auto';
+        this.bottomSheet.className = 'fixed bottom-0 left-0 right-0 bg-gray-900 border-t border-yellow-500/30 rounded-t-2xl z-[100] transform translate-y-full max-h-[85vh] overflow-y-auto sheet-closed';
         this.bottomSheet.innerHTML = `
-            <div class="w-12 h-1.5 bg-gray-700 rounded-full mx-auto mb-4"></div>
-            <div id="mobile-sheet-content"></div>
+            <div class="sticky top-0 bg-gray-900 z-10 pt-3 pb-2 w-full flex justify-center border-b border-white/5" id="sheet-handle">
+                <div class="w-12 h-1.5 bg-gray-700 rounded-full"></div>
+            </div>
+            <div id="mobile-sheet-content" class="p-4"></div>
         `;
         document.body.appendChild(this.bottomSheet);
+        this.sheetContent = this.bottomSheet.querySelector('#mobile-sheet-content');
 
-        // Botão Flutuante de Menu (Substitui Sidebar)
+        // Botão FAB para Menu (Substitui Sidebar)
+        // Posicionado no topo direito, abaixo da navbar
         const menuFab = document.createElement('button');
         menuFab.id = 'mobile-menu-fab';
-        menuFab.className = 'fixed top-20 right-4 z-40 w-12 h-12 bg-gray-800 border border-white/20 rounded-full shadow-lg flex items-center justify-center text-xl text-yellow-400 active:scale-95 transition-transform';
-        menuFab.innerHTML = '☰';
-        menuFab.onclick = () => this.openSidebarAsSheet();
+        menuFab.className = 'fixed top-16 right-4 z-40 w-12 h-12 bg-gray-800/90 backdrop-blur border border-yellow-500/30 rounded-full shadow-lg flex items-center justify-center text-xl text-yellow-400 active:scale-95 transition-transform';
+        menuFab.innerHTML = '<i class="bi bi-list"></i>'; // Usando Bootstrap Icons ou emoji '☰'
+        menuFab.onclick = () => this.openMenuSheet();
+        
+        // Se bootstrap icons não carregar, fallback para texto
+        if(!document.querySelector('link[href*="bootstrap-icons"]')) {
+            menuFab.innerHTML = '☰';
+        }
+        
         document.body.appendChild(menuFab);
     }
 
-    // Move elementos do DOM original para posições mobile-friendly
-    reorganizeLayout() {
-        // Mover o Navbar para ser menos intrusivo ou fixo
+    /**
+     * Ajusta classes de elementos existentes para melhor visualização
+     */
+    adaptExistingLayout() {
         const navbar = document.getElementById('gameNavbar');
-        if (navbar) {
-            navbar.classList.add('mobile-compact-nav');
-        }
-
-        // Ajustar Footer para ser sticky bottom real
-        const footer = document.getElementById('gameFooter');
-        if (footer) {
-            footer.classList.remove('bottom-4', 'rounded-lg', 'left-1/2', '-translate-x-1/2', 'max-w-4xl');
-            footer.classList.add('bottom-0', 'left-0', 'right-0', 'rounded-t-xl', 'border-t', 'border-white/10', 'bg-gray-900/95');
-            // Remove bordas laterais e inferiores para colar na tela
-            footer.style.width = '100%';
-            footer.style.maxWidth = '100%';
-        }
+        if (navbar) navbar.classList.add('mobile-navbar-compact');
+        
+        // Garante que o container do jogo tenha padding para o footer
+        const container = document.getElementById('gameContainer');
+        if (container) container.style.paddingBottom = '100px';
     }
 
-    // Intercepta a lógica de tooltip do ui-game.js
-    overrideTooltipBehavior() {
-        // Monkey patch no método showRegionTooltip do gameManager
-        const originalShowTooltip = this.uiManager.gameManager.showRegionTooltip.bind(this.uiManager.gameManager);
-        
-        // Substituímos o método original
-        this.uiManager.gameManager.showRegionTooltip = (region, targetEl) => {
-            if (this.isMobile) {
-                // Em mobile, abrimos o Bottom Sheet em vez do tooltip flutuante
-                this.showRegionDetailsSheet(region);
-            } else {
-                // Em desktop, mantém comportamento normal
-                originalShowTooltip(region, targetEl);
+    /**
+     * Intercepta a lógica de Tooltip do UIGameManager
+     * Em vez de mostrar tooltip flutuante, abre o Bottom Sheet
+     */
+    overrideDesktopBehaviors() {
+        const gameMgr = this.uiManager.gameManager;
+
+        // Salva referência original (opcional, caso queira reverter)
+        const originalShowTooltip = gameMgr.showRegionTooltip.bind(gameMgr);
+
+        // Substitui a função
+        gameMgr.showRegionTooltip = (region, targetEl) => {
+            // No mobile, ignoramos o tooltip hover e usamos o clique
+            // Mas se a lógica do jogo chamar tooltip explicitamente, redirecionamos
+            // Nota: Geralmente mobile usa 'click' para selecionar. 
+            // Vamos garantir que a seleção de região abra o Sheet.
+        };
+
+        // Intercepta o clique na célula (que já existe no ui-game.js)
+        // Adicionamos um listener global para capturar seleção de região e abrir detalhes
+        document.addEventListener('click', (e) => {
+            const cell = e.target.closest('.board-cell');
+            if (cell && cell.dataset.regionId) {
+                const region = gameState.regions[parseInt(cell.dataset.regionId)];
+                // Pequeno delay para permitir que a lógica de seleção do jogo ocorra primeiro
+                setTimeout(() => this.openRegionSheet(region), 50);
             }
-        };
-
-        // Desativa o hideRegionTooltip no mobile para não fechar o sheet acidentalmente
-        const originalHideTooltip = this.uiManager.gameManager.hideRegionTooltip.bind(this.uiManager.gameManager);
-        this.uiManager.gameManager.hideRegionTooltip = () => {
-            if (!this.isMobile) originalHideTooltip();
-        };
+        });
     }
 
-    // Exibe detalhes da região no Bottom Sheet
-    showRegionDetailsSheet(region) {
-        const owner = region.controller !== null 
-            ? `${gameState.players[region.controller].icon} ${gameState.players[region.controller].name}`
-            : '<span class="text-gray-400">Neutro</span>';
-        
+    /**
+     * Abre o Bottom Sheet com detalhes da região
+     */
+    openRegionSheet(region) {
+        if (!region) return;
+
+        const ownerPlayer = region.controller !== null ? gameState.players[region.controller] : null;
+        const ownerName = ownerPlayer ? ownerPlayer.name : 'Neutro';
+        const ownerIcon = ownerPlayer ? ownerPlayer.icon : '🏳️';
+        const ownerColor = ownerPlayer ? ownerPlayer.color : '#9ca3af';
+
+        // Renderiza recursos
         const resourcesHtml = Object.entries(region.resources)
             .filter(([_, val]) => val > 0)
             .map(([key, val]) => `
-                <div class="flex flex-col items-center p-2 bg-gray-800 rounded border border-white/5">
-                    <span class="text-xl mb-1">${RESOURCE_ICONS[key]}</span>
+                <div class="flex flex-col items-center justify-center p-2 bg-gray-800 rounded-lg border border-white/5">
+                    <span class="text-2xl mb-1">${RESOURCE_ICONS[key]}</span>
                     <span class="font-bold text-white">${val}</span>
-                    <span class="text-[10px] text-gray-400 uppercase">${key}</span>
+                    <span class="text-[10px] text-gray-400 uppercase tracking-wider">${key}</span>
                 </div>
             `).join('');
 
+        // Define conteúdo HTML
         const content = `
-            <div class="flex justify-between items-start mb-4">
+            <div class="flex justify-between items-start mb-5">
                 <div>
-                    <h3 class="text-xl font-bold text-yellow-400">${region.name}</h3>
-                    <p class="text-sm text-gray-400">${region.biome}</p>
+                    <h3 class="text-2xl font-bold text-white flex items-center gap-2">
+                        ${region.name}
+                        <span class="text-sm font-normal text-gray-400 bg-gray-800 px-2 py-0.5 rounded border border-white/10">${region.biome}</span>
+                    </h3>
+                    <div class="flex items-center gap-2 mt-1">
+                        <span class="text-xs text-gray-400">Controlado por:</span>
+                        <span class="flex items-center gap-1 text-sm font-bold" style="color: ${ownerColor}">
+                            ${ownerIcon} ${ownerName}
+                        </span>
+                    </div>
                 </div>
-                <div class="bg-gray-800 px-3 py-1 rounded-full text-sm border border-white/10">
-                    ${owner}
+                <div class="flex flex-col items-end">
+                    <span class="text-2xl font-bold text-yellow-400 flex items-center gap-1">
+                        ${region.explorationLevel} <span class="text-sm">⭐</span>
+                    </span>
+                    <span class="text-[10px] text-gray-500">Nível Exploração</span>
                 </div>
             </div>
 
-            <div class="grid grid-cols-2 gap-4 mb-4">
-                <div class="bg-gray-800/50 p-3 rounded-lg">
-                    <div class="text-xs text-gray-500 mb-1">Exploração</div>
-                    <div class="text-lg font-bold text-white flex items-center gap-1">
-                        ${region.explorationLevel} <span class="text-yellow-500">⭐</span>
+            <div class="grid grid-cols-2 gap-3 mb-5">
+                <div class="bg-gray-800/60 p-3 rounded-xl border border-white/5">
+                    <div class="text-xs text-gray-500 mb-1 uppercase">Estruturas</div>
+                    <div class="text-sm font-medium text-white">
+                        ${region.structures.length ? region.structures.join(', ') : 'Nenhuma estrutura'}
                     </div>
                 </div>
-                <div class="bg-gray-800/50 p-3 rounded-lg">
-                    <div class="text-xs text-gray-500 mb-1">Estruturas</div>
+                 <div class="bg-gray-800/60 p-3 rounded-xl border border-white/5">
+                    <div class="text-xs text-gray-500 mb-1 uppercase">Coordenada</div>
                     <div class="text-sm font-medium text-white">
-                        ${region.structures.length ? region.structures.join(', ') : 'Nenhuma'}
+                        Região ID #${region.id}
                     </div>
                 </div>
             </div>
 
             <div class="mb-6">
-                <h4 class="text-sm font-bold text-gray-300 mb-2">Recursos Disponíveis</h4>
+                <h4 class="text-sm font-bold text-gray-300 mb-3 uppercase tracking-wide">Recursos Disponíveis</h4>
                 <div class="grid grid-cols-4 gap-2">
-                    ${resourcesHtml || '<p class="text-gray-500 text-sm col-span-4">Sem recursos</p>'}
+                    ${resourcesHtml || '<div class="col-span-4 text-center text-gray-500 py-2 italic">Sem recursos naturais</div>'}
                 </div>
             </div>
 
-            <div class="grid grid-cols-2 gap-3">
-                <button onclick="window.gameLogic.handleExplore()" class="py-3 bg-blue-600 rounded-lg text-white font-bold shadow-lg active:scale-95 transition-transform">
-                    Explorar / Dominar
-                </button>
-                <button onclick="window.gameLogic.handleCollect()" class="py-3 bg-green-600 rounded-lg text-white font-bold shadow-lg active:scale-95 transition-transform">
-                    Coletar
+            <div class="pt-4 border-t border-white/10">
+                <h4 class="text-xs font-bold text-gray-500 mb-3 uppercase text-center">Ações Rápidas</h4>
+                <div class="grid grid-cols-2 gap-3">
+                    <button id="mobile-btn-explore" class="py-3 px-4 bg-blue-600 hover:bg-blue-700 rounded-xl text-white font-bold shadow-lg active:scale-95 transition-transform flex items-center justify-center gap-2">
+                        <span>⛏️</span> Explorar / Dominar
+                    </button>
+                    <button id="mobile-btn-collect" class="py-3 px-4 bg-green-600 hover:bg-green-700 rounded-xl text-white font-bold shadow-lg active:scale-95 transition-transform flex items-center justify-center gap-2">
+                        <span>🌾</span> Coletar
+                    </button>
+                </div>
+                <button id="mobile-btn-build" class="w-full mt-3 py-3 px-4 bg-yellow-600 hover:bg-yellow-700 rounded-xl text-white font-bold shadow-lg active:scale-95 transition-transform flex items-center justify-center gap-2">
+                    <span>🏗️</span> Construir Estrutura
                 </button>
             </div>
-            <div class="mt-2 text-center text-xs text-gray-500">
-                Toque fora para fechar
-            </div>
-        `;
+            
+            <div class="h-6"></div> `;
 
         this.openSheet(content);
+
+        // Bind events dos botões criados
+        setTimeout(() => {
+            document.getElementById('mobile-btn-explore')?.addEventListener('click', () => {
+                this.closeSheet();
+                window.gameLogic.handleExplore();
+            });
+            document.getElementById('mobile-btn-collect')?.addEventListener('click', () => {
+                this.closeSheet();
+                window.gameLogic.handleCollect();
+            });
+            document.getElementById('mobile-btn-build')?.addEventListener('click', () => {
+                this.closeSheet();
+                this.uiManager.modals.openStructureModal();
+            });
+        }, 100);
     }
 
-    // Abre o conteúdo da Sidebar (Recursos, Logs) no Sheet
-    openSidebarAsSheet() {
-        // Clona os elementos da sidebar original para não quebrar referências de eventos
-        const resourceList = document.getElementById('resourceList').cloneNode(true);
-        const logEntries = document.getElementById('logEntriesSidebar').cloneNode(true);
-        const achievements = document.getElementById('achievementsList').cloneNode(true);
-        const playerInfo = document.getElementById('sidebarPlayerHeader').innerHTML;
+    /**
+     * Abre o Bottom Sheet com o Menu (Recursos, Logs, Infos)
+     * Substitui a Sidebar desktop
+     */
+    openMenuSheet() {
+        const currentPlayer = getCurrentPlayer();
+        const playerColor = currentPlayer ? currentPlayer.color : '#fff';
+        
+        // Clona conteúdos existentes para manter consistência
+        const resourceListHTML = document.getElementById('resourceList')?.innerHTML || '';
+        const logEntriesHTML = document.getElementById('logEntriesSidebar')?.innerHTML || '';
+        const achievementsHTML = document.getElementById('achievementsList')?.innerHTML || '';
 
         const content = `
-            <div class="mb-4 border-b border-white/10 pb-4">
-                ${playerInfo}
+            <div class="flex items-center gap-3 mb-6 pb-4 border-b border-white/10">
+                <div class="text-4xl">${currentPlayer.icon}</div>
+                <div>
+                    <h3 class="text-xl font-bold text-white">${currentPlayer.name}</h3>
+                    <p class="text-sm" style="color: ${playerColor}">${currentPlayer.faction?.name || 'Sem facção'}</p>
+                    <div class="mt-1 inline-block bg-yellow-500/20 text-yellow-300 text-xs px-2 py-0.5 rounded font-bold border border-yellow-500/30">
+                        ${currentPlayer.victoryPoints} Pontos de Vitória
+                    </div>
+                </div>
+            </div>
+
+            <div class="space-y-6">
+                <div class="bg-gray-800/40 p-4 rounded-xl border border-white/5">
+                    <h4 class="text-yellow-400 font-bold mb-3 flex items-center gap-2">
+                        📦 Seus Recursos
+                    </h4>
+                    <ul class="grid grid-cols-2 gap-x-4 gap-y-2 text-sm">
+                        ${resourceListHTML}
+                    </ul>
+                </div>
+
+                <div>
+                    <h4 class="text-gray-300 font-bold mb-2 flex items-center gap-2">
+                        📜 Histórico Recente
+                    </h4>
+                    <div class="bg-black/30 rounded-lg p-3 max-h-40 overflow-y-auto border border-white/5 text-xs text-gray-300">
+                        ${logEntriesHTML || '<p class="text-gray-500 italic">Sem atividades recentes.</p>'}
+                    </div>
+                </div>
+
+                <div>
+                    <h4 class="text-gray-300 font-bold mb-2 flex items-center gap-2">
+                        🏆 Conquistas
+                    </h4>
+                    <div class="space-y-2">
+                        ${achievementsHTML}
+                    </div>
+                </div>
             </div>
             
-            <div class="mb-6">
-                <h4 class="text-yellow-400 font-bold mb-2 text-lg">Seus Recursos</h4>
-                <ul class="grid grid-cols-2 gap-2 text-sm">
-                    ${resourceList.innerHTML}
-                </ul>
-            </div>
-
-            <div class="mb-6">
-                <h4 class="text-gray-300 font-bold mb-2">Histórico Recente</h4>
-                <div class="bg-gray-800 rounded p-2 max-h-40 overflow-y-auto">
-                    ${logEntries.innerHTML}
-                </div>
-            </div>
-
-            <div class="mb-4">
-                <h4 class="text-gray-300 font-bold mb-2">Conquistas</h4>
-                <div class="space-y-2">
-                    ${achievements.innerHTML}
-                </div>
-            </div>
-        `;
+             <div class="h-6"></div> `;
 
         this.openSheet(content);
     }
 
+    /**
+     * Lógica genérica para abrir o sheet
+     */
     openSheet(htmlContent) {
-        const contentContainer = document.getElementById('mobile-sheet-content');
-        if (contentContainer) {
-            contentContainer.innerHTML = htmlContent;
-            this.bottomSheet.classList.remove('translate-y-full');
-            
-            this.mobileOverlay.classList.remove('hidden');
-            // Pequeno delay para permitir a transição de opacidade
-            requestAnimationFrame(() => {
-                this.mobileOverlay.classList.remove('opacity-0');
-            });
-            
-            this.activeBottomSheet = true;
-        }
+        if (!this.bottomSheet || !this.sheetContent) return;
+
+        this.sheetContent.innerHTML = htmlContent;
+        
+        // Mostrar overlay
+        this.mobileOverlay.classList.remove('hidden');
+        // Hack para forçar reflow e permitir transição CSS
+        void this.mobileOverlay.offsetWidth; 
+        this.mobileOverlay.classList.remove('opacity-0');
+
+        // Subir sheet
+        this.bottomSheet.classList.remove('sheet-closed');
+        this.bottomSheet.classList.add('sheet-open');
+
+        this.activeBottomSheet = true;
     }
 
-    closeAllSheets() {
+    /**
+     * Fecha o sheet atual
+     */
+    closeSheet() {
         if (!this.bottomSheet) return;
-        
-        this.bottomSheet.classList.add('translate-y-full');
+
+        // Descer sheet
+        this.bottomSheet.classList.remove('sheet-open');
+        this.bottomSheet.classList.add('sheet-closed');
+
+        // Esconder overlay
         this.mobileOverlay.classList.add('opacity-0');
         
+        // Aguardar transição para esconder display
         setTimeout(() => {
             this.mobileOverlay.classList.add('hidden');
+            this.activeBottomSheet = false;
         }, 300);
-        
-        this.activeBottomSheet = false;
-        
-        // Limpar seleção visual no mapa se desejar
-        // this.uiManager.gameManager.clearRegionSelection();
     }
 
-    setupTouchEvents() {
-        // Melhorar resposta ao toque no mapa
+    /**
+     * Otimizações básicas de toque
+     */
+    setupTouchOptimization() {
+        // Prevenir zoom acidental com duplo toque
+        // Nota: O meta viewport user-scalable=yes foi definido no HTML, 
+        // então controlamos via touch-action onde necessário
         const map = document.getElementById('gameMap');
-        if(map) {
-            map.style.touchAction = 'none'; // Previne scroll do browser ao arrastar mapa
-            // Implementação futura: lógica de Pan/Zoom customizada com touch events
+        if (map) {
+            // Permite pan mas evita comportamentos padrão do browser
+            map.style.touchAction = 'none'; 
         }
-    }
-
-    injectMobileStyles() {
-        const style = document.createElement('style');
-        style.textContent = `
-            /* Ajustes Mobile Injetados */
-            .mobile-compact-nav {
-                padding: 0.5rem !important;
-            }
-            .mobile-compact-nav h1 {
-                font-size: 1rem !important;
-            }
-            
-            /* Ajuste de células do grid para toque */
-            .board-cell {
-                min-height: 80px !important; /* Mais alto para caber o dedo */
-            }
-            
-            /* Esconder scrollbar no sheet */
-            #mobile-bottom-sheet::-webkit-scrollbar {
-                width: 4px;
-            }
-            #mobile-bottom-sheet::-webkit-scrollbar-thumb {
-                background-color: rgba(255,255,255,0.2);
-                border-radius: 4px;
-            }
-
-            /* Ajustes no Footer Mobile */
-            #gameFooter .action-btn {
-                flex: 1;
-                display: flex;
-                flex-direction: column;
-                align-items: center;
-                justify-content: center;
-                font-size: 0.7rem !important;
-                padding: 8px 2px !important;
-                height: 50px;
-            }
-            
-            /* Ícones SVG para os botões do footer (opcional, via CSS content) */
-        `;
-        document.head.appendChild(style);
     }
 }
