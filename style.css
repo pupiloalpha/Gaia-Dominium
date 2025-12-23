@@ -1836,13 +1836,6 @@ body.modal-open .board-cell {
   z-index: 1;
 }
 
-/* Remover qualquer overlay transparente existente */
-.modal-content-container > .absolute,
-.modal-overlay {
-  background: transparent !important;
-  backdrop-filter: none !important;
-}
-
 /* Ajustar específicamente para modal de alerta */
 #alertModal .modal-content-container > .relative {
   background: rgba(17, 24, 39, 0.98) !important;
