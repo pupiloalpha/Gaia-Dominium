@@ -16,6 +16,7 @@ import { ModalManager } from '../ui/ui-modals.js';
 import { NegotiationUI } from '../ui/ui-negotiation.js';
 import { UIPlayersManager } from '../ui/ui-players.js';
 import { UIGameManager } from '../ui/ui-game.js';
+import { UIMobileManager } from '../ui/ui-mobile.js';
 
 class UIManager {
     constructor() {
@@ -23,6 +24,7 @@ class UIManager {
     this.negotiation = new NegotiationUI(this);
     this.playersManager = new UIPlayersManager(this);
     this.gameManager = new UIGameManager(this);
+    this.mobileManager = new UIMobileManager(this);
     
     this.cacheElements();
     
@@ -72,6 +74,9 @@ preloadCriticalAssets() {
         this.playersManager.init();
         this.gameManager.init();
         this.setupGlobalEventListeners();
+
+        // Inicializar mobile por último para que possa sobrescrever/adaptar o que foi criado
+        this.mobileManager.init();
     }
 
     // ==================== INICIALIZAÇÃO DO JOGO ====================
