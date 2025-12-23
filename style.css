@@ -76,23 +76,23 @@ p {
 }
 
 /* ============================================
-   HIERARQUIA DE Z-INDEX - UNIFICADA
+   HIERARQUIA DE Z-INDEX - CORRIGIDA
    ============================================ */
 
-#initialScreen { z-index: 50; }
-#manualIcon { z-index: 60; position: fixed !important; top: 20px !important; right: 20px !important; }
+#initialScreen { z-index: 1000; }
+#manualIcon { z-index: 60; }
 #gameNavbar { z-index: 40; }
 #gameFooter { z-index: 45; }
 #regionTooltip { z-index: 90; }
-#eventModal { z-index: 95; }
-#incomeModal { z-index: 96; }
-#structureModal { z-index: 97; }
-#negotiationModal { z-index: 98; }
-#negResponseModal { z-index: 99; }
-#manualModal { z-index: 100; }
-#alertModal { z-index: 101; }
-#victoryModal { z-index: 102; }
-#saveLoadModal { z-index: 103; }
+#eventModal { z-index: 110; }
+#incomeModal { z-index: 111; }
+#structureModal { z-index: 112; }
+#negotiationModal { z-index: 113; }
+#negResponseModal { z-index: 114; }
+#manualModal { z-index: 115; }
+#alertModal { z-index: 116; }
+#victoryModal { z-index: 117; }
+#saveLoadModal { z-index: 118; }
 
 /* ============================================
    UTILITÁRIOS REUTILIZÁVEIS - HÍBRIDOS
@@ -2050,4 +2050,38 @@ body.modal-open .board-cell {
 
 ::-webkit-scrollbar-thumb:hover {
   background: rgba(255, 255, 255, 0.15);
+}
+
+/* ============================================
+   CORREÇÃO CRÍTICA - FUNDO DOS MODAIS
+   ============================================ */
+
+/* Corrigir o modal de resposta de negociação */
+#negResponseModal .relative {
+  background-color: rgb(17, 24, 39) !important; /* gray-900 sólido */
+  opacity: 1 !important;
+  border: 1px solid rgba(255, 255, 255, 0.15) !important;
+}
+
+/* Corrigir o modal principal de negociação */
+#negotiationModal .relative {
+  background-color: rgb(17, 24, 39) !important; /* gray-900 sólido */
+  opacity: 1 !important;
+}
+
+/* Garantir que as seções dentro tenham fundo */
+#negotiationModal .negotiation-section {
+  background-color: rgba(31, 41, 55, 0.9) !important; /* gray-800 */
+}
+
+/* Corrigir o modal de alerta/confirmação */
+#alertModal .relative {
+  background-color: rgb(17, 24, 39) !important;
+  border: 1px solid rgba(245, 158, 11, 0.3) !important;
+}
+
+/* Corrigir o modal de evento global */
+#eventModal .relative {
+  background-color: rgb(17, 24, 39) !important;
+  border: 1px solid rgba(245, 158, 11, 0.3) !important;
 }
