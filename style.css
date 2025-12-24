@@ -23,6 +23,7 @@
    9. MODAIS
      9.1 Estilos Gerais de Modais
      9.2 Modais Específicos (Negociação, Estrutura, etc.)
+     9.3 MODAL DE CONQUISTAS
    10. TOOLTIPS E BANNERS
    11. CONTROLES E INTERAÇÕES
    12. LOGS, CONQUISTAS E SISTEMAS
@@ -1049,6 +1050,46 @@ p {
   background: linear-gradient(135deg, rgba(251, 191, 36, 0.15), rgba(245, 158, 11, 0.15)) !important;
   border-color: rgba(251, 191, 36, 0.4) !important;
   backdrop-filter: blur(12px);
+}
+
+/* 9.3 MODAL DE CONQUISTAS - CORREÇÃO DO FUNDO TRANSPARENTE */
+#achievementsModal {
+  z-index: 110; /* Mantém a hierarquia definida no HTML */
+}
+
+#achievementsModal > .absolute {
+  background-color: rgba(0, 0, 0, 0.7) !important;
+  backdrop-filter: none !important; /* Remove blur do overlay */
+}
+
+#achievementsModal > .relative {
+  background: rgba(17, 24, 39, 0.98) !important;
+  backdrop-filter: blur(25px) saturate(180%) !important;
+  border: 1px solid rgba(255, 255, 255, 0.15) !important;
+  border-radius: 1rem !important;
+  box-shadow: 
+    0 25px 50px -12px rgba(0, 0, 0, 0.5),
+    inset 0 1px 0 rgba(255, 255, 255, 0.1) !important;
+  opacity: 1 !important;
+  visibility: visible !important;
+}
+
+/* Garante legibilidade do conteúdo */
+#achievementsModal .text-yellow-300 {
+  color: #fbbf24 !important;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5) !important;
+}
+
+#achievementsModal .text-gray-300 {
+  color: rgba(255, 255, 255, 0.95) !important;
+}
+
+#achievementsModal .bg-yellow-900\/10 {
+  background-color: rgba(120, 53, 15, 0.2) !important;
+}
+
+#achievementsModal .border-yellow-500\/50 {
+  border-color: rgba(245, 158, 11, 0.3) !important;
 }
 
 /* ============================================
