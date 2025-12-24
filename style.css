@@ -2073,10 +2073,10 @@ body.modal-open .board-cell {
    ============================================ */
 
 /* 1. Remover qualquer backdrop-filter residual */
-#negotiationModal .relative,
-#negResponseModal .relative,
-[id^="negotiation-notification-"],
-#pending-negotiations-summary {
+#negotiationModal > .relative,
+#negResponseModal > .relative,
+[id^="negotiation-notification-"]:not(.modal-overlay),
+#pending-negotiations-summary:not(.modal-overlay) {
   backdrop-filter: none !important;
 }
 
