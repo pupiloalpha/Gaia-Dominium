@@ -1241,7 +1241,7 @@ class NegotiationUI {
     }
     
     const modal = document.createElement('div');
-    modal.className = 'fixed inset-0 z-[100] flex items-center justify-center p-6';
+    modal.className = 'fixed inset-0 z-[100] flex items-center justify-center p-6 modal-content-container';
     modal.innerHTML = `
       <div class="absolute inset-0 bg-black/70"></div>
       <div class="relative w-full max-w-2xl bg-gray-900/95 backdrop-blur-md border border-white/10 rounded-2xl shadow-xl p-6">
