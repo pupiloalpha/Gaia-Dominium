@@ -104,6 +104,11 @@ class ModalManager {
 
     // Income modal
     this.incomeOkBtn?.addEventListener('click', () => this.closeIncomeModal());
+
+    // Achievements modal
+    document.getElementById('achievementsNavBtn')?.addEventListener('click', () => {
+    this.renderAchievementsModal();
+  });
   }
 
   // ==================== MODAL GENÉRICO ====================
@@ -824,14 +829,17 @@ showIncomeModal(player, bonuses) {
 
   // ==================== MODAL DE CONQUISTAS ====================
 renderAchievementsModal() {
+  console.log('🏆 Abrindo modal de conquistas...');
+  
   let modal = document.getElementById('achievementsModal');
   
   if (!modal) {
+    console.log('📝 Criando modal de conquistas dinamicamente...');
     modal = document.createElement('div');
     modal.id = 'achievementsModal';
-    modal.className = 'hidden fixed inset-0 z-[110] flex items-center justify-center p-6 modal-content-container';
+    modal.className = 'fixed inset-0 z-[110] flex items-center justify-center p-6';
     
-    // CORREÇÃO: HTML com fundo sólido e classes apropriadas
+    // ESTRUTURA CORRIGIDA
     modal.innerHTML = `
       <div class="absolute inset-0 bg-black/80 backdrop-blur-sm"></div>
       <div class="relative w-full max-w-4xl bg-gradient-to-br from-gray-900 to-gray-950 backdrop-blur-xl border-2 border-yellow-500/40 rounded-2xl shadow-2xl p-6">
@@ -840,20 +848,44 @@ renderAchievementsModal() {
             <h2 class="text-2xl text-yellow-300 font-semibold">🏆 Conquistas</h2>
             <p id="achievementsPlayerName" class="text-gray-300 text-sm"></p>
           </div>
-          <button id="achievementsModalClose" class="text-gray-300 hover:text-white text-xl">✖</button>
+          <button id="achievementsModalClose" class="text-gray-300 hover:text-white text-xl transition">✖</button>
         </div>
-        <div id="achievementsModalContent" class="grid grid-cols-1 md:grid-cols-2 gap-4 max-h-[60vh] overflow-y-auto custom-scrollbar"></div>
+        <div id="achievementsModalContent" class="grid grid-cols-1 md:grid-cols-2 gap-4 max-h-[60vh] overflow-y-auto custom-scrollbar p-2"></div>
       </div>
     `;
     
     document.body.appendChild(modal);
+    
+    // Configurar listener para fechar
+    const closeBtn = document.getElementById('achievementsModalClose');
+    if (closeBtn) {
+      closeBtn.addEventListener('click', () => {
+        modal.classList.add('hidden');
+      });
+    }
+    
+    // Fechar ao clicar no overlay
+    modal.addEventListener('click', (e) => {
+      if (e.target === modal) {
+        modal.classList.add('hidden');
+      }
+    });
+    
     // Atualizar cache
     this.modals.achievements = modal;
   }
   
+  // Garantir que o modal esteja visível
+  modal.classList.remove('hidden');
+  
+  // Atualizar conteúdo
   const content = document.getElementById('achievementsModalContent');
   const playerNameEl = document.getElementById('achievementsPlayerName');
-  if (!content || !playerNameEl) return;
+  
+  if (!content || !playerNameEl) {
+    console.error('❌ Elementos do modal de conquistas não encontrados');
+    return;
+  }
   
   content.innerHTML = '';
   
@@ -873,7 +905,7 @@ renderAchievementsModal() {
   Object.values(ACHIEVEMENTS_CONFIG).forEach(achievement => {
     const isUnlocked = (achievementsState.unlockedAchievements[playerIndex] || []).includes(achievement.id);
     const card = document.createElement('div');
-    card.className = `p-4 rounded-lg border ${isUnlocked ? 'border-yellow-500/50 bg-yellow-900/10' : 'border-gray-700/50 bg-gray-800/30'}`;
+    card.className = `p-4 rounded-lg border ${isUnlocked ? 'border-yellow-500/50 bg-yellow-900/10' : 'border-gray-700/50 bg-gray-800/30'} hover:bg-gray-800/50 transition`;
     
     let progress = 0;
     let progressText = '';
@@ -919,7 +951,7 @@ renderAchievementsModal() {
     
     const progressPercent = achievement.requirement > 0 
       ? Math.min(100, (progress / achievement.requirement) * 100)
-      : (progress === 0 ? 100 : 0); // Para pacifist
+      : (progress === 0 ? 100 : 0);
     
     card.innerHTML = `
       <div class="flex items-start gap-3">
@@ -953,15 +985,8 @@ renderAchievementsModal() {
     
     content.appendChild(card);
   });
-
-  modal.classList.remove('hidden');
-  const closeBtn = document.getElementById('achievementsModalClose');
-  if (closeBtn && !closeBtn.hasListener) {
-    closeBtn.addEventListener('click', () => {
-      modal.classList.add('hidden');
-    });
-    closeBtn.hasListener = true;
-  }
+  
+  console.log('✅ Modal de conquistas renderizado com sucesso');
 }
 
   getAchievementRewardText(achievement) {
