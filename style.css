@@ -19,7 +19,7 @@
   --cell-opacity: 0.25;
   --cell-blur: 1px;
   --cell-bg-opacity: 0.15;
-  --cell-hover-opacity: 0.25;
+  --cell-hover-opacity: 0.30;
   --cell-selected-opacity: 0.45;
   
   /* Sombras */
@@ -1794,72 +1794,54 @@ input[type="text"]:focus, select:focus, input[type="number"]:focus {
 }
 
 /* ============================================
-   ESTILOS PARA EMOJIS (HÍBRIDO)
+   EMOJIS COMPATÍVEIS EM TODOS OS DISPOSITIVOS
    ============================================ */
 
-/* Forçar uso de fontes de emoji modernas */
-@font-face {
-  font-family: 'Twemoji Mozilla';
-  src: local('Apple Color Emoji'), 
-       local('Segoe UI Emoji'), 
-       local('Segoe UI Symbol'), 
-       local('Noto Color Emoji'), 
-       local('Android Emoji'),
-       local('EmojiSymbols');
-  unicode-range: U+1F000-1F644, U+203C-3299;
+/* Remover toda a seção antiga de emojis e substituir por: */
+
+.emoji-font {
+  font-family: 
+    /* Windows + Android */
+    "Segoe UI Emoji",
+    /* macOS + iOS */
+    "Apple Color Emoji",
+    /* Linux */
+    "Noto Color Emoji",
+    /* Fallback universal */
+    "Segoe UI Symbol",
+    /* Web-optimized */
+    "Twemoji Mozilla",
+    /* Emoji fallback */
+    "EmojiSymbols",
+    /* Sistema */
+    sans-serif;
+  font-weight: normal;
+  font-style: normal;
+  display: inline-block;
+  line-height: 1;
+  vertical-align: -0.125em;
 }
 
-/* Aplicar a todos os elementos que mostram emojis */
-body * {
-  font-feature-settings: "emoji";
-}
-
-/* Garantir que os emojis sejam renderizados */
+/* Aplicar a todos os elementos que usam emojis */
 .resource-item,
 .resource-value,
-#offerResourcesInfo,
-#requestResourcesInfo,
-#negotiationSummary,
-#incomeResources,
-#resourceList,
-#controlledRegions,
-#actionsLeft,
 .board-cell .text-xs,
-.board-cell .text-\[10px\] {
-  font-family: "Twemoji Mozilla", "Segoe UI Emoji", "Apple Color Emoji", "Noto Color Emoji", "EmojiSymbols", "Symbola", sans-serif;
-  font-size: 1.1em;
-  line-height: 1;
+.board-cell .text-\[10px\],
+#offerResourcesInfo,
+#requestResourcesInfo {
+  composes: emoji-font;
 }
 
-/* Fallback visual para emojis faltantes */
-.resource-emoji {
-  position: relative;
+/* Fallback visual para quando o emoji não carrega */
+.emoji-fallback {
   display: inline-block;
-  min-width: 1.2em;
-  min-height: 1.2em;
-}
-
-.resource-emoji::after {
-  content: attr(title);
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  font-size: 0.7em;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  opacity: 0;
-  transition: opacity 0.2s;
-  background: rgba(0,0,0,0.8);
-  color: white;
+  width: 1.2em;
+  height: 1.2em;
+  background: rgba(255, 255, 255, 0.1);
   border-radius: 3px;
-  padding: 2px;
-}
-
-.resource-emoji:hover::after {
-  opacity: 1;
+  text-align: center;
+  font-size: 0.8em;
+  line-height: 1.4em;
 }
 
 /* ============================================
