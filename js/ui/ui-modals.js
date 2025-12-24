@@ -104,11 +104,6 @@ class ModalManager {
 
     // Income modal
     this.incomeOkBtn?.addEventListener('click', () => this.closeIncomeModal());
-
-    // Achievements modal
-    document.getElementById('achievementsNavBtn')?.addEventListener('click', () => {
-    this.renderAchievementsModal();
-  });
   }
 
   // ==================== MODAL GENÉRICO ====================
@@ -757,7 +752,7 @@ showIncomeModal(player, bonuses) {
     resourcesEl.innerHTML = html;
   }
   
-  // Configurar botão OK corretamente
+  // CORREÇÃO CRÍTICA: Configurar botão OK corretamente
   if (okBtn) {
     // Remover listeners antigos
     const newOkBtn = okBtn.cloneNode(true);
@@ -829,63 +824,31 @@ showIncomeModal(player, bonuses) {
 
   // ==================== MODAL DE CONQUISTAS ====================
 renderAchievementsModal() {
-  console.log('🏆 Abrindo modal de conquistas...');
-  
   let modal = document.getElementById('achievementsModal');
   
   if (!modal) {
-    console.log('📝 Criando modal de conquistas dinamicamente...');
     modal = document.createElement('div');
     modal.id = 'achievementsModal';
-    modal.className = 'fixed inset-0 z-[110] flex items-center justify-center p-6';
-    
-    // ESTRUTURA CORRIGIDA
+    modal.className = 'hidden fixed inset-0 z-[110] flex items-center justify-center p-6';
     modal.innerHTML = `
-      <div class="absolute inset-0 bg-black/80 backdrop-blur-sm"></div>
-      <div class="relative w-full max-w-4xl bg-gradient-to-br from-gray-900 to-gray-950 backdrop-blur-xl border-2 border-yellow-500/40 rounded-2xl shadow-2xl p-6">
+      <div class="absolute inset-0 bg-black/70"></div>
+      <div class="relative w-full max-w-4xl bg-gray-900/95 backdrop-blur-md border border-yellow-500/30 rounded-2xl shadow-xl p-6">
         <div class="flex justify-between items-center mb-6">
           <div>
             <h2 class="text-2xl text-yellow-300 font-semibold">🏆 Conquistas</h2>
             <p id="achievementsPlayerName" class="text-gray-300 text-sm"></p>
           </div>
-          <button id="achievementsModalClose" class="text-gray-300 hover:text-white text-xl transition">✖</button>
+          <button id="achievementsModalClose" class="text-gray-300 hover:text-white text-xl">✖</button>
         </div>
-        <div id="achievementsModalContent" class="grid grid-cols-1 md:grid-cols-2 gap-4 max-h-[60vh] overflow-y-auto custom-scrollbar p-2"></div>
+        <div id="achievementsModalContent" class="grid grid-cols-1 md:grid-cols-2 gap-4 max-h-[60vh] overflow-y-auto"></div>
       </div>
     `;
-    
     document.body.appendChild(modal);
-    
-    // Configurar listener para fechar
-    const closeBtn = document.getElementById('achievementsModalClose');
-    if (closeBtn) {
-      closeBtn.addEventListener('click', () => {
-        modal.classList.add('hidden');
-      });
-    }
-    
-    // Fechar ao clicar no overlay
-    modal.addEventListener('click', (e) => {
-      if (e.target === modal) {
-        modal.classList.add('hidden');
-      }
-    });
-    
-    // Atualizar cache
-    this.modals.achievements = modal;
   }
   
-  // Garantir que o modal esteja visível
-  modal.classList.remove('hidden');
-  
-  // Atualizar conteúdo
   const content = document.getElementById('achievementsModalContent');
   const playerNameEl = document.getElementById('achievementsPlayerName');
-  
-  if (!content || !playerNameEl) {
-    console.error('❌ Elementos do modal de conquistas não encontrados');
-    return;
-  }
+  if (!content || !playerNameEl) return;
   
   content.innerHTML = '';
   
@@ -905,7 +868,7 @@ renderAchievementsModal() {
   Object.values(ACHIEVEMENTS_CONFIG).forEach(achievement => {
     const isUnlocked = (achievementsState.unlockedAchievements[playerIndex] || []).includes(achievement.id);
     const card = document.createElement('div');
-    card.className = `p-4 rounded-lg border ${isUnlocked ? 'border-yellow-500/50 bg-yellow-900/10' : 'border-gray-700/50 bg-gray-800/30'} hover:bg-gray-800/50 transition`;
+    card.className = `p-4 rounded-lg border ${isUnlocked ? 'border-yellow-500/50 bg-yellow-900/10' : 'border-gray-700/50 bg-gray-800/30'}`;
     
     let progress = 0;
     let progressText = '';
@@ -951,7 +914,7 @@ renderAchievementsModal() {
     
     const progressPercent = achievement.requirement > 0 
       ? Math.min(100, (progress / achievement.requirement) * 100)
-      : (progress === 0 ? 100 : 0);
+      : (progress === 0 ? 100 : 0); // Para pacifist
     
     card.innerHTML = `
       <div class="flex items-start gap-3">
@@ -985,8 +948,15 @@ renderAchievementsModal() {
     
     content.appendChild(card);
   });
-  
-  console.log('✅ Modal de conquistas renderizado com sucesso');
+
+  modal.classList.remove('hidden');
+  const closeBtn = document.getElementById('achievementsModalClose');
+  if (closeBtn && !closeBtn.hasListener) {
+    closeBtn.addEventListener('click', () => {
+      modal.classList.add('hidden');
+    });
+    closeBtn.hasListener = true;
+  }
 }
 
   getAchievementRewardText(achievement) {
@@ -1142,7 +1112,7 @@ animateCounter(element, start, end, duration) {
   window.requestAnimationFrame(step);
 }
 
-// Método para Efeito de confete
+// Método auxiliar: Efeito de confete
 createConfettiEffect() {
   const confettiCount = 50;
   const colors = ['#fbbf24', '#f59e0b', '#d97706', '#fde68a'];
@@ -1177,7 +1147,7 @@ createConfettiEffect() {
   }
 }
 
-// Método para Salvar estatísticas
+// Método auxiliar: Salvar estatísticas
 saveGameStatistics(winner) {
   try {
     const stats = {
@@ -1222,7 +1192,874 @@ closeVictoryModal() {
   }
 }
 
-  // Método para desabilitar ações ao término do jogo
+// ADICIONE este m// ==================== MODAL DE VITÓRIA ====================
+
+openVictoryModal(winner) {
+  console.log('🏆 Abrindo modal de vitória para:', winner.name);
+  
+  // Garantir que o modal exista no DOM
+  if (!this.modals.victory) {
+    this.modals.victory = document.getElementById('victoryModal');
+    if (!this.modals.victory) {
+      console.error('❌ Modal de vitória não encontrado no DOM');
+      return;
+    }
+  }
+  
+  // Atualizar conteúdo do modal
+  if (this.victoryModalTitle) {
+    this.victoryModalTitle.textContent = '🏆 VITÓRIA IMPERIAL!';
+  }
+  
+  // Atualizar nome do jogador
+  const victoryPlayerNameEl = document.getElementById('victoryPlayerName');
+  if (victoryPlayerNameEl) {
+    victoryPlayerNameEl.textContent = winner.name;
+  }
+  
+  // Atualizar a pontuação
+  const pointsDisplay = document.getElementById('victoryPointsDisplay');
+  if (pointsDisplay) {
+    pointsDisplay.textContent = winner.victoryPoints;
+    
+    // Animação de contagem
+    this.animateCounter(pointsDisplay, 0, winner.victoryPoints, 1500);
+  }
+  
+  // Atualizar contador de turnos
+  const turnCountEl = document.getElementById('victoryTurnCount');
+  if (turnCountEl) {
+    turnCountEl.textContent = gameState.turn;
+  }
+  
+  // Configurar botões do modal
+  this.setupVictoryButtons(winner);
+  
+  // Mostrar o modal
+  this.showVictoryModalWithAnimations();
+}
+
+// Método auxiliar: Configurar botões do modal de vitória
+setupVictoryButtons(winner) {
+  // Botão de novo jogo
+  const newGameBtn = document.getElementById('victoryNewGameBtn');
+  if (newGameBtn) {
+    // Remover listeners anteriores
+    const newBtn = newGameBtn.cloneNode(true);
+    newGameBtn.parentNode.replaceChild(newBtn, newGameBtn);
+    
+    // Adicionar novo listener
+    document.getElementById('victoryNewGameBtn').addEventListener('click', () => {
+      console.log('🎮 Jogador clicou em Novo Jogo');
+      
+      // Feedback visual
+      newBtn.classList.add('animate-pulse');
+      
+      // Salvar estatísticas antes de reiniciar
+      this.saveGameStatistics(winner);
+      
+      // Delay para ver a animação
+      setTimeout(() => {
+        this.modals.victory.classList.add('hidden');
+        
+        // Reiniciar o jogo após um breve delay
+        setTimeout(() => {
+          window.location.reload();
+        }, 500);
+      }, 300);
+    });
+  }
+  
+  // Botão de fechar
+  const closeBtn = document.getElementById('victoryModalClose');
+  if (closeBtn) {
+    // Remover listeners anteriores
+    const newCloseBtn = closeBtn.cloneNode(true);
+    closeBtn.parentNode.replaceChild(newCloseBtn, closeBtn);
+    
+    // Adicionar novo listener
+    document.getElementById('victoryModalClose').addEventListener('click', () => {
+      this.closeVictoryModal();
+    });
+  }
+}
+
+// Método auxiliar: Mostrar modal com animações
+showVictoryModalWithAnimations() {
+  // Remover hidden
+  this.modals.victory.classList.remove('hidden');
+  
+  // Garantir que esteja no topo
+  this.modals.victory.style.zIndex = '9999';
+  
+  // Adicionar animações
+  setTimeout(() => {
+    const modalContent = this.modals.victory.querySelector('.relative');
+    if (modalContent) {
+      // Remover classes antigas
+      modalContent.classList.remove('animate__bounceIn');
+      
+      // Forçar reflow
+      void modalContent.offsetWidth;
+      
+      // Adicionar animação
+      modalContent.classList.add('animate__animated', 'animate__bounceIn');
+      
+      // Efeito de confete (simples)
+      this.createConfettiEffect();
+    }
+  }, 100);
+  
+  // Desabilitar ações do jogo
+  this.disableAllGameActions();
+}
+
+// Método auxiliar: Animação de contador
+animateCounter(element, start, end, duration) {
+  let startTimestamp = null;
+  const step = (timestamp) => {
+    if (!startTimestamp) startTimestamp = timestamp;
+    const progress = Math.min((timestamp - startTimestamp) / duration, 1);
+    const current = Math.floor(progress * (end - start) + start);
+    element.textContent = current;
+    
+    if (progress < 1) {
+      window.requestAnimationFrame(step);
+    }
+  };
+  window.requestAnimationFrame(step);
+}
+
+// Método auxiliar: Efeito de confete
+createConfettiEffect() {
+  const confettiCount = 50;
+  const colors = ['#fbbf24', '#f59e0b', '#d97706', '#fde68a'];
+  
+  for (let i = 0; i < confettiCount; i++) {
+    setTimeout(() => {
+      const confetti = document.createElement('div');
+      confetti.innerHTML = '✨';
+      confetti.style.position = 'fixed';
+      confetti.style.left = `${Math.random() * 100}vw`;
+      confetti.style.top = '-50px';
+      confetti.style.fontSize = `${Math.random() * 20 + 10}px`;
+      confetti.style.color = colors[Math.floor(Math.random() * colors.length)];
+      confetti.style.opacity = '0.8';
+      confetti.style.zIndex = '9998';
+      confetti.style.pointerEvents = 'none';
+      confetti.style.userSelect = 'none';
+      
+      document.body.appendChild(confetti);
+      
+      // Animação
+      const animation = confetti.animate([
+        { transform: 'translateY(0) rotate(0deg)', opacity: 1 },
+        { transform: `translateY(${window.innerHeight + 100}px) rotate(${Math.random() * 360}deg)`, opacity: 0 }
+      ], {
+        duration: Math.random() * 2000 + 1000,
+        easing: 'cubic-bezier(0.215, 0.610, 0.355, 1)'
+      });
+      
+      animation.onfinish = () => confetti.remove();
+    }, i * 30);
+  }
+}
+
+// Método auxiliar: Salvar estatísticas
+saveGameStatistics(winner) {
+  try {
+    const stats = {
+      winner: winner.name,
+      victoryPoints: winner.victoryPoints,
+      turn: gameState.turn,
+      timestamp: new Date().toISOString(),
+      players: gameState.players.map(p => ({
+        name: p.name,
+        points: p.victoryPoints,
+        regions: p.regions.length
+      }))
+    };
+    
+    // Salvar no localStorage
+    const existingStats = JSON.parse(localStorage.getItem('gaia_victory_stats') || '[]');
+    existingStats.push(stats);
+    
+    // Manter apenas as 10 últimas vitórias
+    if (existingStats.length > 10) {
+      existingStats.shift();
+    }
+    
+    localStorage.setItem('gaia_victory_stats', JSON.stringify(existingStats));
+    console.log('📊 Estatísticas de vitória salvas:', stats);
+    
+  } catch (error) {
+    console.warn('⚠️ Não foi possível salvar estatísticas:', error);
+  }
+}
+
+closeVictoryModal() {
+  if (this.modals.victory) {
+    this.modals.victory.classList.add('hidden');
+    
+    // Limpar confetes
+    document.querySelectorAll('div').forEach(el => {
+      if (el.innerHTML === '✨' && el.style.position === 'fixed') {
+        el.remove();
+      }
+    });
+  }
+}// ==================== MODAL DE VITÓRIA ====================
+
+openVictoryModal(winner) {
+  console.log('🏆 Abrindo modal de vitória para:', winner.name);
+  
+  // Garantir que o modal exista no DOM
+  if (!this.modals.victory) {
+    this.modals.victory = document.getElementById('victoryModal');
+    if (!this.modals.victory) {
+      console.error('❌ Modal de vitória não encontrado no DOM');
+      return;
+    }
+  }
+  
+  // Atualizar conteúdo do modal
+  if (this.victoryModalTitle) {
+    this.victoryModalTitle.textContent = '🏆 VITÓRIA IMPERIAL!';
+  }
+  
+  // Atualizar nome do jogador
+  const victoryPlayerNameEl = document.getElementById('victoryPlayerName');
+  if (victoryPlayerNameEl) {
+    victoryPlayerNameEl.textContent = winner.name;
+  }
+  
+  // Atualizar a pontuação
+  const pointsDisplay = document.getElementById('victoryPointsDisplay');
+  if (pointsDisplay) {
+    pointsDisplay.textContent = winner.victoryPoints;
+    
+    // Animação de contagem
+    this.animateCounter(pointsDisplay, 0, winner.victoryPoints, 1500);
+  }
+  
+  // Atualizar contador de turnos
+  const turnCountEl = document.getElementById('victoryTurnCount');
+  if (turnCountEl) {
+    turnCountEl.textContent = gameState.turn;
+  }
+  
+  // Configurar botões do modal
+  this.setupVictoryButtons(winner);
+  
+  // Mostrar o modal
+  this.showVictoryModalWithAnimations();
+}
+
+// Método auxiliar: Configurar botões do modal de vitória
+setupVictoryButtons(winner) {
+  // Botão de novo jogo
+  const newGameBtn = document.getElementById('victoryNewGameBtn');
+  if (newGameBtn) {
+    // Remover listeners anteriores
+    const newBtn = newGameBtn.cloneNode(true);
+    newGameBtn.parentNode.replaceChild(newBtn, newGameBtn);
+    
+    // Adicionar novo listener
+    document.getElementById('victoryNewGameBtn').addEventListener('click', () => {
+      console.log('🎮 Jogador clicou em Novo Jogo');
+      
+      // Feedback visual
+      newBtn.classList.add('animate-pulse');
+      
+      // Salvar estatísticas antes de reiniciar
+      this.saveGameStatistics(winner);
+      
+      // Delay para ver a animação
+      setTimeout(() => {
+        this.modals.victory.classList.add('hidden');
+        
+        // Reiniciar o jogo após um breve delay
+        setTimeout(() => {
+          window.location.reload();
+        }, 500);
+      }, 300);
+    });
+  }
+  
+  // Botão de fechar
+  const closeBtn = document.getElementById('victoryModalClose');
+  if (closeBtn) {
+    // Remover listeners anteriores
+    const newCloseBtn = closeBtn.cloneNode(true);
+    closeBtn.parentNode.replaceChild(newCloseBtn, closeBtn);
+    
+    // Adicionar novo listener
+    document.getElementById('victoryModalClose').addEventListener('click', () => {
+      this.closeVictoryModal();
+    });
+  }
+}
+
+// Método auxiliar: Mostrar modal com animações
+showVictoryModalWithAnimations() {
+  // Remover hidden
+  this.modals.victory.classList.remove('hidden');
+  
+  // Garantir que esteja no topo
+  this.modals.victory.style.zIndex = '9999';
+  
+  // Adicionar animações
+  setTimeout(() => {
+    const modalContent = this.modals.victory.querySelector('.relative');
+    if (modalContent) {
+      // Remover classes antigas
+      modalContent.classList.remove('animate__bounceIn');
+      
+      // Forçar reflow
+      void modalContent.offsetWidth;
+      
+      // Adicionar animação
+      modalContent.classList.add('animate__animated', 'animate__bounceIn');
+      
+      // Efeito de confete (simples)
+      this.createConfettiEffect();
+    }
+  }, 100);
+  
+  // Desabilitar ações do jogo
+  this.disableAllGameActions();
+}
+
+// Método auxiliar: Animação de contador
+animateCounter(element, start, end, duration) {
+  let startTimestamp = null;
+  const step = (timestamp) => {
+    if (!startTimestamp) startTimestamp = timestamp;
+    const progress = Math.min((timestamp - startTimestamp) / duration, 1);
+    const current = Math.floor(progress * (end - start) + start);
+    element.textContent = current;
+    
+    if (progress < 1) {
+      window.requestAnimationFrame(step);
+    }
+  };
+  window.requestAnimationFrame(step);
+}
+
+// Método auxiliar: Efeito de confete
+createConfettiEffect() {
+  const confettiCount = 50;
+  const colors = ['#fbbf24', '#f59e0b', '#d97706', '#fde68a'];
+  
+  for (let i = 0; i < confettiCount; i++) {
+    setTimeout(() => {
+      const confetti = document.createElement('div');
+      confetti.innerHTML = '✨';
+      confetti.style.position = 'fixed';
+      confetti.style.left = `${Math.random() * 100}vw`;
+      confetti.style.top = '-50px';
+      confetti.style.fontSize = `${Math.random() * 20 + 10}px`;
+      confetti.style.color = colors[Math.floor(Math.random() * colors.length)];
+      confetti.style.opacity = '0.8';
+      confetti.style.zIndex = '9998';
+      confetti.style.pointerEvents = 'none';
+      confetti.style.userSelect = 'none';
+      
+      document.body.appendChild(confetti);
+      
+      // Animação
+      const animation = confetti.animate([
+        { transform: 'translateY(0) rotate(0deg)', opacity: 1 },
+        { transform: `translateY(${window.innerHeight + 100}px) rotate(${Math.random() * 360}deg)`, opacity: 0 }
+      ], {
+        duration: Math.random() * 2000 + 1000,
+        easing: 'cubic-bezier(0.215, 0.610, 0.355, 1)'
+      });
+      
+      animation.onfinish = () => confetti.remove();
+    }, i * 30);
+  }
+}
+
+// Método auxiliar: Salvar estatísticas
+saveGameStatistics(winner) {
+  try {
+    const stats = {
+      winner: winner.name,
+      victoryPoints: winner.victoryPoints,
+      turn: gameState.turn,
+      timestamp: new Date().toISOString(),
+      players: gameState.players.map(p => ({
+        name: p.name,
+        points: p.victoryPoints,
+        regions: p.regions.length
+      }))
+    };
+    
+    // Salvar no localStorage
+    const existingStats = JSON.parse(localStorage.getItem('gaia_victory_stats') || '[]');
+    existingStats.push(stats);
+    
+    // Manter apenas as 10 últimas vitórias
+    if (existingStats.length > 10) {
+      existingStats.shift();
+    }
+    
+    localStorage.setItem('gaia_victory_stats', JSON.stringify(existingStats));
+    console.log('📊 Estatísticas de vitória salvas:', stats);
+    
+  } catch (error) {
+    console.warn('⚠️ Não foi possível salvar estatísticas:', error);
+  }
+}
+
+closeVictoryModal() {
+  if (this.modals.victory) {
+    this.modals.victory.classList.add('hidden');
+    
+    // Limpar confetes
+    document.querySelectorAll('div').forEach(el => {
+      if (el.innerHTML === '✨' && el.style.position === 'fixed') {
+        el.remove();
+      }
+    });
+  }
+}// ==================== MODAL DE VITÓRIA ====================
+
+openVictoryModal(winner) {
+  console.log('🏆 Abrindo modal de vitória para:', winner.name);
+  
+  // Garantir que o modal exista no DOM
+  if (!this.modals.victory) {
+    this.modals.victory = document.getElementById('victoryModal');
+    if (!this.modals.victory) {
+      console.error('❌ Modal de vitória não encontrado no DOM');
+      return;
+    }
+  }
+  
+  // Atualizar conteúdo do modal
+  if (this.victoryModalTitle) {
+    this.victoryModalTitle.textContent = '🏆 VITÓRIA IMPERIAL!';
+  }
+  
+  // Atualizar nome do jogador
+  const victoryPlayerNameEl = document.getElementById('victoryPlayerName');
+  if (victoryPlayerNameEl) {
+    victoryPlayerNameEl.textContent = winner.name;
+  }
+  
+  // Atualizar a pontuação
+  const pointsDisplay = document.getElementById('victoryPointsDisplay');
+  if (pointsDisplay) {
+    pointsDisplay.textContent = winner.victoryPoints;
+    
+    // Animação de contagem
+    this.animateCounter(pointsDisplay, 0, winner.victoryPoints, 1500);
+  }
+  
+  // Atualizar contador de turnos
+  const turnCountEl = document.getElementById('victoryTurnCount');
+  if (turnCountEl) {
+    turnCountEl.textContent = gameState.turn;
+  }
+  
+  // Configurar botões do modal
+  this.setupVictoryButtons(winner);
+  
+  // Mostrar o modal
+  this.showVictoryModalWithAnimations();
+}
+
+// Método auxiliar: Configurar botões do modal de vitória
+setupVictoryButtons(winner) {
+  // Botão de novo jogo
+  const newGameBtn = document.getElementById('victoryNewGameBtn');
+  if (newGameBtn) {
+    // Remover listeners anteriores
+    const newBtn = newGameBtn.cloneNode(true);
+    newGameBtn.parentNode.replaceChild(newBtn, newGameBtn);
+    
+    // Adicionar novo listener
+    document.getElementById('victoryNewGameBtn').addEventListener('click', () => {
+      console.log('🎮 Jogador clicou em Novo Jogo');
+      
+      // Feedback visual
+      newBtn.classList.add('animate-pulse');
+      
+      // Salvar estatísticas antes de reiniciar
+      this.saveGameStatistics(winner);
+      
+      // Delay para ver a animação
+      setTimeout(() => {
+        this.modals.victory.classList.add('hidden');
+        
+        // Reiniciar o jogo após um breve delay
+        setTimeout(() => {
+          window.location.reload();
+        }, 500);
+      }, 300);
+    });
+  }
+  
+  // Botão de fechar
+  const closeBtn = document.getElementById('victoryModalClose');
+  if (closeBtn) {
+    // Remover listeners anteriores
+    const newCloseBtn = closeBtn.cloneNode(true);
+    closeBtn.parentNode.replaceChild(newCloseBtn, closeBtn);
+    
+    // Adicionar novo listener
+    document.getElementById('victoryModalClose').addEventListener('click', () => {
+      this.closeVictoryModal();
+    });
+  }
+}
+
+// Método auxiliar: Mostrar modal com animações
+showVictoryModalWithAnimations() {
+  // Remover hidden
+  this.modals.victory.classList.remove('hidden');
+  
+  // Garantir que esteja no topo
+  this.modals.victory.style.zIndex = '9999';
+  
+  // Adicionar animações
+  setTimeout(() => {
+    const modalContent = this.modals.victory.querySelector('.relative');
+    if (modalContent) {
+      // Remover classes antigas
+      modalContent.classList.remove('animate__bounceIn');
+      
+      // Forçar reflow
+      void modalContent.offsetWidth;
+      
+      // Adicionar animação
+      modalContent.classList.add('animate__animated', 'animate__bounceIn');
+      
+      // Efeito de confete (simples)
+      this.createConfettiEffect();
+    }
+  }, 100);
+  
+  // Desabilitar ações do jogo
+  this.disableAllGameActions();
+}
+
+// Método auxiliar: Animação de contador
+animateCounter(element, start, end, duration) {
+  let startTimestamp = null;
+  const step = (timestamp) => {
+    if (!startTimestamp) startTimestamp = timestamp;
+    const progress = Math.min((timestamp - startTimestamp) / duration, 1);
+    const current = Math.floor(progress * (end - start) + start);
+    element.textContent = current;
+    
+    if (progress < 1) {
+      window.requestAnimationFrame(step);
+    }
+  };
+  window.requestAnimationFrame(step);
+}
+
+// Método auxiliar: Efeito de confete
+createConfettiEffect() {
+  const confettiCount = 50;
+  const colors = ['#fbbf24', '#f59e0b', '#d97706', '#fde68a'];
+  
+  for (let i = 0; i < confettiCount; i++) {
+    setTimeout(() => {
+      const confetti = document.createElement('div');
+      confetti.innerHTML = '✨';
+      confetti.style.position = 'fixed';
+      confetti.style.left = `${Math.random() * 100}vw`;
+      confetti.style.top = '-50px';
+      confetti.style.fontSize = `${Math.random() * 20 + 10}px`;
+      confetti.style.color = colors[Math.floor(Math.random() * colors.length)];
+      confetti.style.opacity = '0.8';
+      confetti.style.zIndex = '9998';
+      confetti.style.pointerEvents = 'none';
+      confetti.style.userSelect = 'none';
+      
+      document.body.appendChild(confetti);
+      
+      // Animação
+      const animation = confetti.animate([
+        { transform: 'translateY(0) rotate(0deg)', opacity: 1 },
+        { transform: `translateY(${window.innerHeight + 100}px) rotate(${Math.random() * 360}deg)`, opacity: 0 }
+      ], {
+        duration: Math.random() * 2000 + 1000,
+        easing: 'cubic-bezier(0.215, 0.610, 0.355, 1)'
+      });
+      
+      animation.onfinish = () => confetti.remove();
+    }, i * 30);
+  }
+}
+
+// Método auxiliar: Salvar estatísticas
+saveGameStatistics(winner) {
+  try {
+    const stats = {
+      winner: winner.name,
+      victoryPoints: winner.victoryPoints,
+      turn: gameState.turn,
+      timestamp: new Date().toISOString(),
+      players: gameState.players.map(p => ({
+        name: p.name,
+        points: p.victoryPoints,
+        regions: p.regions.length
+      }))
+    };
+    
+    // Salvar no localStorage
+    const existingStats = JSON.parse(localStorage.getItem('gaia_victory_stats') || '[]');
+    existingStats.push(stats);
+    
+    // Manter apenas as 10 últimas vitórias
+    if (existingStats.length > 10) {
+      existingStats.shift();
+    }
+    
+    localStorage.setItem('gaia_victory_stats', JSON.stringify(existingStats));
+    console.log('📊 Estatísticas de vitória salvas:', stats);
+    
+  } catch (error) {
+    console.warn('⚠️ Não foi possível salvar estatísticas:', error);
+  }
+}
+
+closeVictoryModal() {
+  if (this.modals.victory) {
+    this.modals.victory.classList.add('hidden');
+    
+    // Limpar confetes
+    document.querySelectorAll('div').forEach(el => {
+      if (el.innerHTML === '✨' && el.style.position === 'fixed') {
+        el.remove();
+      }
+    });
+  }
+}// ==================== MODAL DE VITÓRIA ====================
+
+openVictoryModal(winner) {
+  console.log('🏆 Abrindo modal de vitória para:', winner.name);
+  
+  // Garantir que o modal exista no DOM
+  if (!this.modals.victory) {
+    this.modals.victory = document.getElementById('victoryModal');
+    if (!this.modals.victory) {
+      console.error('❌ Modal de vitória não encontrado no DOM');
+      return;
+    }
+  }
+  
+  // Atualizar conteúdo do modal
+  if (this.victoryModalTitle) {
+    this.victoryModalTitle.textContent = '🏆 VITÓRIA IMPERIAL!';
+  }
+  
+  // Atualizar nome do jogador
+  const victoryPlayerNameEl = document.getElementById('victoryPlayerName');
+  if (victoryPlayerNameEl) {
+    victoryPlayerNameEl.textContent = winner.name;
+  }
+  
+  // Atualizar a pontuação
+  const pointsDisplay = document.getElementById('victoryPointsDisplay');
+  if (pointsDisplay) {
+    pointsDisplay.textContent = winner.victoryPoints;
+    
+    // Animação de contagem
+    this.animateCounter(pointsDisplay, 0, winner.victoryPoints, 1500);
+  }
+  
+  // Atualizar contador de turnos
+  const turnCountEl = document.getElementById('victoryTurnCount');
+  if (turnCountEl) {
+    turnCountEl.textContent = gameState.turn;
+  }
+  
+  // Configurar botões do modal
+  this.setupVictoryButtons(winner);
+  
+  // Mostrar o modal
+  this.showVictoryModalWithAnimations();
+}
+
+// Método auxiliar: Configurar botões do modal de vitória
+setupVictoryButtons(winner) {
+  // Botão de novo jogo
+  const newGameBtn = document.getElementById('victoryNewGameBtn');
+  if (newGameBtn) {
+    // Remover listeners anteriores
+    const newBtn = newGameBtn.cloneNode(true);
+    newGameBtn.parentNode.replaceChild(newBtn, newGameBtn);
+    
+    // Adicionar novo listener
+    document.getElementById('victoryNewGameBtn').addEventListener('click', () => {
+      console.log('🎮 Jogador clicou em Novo Jogo');
+      
+      // Feedback visual
+      newBtn.classList.add('animate-pulse');
+      
+      // Salvar estatísticas antes de reiniciar
+      this.saveGameStatistics(winner);
+      
+      // Delay para ver a animação
+      setTimeout(() => {
+        this.modals.victory.classList.add('hidden');
+        
+        // Reiniciar o jogo após um breve delay
+        setTimeout(() => {
+          window.location.reload();
+        }, 500);
+      }, 300);
+    });
+  }
+  
+  // Botão de fechar
+  const closeBtn = document.getElementById('victoryModalClose');
+  if (closeBtn) {
+    // Remover listeners anteriores
+    const newCloseBtn = closeBtn.cloneNode(true);
+    closeBtn.parentNode.replaceChild(newCloseBtn, closeBtn);
+    
+    // Adicionar novo listener
+    document.getElementById('victoryModalClose').addEventListener('click', () => {
+      this.closeVictoryModal();
+    });
+  }
+}
+
+// Método auxiliar: Mostrar modal com animações
+showVictoryModalWithAnimations() {
+  // Remover hidden
+  this.modals.victory.classList.remove('hidden');
+  
+  // Garantir que esteja no topo
+  this.modals.victory.style.zIndex = '9999';
+  
+  // Adicionar animações
+  setTimeout(() => {
+    const modalContent = this.modals.victory.querySelector('.relative');
+    if (modalContent) {
+      // Remover classes antigas
+      modalContent.classList.remove('animate__bounceIn');
+      
+      // Forçar reflow
+      void modalContent.offsetWidth;
+      
+      // Adicionar animação
+      modalContent.classList.add('animate__animated', 'animate__bounceIn');
+      
+      // Efeito de confete (simples)
+      this.createConfettiEffect();
+    }
+  }, 100);
+  
+  // Desabilitar ações do jogo
+  this.disableAllGameActions();
+}
+
+// Método auxiliar: Animação de contador
+animateCounter(element, start, end, duration) {
+  let startTimestamp = null;
+  const step = (timestamp) => {
+    if (!startTimestamp) startTimestamp = timestamp;
+    const progress = Math.min((timestamp - startTimestamp) / duration, 1);
+    const current = Math.floor(progress * (end - start) + start);
+    element.textContent = current;
+    
+    if (progress < 1) {
+      window.requestAnimationFrame(step);
+    }
+  };
+  window.requestAnimationFrame(step);
+}
+
+// Método auxiliar: Efeito de confete
+createConfettiEffect() {
+  const confettiCount = 50;
+  const colors = ['#fbbf24', '#f59e0b', '#d97706', '#fde68a'];
+  
+  for (let i = 0; i < confettiCount; i++) {
+    setTimeout(() => {
+      const confetti = document.createElement('div');
+      confetti.innerHTML = '✨';
+      confetti.style.position = 'fixed';
+      confetti.style.left = `${Math.random() * 100}vw`;
+      confetti.style.top = '-50px';
+      confetti.style.fontSize = `${Math.random() * 20 + 10}px`;
+      confetti.style.color = colors[Math.floor(Math.random() * colors.length)];
+      confetti.style.opacity = '0.8';
+      confetti.style.zIndex = '9998';
+      confetti.style.pointerEvents = 'none';
+      confetti.style.userSelect = 'none';
+      
+      document.body.appendChild(confetti);
+      
+      // Animação
+      const animation = confetti.animate([
+        { transform: 'translateY(0) rotate(0deg)', opacity: 1 },
+        { transform: `translateY(${window.innerHeight + 100}px) rotate(${Math.random() * 360}deg)`, opacity: 0 }
+      ], {
+        duration: Math.random() * 2000 + 1000,
+        easing: 'cubic-bezier(0.215, 0.610, 0.355, 1)'
+      });
+      
+      animation.onfinish = () => confetti.remove();
+    }, i * 30);
+  }
+}
+
+// Método auxiliar: Salvar estatísticas
+saveGameStatistics(winner) {
+  try {
+    const stats = {
+      winner: winner.name,
+      victoryPoints: winner.victoryPoints,
+      turn: gameState.turn,
+      timestamp: new Date().toISOString(),
+      players: gameState.players.map(p => ({
+        name: p.name,
+        points: p.victoryPoints,
+        regions: p.regions.length
+      }))
+    };
+    
+    // Salvar no localStorage
+    const existingStats = JSON.parse(localStorage.getItem('gaia_victory_stats') || '[]');
+    existingStats.push(stats);
+    
+    // Manter apenas as 10 últimas vitórias
+    if (existingStats.length > 10) {
+      existingStats.shift();
+    }
+    
+    localStorage.setItem('gaia_victory_stats', JSON.stringify(existingStats));
+    console.log('📊 Estatísticas de vitória salvas:', stats);
+    
+  } catch (error) {
+    console.warn('⚠️ Não foi possível salvar estatísticas:', error);
+  }
+}
+
+closeVictoryModal() {
+  if (this.modals.victory) {
+    this.modals.victory.classList.add('hidden');
+    
+    // Limpar confetes
+    document.querySelectorAll('div').forEach(el => {
+      if (el.innerHTML === '✨' && el.style.position === 'fixed') {
+        el.remove();
+      }
+    });
+  }
+}
+
+// Método para desabilitar ações ao término do jogo
+
 disableAllGameActions() {
     // Desabilitar botões de ação
     const actionButtons = [
@@ -1252,6 +2089,10 @@ disableAllGameActions() {
         phaseIndicator.classList.add('text-yellow-400', 'font-bold', 'animate-pulse');
     }
 }
+
+  closeVictoryModal() {
+    this.modals.victory.classList.add('hidden');
+  }
 
   // ==================== GERENCIAMENTO DE MODAIS ====================
   closeAllModals() {
