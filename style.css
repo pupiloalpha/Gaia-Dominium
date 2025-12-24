@@ -1,19 +1,62 @@
 /* ============================================
-   VARIÁVEIS GLOBAIS E RESET - VERSÃO HÍBRIDA OTIMIZADA
+   ESTRUTURA DO CSS OTIMIZADO - REORGANIZADO
+   ============================================
+   
+   ÍNDICE:
+   1. RESET E VARIÁVEIS GLOBAIS
+   2. TIPOGRAFIA E ESTILOS BASE
+   3. HIERARQUIA DE Z-INDEX
+   4. UTILITÁRIOS REUTILIZÁVEIS
+   5. ANIMAÇÕES (KEYFRAMES E CLASSES)
+   6. COMPONENTES DE JOGO PRINCIPAIS
+     6.1 Tela de Cadastro/Player Modal
+     6.2 Seleção de Ícones
+     6.3 Botões de IA
+     6.4 Dropdown de Facções
+   7. LAYOUT DO JOGO
+     7.1 Container Principal
+     7.2 Navbar
+     7.3 Sidebar
+     7.4 Mapa
+     7.5 Footer
+   8. CÉLULAS DO TABULEIRO (ESTILOS COMPLETOS)
+   9. MODAIS
+     9.1 Estilos Gerais de Modais
+     9.2 Modais Específicos (Negociação, Estrutura, etc.)
+   10. TOOLTIPS E BANNERS
+   11. CONTROLES E INTERAÇÕES
+   12. LOGS, CONQUISTAS E SISTEMAS
+   13. IA (INTELIGÊNCIA ARTIFICIAL)
+   14. MANUAL DO JOGO
+   15. COMPONENTES DE INTERFACE
+     15.1 Botões de Ação
+     15.2 Badges e Indicadores
+     15.3 Efeitos de Edição
+   16. EMOJIS E ÍCONES
+   17. RESPONSIVIDADE
+     17.1 Desktop
+     17.2 Tablet
+     17.3 Mobile
+   18. ACESSIBILIDADE
+   19. CORREÇÕES ESPECÍFICAS
+   ============================================ */
+
+/* ============================================
+   1. RESET E VARIÁVEIS GLOBAIS
    ============================================ */
 
 :root {
-  /* Cores Base */
+  /* PALETA DE CORES BASE */
   --bg: #0b0d0f;
   --accent: #f8d65c;
   --text-primary: #ffffff;
   --text-secondary: rgba(255, 255, 255, 0.8);
   
-  /* Cores do Jogador (dinâmicas) */
+  /* CORES DINÂMICAS DO JOGADOR */
   --player-rgb: 255, 255, 255;
   --player-color: #ffffff;
   
-  /* Glassmorphism e Células - VALORES OTIMIZADOS */
+  /* GLASSMORPHISM E CÉLULAS */
   --cell-bg: rgba(30, 30, 30, 0.7);
   --cell-border: rgba(255, 255, 255, 0.15);
   --cell-opacity: 0.25;
@@ -22,23 +65,23 @@
   --cell-hover-opacity: 0.30;
   --cell-selected-opacity: 0.45;
   
-  /* Sombras */
+  /* SOMBRAS E EFEITOS VISUAIS */
   --shadow-intensity: 0.3;
   
-  /* IA */
+  /* DIFICULDADES DA IA */
   --ai-easy-color: #10b981;
   --ai-medium-color: #3b82f6;
   --ai-hard-color: #f59e0b;
   --ai-master-color: #ef4444;
   
-  /* Breakpoints */
+  /* BREAKPOINTS RESPONSIVOS */
   --breakpoint-sm: 480px;
   --breakpoint-md: 768px;
   --breakpoint-lg: 1024px;
   --breakpoint-xl: 1280px;
 }
 
-/* Reset Moderno */
+/* RESET MODERNO */
 *, *::before, *::after {
   box-sizing: border-box;
   margin: 0;
@@ -64,7 +107,10 @@ body {
   -moz-osx-font-smoothing: grayscale;
 }
 
-/* Tipografia Consistente */
+/* ============================================
+   2. TIPOGRAFIA E ESTILOS BASE
+   ============================================ */
+
 h1, h2, h3, h4, h5, h6 {
   font-weight: 600;
   line-height: 1.2;
@@ -76,11 +122,11 @@ p {
 }
 
 /* ============================================
-   HIERARQUIA DE Z-INDEX - UNIFICADA
+   3. HIERARQUIA DE Z-INDEX
    ============================================ */
 
 #initialScreen { z-index: 50; }
-#manualIcon { z-index: 60; position: fixed !important; top: 20px !important; right: 20px !important; }
+#manualIcon { z-index: 60; }
 #gameNavbar { z-index: 40; }
 #gameFooter { z-index: 45; }
 #regionTooltip { z-index: 90; }
@@ -95,10 +141,10 @@ p {
 #saveLoadModal { z-index: 103; }
 
 /* ============================================
-   UTILITÁRIOS REUTILIZÁVEIS - HÍBRIDOS
+   4. UTILITÁRIOS REUTILIZÁVEIS
    ============================================ */
 
-/* Layout */
+/* LAYOUT FLEX E GRID */
 .flex-center {
   display: flex;
   align-items: center;
@@ -110,7 +156,7 @@ p {
   place-items: center;
 }
 
-/* Visibilidade */
+/* CONTROLE DE VISIBILIDADE */
 .hidden {
   display: none !important;
 }
@@ -119,7 +165,7 @@ p {
   display: flex !important;
 }
 
-/* Glassmorphism */
+/* EFEITO GLASSMORPHISM */
 .glass-effect {
   background: rgba(31, 31, 31, 0.8);
   backdrop-filter: blur(8px);
@@ -127,7 +173,7 @@ p {
   border-radius: 10px;
 }
 
-/* Transições */
+/* TRANSITIONS */
 .transition-all {
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
@@ -137,9 +183,10 @@ p {
 }
 
 /* ============================================
-   ANIMAÇÕES COMPLETAS - TODAS AS VERSÕES
+   5. ANIMAÇÕES (KEYFRAMES E CLASSES)
    ============================================ */
 
+/* KEYFRAMES PRINCIPAIS */
 @keyframes fadeIn {
   from { opacity: 0; }
   to { opacity: 1; }
@@ -318,7 +365,7 @@ p {
   100% { box-shadow: 0 0 0 0 rgba(251, 191, 36, 0); }
 }
 
-/* Classes de animação */
+/* CLASSES DE ANIMAÇÃO */
 .animate-fade-in { animation: fadeIn 0.3s ease; }
 .animate-slide-in-right { animation: slideInRight 0.3s ease-out forwards; }
 .animate-slide-up { animation: slideUp 0.3s ease-out; }
@@ -328,9 +375,10 @@ p {
 .event-banner-pulse { animation: eventPulse 2s ease-in-out infinite; }
 
 /* ============================================
-   TELA DE CADASTRO - PLAYER MODAL (HÍBRIDO)
+   6. COMPONENTES DE JOGO PRINCIPAIS
    ============================================ */
 
+/* 6.1 TELA DE CADASTRO/PLAYER MODAL */
 .player-modal {
   background: linear-gradient(180deg, rgba(12, 12, 12, 0.56), rgba(8, 8, 8, 0.45));
   border: 1px solid rgba(255, 255, 255, 0.06);
@@ -340,23 +388,6 @@ p {
   position: relative;
 }
 
-/* Inputs */
-input[type="text"], select, input[type="number"] {
-  background: rgba(31, 31, 31, 0.85);
-  color: #EEE;
-  border: 1px solid rgba(255, 255, 255, 0.04);
-  border-radius: 8px;
-  padding: 10px 12px;
-  font-size: 14px;
-}
-
-input[type="text"]:focus, select:focus, input[type="number"]:focus {
-  outline: none;
-  border-color: #f8d65c;
-  box-shadow: 0 0 0 2px rgba(248, 214, 92, 0.2);
-}
-
-/* Estilos para os cartões de jogador */
 .player-card {
   transition: all 0.2s ease;
   position: relative;
@@ -415,33 +446,7 @@ input[type="text"]:focus, select:focus, input[type="number"]:focus {
   background: rgba(239, 68, 68, 0.5) !important;
 }
 
-/* Layout responsivo */
-@media (max-width: 768px) {
-  .player-card {
-    min-height: 120px;
-  }
-  
-  .player-card-inner {
-    padding: 12px 8px;
-  }
-  
-  .player-card-icon {
-    font-size: 24px;
-  }
-  
-  .player-card-name {
-    font-size: 12px;
-  }
-  
-  .player-card-faction {
-    font-size: 11px;
-  }
-}
-
-/* ============================================
-   SELEÇÃO DE ÍCONES (HÍBRIDO)
-   ============================================ */
-
+/* 6.2 SELEÇÃO DE ÍCONES */
 #iconSelection {
   display: flex;
   gap: 8px;
@@ -479,10 +484,7 @@ input[type="text"]:focus, select:focus, input[type="number"]:focus {
   filter: grayscale(0.7);
 }
 
-/* ============================================
-   BOTÕES DE IA COMPACTOS (HÍBRIDO)
-   ============================================ */
-
+/* 6.3 BOTÕES DE IA */
 #aiButtonsContainer {
   display: flex;
   gap: 8px;
@@ -531,10 +533,7 @@ input[type="text"]:focus, select:focus, input[type="number"]:focus {
   border-color: rgba(239, 68, 68, 0.3);
 }
 
-/* ============================================
-   DROPDOWN DE FACÇÕES (HÍBRIDO)
-   ============================================ */
-
+/* 6.4 DROPDOWN DE FACÇÕES */
 .faction-dropdown {
   background-color: rgba(17, 24, 39, 0.9) !important;
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%23fbbf24'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E") !important;
@@ -582,9 +581,10 @@ input[type="text"]:focus, select:focus, input[type="number"]:focus {
 }
 
 /* ============================================
-   LAYOUT DO JOGO (HÍBRIDO)
+   7. LAYOUT DO JOGO
    ============================================ */
 
+/* 7.1 CONTAINER PRINCIPAL */
 #gameContainer {
   display: grid;
   grid-template-columns: 1fr;
@@ -596,7 +596,7 @@ input[type="text"]:focus, select:focus, input[type="number"]:focus {
   overflow: hidden;
 }
 
-/* Navbar */
+/* 7.2 NAVBAR */
 #gameNavbar {
   position: fixed;
   top: 0;
@@ -608,7 +608,7 @@ input[type="text"]:focus, select:focus, input[type="number"]:focus {
   border-bottom: 1px solid rgba(255, 255, 255, 0.06);
 }
 
-/* Sidebar */
+/* 7.3 SIDEBAR */
 #sidebar {
   display: flex;
   flex-direction: column;
@@ -621,7 +621,7 @@ input[type="text"]:focus, select:focus, input[type="number"]:focus {
   border-radius: 10px;
 }
 
-/* Mapa */
+/* 7.4 MAPA */
 #gameMap {
   position: relative;
   width: 100%;
@@ -646,7 +646,7 @@ input[type="text"]:focus, select:focus, input[type="number"]:focus {
   cursor: grabbing;
 }
 
-/* Footer */
+/* 7.5 FOOTER */
 #gameFooter {
   position: fixed;
   bottom: 16px;
@@ -666,26 +666,26 @@ input[type="text"]:focus, select:focus, input[type="number"]:focus {
 }
 
 /* ============================================
-   CÉLULAS DO TABULEIRO - VERSÃO RESTAURADA COMPLETA
+   8. CÉLULAS DO TABULEIRO (ESTILOS COMPLETOS)
    ============================================ */
 
 .board-cell {
   position: relative;
-  border: 1px solid rgba(255, 255, 255, 0.08); /* VERSÃO ANTIGA */
-  background: rgba(15, 15, 15, var(--cell-bg-opacity)); /* VERSÃO ANTIGA */
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(15, 15, 15, var(--cell-bg-opacity));
   backdrop-filter: blur(var(--cell-blur));
-  border-radius: 4px; /* VERSÃO ANTIGA */
-  transition: all 0.2s ease; /* VERSÃO ANTIGA */
+  border-radius: 4px;
+  transition: all 0.2s ease;
   display: flex;
   flex-direction: column;
   justify-content: space-between;
-  padding: 6px; /* VERSÃO ANTIGA */
+  padding: 6px;
   overflow: hidden;
   cursor: pointer;
   user-select: none;
 }
 
-/* Efeito de vidro fosco - VERSÃO ANTIGA */
+/* EFEITO DE VIDRO FOSCO */
 .board-cell::before {
   content: '';
   position: absolute;
@@ -700,12 +700,12 @@ input[type="text"]:focus, select:focus, input[type="number"]:focus {
 }
 
 .board-cell:hover {
-  background: rgba(25, 25, 25, calc(var(--cell-bg-opacity) + 0.1)); /* VERSÃO ANTIGA */
+  background: rgba(25, 25, 25, calc(var(--cell-bg-opacity) + 0.1));
   border-color: rgba(255, 255, 255, 0.15);
   transform: translateY(-1px);
 }
 
-/* Estados das células - RESTAURADOS DA VERSÃO ANTIGA */
+/* ESTADOS DAS CÉLULAS */
 .board-cell.controlled {
   border-left: 4px solid var(--player-color) !important;
   background: rgba(var(--player-rgb), calc(var(--cell-bg-opacity) * 2)) !important;
@@ -730,7 +730,7 @@ input[type="text"]:focus, select:focus, input[type="number"]:focus {
   background: rgba(15, 15, 15, calc(var(--cell-bg-opacity) * 0.8)) !important;
 }
 
-/* Células selecionadas - VERSÃO ANTIGA */
+/* CÉLULAS SELECIONADAS */
 .board-cell.neutral.region-selected {
   border: 2px solid var(--accent) !important;
   background: rgba(15, 15, 15, var(--cell-bg-opacity)) !important;
@@ -756,7 +756,7 @@ input[type="text"]:focus, select:focus, input[type="number"]:focus {
   animation: regionSelectedPulse 2s infinite !important;
 }
 
-/* Efeito de pulso da nova versão */
+/* EFEITO DE PULSO */
 .board-cell.controlled::after {
   opacity: 1;
   background: radial-gradient(
@@ -783,7 +783,7 @@ input[type="text"]:focus, select:focus, input[type="number"]:focus {
   animation: actionPulse 1.5s infinite !important;
 }
 
-/* Efeito shimmer - VERSÃO ANTIGA */
+/* EFEITO SHIMMER */
 .board-cell.action-available::before {
   content: '';
   position: absolute;
@@ -803,7 +803,7 @@ input[type="text"]:focus, select:focus, input[type="number"]:focus {
   pointer-events: none;
 }
 
-/* Contador de ações - VERSÃO ANTIGA */
+/* CONTADOR DE AÇÕES */
 .board-cell .action-counter {
   position: absolute;
   top: 4px;
@@ -817,13 +817,13 @@ input[type="text"]:focus, select:focus, input[type="number"]:focus {
   font-weight: bold;
 }
 
-/* Outros estados - VERSÃO ANTIGA */
+/* OUTROS ESTADOS */
 .board-cell.neutral-available {
   border: 2px dashed rgba(255, 255, 255, 0.4) !important;
   background: rgba(255, 255, 255, 0.05) !important;
 }
 
-/* Indicador de clique - VERSÃO ANTIGA */
+/* INDICADOR DE CLIQUE */
 .board-cell.clickable::after {
   content: '👆';
   position: absolute;
@@ -840,7 +840,7 @@ input[type="text"]:focus, select:focus, input[type="number"]:focus {
   animation: clickableBounce 2s infinite;
 }
 
-/* Estilos de texto RESTAURADOS DA VERSÃO ANTIGA */
+/* ESTILOS DE TEXTO DAS CÉLULAS */
 .board-cell .text-xs {
   font-size: 11px;
   line-height: 1.3;
@@ -856,7 +856,7 @@ input[type="text"]:focus, select:focus, input[type="number"]:focus {
   text-shadow: 0 1px 2px rgba(0, 0, 0, 0.7);
 }
 
-/* Elementos da Célula RESTAURADOS */
+/* ELEMENTOS DA CÉLULA */
 .board-cell .biome-indicator {
   font-size: 9px;
   padding: 2px 6px;
@@ -913,9 +913,10 @@ input[type="text"]:focus, select:focus, input[type="number"]:focus {
 }
 
 /* ============================================
-   MODAIS COMPLETOS (HÍBRIDO)
+   9. MODAIS
    ============================================ */
 
+/* 9.1 ESTILOS GERAIS DE MODAIS */
 .modal-content-container {
   position: relative;
   width: 100%;
@@ -939,7 +940,7 @@ input[type="text"]:focus, select:focus, input[type="number"]:focus {
   animation: modalSlideIn 0.3s ease-out;
 }
 
-/* Títulos e Textos dos Modais */
+/* TÍTULOS E TEXTOS DOS MODAIS */
 .modal-content-container h2, 
 .modal-content-container h3, 
 .modal-content-container h4 {
@@ -957,7 +958,7 @@ input[type="text"]:focus, select:focus, input[type="number"]:focus {
   font-weight: 500 !important;
 }
 
-/* Inputs em Modais */
+/* INPUTS EM MODAIS */
 .modal-content-container input,
 .modal-content-container select,
 .modal-content-container textarea {
@@ -975,7 +976,9 @@ input[type="text"]:focus, select:focus, input[type="number"]:focus {
   box-shadow: 0 0 0 2px rgba(248, 214, 92, 0.2) !important;
 }
 
-/* Modal de Negociação */
+/* 9.2 MODAIS ESPECÍFICOS */
+
+/* MODAL DE NEGOCIAÇÃO */
 #negotiationModal .negotiation-section {
   transition: all 0.2s ease;
   backdrop-filter: blur(4px);
@@ -997,7 +1000,7 @@ input[type="text"]:focus, select:focus, input[type="number"]:focus {
   background: linear-gradient(135deg, rgba(239, 68, 68, 0.1), rgba(220, 38, 38, 0.1));
 }
 
-/* Modal de Estruturas */
+/* MODAL DE ESTRUTURAS */
 #structureModal .structure-option {
   transition: all 0.2s ease;
   border-width: 2px;
@@ -1011,7 +1014,7 @@ input[type="text"]:focus, select:focus, input[type="number"]:focus {
   box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
 }
 
-/* Cores das estruturas */
+/* CORES DAS ESTRUTURAS */
 .bg-orange-500\/30 { background-color: rgba(249, 115, 22, 0.3); }
 .border-orange-500\/30 { border-color: rgba(249, 115, 22, 0.3); }
 .bg-blue-500\/30 { background-color: rgba(59, 130, 246, 0.3); }
@@ -1023,10 +1026,36 @@ input[type="text"]:focus, select:focus, input[type="number"]:focus {
 .bg-green-500\/30 { background-color: rgba(34, 197, 94, 0.3); }
 .border-green-500\/30 { border-color: rgba(34, 197, 94, 0.3); }
 
+/* MODAL DE EVENTO GLOBAL */
+#eventModal .relative.event-positive {
+  background: linear-gradient(135deg, rgba(34, 197, 94, 0.15), rgba(22, 163, 74, 0.15)) !important;
+  border-color: rgba(34, 197, 94, 0.4) !important;
+  backdrop-filter: blur(12px);
+}
+
+#eventModal .relative.event-negative {
+  background: linear-gradient(135deg, rgba(239, 68, 68, 0.15), rgba(220, 38, 38, 0.15)) !important;
+  border-color: rgba(239, 68, 68, 0.4) !important;
+  backdrop-filter: blur(12px);
+}
+
+#eventModal .relative.event-mixed {
+  background: linear-gradient(135deg, rgba(168, 85, 247, 0.15), rgba(147, 51, 234, 0.15)) !important;
+  border-color: rgba(168, 85, 247, 0.4) !important;
+  backdrop-filter: blur(12px);
+}
+
+#eventModal .relative.event-neutral {
+  background: linear-gradient(135deg, rgba(251, 191, 36, 0.15), rgba(245, 158, 11, 0.15)) !important;
+  border-color: rgba(251, 191, 36, 0.4) !important;
+  backdrop-filter: blur(12px);
+}
+
 /* ============================================
-   TOOLTIP (HÍBRIDO)
+   10. TOOLTIPS E BANNERS
    ============================================ */
 
+/* TOOLTIP DE REGIÃO */
 #regionTooltip {
   position: fixed !important;
   z-index: 90;
@@ -1066,10 +1095,7 @@ input[type="text"]:focus, select:focus, input[type="number"]:focus {
   border-bottom: none;
 }
 
-/* ============================================
-   BANNER DE EVENTO (HÍBRIDO)
-   ============================================ */
-
+/* BANNER DE EVENTO */
 #eventBanner {
   background: rgba(0, 0, 0, 0.6);
   backdrop-filter: blur(8px);
@@ -1108,7 +1134,7 @@ input[type="text"]:focus, select:focus, input[type="number"]:focus {
   box-shadow: 0 0 15px rgba(251, 191, 36, 0.2);
 }
 
-/* Texto do banner */
+/* TEXTO DO BANNER */
 #eventBanner #eventBannerTitle {
   color: #ffffff !important;
   font-weight: 700 !important;
@@ -1129,9 +1155,10 @@ input[type="text"]:focus, select:focus, input[type="number"]:focus {
 }
 
 /* ============================================
-   CONTROLE DE TRANSPARÊNCIA (HÍBRIDO)
+   11. CONTROLES E INTERAÇÕES
    ============================================ */
 
+/* CONTROLE DE TRANSPARÊNCIA */
 .transparency-control {
   transition: all 0.3s ease;
   position: relative;
@@ -1197,10 +1224,27 @@ input[type="text"]:focus, select:focus, input[type="number"]:focus {
   transition: all 0.2s ease;
 }
 
+/* INPUTS GERAIS */
+input[type="text"], select, input[type="number"] {
+  background: rgba(31, 31, 31, 0.85);
+  color: #EEE;
+  border: 1px solid rgba(255, 255, 255, 0.04);
+  border-radius: 8px;
+  padding: 10px 12px;
+  font-size: 14px;
+}
+
+input[type="text"]:focus, select:focus, input[type="number"]:focus {
+  outline: none;
+  border-color: #f8d65c;
+  box-shadow: 0 0 0 2px rgba(248, 214, 92, 0.2);
+}
+
 /* ============================================
-   LOG DE ATIVIDADES (HÍBRIDO)
+   12. LOGS, CONQUISTAS E SISTEMAS
    ============================================ */
 
+/* LOG DE ATIVIDADES */
 .log-entry {
   display: flex;
   align-items: center;
@@ -1232,7 +1276,7 @@ input[type="text"]:focus, select:focus, input[type="number"]:focus {
   color: #60a5fa !important;
 }
 
-/* Cores dos tipos de log */
+/* CORES DOS TIPOS DE LOG */
 .log-type-action { color: #60a5fa; }
 .log-type-build { color: #f59e0b; }
 .log-type-explore { color: #10b981; }
@@ -1242,10 +1286,7 @@ input[type="text"]:focus, select:focus, input[type="number"]:focus {
 .log-type-victory { color: #10b981; }
 .log-type-income { color: #22c55e; }
 
-/* ============================================
-   CONQUISTAS (HÍBRIDO)
-   ============================================ */
-
+/* CONQUISTAS */
 .achievement {
   display: flex;
   align-items: center;
@@ -1271,7 +1312,7 @@ input[type="text"]:focus, select:focus, input[type="number"]:focus {
 }
 
 /* ============================================
-   ESTILOS PARA IA (HÍBRIDO)
+   13. IA (INTELIGÊNCIA ARTIFICIAL)
    ============================================ */
 
 .ai-thinking {
@@ -1294,9 +1335,38 @@ input[type="text"]:focus, select:focus, input[type="number"]:focus {
 .ai-master { background-color: var(--ai-master-color); color: white; }
 
 /* ============================================
-   MANUAL - IMAGENS (HÍBRIDO)
+   14. MANUAL DO JOGO
    ============================================ */
 
+/* ÍCONE DO MANUAL */
+#manualIcon {
+  position: fixed !important;
+  top: 20px !important;
+  right: 20px !important;
+  z-index: 60 !important;
+  padding: 12px;
+  border-radius: 50%;
+  background: rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(8px);
+  border: 1px solid rgba(248, 214, 92, 0.3);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  transition: all 0.3s ease;
+  cursor: pointer;
+}
+
+#manualIcon:hover {
+  transform: scale(1.1);
+  border-color: rgba(248, 214, 92, 0.6);
+  box-shadow: 0 6px 20px rgba(248, 214, 92, 0.2);
+}
+
+#manualIcon svg {
+  width: 24px;
+  height: 24px;
+  color: #f8d65c;
+}
+
+/* IMAGENS DO MANUAL */
 .manual-content img {
   display: block;
   margin: 2rem auto;
@@ -1317,10 +1387,7 @@ input[type="text"]:focus, select:focus, input[type="number"]:focus {
   z-index: 10;
 }
 
-/* ============================================
-   MANUAL - FILTRO DE EVENTOS (HÍBRIDO)
-   ============================================ */
-
+/* FILTRO DE EVENTOS DO MANUAL */
 .event-filter-btn {
   transition: all 0.3s ease;
   border: 1px solid transparent;
@@ -1337,23 +1404,12 @@ input[type="text"]:focus, select:focus, input[type="number"]:focus {
   animation: fadeIn 0.5s ease forwards;
 }
 
-@keyframes fadeIn {
-  from {
-    opacity: 0;
-    transform: translateY(10px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
 .event-card:hover {
   transform: translateY(-5px);
   box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
 }
 
-/* Estilos específicos para cada categoria */
+/* ESTILOS ESPECÍFICOS PARA CADA CATEGORIA */
 .category-positive {
   border-left: 4px solid #10b981;
 }
@@ -1366,87 +1422,36 @@ input[type="text"]:focus, select:focus, input[type="number"]:focus {
   border-left: 4px solid #f59e0b;
 }
 
-/* ============================================
-   SCROLLBAR PERSONALIZADA (HÍBRIDO)
-   ============================================ */
-
-.custom-scrollbar {
-  scrollbar-width: thin;
-  scrollbar-color: rgba(251, 191, 36, 0.5) rgba(30, 41, 59, 0.3);
-}
-
-.custom-scrollbar::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
-}
-
-.custom-scrollbar::-webkit-scrollbar-track {
-  background: rgba(30, 41, 59, 0.3);
-  border-radius: 4px;
-}
-
-.custom-scrollbar::-webkit-scrollbar-thumb {
-  background: rgba(251, 191, 36, 0.5);
-  border-radius: 4px;
-}
-
-.custom-scrollbar::-webkit-scrollbar-thumb:hover {
-  background: rgba(251, 191, 36, 0.7);
-}
-
-/* ============================================
-   VÍDEO DE ABERTURA (HÍBRIDO)
-   ============================================ */
-
-#introVideo {
-  position: fixed;
-  top: 0;
-  left: 0;
+/* TABS DO MANUAL */
+.manual-tab {
+  color: #cfcfcf;
+  background: transparent;
+  border: 1px solid transparent;
+  transition: all 0.2s ease;
   width: 100%;
-  height: 100%;
-  object-fit: cover;
-  z-index: 9999;
-  background-color: black;
-  transition: opacity 0.5s ease-out;
+  text-align: left;
+  padding: 8px 16px;
+  border-radius: 6px;
+  margin-bottom: 4px;
+  cursor: pointer;
 }
 
-#introVideo.hidden {
-  opacity: 0;
-  pointer-events: none;
+.manual-tab:hover {
+  color: #fff;
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.manual-tab.active {
+  color: var(--accent);
+  border-color: rgba(248, 214, 92, 0.12);
+  background: linear-gradient(180deg, rgba(248, 214, 92, 0.03), rgba(255, 255, 255, 0.01));
 }
 
 /* ============================================
-   BOTÕES DE AÇÃO (HÍBRIDO) - CORREÇÕES CRÍTICAS
+   15. COMPONENTES DE INTERFACE
    ============================================ */
 
-/* ESTILOS PARA BOTÃO START GAME - CORREÇÃO CRÍTICA */
-#startGameBtn {
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
-  position: relative !important;
-  overflow: hidden !important;
-}
-
-#startGameBtn:disabled {
-  opacity: 0.6 !important;
-  cursor: not-allowed !important;
-  background: linear-gradient(135deg, #4b5563, #374151) !important;
-  border-color: rgba(255, 255, 255, 0.1) !important;
-  transform: none !important;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2) !important;
-}
-
-#startGameBtn:disabled:hover {
-  transform: none !important;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2) !important;
-  background: linear-gradient(135deg, #4b5563, #374151) !important;
-}
-
-#startGameBtn:not(:disabled):hover {
-  transform: translateY(-2px) scale(1.02) !important;
-  box-shadow: 0 8px 25px rgba(37, 99, 235, 0.4) !important;
-}
-
-/* ESTILOS PARA BOTÕES DE AÇÃO PRINCIPAIS */
+/* 15.1 BOTÕES DE AÇÃO */
 .action-btn {
   background: linear-gradient(180deg, rgba(255, 255, 255, 0.02), rgba(0, 0, 0, 0.18));
   color: #fff;
@@ -1473,7 +1478,34 @@ input[type="text"]:focus, select:focus, input[type="number"]:focus {
   box-shadow: none !important;
 }
 
-/* Botão Terminar Turno */
+/* BOTÃO START GAME - CORREÇÃO CRÍTICA */
+#startGameBtn {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+  position: relative !important;
+  overflow: hidden !important;
+}
+
+#startGameBtn:disabled {
+  opacity: 0.6 !important;
+  cursor: not-allowed !important;
+  background: linear-gradient(135deg, #4b5563, #374151) !important;
+  border-color: rgba(255, 255, 255, 0.1) !important;
+  transform: none !important;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2) !important;
+}
+
+#startGameBtn:disabled:hover {
+  transform: none !important;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2) !important;
+  background: linear-gradient(135deg, #4b5563, #374151) !important;
+}
+
+#startGameBtn:not(:disabled):hover {
+  transform: translateY(-2px) scale(1.02) !important;
+  box-shadow: 0 8px 25px rgba(37, 99, 235, 0.4) !important;
+}
+
+/* BOTÃO TERMINAR TURNO */
 #endTurnBtn {
   transition: all 0.3s ease;
   font-weight: bold;
@@ -1491,7 +1523,7 @@ input[type="text"]:focus, select:focus, input[type="number"]:focus {
   transform: translateY(-2px);
 }
 
-/* Botão de Negociação */
+/* BOTÃO DE NEGOCIAÇÃO */
 #negSendBtn:disabled {
   opacity: 0.5 !important;
   cursor: not-allowed !important;
@@ -1499,7 +1531,7 @@ input[type="text"]:focus, select:focus, input[type="number"]:focus {
   border-color: rgba(255, 255, 255, 0.1) !important;
 }
 
-/* Botões de IA quando desabilitados */
+/* BOTÕES DE IA QUANDO DESABILITADOS */
 .ai-button-compact:disabled {
   opacity: 0.4 !important;
   cursor: not-allowed !important;
@@ -1508,268 +1540,22 @@ input[type="text"]:focus, select:focus, input[type="number"]:focus {
   box-shadow: none !important;
 }
 
-/* ============================================
-   RESPONSIVIDADE COMPLETA (HÍBRIDO)
-   ============================================ */
-
-/* Desktop Grande */
-@media (min-width: 1024px) {
-  #gameContainer {
-    grid-template-columns: 320px 1fr;
-    height: calc(100vh - 160px);
-  }
+/* 15.2 BADGES E INDICADORES */
+.badge {
+  display: inline-block;
+  padding: 4px 8px;
+  border-radius: 999px;
+  font-size: 12px;
+  background: rgba(255,255,255,0.03);
+  color: #fff;
+  font-weight: 500;
 }
 
-/* Tablet */
-@media (max-width: 1024px) {
-  #sidebar {
-    display: none;
-  }
-  
-  #gameContainer {
-    grid-template-columns: 1fr;
-    height: calc(100vh - 200px);
-    margin-top: 70px;
-    margin-bottom: 100px;
-  }
+.current-turn-badge {
+  animation: pulse 2s ease-in-out infinite;
 }
 
-/* Mobile Médio */
-@media (max-width: 768px) {
-  #gameContainer {
-    height: calc(100vh - 220px);
-    margin-top: 60px;
-    margin-bottom: 120px;
-    padding: 0.5rem;
-  }
-  
-  .board-cell {
-    padding: 6px;
-  }
-  
-  .action-btn {
-    padding: 6px 8px;
-    font-size: 13px;
-  }
-  
-  /* Ajustes específicos para botões em mobile */
-  #startGameBtn:disabled {
-    opacity: 0.7 !important;
-  }
-  
-  .action-btn:disabled {
-    opacity: 0.5 !important;
-  }
-}
-
-/* Mobile Pequeno */
-@media (max-width: 480px) {
-  #gameContainer {
-    height: calc(100vh - 240px);
-    margin-top: 50px;
-    margin-bottom: 140px;
-    padding: 0.25rem;
-  }
-  
-  .board-cell {
-    padding: 4px;
-  }
-  
-  .board-cell .text-xs {
-    font-size: 10px;
-  }
-  
-  .board-cell .text-\[10px\] {
-    font-size: 9px;
-  }
-}
-
-/* ============================================
-   MOBILE ESPECÍFICO (HÍBRIDO)
-   ============================================ */
-
-@media (max-width: 768px) {
-  /* Reset de altura para mobile */
-  html, body {
-    height: auto;
-    min-height: 100vh;
-    overflow-y: auto;
-    -webkit-tap-highlight-color: transparent;
-  }
-
-  /* Layout principal em coluna única */
-  #gameContainer {
-    grid-template-columns: 1fr !important;
-    height: auto;
-    margin: 60px 0 120px 0 !important;
-    padding: 0.5rem;
-    gap: 0.5rem;
-  }
-
-  /* Sidebar oculta por padrão, acessível via botão */
-  #sidebar {
-    display: none;
-    position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    z-index: 999;
-    background: rgba(15, 23, 42, 0.98);
-    backdrop-filter: blur(20px);
-    max-height: 100vh;
-    padding: 1rem;
-    overflow-y: auto;
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    border-radius: 0;
-  }
-
-  #sidebar.active {
-    display: flex;
-    animation: slideInRight 0.3s ease-out;
-  }
-
-  /* Botão de toggle para sidebar */
-  .sidebar-toggle {
-    position: fixed;
-    bottom: 140px;
-    right: 15px;
-    z-index: 1000;
-    width: 52px;
-    height: 52px;
-    border-radius: 50%;
-    background: linear-gradient(135deg, #3b82f6, #1d4ed8);
-    border: 2px solid rgba(255, 255, 255, 0.3);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 24px;
-    color: white;
-    box-shadow: 0 4px 20px rgba(59, 130, 246, 0.4);
-    cursor: pointer;
-    transition: all 0.3s ease;
-  }
-
-  .sidebar-toggle:hover {
-    transform: scale(1.1);
-    box-shadow: 0 6px 25px rgba(59, 130, 246, 0.6);
-  }
-
-  /* Ajustes no mapa */
-  #gameMap {
-    min-height: 70vh;
-    border-radius: 12px;
-    border: 1px solid rgba(255, 255, 255, 0.1);
-  }
-
-  /* Controles de zoom para mobile */
-  .mobile-zoom-controls {
-    position: absolute;
-    bottom: 15px;
-    right: 15px;
-    z-index: 100;
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-  }
-
-  .mobile-zoom-controls button {
-    width: 44px;
-    height: 44px;
-    border-radius: 50%;
-    background: rgba(0, 0, 0, 0.7);
-    border: 1px solid rgba(255, 255, 255, 0.2);
-    color: white;
-    font-size: 20px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    cursor: pointer;
-    transition: all 0.2s ease;
-  }
-
-  .mobile-zoom-controls button:hover {
-    background: rgba(0, 0, 0, 0.9);
-    transform: scale(1.1);
-  }
-
-  /* Game Footer Mobile */
-  #gameFooter {
-    padding: 0.5rem !important;
-    min-height: auto !important;
-    max-height: 90px !important;
-  }
-
-  #gameFooter .flex {
-    flex-direction: row !important;
-    gap: 0.5rem !important;
-    align-items: center !important;
-    justify-content: space-between !important;
-  }
-
-  #gameFooter .flex > div:first-child {
-    display: grid !important;
-    grid-template-columns: repeat(2, 1fr) !important;
-    gap: 0.25rem !important;
-    width: 55% !important;
-  }
-
-  .action-btn {
-    padding: 6px 4px !important;
-    font-size: 11px !important;
-    min-height: 36px !important;
-    border-radius: 6px !important;
-    margin: 0 !important;
-  }
-
-  #endTurnBtn {
-    padding: 8px 12px !important;
-    font-size: 12px !important;
-    min-height: 36px !important;
-    width: 45% !important;
-    margin: 0 !important;
-  }
-
-  #actionsLeft {
-    display: none !important;
-  }
-
-  /* Botões muito pequenos */
-  @media (max-width: 360px) {
-    .action-btn span:not(.icon) {
-      display: none !important;
-    }
-    
-    .action-btn {
-      font-size: 16px !important;
-      min-width: 44px !important;
-      padding: 8px !important;
-    }
-    
-    #endTurnBtn {
-      font-size: 11px !important;
-      padding: 6px 8px !important;
-    }
-    
-    #startGameBtn {
-      font-size: 14px !important;
-      padding: 12px 8px !important;
-    }
-  }
-
-  /* Estado desabilitado melhorado para mobile */
-  .action-btn:disabled,
-  #startGameBtn:disabled,
-  #endTurnBtn:disabled {
-    opacity: 0.5 !important;
-    transform: scale(0.95) !important;
-  }
-}
-
-/* ============================================
-   EFEITOS DE EDIÇÃO (RESTAURADOS DA VERSÃO ANTIGA)
-   ============================================ */
-
+/* 15.3 EFEITOS DE EDIÇÃO */
 .editing-mode {
   animation: pulseBorder 2s infinite;
 }
@@ -1797,7 +1583,7 @@ input[type="text"]:focus, select:focus, input[type="number"]:focus {
   transform: scale(1.1);
 }
 
-/* Botão de adição/edição dinâmico */
+/* BOTÃO DE ADIÇÃO/EDIÇÃO DINÂMICO */
 #addPlayerBtn.bg-green-600 {
   background-color: #059669;
 }
@@ -1814,7 +1600,7 @@ input[type="text"]:focus, select:focus, input[type="number"]:focus {
   background-color: #1d4ed8;
 }
 
-/* Botão cancelar edição */
+/* BOTÃO CANCELAR EDIÇÃO */
 #cancelEditBtn {
   transition: all 0.2s ease;
 }
@@ -1824,69 +1610,24 @@ input[type="text"]:focus, select:focus, input[type="number"]:focus {
   border-color: rgba(255, 255, 255, 0.2) !important;
 }
 
-/* Modal de save/load */
-#saveLoadModal .relative {
-  animation: modalSlideIn 0.3s ease-out;
-}
-
-#saveLoadYesBtn {
-  background: linear-gradient(135deg, #059669, #047857);
-}
-
-#saveLoadNoBtn {
-  background: rgba(55, 65, 81, 0.8);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-}
-
-#saveLoadDeleteBtn:hover {
-  color: #ef4444;
-}
-
-/* Indicador visual para edição em andamento */
+/* INDICADOR VISUAL PARA EDIÇÃO EM ANDAMENTO */
 .editing-mode .player-name-input {
   border-color: #3b82f6 !important;
   box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2);
 }
 
 /* ============================================
-   BADGES (RESTAURADOS)
+   16. EMOJIS E ÍCONES
    ============================================ */
-
-.badge {
-  display: inline-block;
-  padding: 4px 8px;
-  border-radius: 999px;
-  font-size: 12px;
-  background: rgba(255,255,255,0.03);
-  color: #fff;
-  font-weight: 500;
-}
-
-.current-turn-badge {
-  animation: pulse 2s ease-in-out infinite;
-}
-
-/* ============================================
-   EMOJIS COMPATÍVEIS EM TODOS OS DISPOSITIVOS
-   ============================================ */
-
-/* Remover toda a seção antiga de emojis e substituir por: */
 
 .emoji-font {
   font-family: 
-    /* Windows + Android */
     "Segoe UI Emoji",
-    /* macOS + iOS */
     "Apple Color Emoji",
-    /* Linux */
     "Noto Color Emoji",
-    /* Fallback universal */
     "Segoe UI Symbol",
-    /* Web-optimized */
     "Twemoji Mozilla",
-    /* Emoji fallback */
     "EmojiSymbols",
-    /* Sistema */
     sans-serif;
   font-weight: normal;
   font-style: normal;
@@ -1895,7 +1636,7 @@ input[type="text"]:focus, select:focus, input[type="number"]:focus {
   vertical-align: -0.125em;
 }
 
-/* Aplicar a todos os elementos que usam emojis */
+/* APLICAR A TODOS OS ELEMENTOS QUE USAM EMOJIS */
 .resource-item,
 .resource-value,
 .board-cell .text-xs,
@@ -1905,7 +1646,7 @@ input[type="text"]:focus, select:focus, input[type="number"]:focus {
   composes: emoji-font;
 }
 
-/* Fallback visual para quando o emoji não carrega */
+/* FALLBACK VISUAL PARA QUANDO O EMOJI NÃO CARREGA */
 .emoji-fallback {
   display: inline-block;
   width: 1.2em;
@@ -1918,35 +1659,239 @@ input[type="text"]:focus, select:focus, input[type="number"]:focus {
 }
 
 /* ============================================
-   MANUAL - TABS (HÍBRIDO)
+   17. RESPONSIVIDADE
    ============================================ */
 
-.manual-tab {
-  color: #cfcfcf;
-  background: transparent;
-  border: 1px solid transparent;
-  transition: all 0.2s ease;
-  width: 100%;
-  text-align: left;
-  padding: 8px 16px;
-  border-radius: 6px;
-  margin-bottom: 4px;
-  cursor: pointer;
+/* 17.1 DESKTOP GRANDE */
+@media (min-width: 1024px) {
+  #gameContainer {
+    grid-template-columns: 320px 1fr;
+    height: calc(100vh - 160px);
+  }
 }
 
-.manual-tab:hover {
-  color: #fff;
-  background: rgba(255, 255, 255, 0.02);
+/* 17.2 TABLET */
+@media (max-width: 1024px) {
+  #sidebar {
+    display: none;
+  }
+  
+  #gameContainer {
+    grid-template-columns: 1fr;
+    height: calc(100vh - 200px);
+    margin-top: 70px;
+    margin-bottom: 100px;
+  }
 }
 
-.manual-tab.active {
-  color: var(--accent);
-  border-color: rgba(248, 214, 92, 0.12);
-  background: linear-gradient(180deg, rgba(248, 214, 92, 0.03), rgba(255, 255, 255, 0.01));
+/* 17.3 MOBILE */
+@media (max-width: 768px) {
+  /* LAYOUT PRINCIPAL EM COLUNA ÚNICA */
+  html, body {
+    height: auto;
+    min-height: 100vh;
+    overflow-y: auto;
+    -webkit-tap-highlight-color: transparent;
+  }
+  
+  #gameContainer {
+    grid-template-columns: 1fr !important;
+    height: calc(100vh - 220px);
+    margin-top: 60px;
+    margin-bottom: 120px;
+    padding: 0.5rem;
+    gap: 0.5rem;
+  }
+  
+  /* SIDEBAR OCULTA POR PADRÃO, ACESSÍVEL VIA BOTÃO */
+  #sidebar {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 999;
+    background: rgba(15, 23, 42, 0.98);
+    backdrop-filter: blur(20px);
+    max-height: 100vh;
+    padding: 1rem;
+    overflow-y: auto;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 0;
+  }
+  
+  #sidebar.active {
+    display: flex;
+    animation: slideInRight 0.3s ease-out;
+  }
+  
+  /* BOTÃO DE TOGGLE PARA SIDEBAR */
+  .sidebar-toggle {
+    position: fixed;
+    bottom: 140px;
+    right: 15px;
+    z-index: 1000;
+    width: 52px;
+    height: 52px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #3b82f6, #1d4ed8);
+    border: 2px solid rgba(255, 255, 255, 0.3);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 24px;
+    color: white;
+    box-shadow: 0 4px 20px rgba(59, 130, 246, 0.4);
+    cursor: pointer;
+    transition: all 0.3s ease;
+  }
+  
+  .sidebar-toggle:hover {
+    transform: scale(1.1);
+    box-shadow: 0 6px 25px rgba(59, 130, 246, 0.6);
+  }
+  
+  /* AJUSTES NO MAPA */
+  #gameMap {
+    min-height: 70vh;
+    border-radius: 12px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+  }
+  
+  /* CONTROLES DE ZOOM PARA MOBILE */
+  .mobile-zoom-controls {
+    position: absolute;
+    bottom: 15px;
+    right: 15px;
+    z-index: 100;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+  
+  .mobile-zoom-controls button {
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    background: rgba(0, 0, 0, 0.7);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    color: white;
+    font-size: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.2s ease;
+  }
+  
+  .mobile-zoom-controls button:hover {
+    background: rgba(0, 0, 0, 0.9);
+    transform: scale(1.1);
+  }
+  
+  /* GAME FOOTER MOBILE */
+  #gameFooter {
+    padding: 0.5rem !important;
+    min-height: auto !important;
+    max-height: 90px !important;
+  }
+  
+  #gameFooter .flex {
+    flex-direction: row !important;
+    gap: 0.5rem !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+  }
+  
+  #gameFooter .flex > div:first-child {
+    display: grid !important;
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: 0.25rem !important;
+    width: 55% !important;
+  }
+  
+  .action-btn {
+    padding: 6px 4px !important;
+    font-size: 11px !important;
+    min-height: 36px !important;
+    border-radius: 6px !important;
+    margin: 0 !important;
+  }
+  
+  #endTurnBtn {
+    padding: 8px 12px !important;
+    font-size: 12px !important;
+    min-height: 36px !important;
+    width: 45% !important;
+    margin: 0 !important;
+  }
+  
+  #actionsLeft {
+    display: none !important;
+  }
+  
+  /* CÉLULAS EM MOBILE */
+  .board-cell {
+    padding: 6px;
+  }
+  
+  .board-cell .text-xs {
+    font-size: 10px;
+  }
+  
+  .board-cell .text-\[10px\] {
+    font-size: 9px;
+  }
+  
+  /* ESTADO DESABILITADO MELHORADO PARA MOBILE */
+  .action-btn:disabled,
+  #startGameBtn:disabled,
+  #endTurnBtn:disabled {
+    opacity: 0.5 !important;
+    transform: scale(0.95) !important;
+  }
+}
+
+/* MOBILE PEQUENO */
+@media (max-width: 480px) {
+  #gameContainer {
+    height: calc(100vh - 240px);
+    margin-top: 50px;
+    margin-bottom: 140px;
+    padding: 0.25rem;
+  }
+  
+  .board-cell {
+    padding: 4px;
+  }
+}
+
+/* BOTÕES MUITO PEQUENOS */
+@media (max-width: 360px) {
+  .action-btn span:not(.icon) {
+    display: none !important;
+  }
+  
+  .action-btn {
+    font-size: 16px !important;
+    min-width: 44px !important;
+    padding: 8px !important;
+  }
+  
+  #endTurnBtn {
+    font-size: 11px !important;
+    padding: 6px 8px !important;
+  }
+  
+  #startGameBtn {
+    font-size: 14px !important;
+    padding: 12px 8px !important;
+  }
 }
 
 /* ============================================
-   ACESSIBILIDADE E MODOS DE COR
+   18. ACESSIBILIDADE
    ============================================ */
 
 @media (prefers-reduced-motion: reduce) {
@@ -1959,7 +1904,7 @@ input[type="text"]:focus, select:focus, input[type="number"]:focus {
   }
 }
 
-/* Modo Claro do Sistema */
+/* MODO CLARO DO SISTEMA */
 @media (prefers-color-scheme: light) {
   body {
     background-color: #f5f5f5;
@@ -1990,228 +1935,7 @@ input[type="text"]:focus, select:focus, input[type="number"]:focus {
   }
 }
 
-/* ============================================
-   MANUAL ICON (FLUTUANTE)
-   ============================================ */
-
-#manualIcon {
-  position: fixed !important;
-  top: 20px !important;
-  right: 20px !important;
-  z-index: 60 !important;
-  padding: 12px;
-  border-radius: 50%;
-  background: rgba(0, 0, 0, 0.5);
-  backdrop-filter: blur(8px);
-  border: 1px solid rgba(248, 214, 92, 0.3);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
-  transition: all 0.3s ease;
-  cursor: pointer;
-}
-
-#manualIcon:hover {
-  transform: scale(1.1);
-  border-color: rgba(248, 214, 92, 0.6);
-  box-shadow: 0 6px 20px rgba(248, 214, 92, 0.2);
-}
-
-#manualIcon svg {
-  width: 24px;
-  height: 24px;
-  color: #f8d65c;
-}
-
-/* ============================================
-   ESTILOS ADICIONAIS PARA MODAIS DE EVENTO
-   ============================================ */
-
-#eventModal .relative.event-positive {
-  background: linear-gradient(135deg, rgba(34, 197, 94, 0.15), rgba(22, 163, 74, 0.15)) !important;
-  border-color: rgba(34, 197, 94, 0.4) !important;
-  backdrop-filter: blur(12px);
-}
-
-#eventModal .relative.event-negative {
-  background: linear-gradient(135deg, rgba(239, 68, 68, 0.15), rgba(220, 38, 38, 0.15)) !important;
-  border-color: rgba(239, 68, 68, 0.4) !important;
-  backdrop-filter: blur(12px);
-}
-
-#eventModal .relative.event-mixed {
-  background: linear-gradient(135deg, rgba(168, 85, 247, 0.15), rgba(147, 51, 234, 0.15)) !important;
-  border-color: rgba(168, 85, 247, 0.4) !important;
-  backdrop-filter: blur(12px);
-}
-
-#eventModal .relative.event-neutral {
-  background: linear-gradient(135deg, rgba(251, 191, 36, 0.15), rgba(245, 158, 11, 0.15)) !important;
-  border-color: rgba(251, 191, 36, 0.4) !important;
-  backdrop-filter: blur(12px);
-}
-
-/* ============================================
-   FINAL DO ARQUIVO - VERSÃO COMPLETA HÍBRIDA
-   ============================================ */
-
-/* Estilos para modais sobrepostos */
-body.modal-open #boardContainer,
-body.modal-open .board-cell {
-  pointer-events: none !important;
-  opacity: 0.6;
-  filter: blur(1px);
-  transition: opacity 0.3s, filter 0.3s;
-}
-
-/* Garantir que modais fiquem acima de tudo */
-.modal-overlay,
-.income-modal,
-.negotiation-modal,
-.neg-response-modal,
-.structure-modal,
-.event-modal,
-.alert-modal {
-  pointer-events: auto !important;
-  z-index: 1000 !important;
-}
-
-/* Estilos de Texto colorido para estruturas */
-.text-orange-300 { color: #fdba74; }
-.text-blue-300 { color: #93c5fd; }
-.text-yellow-300 { color: #fde047; }
-.text-purple-300 { color: #d8b4fe; }
-.text-green-300 { color: #86efac; }
-
-/* Classes utilitárias */
-.gap-0\.5 { gap: 0.125rem; }
-.gap-1\.5 { gap: 0.375rem; }
-.text-\[10px\] { font-size: 10px; }
-.leading-tight { line-height: 1.25; }
-
-/* Scrollbar global */
-::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
-}
-
-::-webkit-scrollbar-track {
-  background: rgba(255, 255, 255, 0.03);
-  border-radius: 4px;
-}
-
-::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.1);
-  border-radius: 4px;
-}
-
-::-webkit-scrollbar-thumb:hover {
-  background: rgba(255, 255, 255, 0.15);
-}
-
-/* ============================================
-   CORREÇÃO CRÍTICA - FUNDO DOS MODAIS
-   ============================================ */
-
-/* Corrigir o modal de resposta de negociação */
-#negResponseModal .relative {
-  background-color: rgb(17, 24, 39) !important; /* gray-900 sólido */
-  opacity: 1 !important;
-  border: 1px solid rgba(255, 255, 255, 0.15) !important;
-}
-
-/* Corrigir o modal principal de negociação */
-#negotiationModal .relative {
-  background-color: rgb(17, 24, 39) !important; /* gray-900 sólido */
-  opacity: 1 !important;
-}
-
-/* Garantir que as seções dentro tenham fundo */
-#negotiationModal .negotiation-section {
-  background-color: rgba(31, 41, 55, 0.9) !important; /* gray-800 */
-}
-
-/* Corrigir o modal de alerta/confirmação */
-#alertModal .relative {
-  background-color: rgb(17, 24, 39) !important;
-  border: 1px solid rgba(245, 158, 11, 0.3) !important;
-}
-
-/* Corrigir o modal de evento global */
-#eventModal .relative {
-  background-color: rgb(17, 24, 39) !important;
-  border: 1px solid rgba(245, 158, 11, 0.3) !important;
-}
-
-/* ============================================
-   CORREÇÃO ESPECÍFICA PARA MODAIS
-   ============================================ */
-
-/* 1. Remover qualquer backdrop-filter residual */
-#negotiationModal > .relative,
-#negResponseModal > .relative,
-[id^="negotiation-notification-"]:not(.modal-overlay),
-#pending-negotiations-summary:not(.modal-overlay) {
-  backdrop-filter: none !important;
-}
-
-/* 2. Garantir fundo sólido nos modais de negociação */
-#negResponseModal .relative {
-  background: rgba(17, 24, 39, 0.99) !important;
-}
-
-/* 3. Garantir legibilidade do texto */
-#negResponseTitle {
-  color: #fbbf24 !important;
-  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
-}
-
-#negResponseBody {
-  color: rgba(255, 255, 255, 0.95) !important;
-}
-
-/* 4. Notificações com fundo sólido */
-[id^="negotiation-notification-"] {
-  background: rgba(17, 24, 39, 0.98) !important;
-}
-
-#pending-negotiations-summary {
-  background: rgba(30, 41, 59, 0.98) !important;
-}
-
-#aiDebugPanel {
-  backdrop-filter: none !important;
-  background: rgba(30, 41, 59, 0.95) !important;
-  border: 1px solid rgba(168, 85, 247, 0.5) !important;
-}
-
-/* ============================================
-   CORREÇÕES ADICIONAIS PARA BOTÕES
-   ============================================ */
-
-/* Botão de fechar manual */
-#manualCloseBtn:disabled,
-#structureModalClose:disabled {
-  opacity: 0.4 !important;
-  cursor: not-allowed !important;
-}
-
-/* Botões do modal de alerta */
-#alertButtons button:disabled {
-  opacity: 0.5 !important;
-  cursor: not-allowed !important;
-  background: linear-gradient(135deg, #4b5563, #374151) !important;
-}
-
-/* Botões de log filter */
-.log-filter-sidebar:disabled {
-  opacity: 0.4 !important;
-  cursor: not-allowed !important;
-  background: rgba(75, 85, 99, 0.3) !important;
-}
-
-/* ============================================
-   ESTADOS DE FOCO PARA ACESSIBILIDADE
-   ============================================ */
-
+/* ESTADOS DE FOCO PARA ACESSIBILIDADE */
 .action-btn:focus-visible,
 #startGameBtn:focus-visible,
 #endTurnBtn:focus-visible,
@@ -2230,9 +1954,90 @@ body.modal-open .board-cell {
 }
 
 /* ============================================
-   ESTILOS DE LOADING PARA BOTÕES
+   19. CORREÇÕES ESPECÍFICAS
    ============================================ */
 
+/* CORREÇÃO CRÍTICA - FUNDO DOS MODAIS */
+#negResponseModal .relative {
+  background-color: rgb(17, 24, 39) !important;
+  opacity: 1 !important;
+  border: 1px solid rgba(255, 255, 255, 0.15) !important;
+}
+
+#negotiationModal .relative {
+  background-color: rgb(17, 24, 39) !important;
+  opacity: 1 !important;
+}
+
+#negotiationModal .negotiation-section {
+  background-color: rgba(31, 41, 55, 0.9) !important;
+}
+
+#alertModal .relative {
+  background-color: rgb(17, 24, 39) !important;
+  border: 1px solid rgba(245, 158, 11, 0.3) !important;
+}
+
+#eventModal .relative {
+  background-color: rgb(17, 24, 39) !important;
+  border: 1px solid rgba(245, 158, 11, 0.3) !important;
+}
+
+/* REMOVER BACKDROP-FILTER RESIDUAL */
+#negotiationModal > .relative,
+#negResponseModal > .relative,
+[id^="negotiation-notification-"]:not(.modal-overlay),
+#pending-negotiations-summary:not(.modal-overlay) {
+  backdrop-filter: none !important;
+}
+
+/* GARANTIR LEGIBILIDADE DO TEXTO */
+#negResponseTitle {
+  color: #fbbf24 !important;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
+}
+
+#negResponseBody {
+  color: rgba(255, 255, 255, 0.95) !important;
+}
+
+/* NOTIFICAÇÕES COM FUNDO SÓLIDO */
+[id^="negotiation-notification-"] {
+  background: rgba(17, 24, 39, 0.98) !important;
+}
+
+#pending-negotiations-summary {
+  background: rgba(30, 41, 59, 0.98) !important;
+}
+
+#aiDebugPanel {
+  backdrop-filter: none !important;
+  background: rgba(30, 41, 59, 0.95) !important;
+  border: 1px solid rgba(168, 85, 247, 0.5) !important;
+}
+
+/* BOTÕES DE FECHAR MANUAL */
+#manualCloseBtn:disabled,
+#structureModalClose:disabled {
+  opacity: 0.4 !important;
+  cursor: not-allowed !important;
+}
+
+/* BOTÕES DO MODAL DE ALERTA */
+#alertButtons button:disabled {
+  opacity: 0.5 !important;
+  cursor: not-allowed !important;
+  background: linear-gradient(135deg, #4b5563, #374151) !important;
+}
+
+/* BOTÕES DE LOG FILTER */
+.log-filter-sidebar:disabled {
+  opacity: 0.4 !important;
+  cursor: not-allowed !important;
+  background: rgba(75, 85, 99, 0.3) !important;
+}
+
+/* ESTILOS DE LOADING PARA BOTÕES */
 .button-loading {
   position: relative;
   color: transparent !important;
@@ -2262,26 +2067,140 @@ body.modal-open .board-cell {
   }
 }
 
-/* Otimizações Mobile */
+/* MODAL DE SAVE/LOAD */
+#saveLoadModal .relative {
+  animation: modalSlideIn 0.3s ease-out;
+}
+
+#saveLoadYesBtn {
+  background: linear-gradient(135deg, #059669, #047857);
+}
+
+#saveLoadNoBtn {
+  background: rgba(55, 65, 81, 0.8);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+#saveLoadDeleteBtn:hover {
+  color: #ef4444;
+}
+
+/* VÍDEO DE ABERTURA */
+#introVideo {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  z-index: 9999;
+  background-color: black;
+  transition: opacity 0.5s ease-out;
+}
+
+#introVideo.hidden {
+  opacity: 0;
+  pointer-events: none;
+}
+
+/* ESTILOS PARA MODAIS SOBREPOSTOS */
+body.modal-open #boardContainer,
+body.modal-open .board-cell {
+  pointer-events: none !important;
+  opacity: 0.6;
+  filter: blur(1px);
+  transition: opacity 0.3s, filter 0.3s;
+}
+
+/* GARANTIR QUE MODAIS FIQUEM ACIMA DE TUDO */
+.modal-overlay,
+.income-modal,
+.negotiation-modal,
+.neg-response-modal,
+.structure-modal,
+.event-modal,
+.alert-modal {
+  pointer-events: auto !important;
+  z-index: 1000 !important;
+}
+
+/* CLASSES UTILITÁRIAS */
+.gap-0\.5 { gap: 0.125rem; }
+.gap-1\.5 { gap: 0.375rem; }
+.text-\[10px\] { font-size: 10px; }
+.leading-tight { line-height: 1.25; }
+
+/* ESTILOS DE TEXTO COLORIDO PARA ESTRUTURAS */
+.text-orange-300 { color: #fdba74; }
+.text-blue-300 { color: #93c5fd; }
+.text-yellow-300 { color: #fde047; }
+.text-purple-300 { color: #d8b4fe; }
+.text-green-300 { color: #86efac; }
+
+/* SCROLLBAR PERSONALIZADA */
+.custom-scrollbar {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(251, 191, 36, 0.5) rgba(30, 41, 59, 0.3);
+}
+
+.custom-scrollbar::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: rgba(30, 41, 59, 0.3);
+  border-radius: 4px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: rgba(251, 191, 36, 0.5);
+  border-radius: 4px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: rgba(251, 191, 36, 0.7);
+}
+
+/* SCROLLBAR GLOBAL */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.03);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.15);
+}
+
+/* OTIMIZAÇÕES MOBILE */
 @media (max-width: 768px) {
   .board-cell {
-    /* Evita o highlight azul padrão do toque no Android/iOS */
     -webkit-tap-highlight-color: transparent;
     touch-action: manipulation;
   }
   
-  /* Melhora performance de animações no mobile */
+  /* MELHORA PERFORMANCE DE ANIMAÇÕES NO MOBILE */
   .animate-pulse, .animate-bounce {
     will-change: transform, opacity;
   }
   
-  /* Garante que modais usem toda a largura */
+  /* GARANTE QUE MODAIS USEM TODA A LARGURA */
   .modal-content-container > .relative {
     width: 95% !important;
     max-height: 85vh !important;
   }
   
-  /* Ajustes específicos para botões em mobile */
+  /* AJUSTES ESPECÍFICOS PARA BOTÕES EM MOBILE */
   button, 
   .action-btn, 
   .icon-button,
