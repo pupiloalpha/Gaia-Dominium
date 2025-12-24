@@ -1201,7 +1201,7 @@ class NegotiationUI {
     }
     
     const notification = document.createElement('div');
-    notification.className = 'fixed top-24 right-4 z-[89] bg-blue-900/80 border border-blue-500 rounded-lg p-3 shadow-lg max-w-sm';
+    notification.className = 'fixed top-24 right-4 z-[89] bg-gray-900 border border-blue-500/50 rounded-lg p-3 shadow-lg max-w-sm modal-overlay';
     notification.id = 'pending-negotiations-summary';
     
     notification.innerHTML = `
