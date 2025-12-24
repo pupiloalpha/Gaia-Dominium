@@ -1,104 +1,45 @@
-/* ============================================================================
-   GAIA DOMINIUM - CSS PRINCIPAL (VERSÃO REORGANIZADA E OTIMIZADA)
-   ============================================================================
-   Estrutura:
-   1.  RESET & VARIÁVEIS GLOBAIS
-   2.  TIPOGRAFIA & BASE
-   3.  LAYOUT & ESTRUTURA
-   4.  COMPONENTES DE INTERFACE
-   5.  ESTADOS & INTERAÇÕES
-   6.  ANIMAÇÕES & TRANSITIONS
-   7.  RESPONSIVIDADE
-   8.  ACESSIBILIDADE & COMPATIBILIDADE
-   ============================================================================ */
-
-/* ============================================================================
-   1. RESET & VARIÁVEIS GLOBAIS
-   ============================================================================ */
+/* ============================================
+   VARIÁVEIS GLOBAIS E RESET - VERSÃO HÍBRIDA OTIMIZADA
+   ============================================ */
 
 :root {
-  /* ============ PALETA DE CORES ============ */
-  --color-bg: #0b0d0f;
-  --color-accent: #f8d65c;
-  --color-accent-rgb: 248, 214, 92;
-  --color-text-primary: #ffffff;
-  --color-text-secondary: rgba(255, 255, 255, 0.8);
-  --color-text-muted: rgba(255, 255, 255, 0.6);
+  /* Cores Base */
+  --bg: #0b0d0f;
+  --accent: #f8d65c;
+  --text-primary: #ffffff;
+  --text-secondary: rgba(255, 255, 255, 0.8);
   
-  /* ============ CORES DOS JOGADORES ============ */
-  --player-color-default: #ffffff;
-  --player-rgb-default: 255, 255, 255;
+  /* Cores do Jogador (dinâmicas) */
+  --player-rgb: 255, 255, 255;
+  --player-color: #ffffff;
   
-  /* ============ CORES DAS FACÇÕES ============ */
-  --faction-nature: #10b981;      /* Verde */
-  --faction-water: #3b82f6;       /* Azul */
-  --faction-mountain: #f59e0b;    /* Amarelo/laranja */
-  --faction-trade: #8b5cf6;       /* Roxo */
+  /* Glassmorphism e Células - VALORES OTIMIZADOS */
+  --cell-bg: rgba(30, 30, 30, 0.7);
+  --cell-border: rgba(255, 255, 255, 0.15);
+  --cell-opacity: 0.25;
+  --cell-blur: 1px;
+  --cell-bg-opacity: 0.15;
+  --cell-hover-opacity: 0.30;
+  --cell-selected-opacity: 0.45;
   
-  /* ============ CORES DOS NÍVEIS DE IA ============ */
-  --ai-easy: #10b981;
-  --ai-medium: #3b82f6;
-  --ai-hard: #f59e0b;
-  --ai-master: #ef4444;
+  /* Sombras */
+  --shadow-intensity: 0.3;
   
-  /* ============ EFEITOS VISUAIS ============ */
-  --glass-bg: rgba(31, 31, 31, 0.8);
-  --glass-border: rgba(255, 255, 255, 0.06);
-  --glass-blur: blur(8px);
+  /* IA */
+  --ai-easy-color: #10b981;
+  --ai-medium-color: #3b82f6;
+  --ai-hard-color: #f59e0b;
+  --ai-master-color: #ef4444;
   
-  --cell-bg: rgba(15, 15, 15, 0.15);
-  --cell-border: rgba(255, 255, 255, 0.08);
-  --cell-hover-bg: rgba(25, 25, 25, 0.25);
-  --cell-selected-border: rgba(248, 214, 92, 0.6);
-  
-  /* ============ SOMBRAS ============ */
-  --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.2);
-  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.3);
-  --shadow-lg: 0 8px 25px rgba(0, 0, 0, 0.4);
-  --shadow-xl: 0 12px 40px rgba(0, 0, 0, 0.6);
-  --shadow-accent: 0 4px 12px rgba(248, 214, 92, 0.2);
-  
-  /* ============ Z-INDEX HIERARQUIA ============ */
-  --z-background: -100;
-  --z-map: 0;
-  --z-cells: 10;
-  --z-tooltip: 50;
-  --z-footer: 45;
-  --z-navbar: 40;
-  --z-mobile-bar: 60;
-  --z-modal-overlay: 90;
-  --z-modal-content: 100;
-  --z-modal-alert: 101;
-  --z-modal-victory: 102;
-  --z-debug: 110;
-  
-  /* ============ TAMANHOS & ESPAÇAMENTOS ============ */
-  --border-radius-sm: 4px;
-  --border-radius-md: 8px;
-  --border-radius-lg: 12px;
-  --border-radius-xl: 16px;
-  --border-radius-full: 9999px;
-  
-  --spacing-xs: 0.25rem;
-  --spacing-sm: 0.5rem;
-  --spacing-md: 1rem;
-  --spacing-lg: 1.5rem;
-  --spacing-xl: 2rem;
-  
-  /* ============ BREAKPOINTS RESPONSIVOS ============ */
-  --breakpoint-mobile: 480px;
-  --breakpoint-tablet: 768px;
-  --breakpoint-laptop: 1024px;
-  --breakpoint-desktop: 1280px;
+  /* Breakpoints */
+  --breakpoint-sm: 480px;
+  --breakpoint-md: 768px;
+  --breakpoint-lg: 1024px;
+  --breakpoint-xl: 1280px;
 }
 
-/* ============================================================================
-   2. RESET & BASE
-   ============================================================================ */
-
-*,
-*::before,
-*::after {
+/* Reset Moderno */
+*, *::before, *::after {
   box-sizing: border-box;
   margin: 0;
   padding: 0;
@@ -113,1130 +54,91 @@ html {
 body {
   min-height: 100%;
   font-family: 'Inter', system-ui, -apple-system, sans-serif;
-  background-color: var(--color-bg);
   background-attachment: fixed;
   background-size: cover;
   background-position: center;
-  color: var(--color-text-primary);
-  line-height: 1.5;
+  color: var(--text-primary);
   overflow-x: hidden;
+  line-height: 1.5;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
 
-img,
-video {
-  max-width: 100%;
-  height: auto;
-  display: block;
-}
-
-button,
-input,
-select,
-textarea {
-  font-family: inherit;
-  font-size: inherit;
-}
-
-/* ============================================================================
-   3. TIPOGRAFIA
-   ============================================================================ */
-
+/* Tipografia Consistente */
 h1, h2, h3, h4, h5, h6 {
   font-weight: 600;
   line-height: 1.2;
-  margin-bottom: var(--spacing-sm);
-  color: var(--color-text-primary);
+  margin-bottom: 0.5em;
 }
-
-h1 { font-size: 2.5rem; }
-h2 { font-size: 2rem; }
-h3 { font-size: 1.75rem; }
-h4 { font-size: 1.5rem; }
-h5 { font-size: 1.25rem; }
-h6 { font-size: 1rem; }
 
 p {
-  margin-bottom: var(--spacing-md);
-  color: var(--color-text-secondary);
+  margin-bottom: 1rem;
 }
 
-.text-xs { font-size: 0.75rem; }
-.text-sm { font-size: 0.875rem; }
-.text-base { font-size: 1rem; }
-.text-lg { font-size: 1.125rem; }
-.text-xl { font-size: 1.25rem; }
-.text-2xl { font-size: 1.5rem; }
-.text-3xl { font-size: 1.875rem; }
-.text-4xl { font-size: 2.25rem; }
+/* ============================================
+   HIERARQUIA DE Z-INDEX - UNIFICADA
+   ============================================ */
 
-.font-light { font-weight: 300; }
-.font-normal { font-weight: 400; }
-.font-medium { font-weight: 500; }
-.font-semibold { font-weight: 600; }
-.font-bold { font-weight: 700; }
+#initialScreen { z-index: 50; }
+#manualIcon { z-index: 60; position: fixed !important; top: 20px !important; right: 20px !important; }
+#gameNavbar { z-index: 40; }
+#gameFooter { z-index: 45; }
+#regionTooltip { z-index: 90; }
+#eventModal { z-index: 95; }
+#incomeModal { z-index: 96; }
+#structureModal { z-index: 97; }
+#negotiationModal { z-index: 98; }
+#negResponseModal { z-index: 99; }
+#manualModal { z-index: 100; }
+#alertModal { z-index: 101; }
+#victoryModal { z-index: 102; }
+#saveLoadModal { z-index: 103; }
 
-.text-primary { color: var(--color-text-primary); }
-.text-secondary { color: var(--color-text-secondary); }
-.text-muted { color: var(--color-text-muted); }
-.text-accent { color: var(--color-accent); }
+/* ============================================
+   UTILITÁRIOS REUTILIZÁVEIS - HÍBRIDOS
+   ============================================ */
 
-/* ============================================================================
-   4. UTILITÁRIOS GLOBAIS
-   ============================================================================ */
+/* Layout */
+.flex-center {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
 
-/* --- Visibilidade --- */
+.grid-center {
+  display: grid;
+  place-items: center;
+}
+
+/* Visibilidade */
 .hidden {
   display: none !important;
 }
 
-.invisible {
-  visibility: hidden !important;
+.show {
+  display: flex !important;
 }
 
-/* --- Layout --- */
-.flex { display: flex; }
-.grid { display: grid; }
-.block { display: block; }
-.inline-block { display: inline-block; }
-
-.flex-col { flex-direction: column; }
-.flex-row { flex-direction: row; }
-.flex-wrap { flex-wrap: wrap; }
-.flex-nowrap { flex-wrap: nowrap; }
-
-.items-center { align-items: center; }
-.items-start { align-items: flex-start; }
-.items-end { align-items: flex-end; }
-.items-stretch { align-items: stretch; }
-
-.justify-center { justify-content: center; }
-.justify-start { justify-content: flex-start; }
-.justify-end { justify-content: flex-end; }
-.justify-between { justify-content: space-between; }
-.justify-around { justify-content: space-around; }
-
-.gap-xs { gap: var(--spacing-xs); }
-.gap-sm { gap: var(--spacing-sm); }
-.gap-md { gap: var(--spacing-md); }
-.gap-lg { gap: var(--spacing-lg); }
-.gap-xl { gap: var(--spacing-xl); }
-
-/* --- Espaçamento --- */
-.p-xs { padding: var(--spacing-xs); }
-.p-sm { padding: var(--spacing-sm); }
-.p-md { padding: var(--spacing-md); }
-.p-lg { padding: var(--spacing-lg); }
-.p-xl { padding: var(--spacing-xl); }
-
-.px-xs { padding-left: var(--spacing-xs); padding-right: var(--spacing-xs); }
-.px-sm { padding-left: var(--spacing-sm); padding-right: var(--spacing-sm); }
-.px-md { padding-left: var(--spacing-md); padding-right: var(--spacing-md); }
-.px-lg { padding-left: var(--spacing-lg); padding-right: var(--spacing-lg); }
-
-.py-xs { padding-top: var(--spacing-xs); padding-bottom: var(--spacing-xs); }
-.py-sm { padding-top: var(--spacing-sm); padding-bottom: var(--spacing-sm); }
-.py-md { padding-top: var(--spacing-md); padding-bottom: var(--spacing-md); }
-.py-lg { padding-top: var(--spacing-lg); padding-bottom: var(--spacing-lg); }
-
-.m-auto { margin: auto; }
-.mx-auto { margin-left: auto; margin-right: auto; }
-.my-auto { margin-top: auto; margin-bottom: auto; }
-
-/* --- Bordas & Cantos Arredondados --- */
-.rounded-sm { border-radius: var(--border-radius-sm); }
-.rounded-md { border-radius: var(--border-radius-md); }
-.rounded-lg { border-radius: var(--border-radius-lg); }
-.rounded-xl { border-radius: var(--border-radius-xl); }
-.rounded-full { border-radius: var(--border-radius-full); }
-
-.border { border: 1px solid var(--glass-border); }
-.border-t { border-top: 1px solid var(--glass-border); }
-.border-b { border-bottom: 1px solid var(--glass-border); }
-.border-l { border-left: 1px solid var(--glass-border); }
-.border-r { border-right: 1px solid var(--glass-border); }
-
-/* --- Efeitos Visuais --- */
-.glass {
-  background: var(--glass-bg);
-  backdrop-filter: var(--glass-blur);
-  border: 1px solid var(--glass-border);
-}
-
-.shadow-sm { box-shadow: var(--shadow-sm); }
-.shadow-md { box-shadow: var(--shadow-md); }
-.shadow-lg { box-shadow: var(--shadow-lg); }
-.shadow-xl { box-shadow: var(--shadow-xl); }
-.shadow-accent { box-shadow: var(--shadow-accent); }
-
-/* --- Transições --- */
-.transition-all { transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
-.transition-colors { transition: color 0.3s, background-color 0.3s, border-color 0.3s; }
-.transition-transform { transition: transform 0.3s ease; }
-.transition-opacity { transition: opacity 0.3s ease; }
-
-/* ============================================================================
-   5. LAYOUT PRINCIPAL
-   ============================================================================ */
-
-/* --- Container Principal --- */
-#gameContainer {
-  display: grid;
-  grid-template-columns: 1fr;
-  gap: var(--spacing-md);
-  height: calc(100vh - 180px);
-  margin-top: 80px;
-  margin-bottom: 80px;
-  padding: 0 var(--spacing-md);
-  overflow: hidden;
-}
-
-@media (min-width: 1024px) {
-  #gameContainer {
-    grid-template-columns: 320px 1fr;
-    height: calc(100vh - 160px);
-  }
-}
-
-/* --- Navbar Superior --- */
-#gameNavbar {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  z-index: var(--z-navbar);
-  background: rgba(0, 0, 0, 0.6);
-  backdrop-filter: var(--glass-blur);
-  border-bottom: 1px solid var(--glass-border);
-  padding: var(--spacing-sm) var(--spacing-md);
-}
-
-/* --- Sidebar Esquerda --- */
-#sidebar {
-  display: flex;
-  flex-direction: column;
-  height: 100%;
-  max-height: calc(100vh - 200px);
-  overflow-y: auto;
-  background: var(--glass-bg);
-  backdrop-filter: var(--glass-blur);
-  border: 1px solid var(--glass-border);
-  border-radius: var(--border-radius-lg);
-  padding: var(--spacing-md);
-}
-
-/* --- Área do Mapa --- */
-#gameMap {
-  position: relative;
-  width: 100%;
-  height: 100%;
-  min-height: 400px;
-  border-radius: var(--border-radius-md);
-  overflow: hidden;
-  box-shadow: var(--shadow-lg);
-  background: #000;
-}
-
-#mapViewport {
-  width: 100%;
-  height: 100%;
-  overflow: hidden;
-  cursor: grab;
-  touch-action: none;
-  user-select: none;
-}
-
-#mapViewport:active {
-  cursor: grabbing;
-}
-
-/* --- Footer de Ações --- */
-#gameFooter {
-  position: fixed;
-  bottom: 16px;
-  left: 50%;
-  transform: translateX(-50%);
-  z-index: var(--z-footer);
-  width: 100%;
-  max-width: 64rem;
-  padding: 0 var(--spacing-md);
-  background: rgba(11, 13, 15, 0.95);
-  backdrop-filter: blur(20px) saturate(180%);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: var(--border-radius-xl);
-  box-shadow: var(--shadow-xl), inset 0 0 0 1px rgba(255, 255, 255, 0.05);
-}
-
-/* ============================================================================
-   6. COMPONENTES DE INTERFACE
-   ============================================================================ */
-
-/* --- Células do Tabuleiro --- */
-.board-cell {
-  position: relative;
-  border: 1px solid var(--cell-border);
-  background: var(--cell-bg);
-  backdrop-filter: blur(1px);
-  border-radius: var(--border-radius-sm);
-  transition: all 0.2s ease;
-  display: flex;
-  flex-direction: column;
-  justify-content: space-between;
-  padding: 6px;
-  overflow: hidden;
-  cursor: pointer;
-  user-select: none;
-}
-
-/* Efeito de vidro fosco */
-.board-cell::before {
-  content: '';
-  position: absolute;
-  inset: 0;
-  background: linear-gradient(
-    135deg,
-    rgba(255, 255, 255, 0.02) 0%,
-    rgba(255, 255, 255, 0.008) 100%
-  );
-  z-index: -1;
-  border-radius: calc(var(--border-radius-sm) - 1px);
-}
-
-/* Estados das células */
-.board-cell:hover {
-  background: var(--cell-hover-bg);
-  border-color: rgba(255, 255, 255, 0.15);
-  transform: translateY(-1px);
-}
-
-.board-cell.controlled {
-  border-left: 4px solid var(--player-color-default);
-  background: rgba(var(--player-rgb-default), 0.3);
-}
-
-.board-cell.neutral {
-  border: 1px dashed rgba(255, 255, 255, 0.05);
-  background: rgba(15, 15, 15, 0.12);
-}
-
-.board-cell.region-selected {
-  border: 2px solid var(--cell-selected-border);
-  background: rgba(var(--color-accent-rgb), 0.45);
-  box-shadow: 0 0 10px rgba(248, 214, 92, 0.3);
-  transform: translateY(-1px);
-  z-index: var(--z-cells);
-}
-
-.board-cell.action-available {
-  border: 2px solid rgba(248, 214, 92, 0.6);
-  box-shadow: 0 0 20px rgba(248, 214, 92, 0.3), 0 4px 15px rgba(248, 214, 92, 0.2);
-}
-
-/* Conteúdo das células */
-.cell-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-  margin-bottom: 4px;
-}
-
-.cell-name {
-  font-size: 11px;
-  font-weight: 700;
-  color: var(--color-text-primary);
-  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.8);
-  line-height: 1.3;
-}
-
-.cell-biome {
-  font-size: 9px;
-  padding: 2px 6px;
+/* Glassmorphism */
+.glass-effect {
+  background: rgba(31, 31, 31, 0.8);
+  backdrop-filter: blur(8px);
+  border: 1px solid rgba(255, 255, 255, 0.06);
   border-radius: 10px;
-  background: rgba(0, 0, 0, 0.5);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  color: rgba(255, 255, 255, 0.95);
 }
 
-.cell-resources {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 4px;
-  margin: 6px 0;
-}
-
-.resource-item {
-  display: flex;
-  align-items: center;
-  gap: 2px;
-  font-size: 12px;
-  padding: 2px 6px;
-  border-radius: var(--border-radius-sm);
-  background: rgba(0, 0, 0, 0.45);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-}
-
-.resource-value {
-  font-weight: 800;
-  color: var(--color-text-primary);
-  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.7);
-}
-
-.cell-footer {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-top: 8px;
-  padding-top: 6px;
-  border-top: 1px solid rgba(255, 255, 255, 0.06);
-}
-
-.controller-info {
-  font-size: 10px;
-  font-weight: 700;
-  color: rgba(255, 255, 255, 0.98);
-  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.8);
-  padding: 2px 6px;
-  border-radius: var(--border-radius-sm);
-  background: rgba(0, 0, 0, 0.5);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-}
-
-.structure-display {
-  display: flex;
-  gap: 2px;
-  font-size: 14px;
-  filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.5));
-}
-
-/* --- Botões --- */
-/* Botões Gerais */
-.btn {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  padding: 8px 16px;
-  border-radius: var(--border-radius-md);
-  font-weight: 500;
-  transition: all 0.2s ease;
-  cursor: pointer;
-  border: 1px solid transparent;
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.02), rgba(0, 0, 0, 0.18));
-  color: var(--color-text-primary);
-  text-decoration: none;
-  user-select: none;
-  touch-action: manipulation;
-  min-height: 44px;
-  min-width: 44px;
-}
-
-.btn:hover:not(:disabled) {
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.05), rgba(0, 0, 0, 0.25));
-  border-color: rgba(255, 255, 255, 0.1);
-  transform: translateY(-1px);
-  box-shadow: var(--shadow-md);
-}
-
-.btn:active:not(:disabled) {
-  transform: translateY(0);
-  transition-duration: 0.1s;
-}
-
-.btn:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.01), rgba(0, 0, 0, 0.1));
-  border-color: rgba(255, 255, 255, 0.04);
-  transform: none;
-  box-shadow: none;
-}
-
-.btn:focus-visible {
-  outline: 2px solid var(--color-accent);
-  outline-offset: 2px;
-  box-shadow: 0 0 0 3px rgba(248, 214, 92, 0.3);
-}
-
-.btn:disabled:focus-visible {
-  outline-color: rgba(255, 255, 255, 0.3);
-}
-
-/* Botões de Ação */
-.action-btn {
-  composes: btn;
-  padding: 8px 12px;
-  font-size: 0.875rem;
-}
-
-/* Botão Principal de Iniciar */
-#startGameBtn {
-  composes: btn;
-  background: linear-gradient(135deg, #3b82f6, #1d4ed8);
-  color: white;
-  font-weight: 600;
-  padding: 12px 24px;
-  border: none;
+/* Transições */
+.transition-all {
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  position: relative;
-  overflow: hidden;
 }
 
-#startGameBtn:hover:not(:disabled) {
-  background: linear-gradient(135deg, #2563eb, #1e40af);
-  transform: translateY(-2px) scale(1.02);
-  box-shadow: 0 8px 25px rgba(37, 99, 235, 0.4);
+.transition-transform {
+  transition: transform 0.2s ease;
 }
 
-#startGameBtn:disabled {
-  background: linear-gradient(135deg, #4b5563, #374151);
-  border-color: rgba(255, 255, 255, 0.1);
-  opacity: 0.6;
-  transform: none;
-  box-shadow: var(--shadow-sm);
-}
-
-#startGameBtn:disabled:hover {
-  transform: none;
-  box-shadow: var(--shadow-sm);
-}
-
-/* Botão Terminar Turno */
-#endTurnBtn {
-  composes: btn;
-  background: linear-gradient(135deg, #ef4444, #dc2626);
-  color: white;
-  font-weight: 600;
-  border: none;
-  padding: 10px 20px;
-}
-
-#endTurnBtn:hover:not(:disabled) {
-  background: linear-gradient(135deg, #dc2626, #b91c1c);
-  transform: translateY(-2px);
-}
-
-#endTurnBtn:disabled {
-  background: linear-gradient(135deg, #6b7280, #4b5563);
-  opacity: 0.6;
-}
-
-/* Botões de IA */
-.ai-button {
-  composes: btn;
-  font-size: 0.75rem;
-  font-weight: 600;
-  padding: 8px 12px;
-  border: 2px solid transparent;
-  white-space: nowrap;
-}
-
-.ai-button.easy {
-  background: linear-gradient(135deg, rgba(34, 197, 94, 0.2), rgba(22, 163, 74, 0.2));
-  color: #86efac;
-  border-color: rgba(34, 197, 94, 0.3);
-}
-
-.ai-button.medium {
-  background: linear-gradient(135deg, rgba(59, 130, 246, 0.2), rgba(37, 99, 235, 0.2));
-  color: #93c5fd;
-  border-color: rgba(59, 130, 246, 0.3);
-}
-
-.ai-button.hard {
-  background: linear-gradient(135deg, rgba(245, 158, 11, 0.2), rgba(217, 119, 6, 0.2));
-  color: #fde68a;
-  border-color: rgba(245, 158, 11, 0.3);
-}
-
-.ai-button.master {
-  background: linear-gradient(135deg, rgba(239, 68, 68, 0.2), rgba(220, 38, 38, 0.2));
-  color: #fca5a5;
-  border-color: rgba(239, 68, 68, 0.3);
-}
-
-/* Botões de Ícone */
-.icon-button {
-  composes: btn;
-  min-width: 50px;
-  min-height: 50px;
-  padding: 0;
-  font-size: 1.5rem;
-  border-radius: var(--border-radius-lg);
-  background: rgba(255, 255, 255, 0.02);
-}
-
-.icon-button:hover:not(:disabled) {
-  background: rgba(255, 255, 255, 0.05);
-  transform: translateY(-4px);
-}
-
-.icon-button.selected {
-  border: 2px solid var(--color-accent);
-  background: rgba(248, 214, 92, 0.06);
-  transform: scale(1.06);
-}
-
-.icon-button.disabled {
-  opacity: 0.4;
-  filter: grayscale(0.7);
-}
-
-/* --- Formulários & Inputs --- */
-.form-input {
-  width: 100%;
-  padding: 10px 12px;
-  background: rgba(31, 31, 31, 0.85);
-  color: #EEE;
-  border: 1px solid rgba(255, 255, 255, 0.04);
-  border-radius: var(--border-radius-md);
-  font-size: 0.875rem;
-  transition: all 0.2s ease;
-}
-
-.form-input:focus {
-  outline: none;
-  border-color: var(--color-accent);
-  box-shadow: 0 0 0 2px rgba(248, 214, 92, 0.2);
-}
-
-.form-input::placeholder {
-  color: rgba(255, 255, 255, 0.4);
-}
-
-/* Dropdown de Facções */
-.faction-dropdown {
-  composes: form-input;
-  background-color: rgba(17, 24, 39, 0.9) !important;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%23fbbf24'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E") !important;
-  background-repeat: no-repeat !important;
-  background-position: right 12px center !important;
-  background-size: 16px !important;
-  height: 48px;
-  padding-right: 40px;
-  appearance: none;
-  cursor: pointer;
-}
-
-.faction-dropdown:hover {
-  background-color: rgba(30, 41, 59, 0.95) !important;
-  border-color: rgba(251, 191, 36, 0.5) !important;
-}
-
-.faction-dropdown:focus {
-  background-color: rgba(30, 41, 59, 0.95) !important;
-  border-color: rgba(251, 191, 36, 0.7) !important;
-}
-
-.faction-dropdown option {
-  background-color: rgba(17, 24, 39, 0.95);
-  color: #f3f4f6;
-  padding: 12px 16px;
-}
-
-.faction-dropdown option:checked {
-  background: linear-gradient(135deg, rgba(251, 191, 36, 0.2), rgba(245, 158, 11, 0.1));
-  color: #fbbf24;
-  font-weight: 600;
-}
-
-/* --- Cartões de Jogador --- */
-.player-card {
-  transition: all 0.2s ease;
-  position: relative;
-  height: 100%;
-}
-
-.player-card-inner {
-  height: 100%;
-  transition: all 0.2s ease;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: space-between;
-  padding: var(--spacing-sm);
-  border-radius: var(--border-radius-lg);
-  border: 2px solid transparent;
-  background: rgba(0, 0, 0, 0.3);
-}
-
-.player-card.empty .player-card-inner {
-  border: 2px dashed rgba(255, 255, 255, 0.2);
-  background: rgba(0, 0, 0, 0.1);
-}
-
-.player-card:not(.empty):hover .player-card-inner {
-  transform: translateY(-2px);
-  box-shadow: var(--shadow-md);
-}
-
-.player-card.editing .player-card-inner {
-  border-color: var(--color-accent);
-  box-shadow: 0 0 0 2px var(--color-accent), var(--shadow-md);
-}
-
-.player-card-icon {
-  font-size: 2rem;
-  margin-bottom: 8px;
-}
-
-.player-card-name {
-  font-size: 0.875rem;
-  font-weight: 700;
-  text-align: center;
-  margin-bottom: 4px;
-  width: 100%;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.player-card-faction {
-  font-size: 0.75rem;
-  color: var(--color-text-muted);
-  text-align: center;
-  margin-bottom: 8px;
-}
-
-.player-card-pv {
-  font-size: 0.75rem;
-  font-weight: 700;
-  color: var(--color-accent);
-  background: rgba(0, 0, 0, 0.3);
-  padding: 2px 8px;
-  border-radius: var(--border-radius-full);
-  margin-bottom: 8px;
-}
-
-.player-card-actions {
-  opacity: 0;
-  transition: opacity 0.2s ease;
-  display: flex;
-  gap: 4px;
-}
-
-.player-card:hover .player-card-actions {
-  opacity: 1;
-}
-
-.player-card-actions button {
-  padding: 4px 8px;
-  border-radius: var(--border-radius-sm);
-  background: rgba(0, 0, 0, 0.5);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  transition: all 0.2s ease;
-}
-
-.player-card-actions button:hover {
-  background: rgba(0, 0, 0, 0.7);
-  transform: scale(1.1);
-}
-
-/* --- Modais --- */
-.modal-overlay {
-  position: fixed;
-  inset: 0;
-  z-index: var(--z-modal-overlay);
-  background: rgba(0, 0, 0, 0.7);
-  backdrop-filter: blur(4px);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: var(--spacing-md);
-}
-
-.modal-content {
-  position: relative;
-  background: rgba(17, 24, 39, 0.98);
-  backdrop-filter: blur(25px) saturate(180%);
-  border: 1px solid rgba(255, 255, 255, 0.15);
-  border-radius: var(--border-radius-xl);
-  box-shadow: var(--shadow-xl), inset 0 1px 0 rgba(255, 255, 255, 0.1);
-  max-width: 90%;
-  max-height: 90vh;
-  overflow-y: auto;
-  padding: var(--spacing-xl);
-}
-
-.modal-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: var(--spacing-lg);
-  padding-bottom: var(--spacing-md);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-}
-
-.modal-title {
-  font-size: 1.5rem;
-  font-weight: 700;
-  color: var(--color-accent);
-  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
-}
-
-.modal-close {
-  background: none;
-  border: none;
-  color: rgba(255, 255, 255, 0.6);
-  font-size: 1.5rem;
-  cursor: pointer;
-  padding: 4px;
-  transition: color 0.2s ease;
-}
-
-.modal-close:hover {
-  color: var(--color-text-primary);
-}
-
-.modal-body {
-  color: rgba(255, 255, 255, 0.95);
-  margin-bottom: var(--spacing-lg);
-}
-
-.modal-footer {
-  display: flex;
-  justify-content: flex-end;
-  gap: var(--spacing-sm);
-  padding-top: var(--spacing-md);
-  border-top: 1px solid rgba(255, 255, 255, 0.1);
-}
-
-/* Modal Específico - Negociação */
-.negotiation-section {
-  padding: var(--spacing-md);
-  border-radius: var(--border-radius-lg);
-  margin-bottom: var(--spacing-md);
-  backdrop-filter: blur(4px);
-  transition: all 0.2s ease;
-}
-
-.negotiation-offer {
-  background: linear-gradient(135deg, rgba(34, 197, 94, 0.1), rgba(22, 163, 74, 0.1));
-  border: 1px solid rgba(34, 197, 94, 0.2);
-}
-
-.negotiation-request {
-  background: linear-gradient(135deg, rgba(239, 68, 68, 0.1), rgba(220, 38, 38, 0.1));
-  border: 1px solid rgba(239, 68, 68, 0.2);
-}
-
-/* Modal Específico - Estruturas */
-.structure-option {
-  padding: var(--spacing-md);
-  border-radius: var(--border-radius-lg);
-  border: 2px solid transparent;
-  cursor: pointer;
-  transition: all 0.2s ease;
-}
-
-.structure-option:hover:not(.disabled) {
-  transform: translateY(-4px);
-  box-shadow: var(--shadow-lg);
-}
-
-.structure-option.disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
-
-/* --- Tooltip --- */
-#regionTooltip {
-  position: fixed;
-  z-index: var(--z-tooltip);
-  pointer-events: none;
-  transition: opacity 0.15s ease, transform 0.15s ease;
-  transform-origin: center bottom;
-  max-width: 300px;
-  min-width: 200px;
-  background: rgba(31, 41, 55, 0.95);
-  backdrop-filter: var(--glass-blur);
-  border: 1px solid var(--glass-border);
-  border-radius: var(--border-radius-md);
-  padding: var(--spacing-sm);
-  box-shadow: var(--shadow-lg);
-}
-
-.tooltip-section {
-  margin-bottom: var(--spacing-sm);
-  padding-bottom: var(--spacing-sm);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-}
-
-.tooltip-section:last-child {
-  margin-bottom: 0;
-  padding-bottom: 0;
-  border-bottom: none;
-}
-
-/* --- Banner de Evento --- */
-.event-banner {
-  background: rgba(0, 0, 0, 0.6);
-  backdrop-filter: var(--glass-blur);
-  border-width: 2px;
-  border-style: solid;
-  margin-bottom: var(--spacing-sm);
-  padding: var(--spacing-sm);
-  border-radius: var(--border-radius-md);
-}
-
-.event-banner.positive {
-  background: linear-gradient(135deg, rgba(34, 197, 94, 0.25), rgba(22, 163, 74, 0.25));
-  border-color: rgba(34, 197, 94, 0.7);
-  box-shadow: 0 0 15px rgba(34, 197, 94, 0.2);
-}
-
-.event-banner.negative {
-  background: linear-gradient(135deg, rgba(239, 68, 68, 0.25), rgba(220, 38, 38, 0.25));
-  border-color: rgba(239, 68, 68, 0.7);
-  box-shadow: 0 0 15px rgba(239, 68, 68, 0.2);
-}
-
-.event-banner.mixed {
-  background: linear-gradient(135deg, rgba(168, 85, 247, 0.25), rgba(147, 51, 234, 0.25));
-  border-color: rgba(168, 85, 247, 0.7);
-  box-shadow: 0 0 15px rgba(168, 85, 247, 0.2);
-}
-
-.event-banner.neutral {
-  background: linear-gradient(135deg, rgba(251, 191, 36, 0.25), rgba(245, 158, 11, 0.25));
-  border-color: rgba(251, 191, 36, 0.7);
-  box-shadow: 0 0 15px rgba(251, 191, 36, 0.2);
-}
-
-/* --- Controle de Transparência --- */
-.transparency-control {
-  padding: var(--spacing-sm);
-  background: rgba(55, 65, 81, 0.3);
-  border-radius: var(--border-radius-md);
-  border: 1px solid rgba(255, 255, 255, 0.05);
-  transition: all 0.3s ease;
-}
-
-.transparency-control:hover {
-  background: rgba(55, 65, 81, 0.5);
-  border-color: rgba(255, 255, 255, 0.1);
-}
-
-.transparency-slider {
-  width: 100%;
-  height: 6px;
-  border-radius: 3px;
-  background: linear-gradient(90deg, 
-    rgba(255, 255, 255, 0.05) 0%, 
-    rgba(255, 255, 255, 0.2) 50%, 
-    rgba(255, 255, 255, 0.05) 100%
-  );
-  outline: none;
-  transition: all 0.2s ease;
-  -webkit-appearance: none;
-}
-
-.transparency-slider:hover {
-  background: linear-gradient(90deg, 
-    rgba(255, 255, 255, 0.1) 0%, 
-    rgba(255, 255, 255, 0.3) 50%, 
-    rgba(255, 255, 255, 0.1) 100%
-  );
-}
-
-.transparency-slider::-webkit-slider-thumb {
-  -webkit-appearance: none;
-  appearance: none;
-  width: 20px;
-  height: 20px;
-  border-radius: 50%;
-  background: var(--color-accent);
-  cursor: pointer;
-  border: 2px solid rgba(0, 0, 0, 0.3);
-  box-shadow: var(--shadow-accent);
-  transition: all 0.2s ease;
-}
-
-.transparency-slider::-webkit-slider-thumb:hover {
-  transform: scale(1.1);
-  box-shadow: 0 3px 12px rgba(248, 214, 92, 0.5);
-}
-
-.transparency-slider::-moz-range-thumb {
-  width: 20px;
-  height: 20px;
-  border-radius: 50%;
-  background: var(--color-accent);
-  cursor: pointer;
-  border: 2px solid rgba(0, 0, 0, 0.3);
-  box-shadow: var(--shadow-accent);
-  transition: all 0.2s ease;
-}
-
-/* --- Log de Atividades --- */
-.log-entry {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  padding: 4px 0;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
-  font-size: 0.6875rem;
-}
-
-.log-entry:last-child {
-  border-bottom: none;
-}
-
-.log-filter {
-  transition: all 0.2s ease;
-  border: 1px solid transparent;
-  cursor: pointer;
-  padding: 2px 8px;
-  border-radius: var(--border-radius-sm);
-  font-size: 0.625rem;
-}
-
-.log-filter:hover {
-  background: rgba(255, 255, 255, 0.1);
-}
-
-.log-filter.active {
-  background: rgba(59, 130, 246, 0.2);
-  border-color: rgba(59, 130, 246, 0.4);
-  color: #60a5fa;
-}
-
-/* Cores dos tipos de log */
-.log-type-action { color: #60a5fa; }
-.log-type-build { color: #f59e0b; }
-.log-type-explore { color: #10b981; }
-.log-type-collect { color: #8b5cf6; }
-.log-type-negotiate { color: #f97316; }
-.log-type-event { color: #ef4444; }
-.log-type-victory { color: #10b981; }
-.log-type-income { color: #22c55e; }
-
-/* --- Conquistas --- */
-.achievement {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: var(--spacing-sm);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
-  border-radius: var(--border-radius-md);
-  transition: all 0.2s ease;
-}
-
-.achievement:hover {
-  background: rgba(255, 255, 255, 0.03);
-}
-
-.achievement.unlocked {
-  opacity: 1;
-}
-
-.achievement.locked {
-  opacity: 0.5;
-  filter: grayscale(0.8);
-}
-
-.achievement-icon {
-  font-size: 1.5rem;
-}
-
-.achievement-info {
-  flex: 1;
-}
-
-.achievement-name {
-  font-weight: 600;
-  font-size: 0.875rem;
-}
-
-.achievement-description {
-  font-size: 0.75rem;
-  color: var(--color-text-muted);
-}
-
-/* --- Manual do Jogo --- */
-.manual-tab {
-  color: #cfcfcf;
-  background: transparent;
-  border: 1px solid transparent;
-  transition: all 0.2s ease;
-  width: 100%;
-  text-align: left;
-  padding: 8px 16px;
-  border-radius: var(--border-radius-md);
-  margin-bottom: 4px;
-  cursor: pointer;
-}
-
-.manual-tab:hover {
-  color: #fff;
-  background: rgba(255, 255, 255, 0.02);
-}
-
-.manual-tab.active {
-  color: var(--color-accent);
-  border-color: rgba(248, 214, 92, 0.12);
-  background: linear-gradient(180deg, rgba(248, 214, 92, 0.03), rgba(255, 255, 255, 0.01));
-}
-
-/* ============================================================================
-   7. ESTADOS & INTERAÇÕES
-   ============================================================================ */
-
-/* --- Estados de Botões --- */
-.btn-loading {
-  position: relative;
-  color: transparent !important;
-}
-
-.btn-loading::after {
-  content: "";
-  position: absolute;
-  width: 16px;
-  height: 16px;
-  top: 50%;
-  left: 50%;
-  margin-left: -8px;
-  margin-top: -8px;
-  border: 2px solid rgba(255, 255, 255, 0.3);
-  border-radius: 50%;
-  border-top-color: white;
-  animation: spinner 0.8s linear infinite;
-}
-
-/* --- Estados do Jogo --- */
-.game-state-modal-open #boardContainer,
-.game-state-modal-open .board-cell {
-  pointer-events: none !important;
-  opacity: 0.6;
-  filter: blur(1px);
-  transition: opacity 0.3s, filter 0.3s;
-}
-
-.current-player-turn {
-  animation: pulse 2s ease-in-out infinite;
-}
-
-/* --- Estados de IA --- */
-.ai-thinking {
-  animation: pulse 2s infinite;
-  border-color: #8b5cf6 !important;
-}
-
-.ai-difficulty-badge {
-  display: inline-block;
-  padding: 2px 6px;
-  border-radius: var(--border-radius-full);
-  font-size: 0.7rem;
-  font-weight: bold;
-}
-
-.ai-easy { background-color: var(--ai-easy); color: white; }
-.ai-medium { background-color: var(--ai-medium); color: white; }
-.ai-hard { background-color: var(--ai-hard); color: black; }
-.ai-master { background-color: var(--ai-master); color: white; }
-
-/* ============================================================================
-   8. ANIMAÇÕES & TRANSITIONS
-   ============================================================================ */
+/* ============================================
+   ANIMAÇÕES COMPLETAS - TODAS AS VERSÕES
+   ============================================ */
 
 @keyframes fadeIn {
   from { opacity: 0; }
@@ -1270,11 +172,6 @@ p {
   50% { opacity: 0.6; }
 }
 
-@keyframes pulseSlow {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.8; }
-}
-
 @keyframes regionPulse {
   0%, 100% {
     box-shadow: 
@@ -1293,17 +190,63 @@ p {
   100% { background-position: 200% 200%; }
 }
 
-@keyframes spinner {
-  from { transform: rotate(0deg); }
-  to { transform: rotate(360deg); }
+@keyframes eventPulse {
+  0%, 100% { opacity: 1; box-shadow: 0 0 15px rgba(255, 255, 255, 0.1); }
+  50% { opacity: 0.95; box-shadow: 0 0 20px rgba(255, 255, 255, 0.2); }
 }
 
-@keyframes bounce {
+@keyframes regionSelectedPulse {
+  0%, 100% {
+    box-shadow: 
+      0 0 20px rgba(248, 214, 92, 0.6),
+      0 0 40px rgba(248, 214, 92, 0.3),
+      inset 0 0 15px rgba(248, 214, 92, 0.2);
+  }
+  50% {
+    box-shadow: 
+      0 0 25px rgba(248, 214, 92, 0.8),
+      0 0 50px rgba(248, 214, 92, 0.4),
+      inset 0 0 20px rgba(248, 214, 92, 0.3);
+  }
+}
+
+@keyframes clickableBounce {
   0%, 100% { transform: translateY(0); }
   50% { transform: translateY(-5px); }
 }
 
-@keyframes modalAppear {
+@keyframes editingGlow {
+  0%, 100% { opacity: 0.5; }
+  50% { opacity: 1; }
+}
+
+@keyframes iconPulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.1); }
+}
+
+@keyframes shine {
+  0%, 100% { background-position: -200% 0; }
+  50% { background-position: 200% 0; }
+}
+
+@keyframes slideOutRight {
+  from {
+    transform: translateX(0);
+    opacity: 1;
+  }
+  to {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+}
+
+@keyframes pulseBorder {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(59, 130, 246, 0); }
+  50% { box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.5); }
+}
+
+@keyframes incomeModalAppear {
   from {
     opacity: 0;
     transform: translateY(-20px) scale(0.95);
@@ -1314,270 +257,1119 @@ p {
   }
 }
 
+@keyframes modalSlideIn {
+  from {
+    opacity: 0;
+    transform: translateY(-20px) scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes cellPulse {
+  0%, 100% {
+    opacity: 0.3;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.6;
+    transform: scale(1.02);
+  }
+}
+
+@keyframes actionPulse {
+  0%, 100% {
+    box-shadow: 
+      0 0 15px rgba(248, 214, 92, 0.4),
+      0 4px 12px rgba(248, 214, 92, 0.2);
+  }
+  50% {
+    box-shadow: 
+      0 0 25px rgba(248, 214, 92, 0.6),
+      0 8px 20px rgba(248, 214, 92, 0.3);
+  }
+}
+
+@keyframes glowPulse {
+  0%, 100% { filter: brightness(1); }
+  50% { filter: brightness(1.2); }
+}
+
+@keyframes achievementUnlock {
+  0% {
+    transform: scale(1);
+    box-shadow: 0 0 0 rgba(245, 158, 11, 0);
+  }
+  50% {
+    transform: scale(1.05);
+    box-shadow: 0 0 20px rgba(245, 158, 11, 0.5);
+  }
+  100% {
+    transform: scale(1);
+    box-shadow: 0 0 0 rgba(245, 158, 11, 0);
+  }
+}
+
+@keyframes factionSelected {
+  0% { box-shadow: 0 0 0 0 rgba(251, 191, 36, 0); }
+  50% { box-shadow: 0 0 0 8px rgba(251, 191, 36, 0.2); }
+  100% { box-shadow: 0 0 0 0 rgba(251, 191, 36, 0); }
+}
+
 /* Classes de animação */
 .animate-fade-in { animation: fadeIn 0.3s ease; }
-.animate-slide-in-right { animation: slideInRight 0.3s ease-out; }
+.animate-slide-in-right { animation: slideInRight 0.3s ease-out forwards; }
 .animate-slide-up { animation: slideUp 0.3s ease-out; }
-.animate-pulse { animation: pulse 2s ease-in-out infinite; }
-.animate-pulse-slow { animation: pulseSlow 3s ease-in-out infinite; }
-.animate-bounce { animation: bounce 2s infinite; }
-.animate-spin { animation: spinner 1s linear infinite; }
-.animate-modal { animation: modalAppear 0.3s ease-out; }
+.animate-pulse-slow { animation: pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite; }
+.animate-slide-out-right { animation: slideOutRight 0.3s ease-out forwards; }
+.animate-glow-pulse { animation: glowPulse 2s ease-in-out infinite; }
+.event-banner-pulse { animation: eventPulse 2s ease-in-out infinite; }
 
-/* ============================================================================
-   9. RESPONSIVIDADE
-   ============================================================================ */
+/* ============================================
+   TELA DE CADASTRO - PLAYER MODAL (HÍBRIDO)
+   ============================================ */
 
-/* --- Tablet (768px - 1023px) --- */
-@media (max-width: 1023px) {
-  #sidebar {
-    display: none;
-  }
-  
-  #gameContainer {
-    grid-template-columns: 1fr;
-    height: calc(100vh - 200px);
-    margin-top: 70px;
-    margin-bottom: 100px;
-  }
+.player-modal {
+  background: linear-gradient(180deg, rgba(12, 12, 12, 0.56), rgba(8, 8, 8, 0.45));
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  backdrop-filter: blur(12px) saturate(120%);
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.6);
+  z-index: 51;
+  position: relative;
 }
 
-/* --- Mobile (480px - 767px) --- */
-@media (max-width: 767px) {
-  :root {
-    --spacing-md: 0.75rem;
-    --spacing-lg: 1rem;
-  }
-  
-  #gameContainer {
-    height: calc(100vh - 220px);
-    margin-top: 60px;
-    margin-bottom: 120px;
-    padding: 0.5rem;
-    gap: 0.5rem;
-  }
-  
-  .board-cell {
-    padding: 4px;
-    min-height: 80px;
-  }
-  
-  .cell-name {
-    font-size: 10px;
-  }
-  
-  .cell-biome {
-    font-size: 8px;
-  }
-  
-  .resource-item {
-    font-size: 10px;
-    padding: 1px 4px;
-  }
-  
-  .action-btn {
-    padding: 6px 8px;
-    font-size: 13px;
-    min-height: 36px;
-  }
-  
-  #startGameBtn {
-    padding: 10px 16px;
-    font-size: 14px;
-  }
-  
-  /* Sidebar mobile */
-  #sidebar.mobile-open {
-    display: flex;
-    position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    z-index: var(--z-modal-overlay);
-    background: rgba(15, 23, 42, 0.98);
-    backdrop-filter: blur(20px);
-    max-height: 100vh;
-    padding: 1rem;
-    border-radius: 0;
-  }
-  
-  /* Footer mobile */
-  #gameFooter {
-    padding: 0.5rem;
-    max-height: 90px;
-  }
-  
-  #gameFooter .action-bar {
-    flex-direction: row;
-    gap: 0.5rem;
-    align-items: center;
-    justify-content: space-between;
-  }
-  
-  #gameFooter .action-buttons {
-    display: grid;
-    grid-template-columns: repeat(2, 1fr);
-    gap: 0.25rem;
-    width: 55%;
-  }
-  
-  #endTurnBtn {
-    width: 45%;
-    padding: 8px 12px;
-    font-size: 12px;
-    min-height: 36px;
-  }
-  
-  /* Tela de cadastro mobile */
-  #initialScreen {
-    align-items: flex-start;
-    padding: 10px;
-    overflow-y: auto;
-  }
-  
-  .player-modal {
-    width: 100%;
-    max-width: 100%;
-    border-radius: 12px;
-    padding: 15px;
-    margin: 10px 0 80px 0;
-  }
-  
-  #registeredPlayersList {
-    grid-template-columns: 1fr;
-    gap: 10px;
-    max-height: 300px;
-    overflow-y: auto;
-  }
+/* Inputs */
+input[type="text"], select, input[type="number"] {
+  background: rgba(31, 31, 31, 0.85);
+  color: #EEE;
+  border: 1px solid rgba(255, 255, 255, 0.04);
+  border-radius: 8px;
+  padding: 10px 12px;
+  font-size: 14px;
 }
 
-/* --- Mobile Pequeno (< 480px) --- */
-@media (max-width: 479px) {
-  #gameContainer {
-    height: calc(100vh - 240px);
-    margin-top: 50px;
-    margin-bottom: 140px;
-    padding: 0.25rem;
+input[type="text"]:focus, select:focus, input[type="number"]:focus {
+  outline: none;
+  border-color: #f8d65c;
+  box-shadow: 0 0 0 2px rgba(248, 214, 92, 0.2);
+}
+
+/* Estilos para os cartões de jogador */
+.player-card {
+  transition: all 0.2s ease;
+  position: relative;
+}
+
+.player-card-inner {
+  height: 100%;
+  transition: all 0.2s ease;
+}
+
+.player-card:hover:not(.empty) .player-card-inner {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+.player-card.editing .player-card-inner {
+  box-shadow: 0 0 0 2px #fbbf24, 0 4px 12px rgba(251, 191, 36, 0.3);
+  animation: pulse 1.5s infinite;
+}
+
+.player-card-icon {
+  position: relative;
+}
+
+.player-card-name {
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.8);
+}
+
+.player-card-actions {
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+
+.player-card:hover .player-card-actions {
+  opacity: 1;
+}
+
+.player-card-actions button {
+  padding: 4px 8px;
+  border-radius: 4px;
+  background: rgba(0, 0, 0, 0.5);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  transition: all 0.2s ease;
+}
+
+.player-card-actions button:hover {
+  background: rgba(0, 0, 0, 0.7);
+  transform: scale(1.1);
+}
+
+.player-card-edit:hover {
+  background: rgba(59, 130, 246, 0.5) !important;
+}
+
+.player-card-delete:hover {
+  background: rgba(239, 68, 68, 0.5) !important;
+}
+
+/* Layout responsivo */
+@media (max-width: 768px) {
+  .player-card {
+    min-height: 120px;
   }
   
-  .board-cell .text-xs {
-    font-size: 9px;
-  }
-  
-  .board-cell .text-\[10px\] {
-    font-size: 8px;
-  }
-  
-  .action-btn span:not(.icon) {
-    display: none;
-  }
-  
-  .action-btn {
-    font-size: 16px;
-    min-width: 44px;
-    padding: 8px;
-  }
-  
-  #endTurnBtn {
-    font-size: 11px;
-    padding: 6px 8px;
-  }
-  
-  #startGameBtn {
-    font-size: 14px;
+  .player-card-inner {
     padding: 12px 8px;
   }
-}
-
-/* ============================================================================
-   10. ACESSIBILIDADE & COMPATIBILIDADE
-   ============================================================================ */
-
-/* --- Redução de Movimento --- */
-@media (prefers-reduced-motion: reduce) {
-  *,
-  *::before,
-  *::after {
-    animation-duration: 0.01ms !important;
-    animation-iteration-count: 1 !important;
-    transition-duration: 0.01ms !important;
+  
+  .player-card-icon {
+    font-size: 24px;
+  }
+  
+  .player-card-name {
+    font-size: 12px;
+  }
+  
+  .player-card-faction {
+    font-size: 11px;
   }
 }
 
-/* --- Modo Contraste Alto --- */
-@media (prefers-contrast: high) {
-  :root {
-    --color-bg: #000000;
-    --color-text-primary: #ffffff;
-    --color-text-secondary: #cccccc;
-    --color-accent: #ffd700;
-  }
-  
-  .board-cell {
-    border: 2px solid var(--color-text-primary);
-  }
-  
-  .btn {
-    border: 2px solid currentColor;
-  }
+/* ============================================
+   SELEÇÃO DE ÍCONES (HÍBRIDO)
+   ============================================ */
+
+#iconSelection {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
 }
 
-/* --- Modo Claro do Sistema --- */
-@media (prefers-color-scheme: light) {
-  :root {
-    --color-bg: #f5f5f5;
-    --color-text-primary: #333333;
-    --color-text-secondary: #666666;
-    --color-text-muted: #999999;
-    --color-accent: #d4a017;
-    
-    --glass-bg: rgba(255, 255, 255, 0.8);
-    --glass-border: rgba(0, 0, 0, 0.1);
-    
-    --cell-bg: rgba(240, 240, 240, 0.8);
-    --cell-border: rgba(0, 0, 0, 0.1);
-    --cell-hover-bg: rgba(220, 220, 220, 0.9);
-  }
-  
-  body {
-    color: var(--color-text-primary);
-  }
-  
-  .board-cell.controlled {
-    background: rgba(var(--player-rgb-default), 0.2);
-  }
-  
-  .modal-content {
-    background: rgba(255, 255, 255, 0.98);
-    color: #333333;
-  }
+.icon-button {
+  min-width: 50px;
+  min-height: 50px;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.02);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.5rem;
+  cursor: pointer;
+  transition: .12s;
 }
 
-/* --- Emoji Support --- */
-.emoji-font {
-  font-family: 
-    "Segoe UI Emoji",
-    "Apple Color Emoji",
-    "Noto Color Emoji",
-    "Segoe UI Symbol",
-    "Twemoji Mozilla",
-    "EmojiSymbols",
-    sans-serif;
-  font-weight: normal;
-  font-style: normal;
-  display: inline-block;
-  line-height: 1;
-  vertical-align: -0.125em;
+.icon-button:hover {
+  transform: translateY(-4px);
+  background: rgba(255, 255, 255, 0.05);
 }
 
-.resource-item,
-.resource-value,
+.icon-button.selected {
+  border: 2px solid var(--accent);
+  background: rgba(248, 214, 92, 0.06);
+  transform: scale(1.06);
+  animation: iconPulse 1.5s infinite;
+}
+
+.icon-button.disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+  filter: grayscale(0.7);
+}
+
+/* ============================================
+   BOTÕES DE IA COMPACTOS (HÍBRIDO)
+   ============================================ */
+
+#aiButtonsContainer {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.ai-button-compact {
+  padding: 8px 12px;
+  border-radius: 10px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  border: 2px solid transparent;
+  white-space: nowrap;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.02), rgba(0, 0, 0, 0.18));
+  color: #fff;
+}
+
+.ai-button-compact:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+.ai-button-compact.easy {
+  background: linear-gradient(135deg, rgba(34, 197, 94, 0.2), rgba(22, 163, 74, 0.2));
+  color: #86efac;
+  border-color: rgba(34, 197, 94, 0.3);
+}
+
+.ai-button-compact.medium {
+  background: linear-gradient(135deg, rgba(59, 130, 246, 0.2), rgba(37, 99, 235, 0.2));
+  color: #93c5fd;
+  border-color: rgba(59, 130, 246, 0.3);
+}
+
+.ai-button-compact.hard {
+  background: linear-gradient(135deg, rgba(245, 158, 11, 0.2), rgba(217, 119, 6, 0.2));
+  color: #fde68a;
+  border-color: rgba(245, 158, 11, 0.3);
+}
+
+.ai-button-compact.master {
+  background: linear-gradient(135deg, rgba(239, 68, 68, 0.2), rgba(220, 38, 38, 0.2));
+  color: #fca5a5;
+  border-color: rgba(239, 68, 68, 0.3);
+}
+
+/* ============================================
+   DROPDOWN DE FACÇÕES (HÍBRIDO)
+   ============================================ */
+
+.faction-dropdown {
+  background-color: rgba(17, 24, 39, 0.9) !important;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%23fbbf24'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E") !important;
+  background-repeat: no-repeat !important;
+  background-position: right 12px center !important;
+  background-size: 16px !important;
+  cursor: pointer !important;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2) !important;
+  backdrop-filter: blur(8px) !important;
+  height: 48px !important;
+  border: 1px solid rgba(251, 191, 36, 0.3) !important;
+  border-radius: 12px !important;
+  padding: 12px 40px 12px 12px !important;
+  color: white !important;
+}
+
+.faction-dropdown:hover {
+  background-color: rgba(30, 41, 59, 0.95) !important;
+  border-color: rgba(251, 191, 36, 0.5) !important;
+  box-shadow: 0 6px 20px rgba(251, 191, 36, 0.15) !important;
+  transform: translateY(-1px) !important;
+}
+
+.faction-dropdown:focus {
+  background-color: rgba(30, 41, 59, 0.95) !important;
+  border-color: rgba(251, 191, 36, 0.7) !important;
+  box-shadow: 0 0 0 3px rgba(251, 191, 36, 0.2), 0 8px 25px rgba(0, 0, 0, 0.3) !important;
+  outline: none !important;
+}
+
+.faction-dropdown option {
+  background-color: rgba(17, 24, 39, 0.95) !important;
+  color: #f3f4f6 !important;
+  padding: 12px 16px !important;
+  font-size: 13px !important;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05) !important;
+  transition: all 0.2s ease !important;
+}
+
+.faction-dropdown option:checked {
+  background: linear-gradient(135deg, rgba(251, 191, 36, 0.2), rgba(245, 158, 11, 0.1)) !important;
+  color: #fbbf24 !important;
+  font-weight: 600 !important;
+}
+
+/* ============================================
+   LAYOUT DO JOGO (HÍBRIDO)
+   ============================================ */
+
+#gameContainer {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1rem;
+  height: calc(100vh - 180px);
+  margin-top: 80px;
+  margin-bottom: 80px;
+  padding: 0 1rem;
+  overflow: hidden;
+}
+
+/* Navbar */
+#gameNavbar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 40;
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(8px);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+/* Sidebar */
+#sidebar {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  max-height: calc(100vh - 200px);
+  overflow-y: auto;
+  background: rgba(31, 31, 31, 0.8);
+  backdrop-filter: blur(8px);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 10px;
+}
+
+/* Mapa */
+#gameMap {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  min-height: 400px;
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+  background: #000;
+}
+
+#mapViewport {
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  cursor: grab;
+  touch-action: none;
+  user-select: none;
+}
+
+#mapViewport:active {
+  cursor: grabbing;
+}
+
+/* Footer */
+#gameFooter {
+  position: fixed;
+  bottom: 16px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 45;
+  width: 100%;
+  max-width: 64rem;
+  padding: 0 1rem;
+  background: rgba(11, 13, 15, 0.95) !important;
+  backdrop-filter: blur(20px) saturate(180%) !important;
+  border: 1px solid rgba(255, 255, 255, 0.1) !important;
+  border-radius: 16px !important;
+  box-shadow: 
+    0 10px 40px rgba(0, 0, 0, 0.6),
+    0 0 0 1px rgba(255, 255, 255, 0.05) inset !important;
+}
+
+/* ============================================
+   CÉLULAS DO TABULEIRO - VERSÃO RESTAURADA COMPLETA
+   ============================================ */
+
+.board-cell {
+  position: relative;
+  border: 1px solid rgba(255, 255, 255, 0.08); /* VERSÃO ANTIGA */
+  background: rgba(15, 15, 15, var(--cell-bg-opacity)); /* VERSÃO ANTIGA */
+  backdrop-filter: blur(var(--cell-blur));
+  border-radius: 4px; /* VERSÃO ANTIGA */
+  transition: all 0.2s ease; /* VERSÃO ANTIGA */
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  padding: 6px; /* VERSÃO ANTIGA */
+  overflow: hidden;
+  cursor: pointer;
+  user-select: none;
+}
+
+/* Efeito de vidro fosco - VERSÃO ANTIGA */
+.board-cell::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    135deg,
+    rgba(255, 255, 255, 0.02) 0%,
+    rgba(255, 255, 255, 0.008) 100%
+  );
+  z-index: -1;
+  border-radius: 5px;
+}
+
+.board-cell:hover {
+  background: rgba(25, 25, 25, calc(var(--cell-bg-opacity) + 0.1)); /* VERSÃO ANTIGA */
+  border-color: rgba(255, 255, 255, 0.15);
+  transform: translateY(-1px);
+}
+
+/* Estados das células - RESTAURADOS DA VERSÃO ANTIGA */
+.board-cell.controlled {
+  border-left: 4px solid var(--player-color) !important;
+  background: rgba(var(--player-rgb), calc(var(--cell-bg-opacity) * 2)) !important;
+}
+
+.board-cell.controlled::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: linear-gradient(90deg, 
+    transparent 0%,
+    var(--player-color) 50%,
+    transparent 100%);
+  opacity: 0.4;
+}
+
+.board-cell.neutral {
+  border: 1px dashed rgba(255, 255, 255, 0.05) !important;
+  background: rgba(15, 15, 15, calc(var(--cell-bg-opacity) * 0.8)) !important;
+}
+
+/* Células selecionadas - VERSÃO ANTIGA */
+.board-cell.neutral.region-selected {
+  border: 2px solid var(--accent) !important;
+  background: rgba(15, 15, 15, var(--cell-bg-opacity)) !important;
+  box-shadow: 0 0 10px rgba(248, 214, 92, 0.3) !important;
+  transform: translateY(-1px) !important;
+  z-index: 10;
+}
+
+.board-cell.controlled.region-selected {
+  border: 2px solid var(--accent) !important;
+  background: rgba(var(--player-rgb), calc(var(--cell-bg-opacity) * 2)) !important;
+  box-shadow: 0 0 10px rgba(248, 214, 92, 0.3) !important;
+  transform: translateY(-1px) !important;
+  z-index: 10;
+}
+
+.board-cell.region-selected {
+  border: 2px solid var(--accent) !important;
+  background: rgba(248, 214, 92, calc(var(--cell-bg-opacity) * 3)) !important;
+  box-shadow: 0 0 10px rgba(248, 214, 92, 0.3) !important;
+  transform: translateY(-1px) !important;
+  z-index: 10;
+  animation: regionSelectedPulse 2s infinite !important;
+}
+
+/* Efeito de pulso da nova versão */
+.board-cell.controlled::after {
+  opacity: 1;
+  background: radial-gradient(
+    circle at center,
+    rgba(var(--player-rgb), 0.15) 0%,
+    transparent 70%
+  );
+  animation: cellPulse 3s ease-in-out infinite;
+}
+
+.board-cell.player-owned {
+  border-left-width: 6px !important;
+  border-left-color: var(--accent) !important;
+  background: rgba(248, 214, 92, calc(var(--cell-bg-opacity) * 3)) !important;
+  box-shadow: 0 8px 25px rgba(248, 214, 92, 0.25) !important;
+}
+
+.board-cell.action-available {
+  position: relative;
+  border: 2px solid rgba(248, 214, 92, 0.6) !important;
+  box-shadow: 
+    0 0 20px rgba(248, 214, 92, 0.3),
+    0 4px 15px rgba(248, 214, 92, 0.2) !important;
+  animation: actionPulse 1.5s infinite !important;
+}
+
+/* Efeito shimmer - VERSÃO ANTIGA */
+.board-cell.action-available::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  border-radius: 4px;
+  background: linear-gradient(
+    45deg,
+    transparent 30%,
+    rgba(255, 255, 255, 0.05) 50%,
+    transparent 70%
+  );
+  background-size: 200% 200%;
+  animation: shimmer 3s infinite;
+  pointer-events: none;
+}
+
+/* Contador de ações - VERSÃO ANTIGA */
+.board-cell .action-counter {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  background: rgba(0, 0, 0, 0.7);
+  color: var(--text-primary);
+  font-size: 10px;
+  padding: 2px 6px;
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  font-weight: bold;
+}
+
+/* Outros estados - VERSÃO ANTIGA */
+.board-cell.neutral-available {
+  border: 2px dashed rgba(255, 255, 255, 0.4) !important;
+  background: rgba(255, 255, 255, 0.05) !important;
+}
+
+/* Indicador de clique - VERSÃO ANTIGA */
+.board-cell.clickable::after {
+  content: '👆';
+  position: absolute;
+  top: -8px;
+  right: -8px;
+  font-size: 12px;
+  background: rgba(0, 0, 0, 0.7);
+  border-radius: 50%;
+  width: 20px;
+  height: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  animation: clickableBounce 2s infinite;
+}
+
+/* Estilos de texto RESTAURADOS DA VERSÃO ANTIGA */
 .board-cell .text-xs {
-  composes: emoji-font;
+  font-size: 11px;
+  line-height: 1.3;
+  font-weight: 700;
+  color: #ffffff;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.8);
 }
 
-/* --- Scrollbar Personalizada --- */
+.board-cell .text-\[10px\] {
+  font-size: 10px;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.95);
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.7);
+}
+
+/* Elementos da Célula RESTAURADOS */
+.board-cell .biome-indicator {
+  font-size: 9px;
+  padding: 2px 6px;
+  border-radius: 10px;
+  background: rgba(0, 0, 0, 0.5) !important;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: rgba(255, 255, 255, 0.95) !important;
+  display: inline-block;
+  margin-top: 2px;
+}
+
+.board-cell .resource-item {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  font-size: 12px;
+  padding: 2px 6px;
+  border-radius: 4px;
+  background: rgba(0, 0, 0, 0.45) !important;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.board-cell .resource-value {
+  font-weight: 800;
+  color: #ffffff !important;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.7);
+}
+
+.board-cell .cell-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 8px;
+  padding-top: 6px;
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.board-cell .controller-info {
+  font-size: 10px;
+  font-weight: 700;
+  color: rgba(255, 255, 255, 0.98) !important;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.8);
+  padding: 2px 6px;
+  border-radius: 4px;
+  background: rgba(0, 0, 0, 0.5);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.board-cell .structure-display {
+  display: flex;
+  gap: 2px;
+  font-size: 14px;
+  filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.5));
+}
+
+/* ============================================
+   MODAIS COMPLETOS (HÍBRIDO)
+   ============================================ */
+
+.modal-content-container {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.modal-content-container > .relative {
+  background: rgba(17, 24, 39, 0.98) !important;
+  backdrop-filter: blur(25px) saturate(180%) !important;
+  border: 1px solid rgba(255, 255, 255, 0.15) !important;
+  border-radius: 1rem;
+  box-shadow: 
+    0 25px 50px -12px rgba(0, 0, 0, 0.5),
+    inset 0 1px 0 rgba(255, 255, 255, 0.1) !important;
+  max-width: 90%;
+  max-height: 90vh;
+  overflow-y: auto;
+  animation: modalSlideIn 0.3s ease-out;
+}
+
+/* Títulos e Textos dos Modais */
+.modal-content-container h2, 
+.modal-content-container h3, 
+.modal-content-container h4 {
+  color: #fbbf24 !important;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.7) !important;
+  font-weight: 700 !important;
+  letter-spacing: 0.3px !important;
+}
+
+.modal-content-container p, 
+.modal-content-container span:not(.icon), 
+.modal-content-container div:not(.icon) {
+  color: rgba(255, 255, 255, 0.95) !important;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.7) !important;
+  font-weight: 500 !important;
+}
+
+/* Inputs em Modais */
+.modal-content-container input,
+.modal-content-container select,
+.modal-content-container textarea {
+  background: rgba(30, 41, 59, 0.9) !important;
+  color: var(--text-primary) !important;
+  border: 1px solid rgba(255, 255, 255, 0.2) !important;
+  font-weight: 500 !important;
+}
+
+.modal-content-container input:focus, 
+.modal-content-container select:focus, 
+.modal-content-container textarea:focus {
+  outline: none;
+  border-color: var(--accent) !important;
+  box-shadow: 0 0 0 2px rgba(248, 214, 92, 0.2) !important;
+}
+
+/* Modal de Negociação */
+#negotiationModal .negotiation-section {
+  transition: all 0.2s ease;
+  backdrop-filter: blur(4px);
+  padding: 1rem;
+  border-radius: 0.5rem;
+  margin-bottom: 1rem;
+}
+
+#negotiationModal .negotiation-section:hover {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  transform: translateY(-2px);
+}
+
+#negotiationModal .negotiation-section:first-child {
+  background: linear-gradient(135deg, rgba(34, 197, 94, 0.1), rgba(22, 163, 74, 0.1));
+}
+
+#negotiationModal .negotiation-section:last-child {
+  background: linear-gradient(135deg, rgba(239, 68, 68, 0.1), rgba(220, 38, 38, 0.1));
+}
+
+/* Modal de Estruturas */
+#structureModal .structure-option {
+  transition: all 0.2s ease;
+  border-width: 2px;
+  padding: 1rem;
+  border-radius: 0.5rem;
+  cursor: pointer;
+}
+
+#structureModal .structure-option:hover:not(.opacity-50) {
+  transform: translateY(-4px);
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
+}
+
+/* Cores das estruturas */
+.bg-orange-500\/30 { background-color: rgba(249, 115, 22, 0.3); }
+.border-orange-500\/30 { border-color: rgba(249, 115, 22, 0.3); }
+.bg-blue-500\/30 { background-color: rgba(59, 130, 246, 0.3); }
+.border-blue-500\/30 { border-color: rgba(59, 130, 246, 0.3); }
+.bg-yellow-500\/30 { background-color: rgba(234, 179, 8, 0.3); }
+.border-yellow-500\/30 { border-color: rgba(234, 179, 8, 0.3); }
+.bg-purple-500\/30 { background-color: rgba(168, 85, 247, 0.3); }
+.border-purple-500\/30 { border-color: rgba(168, 85, 247, 0.3); }
+.bg-green-500\/30 { background-color: rgba(34, 197, 94, 0.3); }
+.border-green-500\/30 { border-color: rgba(34, 197, 94, 0.3); }
+
+/* ============================================
+   TOOLTIP (HÍBRIDO)
+   ============================================ */
+
+#regionTooltip {
+  position: fixed !important;
+  z-index: 90;
+  pointer-events: none;
+  transition: opacity 0.15s ease, transform 0.15s ease;
+  transform-origin: center bottom;
+  max-width: 300px;
+  min-width: 200px;
+  background: rgba(31, 41, 55, 0.95);
+  backdrop-filter: blur(8px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 0.5rem;
+  padding: 0.75rem;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
+}
+
+#regionTooltip.visible {
+  opacity: 1;
+  transform: translateY(0) scale(1);
+}
+
+#regionTooltip.hidden {
+  opacity: 0;
+  transform: translateY(10px) scale(0.95);
+  pointer-events: none;
+}
+
+.tooltip-section {
+  margin-bottom: 0.5rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.tooltip-section:last-child {
+  margin-bottom: 0;
+  padding-bottom: 0;
+  border-bottom: none;
+}
+
+/* ============================================
+   BANNER DE EVENTO (HÍBRIDO)
+   ============================================ */
+
+#eventBanner {
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(8px);
+  border-width: 2px;
+  border-style: solid;
+  margin-bottom: 12px;
+  padding: 10px;
+  border-radius: 0.5rem;
+}
+
+#eventBanner.animate-pulse-slow {
+  animation: eventPulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+#eventBanner.event-positive {
+  background: linear-gradient(135deg, rgba(34, 197, 94, 0.25), rgba(22, 163, 74, 0.25));
+  border-color: rgba(34, 197, 94, 0.7);
+  box-shadow: 0 0 15px rgba(34, 197, 94, 0.2);
+}
+
+#eventBanner.event-negative {
+  background: linear-gradient(135deg, rgba(239, 68, 68, 0.25), rgba(220, 38, 38, 0.25));
+  border-color: rgba(239, 68, 68, 0.7);
+  box-shadow: 0 0 15px rgba(239, 68, 68, 0.2);
+}
+
+#eventBanner.event-mixed {
+  background: linear-gradient(135deg, rgba(168, 85, 247, 0.25), rgba(147, 51, 234, 0.25));
+  border-color: rgba(168, 85, 247, 0.7);
+  box-shadow: 0 0 15px rgba(168, 85, 247, 0.2);
+}
+
+#eventBanner.event-neutral {
+  background: linear-gradient(135deg, rgba(251, 191, 36, 0.25), rgba(245, 158, 11, 0.25));
+  border-color: rgba(251, 191, 36, 0.7);
+  box-shadow: 0 0 15px rgba(251, 191, 36, 0.2);
+}
+
+/* Texto do banner */
+#eventBanner #eventBannerTitle {
+  color: #ffffff !important;
+  font-weight: 700 !important;
+  font-size: 13px !important;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.8) !important;
+}
+
+#eventBanner #eventBannerEffect {
+  color: rgba(255, 255, 255, 0.95) !important;
+  font-weight: 500 !important;
+  font-size: 11px !important;
+}
+
+#eventBanner #eventBannerTurns {
+  background: rgba(0, 0, 0, 0.6) !important;
+  color: #ffffff !important;
+  font-weight: 600 !important;
+}
+
+/* ============================================
+   CONTROLE DE TRANSPARÊNCIA (HÍBRIDO)
+   ============================================ */
+
+.transparency-control {
+  transition: all 0.3s ease;
+  position: relative;
+  padding: 0.75rem;
+  background: rgba(55, 65, 81, 0.3);
+  border-radius: 0.5rem;
+  border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.transparency-control:hover {
+  background: rgba(55, 65, 81, 0.5) !important;
+  border-color: rgba(255, 255, 255, 0.1) !important;
+}
+
+.transparency-slider {
+  -webkit-appearance: none;
+  width: 100%;
+  height: 6px;
+  border-radius: 3px;
+  background: linear-gradient(90deg, 
+    rgba(255, 255, 255, 0.05) 0%, 
+    rgba(255, 255, 255, 0.2) 50%, 
+    rgba(255, 255, 255, 0.05) 100%
+  );
+  outline: none;
+  transition: all 0.2s ease;
+}
+
+.transparency-slider:hover {
+  background: linear-gradient(90deg, 
+    rgba(255, 255, 255, 0.1) 0%, 
+    rgba(255, 255, 255, 0.3) 50%, 
+    rgba(255, 255, 255, 0.1) 100%
+  );
+}
+
+.transparency-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: var(--accent);
+  cursor: pointer;
+  border: 2px solid rgba(0, 0, 0, 0.3);
+  box-shadow: 0 2px 8px rgba(248, 214, 92, 0.3);
+  transition: all 0.2s ease;
+}
+
+.transparency-slider::-webkit-slider-thumb:hover {
+  transform: scale(1.1);
+  box-shadow: 0 3px 12px rgba(248, 214, 92, 0.5);
+}
+
+.transparency-slider::-moz-range-thumb {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: var(--accent);
+  cursor: pointer;
+  border: 2px solid rgba(0, 0, 0, 0.3);
+  box-shadow: 0 2px 8px rgba(248, 214, 92, 0.3);
+  transition: all 0.2s ease;
+}
+
+/* ============================================
+   LOG DE ATIVIDADES (HÍBRIDO)
+   ============================================ */
+
+.log-entry {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.log-entry:last-child {
+  border-bottom: none;
+}
+
+.log-filter-sidebar {
+  transition: all 0.2s ease;
+  border: 1px solid transparent;
+  cursor: pointer;
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 10px;
+}
+
+.log-filter-sidebar:hover {
+  background: rgba(255, 255, 255, 0.1) !important;
+}
+
+.log-filter-sidebar.active {
+  background: rgba(59, 130, 246, 0.2) !important;
+  border-color: rgba(59, 130, 246, 0.4) !important;
+  color: #60a5fa !important;
+}
+
+/* Cores dos tipos de log */
+.log-type-action { color: #60a5fa; }
+.log-type-build { color: #f59e0b; }
+.log-type-explore { color: #10b981; }
+.log-type-collect { color: #8b5cf6; }
+.log-type-negotiate { color: #f97316; }
+.log-type-event { color: #ef4444; }
+.log-type-victory { color: #10b981; }
+.log-type-income { color: #22c55e; }
+
+/* ============================================
+   CONQUISTAS (HÍBRIDO)
+   ============================================ */
+
+.achievement {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  border-radius: 6px;
+  transition: all 0.2s ease;
+}
+
+.achievement:hover {
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.achievement-unlocked {
+  opacity: 1;
+  animation: achievementUnlock 0.5s ease-out;
+}
+
+.achievement-locked {
+  opacity: 0.5;
+  filter: grayscale(0.8);
+}
+
+/* ============================================
+   ESTILOS PARA IA (HÍBRIDO)
+   ============================================ */
+
+.ai-thinking {
+  animation: pulse 2s infinite;
+  border-color: #8b5cf6 !important;
+}
+
+.ai-difficulty-badge {
+  display: inline-block;
+  padding: 2px 6px;
+  border-radius: 10px;
+  font-size: 0.7rem;
+  font-weight: bold;
+  margin-left: 4px;
+}
+
+.ai-easy { background-color: var(--ai-easy-color); color: white; }
+.ai-medium { background-color: var(--ai-medium-color); color: white; }
+.ai-hard { background-color: var(--ai-hard-color); color: black; }
+.ai-master { background-color: var(--ai-master-color); color: white; }
+
+/* ============================================
+   MANUAL - IMAGENS (HÍBRIDO)
+   ============================================ */
+
+.manual-content img {
+  display: block;
+  margin: 2rem auto;
+  background-color: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+  outline: none !important;
+  border-radius: 0 !important;
+  -webkit-clip-path: inset(2px round 12px);
+  clip-path: inset(2px round 12px);
+  filter: drop-shadow(0 15px 25px rgba(0, 0, 0, 0.7));
+  transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1), filter 0.3s ease;
+}
+
+.manual-content img:hover {
+  transform: scale(1.03) translateY(-5px);
+  filter: drop-shadow(0 20px 35px rgba(0, 0, 0, 0.85));
+  z-index: 10;
+}
+
+/* ============================================
+   MANUAL - FILTRO DE EVENTOS (HÍBRIDO)
+   ============================================ */
+
+.event-filter-btn {
+  transition: all 0.3s ease;
+  border: 1px solid transparent;
+}
+
+.event-filter-btn.active {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.4);
+  border-color: rgba(59, 130, 246, 0.5);
+}
+
+.event-card {
+  transition: all 0.4s ease;
+  animation: fadeIn 0.5s ease forwards;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.event-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
+}
+
+/* Estilos específicos para cada categoria */
+.category-positive {
+  border-left: 4px solid #10b981;
+}
+
+.category-negative {
+  border-left: 4px solid #ef4444;
+}
+
+.category-mixed {
+  border-left: 4px solid #f59e0b;
+}
+
+/* ============================================
+   SCROLLBAR PERSONALIZADA (HÍBRIDO)
+   ============================================ */
+
 .custom-scrollbar {
   scrollbar-width: thin;
   scrollbar-color: rgba(251, 191, 36, 0.5) rgba(30, 41, 59, 0.3);
@@ -1602,68 +1394,10 @@ p {
   background: rgba(251, 191, 36, 0.7);
 }
 
-/* --- Touch Optimizations --- */
-@media (hover: none) and (pointer: coarse) {
-  .board-cell {
-    -webkit-tap-highlight-color: transparent;
-    touch-action: manipulation;
-  }
-  
-  .btn,
-  .action-btn,
-  .icon-button {
-    min-height: 44px;
-    min-width: 44px;
-  }
-  
-  .player-card-actions {
-    opacity: 1;
-  }
-}
+/* ============================================
+   VÍDEO DE ABERTURA (HÍBRIDO)
+   ============================================ */
 
-/* ============================================================================
-   11. CORREÇÕES ESPECÍFICAS & HACKS
-   ============================================================================ */
-
-/* --- Corrigir fundo de modais específicos --- */
-#negResponseModal .modal-content,
-#negotiationModal .modal-content,
-#alertModal .modal-content,
-#eventModal .modal-content {
-  background-color: rgb(17, 24, 39) !important;
-  border: 1px solid rgba(255, 255, 255, 0.15) !important;
-}
-
-/* --- Remover backdrop-filter duplicado --- */
-#negotiationModal > .modal-content,
-#negResponseModal > .modal-content,
-#aiDebugPanel {
-  backdrop-filter: none !important;
-  background: rgba(30, 41, 59, 0.95) !important;
-}
-
-/* --- Garantir que elementos móveis apareçam corretamente --- */
-#gaia-mobile-overlay,
-#gaia-mobile-sheet,
-#gaia-mobile-menu,
-#gaia-mobile-action-bar {
-  display: none;
-}
-
-@media (max-width: 768px) {
-  #gaia-mobile-overlay,
-  #gaia-mobile-sheet,
-  #gaia-mobile-menu,
-  #gaia-mobile-action-bar {
-    display: block;
-  }
-  
-  #gameFooter {
-    display: none !important;
-  }
-}
-
-/* --- Correção para vídeo de abertura --- */
 #introVideo {
   position: fixed;
   top: 0;
@@ -1681,7 +1415,585 @@ p {
   pointer-events: none;
 }
 
-/* --- Ícone do Manual Flutuante --- */
+/* ============================================
+   BOTÕES DE AÇÃO (HÍBRIDO) - CORREÇÕES CRÍTICAS
+   ============================================ */
+
+/* ESTILOS PARA BOTÃO START GAME - CORREÇÃO CRÍTICA */
+#startGameBtn {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+  position: relative !important;
+  overflow: hidden !important;
+}
+
+#startGameBtn:disabled {
+  opacity: 0.6 !important;
+  cursor: not-allowed !important;
+  background: linear-gradient(135deg, #4b5563, #374151) !important;
+  border-color: rgba(255, 255, 255, 0.1) !important;
+  transform: none !important;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2) !important;
+}
+
+#startGameBtn:disabled:hover {
+  transform: none !important;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2) !important;
+  background: linear-gradient(135deg, #4b5563, #374151) !important;
+}
+
+#startGameBtn:not(:disabled):hover {
+  transform: translateY(-2px) scale(1.02) !important;
+  box-shadow: 0 8px 25px rgba(37, 99, 235, 0.4) !important;
+}
+
+/* ESTILOS PARA BOTÕES DE AÇÃO PRINCIPAIS */
+.action-btn {
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.02), rgba(0, 0, 0, 0.18));
+  color: #fff;
+  padding: 8px 12px;
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.04);
+  font-weight: 500;
+  transition: all 0.2s ease;
+  cursor: pointer;
+}
+
+.action-btn:hover:not(:disabled) {
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.05), rgba(0, 0, 0, 0.25));
+  border-color: rgba(255, 255, 255, 0.1);
+  transform: translateY(-1px);
+}
+
+.action-btn:disabled {
+  opacity: 0.45 !important;
+  cursor: not-allowed !important;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.01), rgba(0, 0, 0, 0.1)) !important;
+  border-color: rgba(255, 255, 255, 0.04) !important;
+  transform: none !important;
+  box-shadow: none !important;
+}
+
+/* Botão Terminar Turno */
+#endTurnBtn {
+  transition: all 0.3s ease;
+  font-weight: bold;
+}
+
+#endTurnBtn:disabled {
+  opacity: 0.6 !important;
+  cursor: not-allowed !important;
+  background: linear-gradient(135deg, #6b7280, #4b5563) !important;
+  border-color: rgba(255, 255, 255, 0.1) !important;
+  transform: none !important;
+}
+
+#endTurnBtn:not(:disabled):hover {
+  transform: translateY(-2px);
+}
+
+/* Botão de Negociação */
+#negSendBtn:disabled {
+  opacity: 0.5 !important;
+  cursor: not-allowed !important;
+  background: linear-gradient(135deg, #4b5563, #374151) !important;
+  border-color: rgba(255, 255, 255, 0.1) !important;
+}
+
+/* Botões de IA quando desabilitados */
+.ai-button-compact:disabled {
+  opacity: 0.4 !important;
+  cursor: not-allowed !important;
+  filter: grayscale(0.7) !important;
+  transform: none !important;
+  box-shadow: none !important;
+}
+
+/* ============================================
+   RESPONSIVIDADE COMPLETA (HÍBRIDO)
+   ============================================ */
+
+/* Desktop Grande */
+@media (min-width: 1024px) {
+  #gameContainer {
+    grid-template-columns: 320px 1fr;
+    height: calc(100vh - 160px);
+  }
+}
+
+/* Tablet */
+@media (max-width: 1024px) {
+  #sidebar {
+    display: none;
+  }
+  
+  #gameContainer {
+    grid-template-columns: 1fr;
+    height: calc(100vh - 200px);
+    margin-top: 70px;
+    margin-bottom: 100px;
+  }
+}
+
+/* Mobile Médio */
+@media (max-width: 768px) {
+  #gameContainer {
+    height: calc(100vh - 220px);
+    margin-top: 60px;
+    margin-bottom: 120px;
+    padding: 0.5rem;
+  }
+  
+  .board-cell {
+    padding: 6px;
+  }
+  
+  .action-btn {
+    padding: 6px 8px;
+    font-size: 13px;
+  }
+  
+  /* Ajustes específicos para botões em mobile */
+  #startGameBtn:disabled {
+    opacity: 0.7 !important;
+  }
+  
+  .action-btn:disabled {
+    opacity: 0.5 !important;
+  }
+}
+
+/* Mobile Pequeno */
+@media (max-width: 480px) {
+  #gameContainer {
+    height: calc(100vh - 240px);
+    margin-top: 50px;
+    margin-bottom: 140px;
+    padding: 0.25rem;
+  }
+  
+  .board-cell {
+    padding: 4px;
+  }
+  
+  .board-cell .text-xs {
+    font-size: 10px;
+  }
+  
+  .board-cell .text-\[10px\] {
+    font-size: 9px;
+  }
+}
+
+/* ============================================
+   MOBILE ESPECÍFICO (HÍBRIDO)
+   ============================================ */
+
+@media (max-width: 768px) {
+  /* Reset de altura para mobile */
+  html, body {
+    height: auto;
+    min-height: 100vh;
+    overflow-y: auto;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  /* Layout principal em coluna única */
+  #gameContainer {
+    grid-template-columns: 1fr !important;
+    height: auto;
+    margin: 60px 0 120px 0 !important;
+    padding: 0.5rem;
+    gap: 0.5rem;
+  }
+
+  /* Sidebar oculta por padrão, acessível via botão */
+  #sidebar {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 999;
+    background: rgba(15, 23, 42, 0.98);
+    backdrop-filter: blur(20px);
+    max-height: 100vh;
+    padding: 1rem;
+    overflow-y: auto;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 0;
+  }
+
+  #sidebar.active {
+    display: flex;
+    animation: slideInRight 0.3s ease-out;
+  }
+
+  /* Botão de toggle para sidebar */
+  .sidebar-toggle {
+    position: fixed;
+    bottom: 140px;
+    right: 15px;
+    z-index: 1000;
+    width: 52px;
+    height: 52px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #3b82f6, #1d4ed8);
+    border: 2px solid rgba(255, 255, 255, 0.3);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 24px;
+    color: white;
+    box-shadow: 0 4px 20px rgba(59, 130, 246, 0.4);
+    cursor: pointer;
+    transition: all 0.3s ease;
+  }
+
+  .sidebar-toggle:hover {
+    transform: scale(1.1);
+    box-shadow: 0 6px 25px rgba(59, 130, 246, 0.6);
+  }
+
+  /* Ajustes no mapa */
+  #gameMap {
+    min-height: 70vh;
+    border-radius: 12px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+  }
+
+  /* Controles de zoom para mobile */
+  .mobile-zoom-controls {
+    position: absolute;
+    bottom: 15px;
+    right: 15px;
+    z-index: 100;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .mobile-zoom-controls button {
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    background: rgba(0, 0, 0, 0.7);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    color: white;
+    font-size: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.2s ease;
+  }
+
+  .mobile-zoom-controls button:hover {
+    background: rgba(0, 0, 0, 0.9);
+    transform: scale(1.1);
+  }
+
+  /* Game Footer Mobile */
+  #gameFooter {
+    padding: 0.5rem !important;
+    min-height: auto !important;
+    max-height: 90px !important;
+  }
+
+  #gameFooter .flex {
+    flex-direction: row !important;
+    gap: 0.5rem !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+  }
+
+  #gameFooter .flex > div:first-child {
+    display: grid !important;
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: 0.25rem !important;
+    width: 55% !important;
+  }
+
+  .action-btn {
+    padding: 6px 4px !important;
+    font-size: 11px !important;
+    min-height: 36px !important;
+    border-radius: 6px !important;
+    margin: 0 !important;
+  }
+
+  #endTurnBtn {
+    padding: 8px 12px !important;
+    font-size: 12px !important;
+    min-height: 36px !important;
+    width: 45% !important;
+    margin: 0 !important;
+  }
+
+  #actionsLeft {
+    display: none !important;
+  }
+
+  /* Botões muito pequenos */
+  @media (max-width: 360px) {
+    .action-btn span:not(.icon) {
+      display: none !important;
+    }
+    
+    .action-btn {
+      font-size: 16px !important;
+      min-width: 44px !important;
+      padding: 8px !important;
+    }
+    
+    #endTurnBtn {
+      font-size: 11px !important;
+      padding: 6px 8px !important;
+    }
+    
+    #startGameBtn {
+      font-size: 14px !important;
+      padding: 12px 8px !important;
+    }
+  }
+
+  /* Estado desabilitado melhorado para mobile */
+  .action-btn:disabled,
+  #startGameBtn:disabled,
+  #endTurnBtn:disabled {
+    opacity: 0.5 !important;
+    transform: scale(0.95) !important;
+  }
+}
+
+/* ============================================
+   EFEITOS DE EDIÇÃO (RESTAURADOS DA VERSÃO ANTIGA)
+   ============================================ */
+
+.editing-mode {
+  animation: pulseBorder 2s infinite;
+}
+
+.player-card.editing::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: linear-gradient(90deg, #3b82f6, #8b5cf6);
+  animation: editingGlow 2s infinite;
+}
+
+.player-actions {
+  transition: opacity 0.2s ease;
+}
+
+.player-actions button {
+  transition: all 0.2s ease;
+}
+
+.player-actions button:hover {
+  transform: scale(1.1);
+}
+
+/* Botão de adição/edição dinâmico */
+#addPlayerBtn.bg-green-600 {
+  background-color: #059669;
+}
+
+#addPlayerBtn.bg-blue-600 {
+  background-color: #2563eb;
+}
+
+#addPlayerBtn.bg-green-600:hover {
+  background-color: #047857;
+}
+
+#addPlayerBtn.bg-blue-600:hover {
+  background-color: #1d4ed8;
+}
+
+/* Botão cancelar edição */
+#cancelEditBtn {
+  transition: all 0.2s ease;
+}
+
+#cancelEditBtn:hover {
+  background-color: #4b5563 !important;
+  border-color: rgba(255, 255, 255, 0.2) !important;
+}
+
+/* Modal de save/load */
+#saveLoadModal .relative {
+  animation: modalSlideIn 0.3s ease-out;
+}
+
+#saveLoadYesBtn {
+  background: linear-gradient(135deg, #059669, #047857);
+}
+
+#saveLoadNoBtn {
+  background: rgba(55, 65, 81, 0.8);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+#saveLoadDeleteBtn:hover {
+  color: #ef4444;
+}
+
+/* Indicador visual para edição em andamento */
+.editing-mode .player-name-input {
+  border-color: #3b82f6 !important;
+  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2);
+}
+
+/* ============================================
+   BADGES (RESTAURADOS)
+   ============================================ */
+
+.badge {
+  display: inline-block;
+  padding: 4px 8px;
+  border-radius: 999px;
+  font-size: 12px;
+  background: rgba(255,255,255,0.03);
+  color: #fff;
+  font-weight: 500;
+}
+
+.current-turn-badge {
+  animation: pulse 2s ease-in-out infinite;
+}
+
+/* ============================================
+   EMOJIS COMPATÍVEIS EM TODOS OS DISPOSITIVOS
+   ============================================ */
+
+/* Remover toda a seção antiga de emojis e substituir por: */
+
+.emoji-font {
+  font-family: 
+    /* Windows + Android */
+    "Segoe UI Emoji",
+    /* macOS + iOS */
+    "Apple Color Emoji",
+    /* Linux */
+    "Noto Color Emoji",
+    /* Fallback universal */
+    "Segoe UI Symbol",
+    /* Web-optimized */
+    "Twemoji Mozilla",
+    /* Emoji fallback */
+    "EmojiSymbols",
+    /* Sistema */
+    sans-serif;
+  font-weight: normal;
+  font-style: normal;
+  display: inline-block;
+  line-height: 1;
+  vertical-align: -0.125em;
+}
+
+/* Aplicar a todos os elementos que usam emojis */
+.resource-item,
+.resource-value,
+.board-cell .text-xs,
+.board-cell .text-\[10px\],
+#offerResourcesInfo,
+#requestResourcesInfo {
+  composes: emoji-font;
+}
+
+/* Fallback visual para quando o emoji não carrega */
+.emoji-fallback {
+  display: inline-block;
+  width: 1.2em;
+  height: 1.2em;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 3px;
+  text-align: center;
+  font-size: 0.8em;
+  line-height: 1.4em;
+}
+
+/* ============================================
+   MANUAL - TABS (HÍBRIDO)
+   ============================================ */
+
+.manual-tab {
+  color: #cfcfcf;
+  background: transparent;
+  border: 1px solid transparent;
+  transition: all 0.2s ease;
+  width: 100%;
+  text-align: left;
+  padding: 8px 16px;
+  border-radius: 6px;
+  margin-bottom: 4px;
+  cursor: pointer;
+}
+
+.manual-tab:hover {
+  color: #fff;
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.manual-tab.active {
+  color: var(--accent);
+  border-color: rgba(248, 214, 92, 0.12);
+  background: linear-gradient(180deg, rgba(248, 214, 92, 0.03), rgba(255, 255, 255, 0.01));
+}
+
+/* ============================================
+   ACESSIBILIDADE E MODOS DE COR
+   ============================================ */
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* Modo Claro do Sistema */
+@media (prefers-color-scheme: light) {
+  body {
+    background-color: #f5f5f5;
+    color: #333;
+  }
+  
+  .board-cell {
+    background: rgba(30, 30, 30, 0.8);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+  }
+  
+  .board-cell.controlled {
+    background: rgba(var(--player-rgb), 0.3) !important;
+    border-left: 6px solid var(--player-color);
+  }
+  
+  .board-cell.neutral {
+    border-color: rgba(255,255,255,0.3);
+  }
+  
+  .board-cell:hover::before {
+    opacity: 0.8;
+  }
+  
+  .board-cell.region-selected::before {
+    opacity: 0.65;
+    filter: saturate(1.05) contrast(1.02);
+  }
+}
+
+/* ============================================
+   MANUAL ICON (FLUTUANTE)
+   ============================================ */
+
 #manualIcon {
   position: fixed !important;
   top: 20px !important;
@@ -1709,6 +2021,272 @@ p {
   color: #f8d65c;
 }
 
-/* ============================================================================
-   FIM DO ARQUIVO CSS
-   ============================================================================ */
+/* ============================================
+   ESTILOS ADICIONAIS PARA MODAIS DE EVENTO
+   ============================================ */
+
+#eventModal .relative.event-positive {
+  background: linear-gradient(135deg, rgba(34, 197, 94, 0.15), rgba(22, 163, 74, 0.15)) !important;
+  border-color: rgba(34, 197, 94, 0.4) !important;
+  backdrop-filter: blur(12px);
+}
+
+#eventModal .relative.event-negative {
+  background: linear-gradient(135deg, rgba(239, 68, 68, 0.15), rgba(220, 38, 38, 0.15)) !important;
+  border-color: rgba(239, 68, 68, 0.4) !important;
+  backdrop-filter: blur(12px);
+}
+
+#eventModal .relative.event-mixed {
+  background: linear-gradient(135deg, rgba(168, 85, 247, 0.15), rgba(147, 51, 234, 0.15)) !important;
+  border-color: rgba(168, 85, 247, 0.4) !important;
+  backdrop-filter: blur(12px);
+}
+
+#eventModal .relative.event-neutral {
+  background: linear-gradient(135deg, rgba(251, 191, 36, 0.15), rgba(245, 158, 11, 0.15)) !important;
+  border-color: rgba(251, 191, 36, 0.4) !important;
+  backdrop-filter: blur(12px);
+}
+
+/* ============================================
+   FINAL DO ARQUIVO - VERSÃO COMPLETA HÍBRIDA
+   ============================================ */
+
+/* Estilos para modais sobrepostos */
+body.modal-open #boardContainer,
+body.modal-open .board-cell {
+  pointer-events: none !important;
+  opacity: 0.6;
+  filter: blur(1px);
+  transition: opacity 0.3s, filter 0.3s;
+}
+
+/* Garantir que modais fiquem acima de tudo */
+.modal-overlay,
+.income-modal,
+.negotiation-modal,
+.neg-response-modal,
+.structure-modal,
+.event-modal,
+.alert-modal {
+  pointer-events: auto !important;
+  z-index: 1000 !important;
+}
+
+/* Estilos de Texto colorido para estruturas */
+.text-orange-300 { color: #fdba74; }
+.text-blue-300 { color: #93c5fd; }
+.text-yellow-300 { color: #fde047; }
+.text-purple-300 { color: #d8b4fe; }
+.text-green-300 { color: #86efac; }
+
+/* Classes utilitárias */
+.gap-0\.5 { gap: 0.125rem; }
+.gap-1\.5 { gap: 0.375rem; }
+.text-\[10px\] { font-size: 10px; }
+.leading-tight { line-height: 1.25; }
+
+/* Scrollbar global */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.03);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.15);
+}
+
+/* ============================================
+   CORREÇÃO CRÍTICA - FUNDO DOS MODAIS
+   ============================================ */
+
+/* Corrigir o modal de resposta de negociação */
+#negResponseModal .relative {
+  background-color: rgb(17, 24, 39) !important; /* gray-900 sólido */
+  opacity: 1 !important;
+  border: 1px solid rgba(255, 255, 255, 0.15) !important;
+}
+
+/* Corrigir o modal principal de negociação */
+#negotiationModal .relative {
+  background-color: rgb(17, 24, 39) !important; /* gray-900 sólido */
+  opacity: 1 !important;
+}
+
+/* Garantir que as seções dentro tenham fundo */
+#negotiationModal .negotiation-section {
+  background-color: rgba(31, 41, 55, 0.9) !important; /* gray-800 */
+}
+
+/* Corrigir o modal de alerta/confirmação */
+#alertModal .relative {
+  background-color: rgb(17, 24, 39) !important;
+  border: 1px solid rgba(245, 158, 11, 0.3) !important;
+}
+
+/* Corrigir o modal de evento global */
+#eventModal .relative {
+  background-color: rgb(17, 24, 39) !important;
+  border: 1px solid rgba(245, 158, 11, 0.3) !important;
+}
+
+/* ============================================
+   CORREÇÃO ESPECÍFICA PARA MODAIS
+   ============================================ */
+
+/* 1. Remover qualquer backdrop-filter residual */
+#negotiationModal > .relative,
+#negResponseModal > .relative,
+[id^="negotiation-notification-"]:not(.modal-overlay),
+#pending-negotiations-summary:not(.modal-overlay) {
+  backdrop-filter: none !important;
+}
+
+/* 2. Garantir fundo sólido nos modais de negociação */
+#negResponseModal .relative {
+  background: rgba(17, 24, 39, 0.99) !important;
+}
+
+/* 3. Garantir legibilidade do texto */
+#negResponseTitle {
+  color: #fbbf24 !important;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
+}
+
+#negResponseBody {
+  color: rgba(255, 255, 255, 0.95) !important;
+}
+
+/* 4. Notificações com fundo sólido */
+[id^="negotiation-notification-"] {
+  background: rgba(17, 24, 39, 0.98) !important;
+}
+
+#pending-negotiations-summary {
+  background: rgba(30, 41, 59, 0.98) !important;
+}
+
+#aiDebugPanel {
+  backdrop-filter: none !important;
+  background: rgba(30, 41, 59, 0.95) !important;
+  border: 1px solid rgba(168, 85, 247, 0.5) !important;
+}
+
+/* ============================================
+   CORREÇÕES ADICIONAIS PARA BOTÕES
+   ============================================ */
+
+/* Botão de fechar manual */
+#manualCloseBtn:disabled,
+#structureModalClose:disabled {
+  opacity: 0.4 !important;
+  cursor: not-allowed !important;
+}
+
+/* Botões do modal de alerta */
+#alertButtons button:disabled {
+  opacity: 0.5 !important;
+  cursor: not-allowed !important;
+  background: linear-gradient(135deg, #4b5563, #374151) !important;
+}
+
+/* Botões de log filter */
+.log-filter-sidebar:disabled {
+  opacity: 0.4 !important;
+  cursor: not-allowed !important;
+  background: rgba(75, 85, 99, 0.3) !important;
+}
+
+/* ============================================
+   ESTADOS DE FOCO PARA ACESSIBILIDADE
+   ============================================ */
+
+.action-btn:focus-visible,
+#startGameBtn:focus-visible,
+#endTurnBtn:focus-visible,
+#addPlayerBtn:focus-visible,
+#cancelEditBtn:focus-visible {
+  outline: 2px solid #3b82f6;
+  outline-offset: 2px;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.3);
+}
+
+.action-btn:disabled:focus-visible,
+#startGameBtn:disabled:focus-visible,
+#endTurnBtn:disabled:focus-visible {
+  outline: 2px solid #6b7280;
+  box-shadow: 0 0 0 3px rgba(107, 114, 128, 0.3);
+}
+
+/* ============================================
+   ESTILOS DE LOADING PARA BOTÕES
+   ============================================ */
+
+.button-loading {
+  position: relative;
+  color: transparent !important;
+}
+
+.button-loading::after {
+  content: "";
+  position: absolute;
+  width: 16px;
+  height: 16px;
+  top: 50%;
+  left: 50%;
+  margin-left: -8px;
+  margin-top: -8px;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-radius: 50%;
+  border-top-color: white;
+  animation: button-loading-spinner 0.8s linear infinite;
+}
+
+@keyframes button-loading-spinner {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Otimizações Mobile */
+@media (max-width: 768px) {
+  .board-cell {
+    /* Evita o highlight azul padrão do toque no Android/iOS */
+    -webkit-tap-highlight-color: transparent;
+    touch-action: manipulation;
+  }
+  
+  /* Melhora performance de animações no mobile */
+  .animate-pulse, .animate-bounce {
+    will-change: transform, opacity;
+  }
+  
+  /* Garante que modais usem toda a largura */
+  .modal-content-container > .relative {
+    width: 95% !important;
+    max-height: 85vh !important;
+  }
+  
+  /* Ajustes específicos para botões em mobile */
+  button, 
+  .action-btn, 
+  .icon-button,
+  .ai-button-compact {
+    min-height: 44px !important;
+    min-width: 44px !important;
+  }
+}
