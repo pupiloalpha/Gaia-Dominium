@@ -930,10 +930,11 @@ export class UIGameManager {
             const isActionButton = e.target.closest('.action-btn, #endTurnBtn');
             const isGameFooter = e.target.closest('#gameFooter');
             const isModal = e.target.closest('[id$="Modal"]');
+            const isMobileSheet = e.target.closest('#gaia-mobile-sheet, #gaia-mobile-overlay');
             const isStructureOption = e.target.closest('.structure-option');
             
             if (!isRegionCell && !isActionButton && !isGameFooter && !isModal && 
-                !isStructureOption && gameState.selectedRegionId !== null) {
+                !isStructureOption && !isMobileSheet && gameState.selectedRegionId !== null) {
                 
                 this.clearRegionSelection();
                 this.updateFooter();
