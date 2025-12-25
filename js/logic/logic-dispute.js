@@ -1,0 +1,351 @@
+// logic-dispute.js - Sistema de Disputa Territorial
+import { 
+  gameState, 
+  achievementsState, 
+  addActivityLog, 
+  getCurrentPlayer, 
+  getPlayerById 
+} from '../state/game-state.js';
+import { GAME_CONFIG, STRUCTURE_EFFECTS } from '../state/game-config.js';
+
+export class DisputeLogic {
+  constructor(gameLogic) {
+    this.main = gameLogic;
+  }
+
+  // Validação da ação de disputa
+  validateDispute() {
+    const currentPhase = gameState.currentPhase;
+    if (currentPhase !== 'acoes') {
+      this.main.showFeedback('Disputas só podem ser realizadas na fase de ações.', 'warning');
+      return false;
+    }
+
+    if (gameState.actionsLeft <= 0) {
+      this.main.showFeedback('Sem ações restantes neste turno.', 'warning');
+      return false;
+    }
+
+    if (gameState.selectedRegionId === null) {
+      this.main.showFeedback('Selecione uma região para disputar.', 'error');
+      return false;
+    }
+
+    const region = gameState.regions[gameState.selectedRegionId];
+    const currentPlayer = getCurrentPlayer();
+
+    if (region.controller === null) {
+      this.main.showFeedback('Esta região não possui dominador.', 'error');
+      return false;
+    }
+
+    if (region.controller === currentPlayer.id) {
+      this.main.showFeedback('Você já domina esta região.', 'error');
+      return false;
+    }
+
+    // Verificar custos básicos
+    if (!this.canAffordDispute(currentPlayer)) {
+      this.main.showFeedback('Recursos insuficientes para iniciar disputa.', 'error');
+      return false;
+    }
+
+    return true;
+  }
+
+  // Calcular custos de disputa
+  calculateDisputeCosts(player, region) {
+    const defender = getPlayerById(region.controller);
+    const baseCost = {
+      pv: 3, // Custo base em pontos de vitória
+      madeira: 2,
+      pedra: 2,
+      ouro: 3, // Mais caro para evitar spam
+      agua: 1
+    };
+
+    // Modificadores baseados na região
+    let modifiers = {
+      exploration: region.explorationLevel * 0.5, // +0.5 PV por nível de exploração
+      structures: 0,
+      defenderAdvantage: 0
+    };
+
+    // Bônus por estruturas defensivas
+    region.structures.forEach(structure => {
+      if (structure === 'Torre de Vigia') {
+        modifiers.structures += 2; // +2 PV para regiões com torre
+      } else if (structure === 'Santuário') {
+        modifiers.structures += 1; // +1 PV para regiões com santuário
+      }
+    });
+
+    // Diferença de PV entre jogadores
+    const pvDifference = defender.victoryPoints - player.victoryPoints;
+    if (pvDifference > 0) {
+      modifiers.defenderAdvantage = Math.floor(pvDifference * 0.1); // 10% da diferença
+    }
+
+    // Custo final
+    const finalCost = {
+      pv: baseCost.pv + modifiers.exploration + modifiers.structures + modifiers.defenderAdvantage,
+      madeira: baseCost.madeira,
+      pedra: baseCost.pedra,
+      ouro: baseCost.ouro,
+      agua: baseCost.agua
+    };
+
+    // Aplicar modificadores de facção
+    if (this.main.factionLogic) {
+      const factionModifier = this.main.factionLogic.modifyDisputeCost(player, finalCost, region);
+      Object.assign(finalCost, factionModifier);
+    }
+
+    // Garantir valores mínimos
+    finalCost.pv = Math.max(1, finalCost.pv);
+    finalCost.madeira = Math.max(1, finalCost.madeira);
+    finalCost.pedra = Math.max(1, finalCost.pedra);
+    finalCost.ouro = Math.max(1, finalCost.ouro);
+    finalCost.agua = Math.max(0, finalCost.agua);
+
+    return {
+      baseCost,
+      modifiers,
+      finalCost,
+      successChance: this.calculateSuccessChance(player, defender, region, finalCost)
+    };
+  }
+
+  // Calcular chance de sucesso
+  calculateSuccessChance(attacker, defender, region, disputeCost) {
+    let baseChance = 50; // 50% base
+
+    // Fatores que aumentam a chance:
+    // 1. Diferença de PV a favor do atacante
+    const pvDiff = attacker.victoryPoints - defender.victoryPoints;
+    if (pvDiff > 0) {
+      baseChance += Math.min(20, pvDiff * 2); // +2% por PV de vantagem, até 20%
+    }
+
+    // 2. Recursos gastos acima do mínimo
+    const resourceBonus = Math.min(15, 
+      (disputeCost.madeira - 1) * 2 +
+      (disputeCost.pedra - 1) * 2 +
+      (disputeCost.ouro - 1) * 3 +
+      disputeCost.agua * 1
+    );
+    baseChance += resourceBonus;
+
+    // 3. Nível de exploração (conhecer a região ajuda)
+    if (region.explorationLevel > 0) {
+      baseChance += region.explorationLevel * 5; // +5% por nível
+    }
+
+    // Fatores que diminuem a chance:
+    // 1. Estruturas defensivas
+    if (region.structures.includes('Torre de Vigia')) {
+      baseChance -= 15;
+    }
+    if (region.structures.includes('Santuário')) {
+      baseChance -= 10;
+    }
+
+    // 2. Diferença de PV a favor do defensor
+    if (pvDiff < 0) {
+      baseChance += Math.max(-30, pvDiff * 1.5); // -1.5% por PV de desvantagem
+    }
+
+    // 3. Bônus de facção do defensor
+    if (this.main.factionLogic) {
+      const factionDefense = this.main.factionLogic.getDefenseBonus(defender, region);
+      baseChance -= factionDefense;
+    }
+
+    // Limites
+    return Math.max(10, Math.min(90, baseChance));
+  }
+
+  // Verificar se pode pagar a disputa
+  canAffordDispute(player) {
+    // Verificação básica - custos serão calculados precisamente depois
+    return player.victoryPoints >= 3 && 
+           player.resources.ouro >= 2 &&
+           player.resources.madeira >= 1 &&
+           player.resources.pedra >= 1;
+  }
+
+  // Executar disputa
+  async handleDispute() {
+    if (this.main.preventActionIfModalOpen()) return;
+    if (!this.validateDispute()) return;
+
+    const region = gameState.regions[gameState.selectedRegionId];
+    const attacker = getCurrentPlayer();
+    const defender = getPlayerById(region.controller);
+
+    // Calcular custos e chances
+    const disputeData = this.calculateDisputeCosts(attacker, region);
+
+    // Modal de confirmação
+    const confirmMessage = `
+      <div class="space-y-2">
+        <p class="font-semibold">Disputar ${region.name} com ${defender.name}?</p>
+        <div class="bg-gray-800 p-3 rounded">
+          <p class="text-sm">Custos da Disputa:</p>
+          <div class="grid grid-cols-2 gap-1 text-sm mt-1">
+            <div>PV: ${disputeData.finalCost.pv} ⭐</div>
+            <div>Madeira: ${disputeData.finalCost.madeira} 🪵</div>
+            <div>Pedra: ${disputeData.finalCost.pedra} 🪨</div>
+            <div>Ouro: ${disputeData.finalCost.ouro} 🪙</div>
+            ${disputeData.finalCost.agua > 0 ? `<div>Água: ${disputeData.finalCost.agua} 💧</div>` : ''}
+          </div>
+        </div>
+        <div class="bg-blue-900/30 p-3 rounded">
+          <p class="text-sm">Chance de Sucesso:</p>
+          <div class="flex items-center mt-1">
+            <div class="w-full bg-gray-700 rounded-full h-4">
+              <div class="bg-green-600 h-4 rounded-full" style="width: ${disputeData.successChance}%"></div>
+            </div>
+            <span class="ml-2 font-bold">${Math.round(disputeData.successChance)}%</span>
+          </div>
+          <p class="text-xs mt-2 text-gray-300">
+            ${disputeData.successChance >= 70 ? 'Alta chance de sucesso!' : 
+              disputeData.successChance >= 40 ? 'Chance moderada.' : 
+              'Baixa chance - considere fortalecer-se primeiro.'}
+          </p>
+        </div>
+        <p class="text-xs text-yellow-300">Atenção: Em caso de falha, você perde os recursos gastos!</p>
+      </div>
+    `;
+
+    const confirmed = await this.main.showConfirm(
+      '🗡️ Disputa Territorial', 
+      confirmMessage
+    );
+
+    if (!confirmed) return;
+
+    // Consumir ação
+    if (!this.main.actionsLogic.consumeAction()) return;
+
+    // Pagar custos
+    attacker.victoryPoints -= disputeData.finalCost.pv;
+    Object.entries(disputeData.finalCost).forEach(([resource, amount]) => {
+      if (resource !== 'pv' && amount > 0) {
+        attacker.resources[resource] = Math.max(0, (attacker.resources[resource] || 0) - amount);
+      }
+    });
+
+    // Determinar resultado
+    const success = Math.random() * 100 < disputeData.successChance;
+    
+    if (success) {
+      // Sucesso: Atacante ganha a região
+      await this._handleSuccessfulDispute(attacker, defender, region, disputeData);
+    } else {
+      // Falha: Atacante perde recursos, defensor mantém controle
+      await this._handleFailedDispute(attacker, defender, region, disputeData);
+    }
+
+    // Finalizar ação
+    this._finalizeDispute();
+  }
+
+  // Processar disputa bem-sucedida
+  async _handleSuccessfulDispute(attacker, defender, region, disputeData) {
+    // Remover região do defensor
+    defender.regions = defender.regions.filter(id => id !== region.id);
+    
+    // Adicionar região ao atacante
+    attacker.regions.push(region.id);
+    
+    // Atualizar controlador
+    region.controller = attacker.id;
+    
+    // Reduzir nível de exploração (dano durante a disputa)
+    region.explorationLevel = Math.max(0, region.explorationLevel - 1);
+    
+    // Manter estruturas? 50% chance de cada estrutura sobreviver
+    if (region.structures.length > 0) {
+      region.structures = region.structures.filter(() => Math.random() > 0.5);
+    }
+
+    // Bônus de conquista
+    attacker.victoryPoints += 1; // Bônus por conquista
+    achievementsState.totalDisputes = (achievementsState.totalDisputes || 0) + 1;
+    achievementsState.successfulDisputes = (achievementsState.successfulDisputes || 0) + 1;
+
+    // Log
+    this.main.showFeedback(`✅ Vitória! Você conquistou ${region.name}! +1 PV`, 'success');
+    addActivityLog({
+      type: 'dispute',
+      playerName: attacker.name,
+      action: 'conquistou',
+      details: `${region.name} de ${defender.name}`,
+      turn: gameState.turn,
+      success: true
+    });
+
+    // Verificar se defensor ficou sem regiões
+    if (defender.regions.length === 0) {
+      this._handlePlayerElimination(defender);
+    }
+  }
+
+  // Processar disputa falhada
+  async _handleFailedDispute(attacker, defender, region, disputeData) {
+    // Defensor ganha 1 PV por defender com sucesso
+    defender.victoryPoints += 1;
+    
+    // A região pode ganhar bônus defensivo
+    region.explorationLevel = Math.min(3, region.explorationLevel + 1);
+
+    achievementsState.totalDisputes = (achievementsState.totalDisputes || 0) + 1;
+    achievementsState.failedDisputes = (achievementsState.failedDisputes || 0) + 1;
+
+    // Log
+    this.main.showFeedback(`❌ Falha! ${defender.name} defendeu ${region.name}. -1 PV para você, +1 PV para ${defender.name}`, 'error');
+    addActivityLog({
+      type: 'dispute',
+      playerName: attacker.name,
+      action: 'falhou em conquistar',
+      details: `${region.name} de ${defender.name}`,
+      turn: gameState.turn,
+      success: false
+    });
+  }
+
+  // Eliminar jogador sem regiões
+  _handlePlayerElimination(player) {
+    player.victoryPoints = Math.max(0, player.victoryPoints - 5); // Penalidade por eliminação
+    
+    // Distribuir recursos restantes? Opcional
+    // const totalPlayers = gameState.players.filter(p => p.regions.length > 0).length;
+    // if (totalPlayers > 0) {
+    //   // Distribuir recursos entre jogadores restantes
+    // }
+    
+    this.main.showFeedback(`💀 ${player.name} foi eliminado por perder todas as regiões! -5 PV`, 'warning');
+    addActivityLog({
+      type: 'elimination',
+      playerName: 'SISTEMA',
+      action: 'eliminou',
+      details: `${player.name} (sem regiões)`,
+      turn: gameState.turn
+    });
+  }
+
+  // Finalizar disputa
+  _finalizeDispute() {
+    // Verificar vitória
+    this.main.turnLogic.checkVictory();
+    
+    // Atualizar UI
+    if (window.uiManager) {
+      window.uiManager.updateUI();
+      if (window.uiManager.gameManager) {
+        setTimeout(() => window.uiManager.gameManager.updateFooter(), 100);
+      }
+    }
+  }
+}
