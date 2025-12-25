@@ -168,26 +168,63 @@ class GameLogic {
   }
   
   canAffordAction(actionType) {
-    const player = getCurrentPlayer();
-    let cost = GAME_CONFIG.ACTION_DETAILS[actionType]?.cost || {};
+  const player = getCurrentPlayer();
+  let cost = GAME_CONFIG.ACTION_DETAILS[actionType]?.cost || {};
 
-    // Verificar descontos de facção
-    if (actionType === 'explorar') {
-      cost = this.factionLogic.modifyExploreCost(player, cost);
-    } else if (actionType === 'construir') {
-      // Nota: Para construção genérica na UI, usamos custo base. 
-      // A verificação real ocorre dentro do handleBuild com o tipo específico.
-    } else if (actionType === 'negociar') {
-       const negCost = this.factionLogic.modifyNegotiationCost(player);
-       return player.resources.ouro >= negCost;
-    } else if (actionType === 'disputar') {
-       return this.disputeLogic.canAffordDispute(player);
+  // Verificar descontos de facção
+  if (actionType === 'explorar') {
+    // IMPORTANTE: Verificar primeiro se há região selecionada
+    if (gameState.selectedRegionId === null) {
+      return false; // Não há região para avaliar
     }
-
-    return Object.entries(cost).every(([resource, amount]) => {
-      return (player.resources[resource] || 0) >= amount;
-    });
+    
+    const region = gameState.regions[gameState.selectedRegionId];
+    
+    // CASO 1: Região própria - usar custo de exploração
+    if (region.controller === player.id) {
+      cost = this.factionLogic.modifyExploreCost(player, cost);
+      return Object.entries(cost).every(([resource, amount]) => {
+        return (player.resources[resource] || 0) >= amount;
+      });
+    }
+    // CASO 2: Região neutra - usar custo de dominação
+    else if (region.controller === null) {
+      // Dominação custa 2 PV + recursos da região
+      const pvCost = 2;
+      if (player.victoryPoints < pvCost) return false;
+      
+      // Verificar se pode pagar os recursos da região
+      return Object.entries(region.resources).every(([resource, amount]) => {
+        return (player.resources[resource] || 0) >= amount;
+      });
+    }
+    // CASO 3: Região inimiga - usar verificação de disputa
+    else {
+      // Delegar para o sistema de disputa calcular se pode disputar
+      if (this.disputeLogic && this.disputeLogic.canAffordDispute) {
+        return this.disputeLogic.canAffordDispute(player);
+      }
+      // Fallback: verificação básica
+      return player.victoryPoints >= 3 && 
+             player.resources.ouro >= 2 &&
+             player.resources.madeira >= 1 &&
+             player.resources.pedra >= 1;
+    }
+  } 
+  else if (actionType === 'construir') {
+    // Nota: Para construção genérica na UI, usamos custo base. 
+    // A verificação real ocorre dentro do handleBuild com o tipo específico.
+  } 
+  else if (actionType === 'negociar') {
+    const negCost = this.factionLogic.modifyNegotiationCost(player);
+    return player.resources.ouro >= negCost;
   }
+  // NOTA: Não há 'disputar' separado - é parte de 'explorar'
+
+  return Object.entries(cost).every(([resource, amount]) => {
+    return (player.resources[resource] || 0) >= amount;
+  });
+}
   
   preventActionIfModalOpen() {
     const modal = document.getElementById('negotiationModal');
