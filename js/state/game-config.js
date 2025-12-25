@@ -12,6 +12,7 @@ const GAME_CONFIG = {
   ACTION_DETAILS: {
     explorar: { cost:{madeira:2, agua:1}, pv:1 },
     construir: { cost:{madeira:3, pedra:2, ouro:1}, pv:2 },
+    disputar: { cost:{madeira:2, pedra:2, ouro:3, agua:1}, pv:3 },
     recolher: { cost:{madeira:1}, pv:1 },
     negociar: { cost:{ouro:1}, pv:1 }
   },
@@ -487,6 +488,24 @@ const ACHIEVEMENTS_CONFIG = {
     requirement: 0,
     type: 'pacifist',
     reward: { peacefulBonus: 5 }
+  },
+  WARLORD: {
+    id: 'senhor_guerra',
+    name: 'Senhor da Guerra',
+    description: 'Vença 5 disputas territoriais',
+    icon: '⚔️',
+    requirement: 5,
+    type: 'disputes',
+    reward: { disputeSuccessBonus: 0.1 }
+  },
+  CONQUEROR: {
+    id: 'conquistador',
+    name: 'Conquistador',
+    description: 'Controle 10 regiões simultaneamente',
+    icon: '🏹',
+    requirement: 10,
+    type: 'regions',
+    reward: { regionDefenseBonus: 2 }
   }
 };
 
