@@ -36,6 +36,9 @@ class ModalManager {
       structure: document.getElementById('structureModal'),
       income: document.getElementById('incomeModal'),
       victory: document.getElementById('victoryModal'),
+      domination: document.getElementById('dominationModal'),
+      dispute: document.getElementById('disputeModal'),
+      disputeResult: document.getElementById('disputeResultModal'),
       achievements: null // criado dinamicamente
     };
 
