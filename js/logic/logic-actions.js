@@ -19,7 +19,7 @@ export class ActionLogic {
 
     const currentPhase = gameState.currentPhase;
     // Ações permitidas apenas na fase de ações
-    const allowedInActions = ['explorar', 'recolher', 'construir'];
+    const allowedInActions = ['explorar', 'recolher', 'construir', 'disputar'];
     
     if (!allowedInActions.includes(actionType) || currentPhase !== 'acoes') {
       // Se tentar negociar, valida fase negociação
