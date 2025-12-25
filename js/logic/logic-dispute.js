@@ -174,82 +174,75 @@ export class DisputeLogic {
            player.resources.pedra >= 1;
   }
 
-  // Executar disputa
-  async handleDispute() {
-    if (this.main.preventActionIfModalOpen()) return;
-    if (!this.validateDispute()) return;
-
-    const region = gameState.regions[gameState.selectedRegionId];
-    const attacker = getCurrentPlayer();
-    const defender = getPlayerById(region.controller);
-
-    // Calcular custos e chances
-    const disputeData = this.calculateDisputeCosts(attacker, region);
-
-    // Modal de confirmação
-    const confirmMessage = `
-      <div class="space-y-2">
-        <p class="font-semibold">Disputar ${region.name} com ${defender.name}?</p>
-        <div class="bg-gray-800 p-3 rounded">
-          <p class="text-sm">Custos da Disputa:</p>
-          <div class="grid grid-cols-2 gap-1 text-sm mt-1">
-            <div>PV: ${disputeData.finalCost.pv} ⭐</div>
-            <div>Madeira: ${disputeData.finalCost.madeira} 🪵</div>
-            <div>Pedra: ${disputeData.finalCost.pedra} 🪨</div>
-            <div>Ouro: ${disputeData.finalCost.ouro} 🪙</div>
-            ${disputeData.finalCost.agua > 0 ? `<div>Água: ${disputeData.finalCost.agua} 💧</div>` : ''}
-          </div>
+  // Executar disputa para receber região e jogador
+async handleDispute(region, attacker) {
+  // Calcular custos e chances
+  const disputeData = this.calculateDisputeCosts(attacker, region);
+  const defender = getPlayerById(region.controller);
+  
+  // Modal de confirmação
+  const confirmMessage = `
+    <div class="space-y-2">
+      <p class="font-semibold">Disputar ${region.name} com ${defender.name}?</p>
+      <div class="bg-gray-800 p-3 rounded">
+        <p class="text-sm">Custos da Disputa:</p>
+        <div class="grid grid-cols-2 gap-1 text-sm mt-1">
+          <div>PV: ${disputeData.finalCost.pv} ⭐</div>
+          <div>Madeira: ${disputeData.finalCost.madeira} 🪵</div>
+          <div>Pedra: ${disputeData.finalCost.pedra} 🪨</div>
+          <div>Ouro: ${disputeData.finalCost.ouro} 🪙</div>
+          ${disputeData.finalCost.agua > 0 ? `<div>Água: ${disputeData.finalCost.agua} 💧</div>` : ''}
         </div>
-        <div class="bg-blue-900/30 p-3 rounded">
-          <p class="text-sm">Chance de Sucesso:</p>
-          <div class="flex items-center mt-1">
-            <div class="w-full bg-gray-700 rounded-full h-4">
-              <div class="bg-green-600 h-4 rounded-full" style="width: ${disputeData.successChance}%"></div>
-            </div>
-            <span class="ml-2 font-bold">${Math.round(disputeData.successChance)}%</span>
-          </div>
-          <p class="text-xs mt-2 text-gray-300">
-            ${disputeData.successChance >= 70 ? 'Alta chance de sucesso!' : 
-              disputeData.successChance >= 40 ? 'Chance moderada.' : 
-              'Baixa chance - considere fortalecer-se primeiro.'}
-          </p>
-        </div>
-        <p class="text-xs text-yellow-300">Atenção: Em caso de falha, você perde os recursos gastos!</p>
       </div>
-    `;
+      <div class="bg-blue-900/30 p-3 rounded">
+        <p class="text-sm">Chance de Sucesso:</p>
+        <div class="flex items-center mt-1">
+          <div class="w-full bg-gray-700 rounded-full h-4">
+            <div class="bg-green-600 h-4 rounded-full" style="width: ${disputeData.successChance}%"></div>
+          </div>
+          <span class="ml-2 font-bold">${Math.round(disputeData.successChance)}%</span>
+        </div>
+        <p class="text-xs mt-2 text-gray-300">
+          ${disputeData.successChance >= 70 ? 'Alta chance de sucesso!' : 
+            disputeData.successChance >= 40 ? 'Chance moderada.' : 
+            'Baixa chance - considere fortalecer-se primeiro.'}
+        </p>
+      </div>
+      <p class="text-xs text-yellow-300">Atenção: Em caso de falha, você perde os recursos gastos!</p>
+    </div>
+  `;
 
-    const confirmed = await this.main.showConfirm(
-      '🗡️ Disputa Territorial', 
-      confirmMessage
-    );
+  const confirmed = await this.main.showConfirm(
+    '🗡️ Disputa Territorial', 
+    confirmMessage
+  );
 
-    if (!confirmed) return;
-
-    // Consumir ação
-    if (!this.main.actionsLogic.consumeAction()) return;
-
-    // Pagar custos
-    attacker.victoryPoints -= disputeData.finalCost.pv;
-    Object.entries(disputeData.finalCost).forEach(([resource, amount]) => {
-      if (resource !== 'pv' && amount > 0) {
-        attacker.resources[resource] = Math.max(0, (attacker.resources[resource] || 0) - amount);
-      }
-    });
-
-    // Determinar resultado
-    const success = Math.random() * 100 < disputeData.successChance;
-    
-    if (success) {
-      // Sucesso: Atacante ganha a região
-      await this._handleSuccessfulDispute(attacker, defender, region, disputeData);
-    } else {
-      // Falha: Atacante perde recursos, defensor mantém controle
-      await this._handleFailedDispute(attacker, defender, region, disputeData);
-    }
-
-    // Finalizar ação
-    this._finalizeDispute();
+  if (!confirmed) {
+    // Se cancelar, devolver a ação
+    gameState.actionsLeft++;
+    return;
   }
+
+  // Pagar custos
+  attacker.victoryPoints -= disputeData.finalCost.pv;
+  Object.entries(disputeData.finalCost).forEach(([resource, amount]) => {
+    if (resource !== 'pv' && amount > 0) {
+      attacker.resources[resource] = Math.max(0, (attacker.resources[resource] || 0) - amount);
+    }
+  });
+
+  // Determinar resultado
+  const success = Math.random() * 100 < disputeData.successChance;
+  
+  if (success) {
+    await this._handleSuccessfulDispute(attacker, defender, region, disputeData);
+  } else {
+    await this._handleFailedDispute(attacker, defender, region, disputeData);
+  }
+
+  // Verificar vitória
+  this.main.turnLogic.checkVictory();
+}
 
   // Processar disputa bem-sucedida
   async _handleSuccessfulDispute(attacker, defender, region, disputeData) {
