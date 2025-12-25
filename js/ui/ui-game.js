@@ -509,6 +509,7 @@ export class UIGameManager {
             
             const isOwnRegion = region.controller === player.id;
             const isNeutral = region.controller === null;
+            const isEnemyRegion = !isOwnRegion && !isNeutral;
             const canCollect = isOwnRegion && region.explorationLevel > 0;
             
             const actionExploreCost = ACTION_COSTS['explorar'];
@@ -527,6 +528,9 @@ export class UIGameManager {
                 if (this.actionExploreBtn) {
                     this.actionExploreBtn.disabled = !baseEnabled || !hasEnoughPV || !canPayBiome;
                     this.actionExploreBtn.textContent = 'Dominar';
+                    this.actionExploreBtn.classList.remove('bg-green-600', 'bg-red-600');
+                    this.actionExploreBtn.classList.add('bg-yellow-600');
+                    this.actionExploreBtn.title = 'Dominar região neutra (custo: 2 PV + recursos do bioma)';
                     
                     if (this.actionExploreBtn.disabled) {
                         if (!hasEnoughPV) exploreReason = 'Requer 2 PVs (Pontos de Vitória).';
@@ -538,8 +542,20 @@ export class UIGameManager {
                 if (this.actionExploreBtn) {
                     this.actionExploreBtn.disabled = !baseEnabled;
                     this.actionExploreBtn.textContent = 'Explorar';
+                    this.actionExploreBtn.classList.remove('bg-yellow-600', 'bg-red-600');
+                    this.actionExploreBtn.classList.add('bg-green-600');
                     this.actionExploreBtn.title = 'Explorar região própria (ação gratuita)';
                 }
+            } else if (isEnemyRegion) {
+                // Lógica para Disputar
+                const enemyPlayer = gameState.players[region.controller];
+                if (this.actionExploreBtn) {
+                     this.actionExploreBtn.disabled = !baseEnabled;
+                     this.actionExploreBtn.textContent = 'Disputar';
+                     this.actionExploreBtn.classList.remove('bg-green-600', 'bg-yellow-600');
+                     this.actionExploreBtn.classList.add('bg-red-600');
+                     this.actionExploreBtn.title = `Disputar região controlada por ${enemyPlayer.name}`;
+                }      
             } else {
                 // Não é neutro, nem sua região.
                 if (this.actionExploreBtn) {
@@ -654,6 +670,24 @@ export class UIGameManager {
             return (player.resources[resource] || 0) >= amount;
         });
     }
+    
+handleExploreWithContext() {
+    if (gameState.selectedRegionId === null) return;
+    
+    const region = gameState.regions[gameState.selectedRegionId];
+    const player = getCurrentPlayer();
+    
+    if (region.controller === null) {
+        // Região neutra - abrir modal de dominação
+        this.uiManager.disputeUI.openDominationModal(region);
+    } else if (region.controller === player.id) {
+        // Região própria - explorar diretamente
+        window.gameLogic.handleExplore();
+    } else {
+        // Região inimiga - abrir modal de disputa
+        this.uiManager.disputeUI.openDisputeModal(region.id);
+    }
+}
 
     // ==================== LOG DE ATIVIDADES ====================
 
@@ -893,8 +927,9 @@ export class UIGameManager {
     // ==================== EVENT LISTENERS ====================
 
     setupEventListeners() {
+        this.actionExploreBtn?.addEventListener('click', () => this.handleExploreWithContext());
+       
         // Ações principais (delegam para game-logic.js)
-        this.actionExploreBtn?.addEventListener('click', () => window.gameLogic.handleExplore());
         this.actionCollectBtn?.addEventListener('click', () => window.gameLogic.handleCollect());
         this.endTurnBtn?.addEventListener('click', () => window.gameLogic.handleEndTurn());
         
