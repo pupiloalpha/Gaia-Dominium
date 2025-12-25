@@ -1,4 +1,4 @@
-// ui-mobile.js - Adaptador Mobile Completo (Footer gerenciado)
+// ui-mobile.js - Adaptador Mobile Otimizado (Sistema de Sheets Unificado)
 import { gameState, getCurrentPlayer } from '../state/game-state.js';
 import { RESOURCE_ICONS } from '../state/game-config.js';
 
@@ -12,6 +12,9 @@ export class UIMobileManager {
         this.currentRegionId = null;
         this.gameStarted = false;
         this.menuButton = null;
+        this.regionFAB = null;
+        this.sheetStartY = 0;
+        this.sheetCurrentY = 0;
         
         console.log(`📱 Mobile Manager: ${this.isMobile ? 'Ativo' : 'Inativo'}`);
     }
@@ -22,10 +25,8 @@ export class UIMobileManager {
         const isMobileWidth = window.innerWidth <= 768;
         const isTouchDevice = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
         
-        // Para desenvolvimento: forçar mobile se menor que 768px
-        if (isMobileWidth) return true;
-        
-        return isMobileWidth && isTouchDevice;
+        // Forçar mobile se menor que 768px (para desenvolvimento)
+        return isMobileWidth || (isMobileWidth && isTouchDevice);
     }
 
     // ==================== INICIALIZAÇÃO ====================
@@ -33,54 +34,46 @@ export class UIMobileManager {
     init() {
         if (!this.isMobile) return;
         
-        console.log('📱 Iniciando adaptações mobile...');
+        console.log('📱 Iniciando adaptações mobile (sistema de sheets)...');
         
-        // 1. Injetar estilos críticos primeiro
+        // 1. Injetar estilos críticos
         this.injectMobileStyles();
         
-        // 2. Esconder footer original IMEDIATAMENTE
+        // 2. Esconder footer original permanentemente
         this.hideOriginalFooter();
         
-        // 3. Configurar observador de estado do jogo
+        // 3. Criar elementos mobile
+        this.createMobileElements();
+        
+        // 4. Configurar observador de estado do jogo
         this.setupGameStateObserver();
         
-        // 4. Aguardar carregamento
-        if (document.readyState === 'loading') {
-            document.addEventListener('DOMContentLoaded', () => this.initialize());
-        } else {
-            this.initialize();
-        }
-    }
-    
-    initialize() {
-        try {
-            // 1. Criar elementos mobile
-            this.createMobileElements();
-            
-            // 2. Adaptar tela atual
-            this.adaptCurrentScreen();
-            
-            // 3. Configurar eventos
-            this.setupEventListeners();
-            
-            console.log('✅ Mobile Manager inicializado');
-        } catch (error) {
-            console.error('❌ Erro na inicialização mobile:', error);
-        }
+        // 5. Configurar eventos
+        this.setupEventListeners();
+        
+        // 6. Adaptar tela atual
+        this.adaptCurrentScreen();
+        
+        console.log('✅ Mobile Manager inicializado (sistema de sheets)');
     }
 
     // ==================== ESTILOS MOBILE ====================
     
     injectMobileStyles() {
-        const styleId = 'gaia-mobile-core';
+        const styleId = 'gaia-mobile-optimized';
         if (document.getElementById(styleId)) return;
         
         const css = `
-            /* === MOBILE CORE STYLES === */
+            /* === MOBILE OPTIMIZED STYLES === */
             @media (max-width: 768px) {
-                /* 1. SEMPRE ocultar footer original em mobile */
+                /* 1. SEMPRE ocultar footer original */
                 #gameFooter {
                     display: none !important;
+                    visibility: hidden !important;
+                    opacity: 0 !important;
+                    pointer-events: none !important;
+                    position: absolute !important;
+                    z-index: -1000 !important;
                 }
                 
                 /* 2. Tela de cadastro responsiva */
@@ -99,135 +92,98 @@ export class UIMobileManager {
                     margin: 10px 0 80px 0 !important;
                 }
                 
-                .player-modal > div:first-child {
-                    display: flex !important;
-                    flex-direction: column !important;
-                    gap: 12px !important;
+                /* 3. Aumentar área de toque para células */
+                .board-cell {
+                    min-height: 100px !important;
+                    padding: 10px !important;
+                    -webkit-tap-highlight-color: transparent;
+                    touch-action: manipulation;
                 }
                 
-                #playerName, .faction-dropdown {
-                    width: 100% !important;
-                    font-size: 16px !important;
-                    min-height: 44px !important;
-                    padding: 12px !important;
+                .board-cell:active {
+                    transition: transform 0.1s !important;
+                    transform: scale(0.98) !important;
                 }
                 
-                .player-modal > div:first-child > div:nth-child(3) {
-                    display: grid !important;
-                    grid-template-columns: 1fr 1fr !important;
-                    gap: 8px !important;
-                    width: 100% !important;
+                /* 4. Indicador visual para região selecionada (mobile) */
+                .region-selected-mobile {
+                    animation: mobileRegionPulse 2s infinite !important;
+                    border: 3px solid #fbbf24 !important;
+                    box-shadow: 0 0 20px rgba(251, 191, 36, 0.5) !important;
+                    z-index: 100 !important;
                 }
                 
-                #startGameBtn {
-                    grid-column: span 2 !important;
-                    width: 100% !important;
-                    padding: 16px !important;
-                    font-size: 16px !important;
-                    min-height: 55px !important;
-                    margin-top: 8px !important;
+                @keyframes mobileRegionPulse {
+                    0%, 100% { border-color: #fbbf24; }
+                    50% { border-color: #fcd34d; }
                 }
-                
-                .player-modal > div:nth-child(2) {
-                    flex-direction: column !important;
-                    gap: 15px !important;
-                    padding-top: 15px !important;
-                    margin-top: 15px !important;
-                    border-top: 1px solid rgba(255,255,255,0.1) !important;
-                }
-                
-                #iconSelection {
-                    display: flex !important;
-                    flex-wrap: nowrap !important;
-                    overflow-x: auto !important;
-                    gap: 8px !important;
-                    padding-bottom: 10px !important;
-                    -webkit-overflow-scrolling: touch !important;
-                }
-                
-                .icon-button {
-                    min-width: 60px !important;
-                    min-height: 60px !important;
-                    font-size: 24px !important;
-                    flex-shrink: 0 !important;
-                }
-                
-                #aiButtonsContainer {
-                    display: grid !important;
-                    grid-template-columns: repeat(2, 1fr) !important;
-                    gap: 8px !important;
-                    width: 100% !important;
-                }
-                
-                .ai-button-compact {
-                    padding: 12px 8px !important;
-                    min-height: 44px !important;
-                    text-align: center !important;
-                }
-                
-                #registeredPlayersList {
-                    grid-template-columns: 1fr !important;
-                    gap: 10px !important;
-                    max-height: 300px !important;
-                    overflow-y: auto !important;
-                    margin-top: 15px !important;
-                    -webkit-overflow-scrolling: touch !important;
-                }
-                
-                /* 3. Tela de jogo - ajustes */
-                #gameContainer {
-                    padding-bottom: 100px !important;
-                }
-                
-                /* 4. Bottom Sheet Mobile */
-                #gaia-mobile-overlay {
-                    transition: opacity 0.3s ease !important;
-                    backdrop-filter: blur(4px) !important;
-                    z-index: 9990 !important;
-                }
-                
-                #gaia-mobile-sheet {
-                    transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1) !important;
-                    box-shadow: 0 -10px 40px rgba(0,0,0,0.5) !important;
-                    z-index: 9991 !important;
-                }
-                
-                .sheet-open { transform: translateY(0) !important; }
-                .sheet-closed { transform: translateY(100%) !important; }
                 
                 /* 5. Menu flutuante mobile */
                 #gaia-mobile-menu {
                     z-index: 9980 !important;
                 }
                 
-                /* 6. Barra de ações mobile (NOVA) */
-                #gaia-mobile-action-bar {
-                    z-index: 8000 !important;
-                    transition: transform 0.3s ease !important;
+                /* 6. Botão flutuante para região selecionada */
+                #mobile-region-fab {
+                    z-index: 9990 !important;
+                    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
                 }
                 
-                /* 7. Ajustes gerais */
-                .board-cell {
-                    min-height: 80px !important;
-                    padding: 8px !important;
+                #mobile-region-fab:active {
+                    transform: scale(0.9) !important;
                 }
                 
-                input, select, textarea {
+                /* 7. Sheet mobile */
+                #gaia-mobile-overlay {
+                    transition: opacity 0.3s ease !important;
+                    backdrop-filter: blur(4px) !important;
+                    z-index: 9995 !important;
+                }
+                
+                #gaia-mobile-sheet {
+                    transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1) !important;
+                    box-shadow: 0 -10px 40px rgba(0,0,0,0.5) !important;
+                    z-index: 9996 !important;
+                    max-height: 70vh !important;
+                    border-radius: 20px 20px 0 0 !important;
+                    overflow-y: auto !important;
+                    -webkit-overflow-scrolling: touch !important;
+                }
+                
+                .sheet-open { transform: translateY(0) !important; }
+                .sheet-closed { transform: translateY(100%) !important; }
+                
+                /* 8. Botões maiores na sheet */
+                #gaia-sheet-content button {
+                    min-height: 52px !important;
                     font-size: 16px !important;
                 }
                 
-                button, .icon-button {
-                    touch-action: manipulation !important;
+                /* 9. Ajustes gerais para touch */
+                input, select, textarea, button, .icon-button {
                     min-height: 44px !important;
                     min-width: 44px !important;
+                    font-size: 16px !important;
+                    touch-action: manipulation !important;
+                }
+                
+                /* 10. Feedback visual para ações indisponíveis */
+                button:disabled {
+                    opacity: 0.5 !important;
+                    transform: scale(0.95) !important;
+                    filter: grayscale(0.7) !important;
                 }
             }
             
             /* iPhone SE e telas pequenas */
             @media (max-width: 375px) {
-                .action-btn {
-                    font-size: 10px !important;
-                    padding: 6px 2px !important;
+                .board-cell {
+                    min-height: 90px !important;
+                    padding: 8px !important;
+                }
+                
+                #gaia-mobile-sheet {
+                    max-height: 65vh !important;
                 }
             }
         `;
@@ -241,7 +197,6 @@ export class UIMobileManager {
     // ==================== CONTROLE DO FOOTER ORIGINAL ====================
     
     hideOriginalFooter() {
-        // Método AGGRESSIVO para garantir que o footer original NUNCA apareça no mobile
         const footer = document.getElementById('gameFooter');
         if (footer) {
             footer.style.display = 'none';
@@ -252,13 +207,20 @@ export class UIMobileManager {
             footer.style.zIndex = '-1000';
         }
         
-        // Monitorar continuamente para prevenir reaparecimento
-        setInterval(() => {
+        // Monitorar para prevenir reaparecimento
+        const observer = new MutationObserver(() => {
             const checkFooter = document.getElementById('gameFooter');
             if (checkFooter && checkFooter.style.display !== 'none') {
                 checkFooter.style.display = 'none';
             }
-        }, 1000);
+        });
+        
+        observer.observe(document.body, {
+            childList: true,
+            subtree: true,
+            attributes: true,
+            attributeFilter: ['style', 'class']
+        });
     }
 
     // ==================== CRIAÇÃO DOS ELEMENTOS MOBILE ====================
@@ -270,8 +232,8 @@ export class UIMobileManager {
         // 2. Menu flutuante
         this.createFloatingMenu();
         
-        // 3. Barra de ações mobile (APENAS durante o jogo)
-        this.createMobileActionBar();
+        // 3. Botão flutuante para região selecionada
+        this.createRegionFAB();
     }
     
     createMobileOverlay() {
@@ -284,7 +246,7 @@ export class UIMobileManager {
             inset: '0',
             background: 'rgba(0,0,0,0.7)',
             backdropFilter: 'blur(4px)',
-            zIndex: '9990',
+            zIndex: '9995',
             opacity: '0',
             visibility: 'hidden',
             transition: 'opacity 0.3s ease'
@@ -303,17 +265,19 @@ export class UIMobileManager {
             background: 'rgb(17,24,39)',
             borderTop: '1px solid rgba(251,191,36,0.3)',
             borderRadius: '20px 20px 0 0',
-            zIndex: '9991',
+            zIndex: '9996',
             transform: 'translateY(100%)',
             transition: 'transform 0.3s cubic-bezier(0.16, 1, 0.3, 1)',
-            maxHeight: '85vh',
+            maxHeight: '70vh',
             overflowY: 'auto',
-            boxShadow: '0 -10px 40px rgba(0,0,0,0.5)'
+            boxShadow: '0 -10px 40px rgba(0,0,0,0.5)',
+            WebkitOverflowScrolling: 'touch'
         });
         
+        // Handle para arrastar
         const handle = document.createElement('div');
-        handle.innerHTML = '<div style="width:40px;height:4px;background:rgba(255,255,255,0.3);border-radius:2px;margin:16px auto;"></div>';
-        handle.addEventListener('click', () => this.closeSheet());
+        handle.style.cssText = 'padding: 16px 0 8px; touch-action: none;';
+        handle.innerHTML = '<div style="width:40px;height:4px;background:rgba(255,255,255,0.3);border-radius:2px;margin:0 auto;"></div>';
         this.bottomSheet.appendChild(handle);
         
         this.sheetContent = document.createElement('div');
@@ -321,7 +285,43 @@ export class UIMobileManager {
         this.sheetContent.style.padding = '0 20px 30px';
         this.bottomSheet.appendChild(this.sheetContent);
         
+        // Configurar gestos de arrastar
+        this.setupSheetGestures(handle);
+        
         document.body.appendChild(this.bottomSheet);
+    }
+    
+    setupSheetGestures(handle) {
+        handle.addEventListener('touchstart', (e) => {
+            this.sheetStartY = e.touches[0].clientY;
+            this.sheetCurrentY = this.sheetStartY;
+        }, { passive: true });
+        
+        handle.addEventListener('touchmove', (e) => {
+            if (!this.activeSheet) return;
+            
+            this.sheetCurrentY = e.touches[0].clientY;
+            const diff = this.sheetCurrentY - this.sheetStartY;
+            
+            if (diff > 0) { // Arrastando para baixo
+                this.bottomSheet.style.transform = `translateY(${diff}px)`;
+            }
+        }, { passive: true });
+        
+        handle.addEventListener('touchend', () => {
+            if (!this.activeSheet) return;
+            
+            const diff = this.sheetCurrentY - this.sheetStartY;
+            
+            if (diff > 100) { // Arrastou mais de 100px para baixo
+                this.closeSheet();
+            } else {
+                this.bottomSheet.style.transform = 'translateY(0)';
+            }
+            
+            this.sheetStartY = 0;
+            this.sheetCurrentY = 0;
+        }, { passive: true });
     }
     
     createFloatingMenu() {
@@ -330,7 +330,7 @@ export class UIMobileManager {
         this.menuButton = document.createElement('button');
         this.menuButton.id = 'gaia-mobile-menu';
         this.updateMenuButtonStyle();
-        this.menuButton.textContent = '☰';
+        this.menuButton.innerHTML = '☰';
         this.menuButton.title = 'Menu Mobile';
         this.menuButton.addEventListener('click', (e) => {
             e.stopPropagation();
@@ -365,122 +365,75 @@ export class UIMobileManager {
             color: 'white',
             boxShadow: '0 4px 20px rgba(59,130,246,0.4)',
             cursor: 'pointer',
-            transition: 'all 0.3s ease'
+            transition: 'all 0.3s ease',
+            touchAction: 'manipulation'
         });
     }
     
-    createMobileActionBar() {
-        if (document.getElementById('gaia-mobile-action-bar')) return;
+    createRegionFAB() {
+        if (document.getElementById('mobile-region-fab')) return;
         
-        const actionBar = document.createElement('div');
-        actionBar.id = 'gaia-mobile-action-bar';
-        Object.assign(actionBar.style, {
+        this.regionFAB = document.createElement('button');
+        this.regionFAB.id = 'mobile-region-fab';
+        this.regionFAB.innerHTML = '📍';
+        this.regionFAB.title = 'Região selecionada - Toque para ver detalhes';
+        
+        Object.assign(this.regionFAB.style, {
             position: 'fixed',
-            bottom: '0',
-            left: '0',
-            right: '0',
-            background: 'rgba(11,13,15,0.95)',
-            backdropFilter: 'blur(20px)',
-            borderTop: '1px solid rgba(255,255,255,0.1)',
-            padding: '12px 15px',
-            zIndex: '8000',
-            display: 'none', // Começa oculta
-            flexDirection: 'column',
-            gap: '8px'
+            bottom: '80px',
+            right: '15px',
+            width: '56px',
+            height: '56px',
+            borderRadius: '50%',
+            background: 'linear-gradient(135deg, #3b82f6, #1d4ed8)',
+            border: '2px solid white',
+            color: 'white',
+            fontSize: '24px',
+            zIndex: '9990',
+            display: 'none',
+            alignItems: 'center',
+            justifyContent: 'center',
+            boxShadow: '0 4px 20px rgba(0,0,0,0.3)',
+            cursor: 'pointer',
+            touchAction: 'manipulation',
+            transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)'
         });
         
-        // Container principal
-        const mainContainer = document.createElement('div');
-        mainContainer.style.cssText = 'display: flex; justify-content: space-between; align-items: center; gap: 8px; width: 100%;';
-        
-        // Container de ações (4 botões)
-        const actionsContainer = document.createElement('div');
-        actionsContainer.style.cssText = 'display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; width: 70%;';
-        
-        // Botões de ação
-        const actions = [
-            { id: 'mobile-explore', icon: '⛏️', text: 'Explorar', color: '#3b82f6' },
-            { id: 'mobile-collect', icon: '🌾', text: 'Coletar', color: '#10b981' },
-            { id: 'mobile-build', icon: '🏗️', text: 'Construir', color: '#f59e0b' },
-            { id: 'mobile-negotiate', icon: '🤝', text: 'Negociar', color: '#8b5cf6' }
-        ];
-        
-        actions.forEach(action => {
-            const button = document.createElement('button');
-            button.id = action.id;
-            button.innerHTML = `<span style="font-size:16px;">${action.icon}</span><br><span style="font-size:9px;">${action.text}</span>`;
-            button.style.cssText = `
-                padding: 8px 4px;
-                background: rgba(255,255,255,0.02);
-                border: 1px solid rgba(255,255,255,0.04);
-                border-radius: 8px;
-                color: white;
-                display: flex;
-                flex-direction: column;
-                align-items: center;
-                justify-content: center;
-                gap: 2px;
-                min-height: 44px;
-                font-size: 11px;
-                transition: all 0.2s ease;
-            `;
-            
-            button.addEventListener('click', () => {
-                switch(action.id) {
-                    case 'mobile-explore':
-                        this.handleExplore();
-                        break;
-                    case 'mobile-collect':
-                        this.handleCollect();
-                        break;
-                    case 'mobile-build':
-                        this.handleBuild();
-                        break;
-                    case 'mobile-negotiate':
-                        this.handleNegotiate();
-                        break;
+        this.regionFAB.addEventListener('click', () => {
+            if (this.currentRegionId !== null) {
+                const region = gameState.regions[this.currentRegionId];
+                if (region) {
+                    // Rolar para a célula
+                    const cell = document.querySelector(`[data-region-id="${this.currentRegionId}"]`);
+                    if (cell) {
+                        cell.scrollIntoView({ 
+                            behavior: 'smooth', 
+                            block: 'center',
+                            inline: 'center'
+                        });
+                        
+                        // Feedback visual
+                        cell.classList.add('region-selected-mobile');
+                        setTimeout(() => {
+                            cell.classList.remove('region-selected-mobile');
+                        }, 1000);
+                    }
+                    
+                    // Mostrar sheet
+                    this.showRegionSheet(region);
                 }
-            });
-            
-            actionsContainer.appendChild(button);
+            }
         });
         
-        // Botão Terminar Turno
-        const endTurnBtn = document.createElement('button');
-        endTurnBtn.id = 'mobile-end-turn';
-        endTurnBtn.innerHTML = '🔄<br><span style="font-size:9px;">Terminar</span>';
-        endTurnBtn.style.cssText = `
-            width: 30%;
-            padding: 10px 8px;
-            background: linear-gradient(135deg,#ef4444,#dc2626);
-            border: none;
-            border-radius: 10px;
-            color: white;
-            font-weight: bold;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            gap: 2px;
-            min-height: 44px;
-            font-size: 11px;
-            white-space: nowrap;
-        `;
-        endTurnBtn.addEventListener('click', () => window.gameLogic.handleEndTurn());
+        this.regionFAB.addEventListener('touchstart', () => {
+            this.regionFAB.style.transform = 'scale(0.9)';
+        });
         
-        mainContainer.appendChild(actionsContainer);
-        mainContainer.appendChild(endTurnBtn);
-        actionBar.appendChild(mainContainer);
+        this.regionFAB.addEventListener('touchend', () => {
+            this.regionFAB.style.transform = 'scale(1)';
+        });
         
-        // Contador de ações
-        const actionsCounter = document.createElement('div');
-        actionsCounter.id = 'mobile-actions-counter';
-        actionsCounter.style.cssText = 'text-align: center; font-size: 10px; color: rgba(255,255,255,0.7); margin-top: 4px;';
-        actionsCounter.textContent = 'Ações: 2';
-        actionBar.appendChild(actionsCounter);
-        
-        document.body.appendChild(actionBar);
-        this.mobileActionBar = actionBar;
+        document.body.appendChild(this.regionFAB);
     }
 
     // ==================== GERENCIAMENTO DE TELAS ====================
@@ -501,15 +454,9 @@ export class UIMobileManager {
         setInterval(checkGameStarted, 500);
         
         // Observar mutações no DOM
-        const observer = new MutationObserver((mutations) => {
-            mutations.forEach((mutation) => {
-                if (mutation.type === 'attributes' && mutation.attributeName === 'class') {
-                    const target = mutation.target;
-                    if (target.id === 'gameContainer' || target.id === 'initialScreen') {
-                        checkGameStarted();
-                    }
-                }
-            });
+        const observer = new MutationObserver(() => {
+            checkGameStarted();
+            this.syncRegionSelection(); // Sincronizar seleção quando DOM mudar
         });
         
         observer.observe(document.body, {
@@ -530,15 +477,16 @@ export class UIMobileManager {
     }
     
     showSetupInterface() {
-        // Tela de cadastro - mostrar menu button, esconder action bar
+        // Tela de cadastro - mostrar menu button
         if (this.menuButton) {
             this.menuButton.style.display = 'flex';
             this.menuButton.style.top = '15px';
             this.menuButton.style.right = '15px';
         }
         
-        if (this.mobileActionBar) {
-            this.mobileActionBar.style.display = 'none';
+        // Esconder FAB de região
+        if (this.regionFAB) {
+            this.regionFAB.style.display = 'none';
         }
         
         // Garantir que overlay/sheet estejam fechados
@@ -549,17 +497,15 @@ export class UIMobileManager {
     }
     
     showGameInterface() {
-        // Tela de jogo - mostrar menu button E action bar
+        // Tela de jogo - mostrar menu button e FAB
         if (this.menuButton) {
             this.menuButton.style.display = 'flex';
-            this.menuButton.style.top = '70px'; // Mais baixo para não atrapalhar navbar
+            this.menuButton.style.top = '70px';
             this.menuButton.style.right = '15px';
         }
         
-        if (this.mobileActionBar) {
-            this.mobileActionBar.style.display = 'flex';
-            this.mobileActionBar.style.transform = 'translateY(0)';
-        }
+        // Mostrar FAB se houver região selecionada
+        this.updateRegionFAB();
         
         // Configurar interações do jogo
         this.setupGameInteractions();
@@ -630,15 +576,28 @@ export class UIMobileManager {
         const region = window.gameState.regions[regionId];
         this.currentRegionId = regionId;
         
-        // Definir região selecionada no gameState
+        // Sincronizar com gameState
         if (window.gameState) {
             window.gameState.selectedRegionId = regionId;
+            this.uiManager.gameManager.clearRegionSelection();
+            
+            // Adicionar classe de seleção mobile
+            document.querySelectorAll('.board-cell').forEach(c => {
+                c.classList.remove('region-selected-mobile');
+            });
+            cell.classList.add('region-selected-mobile');
         }
         
         this.showRegionSheet(region);
         
-        // Feedback tátil
-        if (navigator.vibrate) navigator.vibrate(50);
+        // Feedback tátil melhorado
+        if (navigator.vibrate) navigator.vibrate([50, 30, 50]);
+        
+        // Feedback visual
+        cell.style.transform = 'scale(0.95)';
+        setTimeout(() => {
+            cell.style.transform = '';
+        }, 200);
     }
     
     setupPhaseMonitor() {
@@ -663,156 +622,67 @@ export class UIMobileManager {
     updateForCurrentPhase(phaseText = '') {
         // Atualizar menu button
         this.updateMenuButtonStyle(phaseText);
-        
-        // Atualizar barra de ações
-        this.updateActionBarForPhase(phaseText);
-        
-        // Atualizar contador de ações
-        this.updateActionsCounter();
-    }
-    
-    updateActionBarForPhase(phaseText) {
-        if (!this.mobileActionBar) return;
-        
-        const isNegotiationPhase = phaseText.includes('Negociação');
-        const negotiateBtn = document.getElementById('mobile-negotiate');
-        
-        if (negotiateBtn) {
-            if (isNegotiationPhase) {
-                negotiateBtn.style.opacity = '1';
-                negotiateBtn.style.pointerEvents = 'auto';
-                negotiateBtn.title = 'Abrir negociação';
-            } else {
-                negotiateBtn.style.opacity = '0.5';
-                negotiateBtn.style.pointerEvents = 'none';
-                negotiateBtn.title = 'Disponível apenas na fase de negociação';
-            }
-        }
-    }
-    
-    updateActionsCounter() {
-        if (!this.mobileActionBar || !window.gameState) return;
-        
-        const counter = document.getElementById('mobile-actions-counter');
-        if (counter) {
-            counter.textContent = `Ações: ${window.gameState.actionsLeft || 0}`;
-            
-            // Destaque visual se poucas ações
-            if (window.gameState.actionsLeft <= 1) {
-                counter.style.color = '#ef4444';
-                counter.style.fontWeight = 'bold';
-            } else {
-                counter.style.color = 'rgba(255,255,255,0.7)';
-                counter.style.fontWeight = 'normal';
-            }
-        }
     }
     
     setupRegionSelectionMonitor() {
-        // Observar quando uma região é selecionada (para atualizar botões)
+        // Observar quando uma região é selecionada
         const observer = new MutationObserver(() => {
-            this.updateActionButtons();
+            this.syncRegionSelection();
         });
         
         // Observar todas as células do board
         document.querySelectorAll('.board-cell').forEach(cell => {
-            observer.observe(cell, { attributes: true, attributeFilter: ['class'] });
+            observer.observe(cell, { 
+                attributes: true, 
+                attributeFilter: ['class', 'data-region-id'] 
+            });
         });
     }
     
-    updateActionButtons() {
-        // Atualizar estado dos botões baseado na região selecionada
-        if (!window.gameState || !this.currentRegionId) return;
-        
-        const region = window.gameState.regions[this.currentRegionId];
-        if (!region) return;
-        
-        const currentPlayer = getCurrentPlayer();
-        const isOwnRegion = region.controller === currentPlayer?.id;
-        const canCollect = isOwnRegion && region.explorationLevel > 0;
-        const canBuild = isOwnRegion;
-        
-        const collectBtn = document.getElementById('mobile-collect');
-        const buildBtn = document.getElementById('mobile-build');
-        
-        if (collectBtn) {
-            collectBtn.disabled = !canCollect;
-            collectBtn.style.opacity = canCollect ? '1' : '0.5';
+    syncRegionSelection() {
+        // Sincronizar currentRegionId com gameState
+        if (gameState.selectedRegionId !== null && 
+            gameState.selectedRegionId !== this.currentRegionId) {
+            this.currentRegionId = gameState.selectedRegionId;
         }
         
-        if (buildBtn) {
-            buildBtn.disabled = !canBuild;
-            buildBtn.style.opacity = canBuild ? '1' : '0.5';
-        }
-    }
-
-    // ==================== HANDLERS DE AÇÕES ====================
-    
-    handleExplore() {
-        if (!window.gameLogic || !window.gameLogic.handleExplore) {
-            console.error('❌ handleExplore não disponível');
-            return;
+        // Atualizar visual da célula selecionada
+        document.querySelectorAll('.board-cell').forEach(cell => {
+            cell.classList.remove('region-selected-mobile');
+        });
+        
+        if (this.currentRegionId !== null) {
+            const selectedCell = document.querySelector(`[data-region-id="${this.currentRegionId}"]`);
+            if (selectedCell) {
+                selectedCell.classList.add('region-selected-mobile');
+            }
         }
         
-        if (this.currentRegionId === null) {
-            this.showRegionSelectionPrompt();
-            return;
-        }
-        
-        window.gameLogic.handleExplore();
-        this.closeSheet();
+        // Atualizar FAB
+        this.updateRegionFAB();
     }
     
-    handleCollect() {
-        if (!window.gameLogic || !window.gameLogic.handleCollect) {
-            console.error('❌ handleCollect não disponível');
-            return;
-        }
+    updateRegionFAB() {
+        if (!this.regionFAB) return;
         
-        if (this.currentRegionId === null) {
-            this.showRegionSelectionPrompt();
-            return;
-        }
+        const shouldShow = this.currentRegionId !== null && 
+                          gameState.selectedRegionId === this.currentRegionId &&
+                          this.gameStarted;
         
-        window.gameLogic.handleCollect();
-        this.closeSheet();
-    }
-    
-    handleBuild() {
-        if (!window.uiManager?.modals?.openStructureModal) {
-            console.error('❌ openStructureModal não disponível');
-            return;
-        }
-        
-        if (this.currentRegionId === null) {
-            this.showRegionSelectionPrompt();
-            return;
-        }
-        
-        // Garantir que a região está selecionada
-        if (window.gameState) {
-            window.gameState.selectedRegionId = this.currentRegionId;
-        }
-        
-        window.uiManager.modals.openStructureModal();
-        this.closeSheet();
-    }
-    
-    handleNegotiate() {
-        if (!window.uiManager?.negotiation?.openNegotiationModal) {
-            console.error('❌ openNegotiationModal não disponível');
-            return;
-        }
-        
-        window.uiManager.negotiation.openNegotiationModal();
-        this.closeSheet();
-    }
-    
-    showRegionSelectionPrompt() {
-        if (this.uiManager?.modals?.showFeedback) {
-            this.uiManager.modals.showFeedback('Selecione uma região primeiro!', 'warning');
+        if (shouldShow) {
+            this.regionFAB.style.display = 'flex';
+            
+            // Animar entrada
+            this.regionFAB.style.opacity = '0';
+            this.regionFAB.style.transform = 'translateY(20px) scale(0.8)';
+            
+            setTimeout(() => {
+                this.regionFAB.style.transition = 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)';
+                this.regionFAB.style.opacity = '1';
+                this.regionFAB.style.transform = 'translateY(0) scale(1)';
+            }, 10);
         } else {
-            alert('📱 Toque e segure em uma região para selecioná-la.');
+            this.regionFAB.style.display = 'none';
         }
     }
 
@@ -830,12 +700,33 @@ export class UIMobileManager {
         const resourcesHTML = Object.entries(region.resources)
             .filter(([_, val]) => val > 0)
             .map(([key, val]) => `
-                <div style="display:flex;flex-direction:column;align-items:center;padding:12px;background:rgba(255,255,255,0.05);border-radius:12px;min-width:70px;">
+                <div style="display:flex;flex-direction:column;align-items:center;padding:12px;background:rgba(255,255,255,0.05);border-radius:12px;min-width:70px;flex:1;">
                     <span style="font-size:28px;">${RESOURCE_ICONS[key]}</span>
                     <span style="font-weight:bold;font-size:18px;margin-top:8px;">${val}</span>
-                    <span style="font-size:11px;color:rgba(255,255,255,0.6);margin-top:4px;">${key}</span>
+                    <span style="font-size:11px;color:rgba(255,255,255,0.6);margin-top:4px;text-transform:capitalize">${key}</span>
                 </div>
             `).join('');
+        
+        // Determinar ação principal
+        let primaryAction = 'explorar';
+        let primaryActionText = 'Explorar';
+        let primaryActionDisabled = false;
+        
+        if (region.controller === null) {
+            primaryAction = 'dominar';
+            primaryActionText = 'Dominar';
+            
+            // Verificar se pode dominar
+            const player = currentPlayer;
+            const hasEnoughPV = player?.victoryPoints >= 2;
+            const canPayBiome = Object.entries(region.resources)
+                .every(([key, value]) => (player?.resources[key] || 0) >= value);
+            
+            primaryActionDisabled = !hasEnoughPV || !canPayBiome;
+        } else if (!isOwnRegion) {
+            primaryActionDisabled = true;
+            primaryActionText = 'Controlada';
+        }
         
         const content = `
             <div style="margin-bottom:20px;">
@@ -870,25 +761,24 @@ export class UIMobileManager {
                 </div>
             </div>
             
+            ${resourcesHTML ? `
             <div style="margin-bottom:20px;">
                 <h3 style="font-size:16px;font-weight:bold;color:#fbbf24;margin-bottom:12px;">Recursos Disponíveis</h3>
-                <div style="display:flex;gap:10px;overflow-x:auto;padding-bottom:8px;">
-                    ${resourcesHTML || `
-                    <div style="text-align:center;padding:20px;color:rgba(255,255,255,0.5);font-style:italic;width:100%;">
-                        Nenhum recurso disponível
-                    </div>
-                    `}
+                <div style="display:flex;gap:10px;overflow-x:auto;padding-bottom:8px;-webkit-overflow-scrolling:touch;">
+                    ${resourcesHTML}
                 </div>
             </div>
+            ` : ''}
             
             <div style="border-top:1px solid rgba(255,255,255,0.1);padding-top:16px;">
-                <h3 style="font-size:14px;font-weight:bold;color:rgba(255,255,255,0.9);margin-bottom:12px;text-align:center;">Ações</h3>
+                <h3 style="font-size:14px;font-weight:bold;color:rgba(255,255,255,0.9);margin-bottom:12px;text-align:center;">Ações Disponíveis</h3>
                 
                 <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
-                    <button onclick="window.uiManager.mobileManager.executeAction('explore', ${region.id})"
-                            style="padding:14px;background:linear-gradient(135deg,#3b82f6,#1d4ed8);border:none;border-radius:12px;color:white;font-weight:bold;font-size:14px;display:flex;flex-direction:column;align-items:center;gap:4px;">
-                        <span style="font-size:20px;">⛏️</span>
-                        <span style="font-size:12px;">${region.controller === null ? 'Dominar' : 'Explorar'}</span>
+                    <button onclick="window.uiManager.mobileManager.executeAction('${primaryAction}', ${region.id})"
+                            style="padding:14px;background:linear-gradient(135deg,#3b82f6,#1d4ed8);border:none;border-radius:12px;color:white;font-weight:bold;font-size:14px;display:flex;flex-direction:column;align-items:center;gap:4px;${primaryActionDisabled ? 'opacity:0.5;cursor:not-allowed;' : ''}"
+                            ${primaryActionDisabled ? 'disabled' : ''}>
+                        <span style="font-size:20px;">${primaryAction === 'dominar' ? '👑' : '⛏️'}</span>
+                        <span style="font-size:12px;">${primaryActionText}</span>
                     </button>
                     
                     <button onclick="window.uiManager.mobileManager.executeAction('collect', ${region.id})"
@@ -905,6 +795,13 @@ export class UIMobileManager {
                     <span style="font-size:20px;">🏗️</span>
                     <span>Construir</span>
                 </button>
+                
+                <div style="margin-top:12px;text-align:center;">
+                    <button onclick="window.uiManager.mobileManager.closeSheet()"
+                            style="width:100%;padding:12px;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);border-radius:10px;color:rgba(255,255,255,0.7);font-size:13px;">
+                        Fechar
+                    </button>
+                </div>
             </div>
         `;
         
@@ -920,16 +817,25 @@ export class UIMobileManager {
         }
         
         switch(action) {
-            case 'explore':
-                this.handleExplore();
+            case 'explorar':
+            case 'dominar':
+                if (window.gameLogic && window.gameLogic.handleExplore) {
+                    window.gameLogic.handleExplore();
+                }
                 break;
             case 'collect':
-                this.handleCollect();
+                if (window.gameLogic && window.gameLogic.handleCollect) {
+                    window.gameLogic.handleCollect();
+                }
                 break;
             case 'build':
-                this.handleBuild();
+                if (window.uiManager?.modals?.openStructureModal) {
+                    window.uiManager.modals.openStructureModal();
+                }
                 break;
         }
+        
+        this.closeSheet();
     }
     
     showMobileMenu() {
@@ -948,7 +854,7 @@ export class UIMobileManager {
                 <div style="display:flex;justify-content:space-between;align-items:center;padding:10px;background:rgba(0,0,0,0.3);border-radius:8px;margin-bottom:6px;">
                     <div style="display:flex;align-items:center;gap:8px;">
                         <span style="font-size:18px;">${RESOURCE_ICONS[key]}</span>
-                        <span style="color:rgba(255,255,255,0.9);font-size:13px;">${key}</span>
+                        <span style="color:rgba(255,255,255,0.9);font-size:13px;text-transform:capitalize">${key}</span>
                     </div>
                     <span style="font-weight:bold;color:white;font-size:16px;">${val}</span>
                 </div>
@@ -995,6 +901,13 @@ export class UIMobileManager {
                         <span>Manual</span>
                     </button>
                 </div>
+                
+                <div style="margin-top:12px;text-align:center;">
+                    <button onclick="window.uiManager.mobileManager.closeSheet()"
+                            style="width:100%;padding:12px;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);border-radius:10px;color:rgba(255,255,255,0.7);font-size:13px;">
+                        Fechar
+                    </button>
+                </div>
             </div>
         `;
         
@@ -1002,18 +915,29 @@ export class UIMobileManager {
         this.openSheet();
     }
     
+    handleNegotiate() {
+        if (window.uiManager?.negotiation?.openNegotiationModal) {
+            window.uiManager.negotiation.openNegotiationModal();
+            this.closeSheet();
+        }
+    }
+    
     openSheet() {
+        if (this.activeSheet) return;
+        
         this.activeSheet = true;
         this.overlay.style.visibility = 'visible';
+        
         setTimeout(() => {
             this.overlay.style.opacity = '1';
             this.bottomSheet.style.transform = 'translateY(0)';
         }, 10);
+        
         document.body.style.overflow = 'hidden';
         
-        // Ocultar action bar temporariamente
-        if (this.mobileActionBar) {
-            this.mobileActionBar.style.transform = 'translateY(100%)';
+        // Esconder FAB temporariamente
+        if (this.regionFAB) {
+            this.regionFAB.style.display = 'none';
         }
     }
     
@@ -1029,10 +953,8 @@ export class UIMobileManager {
             document.body.style.overflow = '';
             this.activeSheet = false;
             
-            // Restaurar action bar
-            if (this.mobileActionBar && this.gameStarted) {
-                this.mobileActionBar.style.transform = 'translateY(0)';
-            }
+            // Restaurar FAB se necessário
+            this.updateRegionFAB();
         }, 300);
     }
 
@@ -1062,10 +984,16 @@ export class UIMobileManager {
                 this.closeSheet();
             }
         });
+        
+        // Toque fora do sheet para fechar (no overlay já configurado)
+        
+        // Sincronizar seleção periodicamente
+        setInterval(() => {
+            this.syncRegionSelection();
+        }, 1000);
     }
     
     adaptCurrentScreen() {
-        // Adaptação automática baseada na tela atual
         const setupScreen = document.getElementById('initialScreen');
         const gameScreen = document.getElementById('gameContainer');
         
@@ -1077,5 +1005,5 @@ export class UIMobileManager {
     }
 }
 
-// Expor globalmente
+// Expor globalmente para acesso
 window.GaiaMobileManager = UIMobileManager;
