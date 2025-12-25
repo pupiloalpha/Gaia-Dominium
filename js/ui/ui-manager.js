@@ -17,6 +17,7 @@ import { NegotiationUI } from '../ui/ui-negotiation.js';
 import { UIPlayersManager } from '../ui/ui-players.js';
 import { UIGameManager } from '../ui/ui-game.js';
 import { UIMobileManager } from '../ui/ui-mobile.js';
+import { DisputeUI } from '../ui/ui-dispute.js';
 
 class UIManager {
     constructor() {
@@ -25,6 +26,7 @@ class UIManager {
     this.playersManager = new UIPlayersManager(this);
     this.gameManager = new UIGameManager(this);
     this.mobileManager = new UIMobileManager(this);
+    this.disputeUI = new DisputeUI(this);
     
     this.cacheElements();
     
