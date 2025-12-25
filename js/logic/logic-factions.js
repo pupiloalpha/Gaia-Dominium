@@ -108,6 +108,75 @@ class FactionLogic {
     return modifiedCost;
   }
 
+modifyDisputeCost(player, baseCost, region) {
+  const faction = this.getPlayerFaction(player);
+  if (!faction) return baseCost;
+  
+  const modifiedCost = { ...baseCost };
+  
+  switch(faction.id) {
+    case 'forest_guardians':
+      // Guardiões da Floresta: custo reduzido em florestas
+      if (region.biome.includes('Floresta')) {
+        modifiedCost.madeira = Math.max(1, modifiedCost.madeira - 1);
+        modifiedCost.pv = Math.max(1, modifiedCost.pv - 1);
+      }
+      break;
+      
+    case 'mountain_builders':
+      // Construtores da Montanha: bônus em regiões rochosas
+      if (region.biome === 'Savana' || region.resources.pedra > 3) {
+        modifiedCost.pedra = Math.max(1, modifiedCost.pedra - 1);
+      }
+      break;
+      
+    case 'water_masters':
+      // Mestres das Águas: vantagem em pântanos
+      if (region.biome === 'Pântano') {
+        modifiedCost.agua = 0;
+        modifiedCost.pv = Math.max(1, modifiedCost.pv - 1);
+      }
+      break;
+      
+    case 'merchants_barons':
+      // Barões do Comércio: podem pagar com ouro
+      modifiedCost.ouro += 1;
+      modifiedCost.madeira = Math.max(1, modifiedCost.madeira - 1);
+      modifiedCost.pedra = Math.max(1, modifiedCost.pedra - 1);
+      break;
+  }
+  
+  return modifiedCost;
+}
+
+getDefenseBonus(player, region) {
+  const faction = this.getPlayerFaction(player);
+  if (!faction) return 0;
+  
+  let bonus = 0;
+  
+  switch(faction.id) {
+    case 'forest_guardians':
+      if (region.biome.includes('Floresta')) bonus += 10;
+      break;
+      
+    case 'mountain_builders':
+      if (region.structures.includes('Torre de Vigia')) bonus += 15;
+      break;
+      
+    case 'water_masters':
+      if (region.biome === 'Pântano') bonus += 12;
+      break;
+      
+    case 'merchants_barons':
+      // Comerciantes são menos defensivos
+      bonus -= 5;
+      break;
+  }
+  
+  return bonus;
+}
+  
   modifyBuildCost(player, baseCost) {
     if (!player.faction) return baseCost;
     
