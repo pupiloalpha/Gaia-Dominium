@@ -100,6 +100,17 @@ function getNegotiationState() {
   return { ...negotiationState };
 }
 
+function getExploreActionType(regionId, playerId) {
+  if (regionId === null) return 'none';
+  
+  const region = gameState.regions[regionId];
+  if (!region) return 'none';
+  
+  if (region.controller === playerId) return 'explore';
+  if (region.controller === null) return 'dominate';
+  return 'dispute';
+}
+
 function canPlayerNegotiate(playerId) {
   const player = getPlayerById(playerId);
   if (!player) return false;
@@ -755,6 +766,7 @@ export {
   getNegotiationState,
   canPlayerNegotiate,
   getNegotiationValidationErrors,
+  getExploreActionType,
   
   // Setters
   setGameState,
