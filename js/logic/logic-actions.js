@@ -42,33 +42,31 @@ export class ActionLogic {
 
   // Método handleExplore permite explorar, dominar ou disputar uma região
 async handleExplore() {
-  if (this.main.preventActionIfModalOpen()) return;
-  if (!this.validateAction('explorar')) return;
-  
-  if (gameState.selectedRegionId === null) {
-    this.main.showFeedback('Selecione uma região primeiro.', 'error');
-    return;
-  }
-  
-  const region = gameState.regions[gameState.selectedRegionId];
-  const player = getCurrentPlayer();
-  
-  // CASO 1: Região própria - Explorar
-  if (region.controller === player.id) {
-    await this._exploreRegion(region, player);
-  } 
-  // CASO 2: Região neutra - Dominar
-  else if (region.controller === null) {
-    await this._assumeControl(region, player);
-  } 
-  // CASO 3: Região inimiga - Disputar
-  else {
-    await this._initiateDispute(region, player);
-  }
-  
-  this._finalizeAction();
+    if (this.main.preventActionIfModalOpen()) return;
+    if (!this.validateAction('explorar')) return;
+    
+    if (gameState.selectedRegionId === null) {
+        this.main.showFeedback('Selecione uma região primeiro.', 'error');
+        return;
+    }
+    
+    const region = gameState.regions[gameState.selectedRegionId];
+    const player = getCurrentPlayer();
+    
+    // NOTA: A UI agora lida com a abertura de modais
+    // Este método será chamado apenas quando o jogador confirmar
+    // no modal de dominação ou disputa
+    
+    // Se chegou aqui, é porque o jogador confirmou no modal
+    if (region.controller === null) {
+        await this._assumeControl(region, player);
+    } else if (region.controller === player.id) {
+        await this._exploreRegion(region, player);
+    }
+    
+    this._finalizeAction();
 }
-
+  
 // Novo método para iniciar disputa
 async _initiateDispute(region, player) {
   // Verificar se o jogo já terminou
