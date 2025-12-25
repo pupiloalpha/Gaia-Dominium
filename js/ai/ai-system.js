@@ -89,19 +89,22 @@ const AI_DIFFICULTY_SETTINGS = {
   }
 };
 
+// Atualizar AI_PERSONALITIES para incluir ação de disputa
 const AI_PERSONALITIES = {
   expansionist: {
     name: 'Expansionista',
     description: 'Foco em controle territorial',
     priorities: [
       { action: 'assume_control', weight: 1.5 },
+      { action: 'dispute', weight: 1.4 },  // NOVO
       { action: 'explore', weight: 1.2 },
       { action: 'build', weight: 0.8 },
       { action: 'collect', weight: 0.7 },
       { action: 'negotiate', weight: 0.3 }
     ],
     preferredBiomes: ['Floresta Tropical', 'Savana'],
-    resourceTargets: { madeira: 15, pedra: 10, ouro: 8, agua: 12 }
+    resourceTargets: { madeira: 15, pedra: 10, ouro: 8, agua: 12 },
+    disputeAggression: 1.8  // Multiplicador para disputas
   },
   builder: {
     name: 'Construtor',
@@ -111,10 +114,12 @@ const AI_PERSONALITIES = {
       { action: 'explore', weight: 1.3 },
       { action: 'collect', weight: 1.0 },
       { action: 'assume_control', weight: 0.7 },
+      { action: 'dispute', weight: 0.4 },  // NOVO
       { action: 'negotiate', weight: 0.4 }
     ],
     preferredBiomes: ['Floresta Temperada', 'Pântano'],
-    resourceTargets: { madeira: 20, pedra: 15, ouro: 5, agua: 10 }
+    resourceTargets: { madeira: 20, pedra: 15, ouro: 5, agua: 10 },
+    disputeAggression: 0.7
   },
   economist: {
     name: 'Economista',
@@ -124,10 +129,12 @@ const AI_PERSONALITIES = {
       { action: 'negotiate', weight: 1.4 },
       { action: 'explore', weight: 1.1 },
       { action: 'assume_control', weight: 0.9 },
-      { action: 'build', weight: 0.8 }
+      { action: 'build', weight: 0.8 },
+      { action: 'dispute', weight: 0.6 }  // NOVO
     ],
     preferredBiomes: ['Savana', 'Pântano'],
-    resourceTargets: { madeira: 12, pedra: 12, ouro: 20, agua: 15 }
+    resourceTargets: { madeira: 12, pedra: 12, ouro: 20, agua: 15 },
+    disputeAggression: 1.0
   },
   diplomat: {
     name: 'Diplomata',
@@ -137,10 +144,12 @@ const AI_PERSONALITIES = {
       { action: 'collect', weight: 1.2 },
       { action: 'explore', weight: 1.0 },
       { action: 'assume_control', weight: 0.6 },
-      { action: 'build', weight: 0.9 }
+      { action: 'build', weight: 0.9 },
+      { action: 'dispute', weight: 0.3 }  // NOVO
     ],
     preferredBiomes: ['Floresta Tropical', 'Savana'],
-    resourceTargets: { madeira: 10, pedra: 8, ouro: 25, agua: 10 }
+    resourceTargets: { madeira: 10, pedra: 8, ouro: 25, agua: 10 },
+    disputeAggression: 0.5
   }
 };
 
