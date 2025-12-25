@@ -2,6 +2,7 @@
 import { ActionLogic } from './logic-actions.js';
 import { FactionLogic } from './logic-factions.js';
 import { NegotiationLogic } from './logic-negotiation.js';
+import { DisputeLogic } from './logic-dispute.js';
 import { TurnLogic } from './logic-turn.js';
 import { AICoordinator } from './logic-ai-coordinator.js';
 import { gameState, addActivityLog, getCurrentPlayer, saveGame } from '../state/game-state.js';
@@ -15,6 +16,7 @@ class GameLogic {
     this.turnLogic = new TurnLogic(this);
     this.aiCoordinator = new AICoordinator(this);
     this.factionLogic = new FactionLogic(this);
+    this.disputeLogic = new DisputeLogic(this);
     
     this.feedbackHistory = []; // Compatibilidade com logs antigos
   }
@@ -129,6 +131,7 @@ class GameLogic {
   handleExplore() { this.actionsLogic.handleExplore(); }
   handleCollect() { this.actionsLogic.handleCollect(); }
   handleBuild(type) { this.actionsLogic.handleBuild(type); }
+  handleDispute() { this.disputeLogic.handleDispute(); }
   performAction(type) { return this.actionsLogic.consumeAction(); }
   
   // Negociação
@@ -177,6 +180,8 @@ class GameLogic {
     } else if (actionType === 'negociar') {
        const negCost = this.factionLogic.modifyNegotiationCost(player);
        return player.resources.ouro >= negCost;
+    } else if (actionType === 'disputar') {
+       return this.disputeLogic.canAffordDispute(player);
     }
 
     return Object.entries(cost).every(([resource, amount]) => {
