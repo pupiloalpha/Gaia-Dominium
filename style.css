@@ -24,6 +24,7 @@
      9.1 Estilos Gerais de Modais
      9.2 Modais Específicos (Negociação, Estrutura, etc.)
      9.3 MODAL DE CONQUISTAS
+     9.4 MODAL DE DISPUTA
    10. TOOLTIPS E BANNERS
    11. CONTROLES E INTERAÇÕES
    12. LOGS, CONQUISTAS E SISTEMAS
@@ -1140,6 +1141,186 @@ p {
 
 #achievementsModal .border-yellow-500\/50 {
   border-color: rgba(245, 158, 11, 0.3) !important;
+}
+
+/* ============================================
+   9.4 MODAL DE DISPUTA - CORREÇÃO DO FUNDO TRANSPARENTE
+   ============================================ */
+
+#disputeModal {
+  z-index: 104; /* Acima de outros modais */
+}
+
+#disputeModal > .absolute {
+  background-color: rgba(0, 0, 0, 0.7) !important;
+  backdrop-filter: none !important;
+}
+
+#disputeModal > .relative {
+  background: rgba(17, 24, 39, 0.98) !important;
+  backdrop-filter: blur(25px) saturate(180%) !important;
+  border: 1px solid rgba(255, 255, 255, 0.15) !important;
+  border-radius: 1rem !important;
+  box-shadow: 
+    0 25px 50px -12px rgba(0, 0, 0, 0.5),
+    inset 0 1px 0 rgba(255, 255, 255, 0.1) !important;
+  opacity: 1 !important;
+  visibility: visible !important;
+  animation: modalSlideIn 0.3s ease-out;
+}
+
+/* Títulos do modal de disputa */
+#disputeModal h2, 
+#disputeModal h3, 
+#disputeModal h4 {
+  color: #fbbf24 !important;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.7) !important;
+  font-weight: 700 !important;
+  letter-spacing: 0.3px !important;
+}
+
+/* Conteúdo do modal */
+#disputeModal .text-yellow-300 {
+  color: #fbbf24 !important;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5) !important;
+}
+
+#disputeModal .text-gray-300 {
+  color: rgba(255, 255, 255, 0.95) !important;
+}
+
+/* Seções coloridas do modal */
+#disputeModal .bg-red-900\/30 {
+  background-color: rgba(127, 29, 29, 0.3) !important;
+}
+
+#disputeModal .bg-blue-900\/30 {
+  background-color: rgba(30, 58, 138, 0.3) !important;
+}
+
+/* Botões do modal de disputa */
+#disputeModal #confirmDispute {
+  background: linear-gradient(135deg, #ef4444, #dc2626) !important;
+  border: 1px solid rgba(239, 68, 68, 0.4) !important;
+  color: white !important;
+  transition: all 0.3s ease !important;
+}
+
+#disputeModal #confirmDispute:hover:not(:disabled) {
+  transform: translateY(-2px) !important;
+  box-shadow: 0 8px 25px rgba(239, 68, 68, 0.4) !important;
+}
+
+#disputeModal #cancelDispute {
+  background: linear-gradient(135deg, #6b7280, #4b5563) !important;
+  border: 1px solid rgba(255, 255, 255, 0.1) !important;
+  color: white !important;
+  transition: all 0.3s ease !important;
+}
+
+#disputeModal #cancelDispute:hover:not(:disabled) {
+  transform: translateY(-2px) !important;
+  box-shadow: 0 8px 25px rgba(107, 114, 128, 0.4) !important;
+}
+
+/* Barra de progresso da chance de sucesso */
+#disputeModal .chance-bar {
+  height: 20px;
+  border-radius: 10px;
+  background: linear-gradient(90deg, #ef4444, #f59e0b, #10b981);
+  transition: width 0.5s ease;
+}
+
+/* Estados da barra de chance */
+#disputeModal .chance-bar.low {
+  background: linear-gradient(90deg, #ef4444, #f59e0b);
+}
+
+#disputeModal .chance-bar.medium {
+  background: linear-gradient(90deg, #f59e0b, #fbbf24);
+}
+
+#disputeModal .chance-bar.high {
+  background: linear-gradient(90deg, #fbbf24, #10b981);
+}
+
+/* Modal de resultado da disputa */
+#disputeResultModal {
+  z-index: 105;
+}
+
+#disputeResultModal > .absolute {
+  background-color: rgba(0, 0, 0, 0.7) !important;
+  backdrop-filter: none !important;
+}
+
+#disputeResultModal > .relative {
+  background: rgba(17, 24, 39, 0.98) !important;
+  backdrop-filter: blur(25px) saturate(180%) !important;
+  border: 1px solid rgba(255, 255, 255, 0.15) !important;
+  border-radius: 1rem !important;
+  box-shadow: 
+    0 25px 50px -12px rgba(0, 0, 0, 0.5),
+    inset 0 1px 0 rgba(255, 255, 255, 0.1) !important;
+  opacity: 1 !important;
+  visibility: visible !important;
+  animation: modalSlideIn 0.3s ease-out;
+}
+
+/* Estilos para resultado de sucesso */
+#disputeResultModal .success {
+  background: linear-gradient(135deg, rgba(34, 197, 94, 0.15), rgba(22, 163, 74, 0.15)) !important;
+  border-color: rgba(34, 197, 94, 0.4) !important;
+}
+
+#disputeResultModal .failure {
+  background: linear-gradient(135deg, rgba(239, 68, 68, 0.15), rgba(220, 38, 38, 0.15)) !important;
+  border-color: rgba(239, 68, 68, 0.4) !important;
+}
+
+/* ============================================
+   CORREÇÃO PARA O PROBLEMA 2: CLIQUE NÃO FUNCIONA
+   ============================================ */
+
+/* Garantir que o modal seja interativo */
+#disputeModal,
+#disputeResultModal {
+  pointer-events: auto !important;
+}
+
+/* Remover qualquer estilo que impeça interação */
+#disputeModal .hidden,
+#disputeResultModal .hidden {
+  display: none !important;
+}
+
+#disputeModal:not(.hidden),
+#disputeResultModal:not(.hidden) {
+  display: flex !important;
+}
+
+/* Corrigir possíveis problemas de sobreposição */
+#disputeModal .absolute,
+#disputeResultModal .absolute {
+  pointer-events: none;
+}
+
+#disputeModal .relative,
+#disputeResultModal .relative {
+  pointer-events: auto;
+}
+
+/* Garantir que os botões sejam clicáveis */
+#disputeModal button,
+#disputeResultModal button {
+  pointer-events: auto !important;
+  cursor: pointer !important;
+}
+
+#disputeModal button:disabled,
+#disputeResultModal button:disabled {
+  opacity: 0.5 !important;
+  cursor: not-allowed !important;
 }
 
 /* ============================================
