@@ -278,6 +278,104 @@ async handleNegotiationPhaseAI(ai) {
     return otherPlayers.sort((a, b) => a.victoryPoints - b.victoryPoints)[0];
   }
 
+  // Adicionar após o método findNegotiationTarget
+
+async handleActionsPhaseAI(ai) {
+  const player = getCurrentPlayer();
+  console.log(`🤖 ${player.name} executando ações (${gameState.actionsLeft} restantes)`);
+
+  // Executar ações enquanto houver ações disponíveis
+  while (gameState.actionsLeft > 0) {
+    try {
+      // Pequeno delay entre ações
+      await this.delay(800);
+      
+      // ADICIONAR: Verificar se há disputas antes de executar ação padrão
+      const shouldDispute = this.shouldExecuteDispute(ai, gameState);
+      
+      if (shouldDispute) {
+        console.log(`🤖 ${player.name} decidiu disputar território`);
+        await this.executeDisputeAI(ai);
+      } else {
+        // Executar uma ação usando o AIBrain
+        await ai.executeActionPhase(gameState, window.uiManager);
+      }
+      
+      // Atualizar UI
+      if (window.uiManager) {
+        window.uiManager.updateUI();
+        if (window.uiManager.gameManager) {
+          window.uiManager.gameManager.updateFooter();
+        }
+      }
+      
+    } catch (error) {
+      console.error(`🤖 Erro na ação da IA:`, error);
+      break;
+    }
+  }
+
+  // Quando terminar ações, avançar para negociação
+  console.log(`🤖 ${player.name} terminou ações`);
+  await this.delay(1000);
+  
+  // Avançar para fase de negociação
+  this.setupNegotiationPhase();
+}
+
+// Novo método para avaliar disputa
+shouldExecuteDispute(ai, gameState) {
+  const player = getCurrentPlayer();
+  
+  // Verificar se a IA pode disputar
+  if (player.victoryPoints < 3 || 
+      player.resources.ouro < 2 || 
+      gameState.actionsLeft <= 0) {
+    return false;
+  }
+  
+  // Usar a lógica do AIBrain para avaliar disputas
+  if (ai.findDisputeOpportunities) {
+    const opportunities = ai.findDisputeOpportunities(player, gameState);
+    if (opportunities.length > 0) {
+      const bestOpportunity = opportunities[0];
+      
+      // Verificar se atende ao threshold baseado na dificuldade
+      const threshold = ai.getDisputeThreshold ? ai.getDisputeThreshold() : 40;
+      return bestOpportunity.score >= threshold;
+    }
+  }
+  
+  return false;
+}
+
+// Método para executar disputa
+async executeDisputeAI(ai) {
+  const player = getCurrentPlayer();
+  
+  try {
+    // Encontrar melhor oportunidade de disputa
+    const opportunities = ai.findDisputeOpportunities(player, gameState);
+    if (opportunities.length === 0) return;
+    
+    const bestOpportunity = opportunities[0];
+    
+    console.log(`🤖 ${player.name} disputando região ${bestOpportunity.regionId} de ${gameState.players[bestOpportunity.defenderId].name}`);
+    
+    // Configurar região selecionada
+    gameState.selectedRegionId = bestOpportunity.regionId;
+    await this.delay(500);
+    
+    // Executar disputa
+    if (window.gameLogic?.handleDispute) {
+      await window.gameLogic.handleDispute();
+    }
+    
+  } catch (error) {
+    console.error(`🤖 Erro ao executar disputa:`, error);
+  }
+}
+  
   // ==================== CONTROLE DE SAÚDE ====================
 
   startHealthMonitor() {
