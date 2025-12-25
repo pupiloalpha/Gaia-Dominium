@@ -145,18 +145,78 @@ async checkAndExecuteAITurn() {
     }
 }
 
-  async _executeActions(ai) {
-    while (gameState.actionsLeft > 0) {
-        await this._delay(1000);
-        try {
-            await ai.takeTurn(gameState, window.uiManager);
-            if(window.uiManager) window.uiManager.updateUI();
-        } catch (e) {
-            console.error('Erro ação IA:', e);
-            break; // Sai do loop para não travar
-        }
+async _executeActions(ai) {
+  while (gameState.actionsLeft > 0) {
+    await this._delay(1000);
+    try {
+      // Verificar disputas antes de ação normal
+      const shouldDispute = this._shouldAIDispute(ai);
+      
+      if (shouldDispute) {
+        await this._executeAIDispute(ai);
+      } else {
+        await ai.takeTurn(gameState, window.uiManager);
+      }
+      
+      if(window.uiManager) window.uiManager.updateUI();
+    } catch (e) {
+      console.error('Erro ação IA:', e);
+      break;
     }
   }
+}
+
+// Método para avaliar disputa
+_shouldAIDispute(ai) {
+  const currentPlayer = getCurrentPlayer();
+  
+  // Verificar condições básicas
+  if (!currentPlayer || gameState.actionsLeft <= 0) return false;
+  
+  // Verificar recursos
+  if (currentPlayer.victoryPoints < 3 || 
+      currentPlayer.resources.ouro < 2) {
+    return false;
+  }
+  
+  // Usar método do AIBrain se disponível
+  if (ai.findDisputeOpportunities) {
+    const opportunities = ai.findDisputeOpportunities(currentPlayer, gameState);
+    if (opportunities.length > 0) {
+      const threshold = ai.getDisputeThreshold ? ai.getDisputeThreshold() : 40;
+      return opportunities[0].score >= threshold;
+    }
+  }
+  
+  return false;
+}
+
+// Método para executar disputa da IA
+async _executeAIDispute(ai) {
+  const currentPlayer = getCurrentPlayer();
+  
+  try {
+    // Encontrar melhor disputa
+    const opportunities = ai.findDisputeOpportunities(currentPlayer, gameState);
+    if (opportunities.length === 0) return;
+    
+    const bestDispute = opportunities[0];
+    
+    console.log(`🤖 ${currentPlayer.name} iniciando disputa contra região ${bestDispute.regionId}`);
+    
+    // Configurar região
+    gameState.selectedRegionId = bestDispute.regionId;
+    await this._delay(800);
+    
+    // Executar disputa
+    if (window.gameLogic?.handleDispute) {
+      await window.gameLogic.handleDispute();
+    }
+    
+  } catch (error) {
+    console.error(`🤖 Erro na disputa:`, error);
+  }
+}
 
 async _executeNegotiations(ai) {
     console.log(`🤖 ${ai.personality?.name || 'IA'} processando negociações`);
