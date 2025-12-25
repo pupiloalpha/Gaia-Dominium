@@ -40,28 +40,56 @@ export class ActionLogic {
     return true;
   }
 
-  async handleExplore() {
-    if (this.main.preventActionIfModalOpen()) return;
-    if (!this.validateAction('explorar')) return;
-    
-    if (gameState.selectedRegionId === null) {
-      this.main.showFeedback('Selecione uma região primeiro.', 'error');
-      return;
-    }
-    
-    const region = gameState.regions[gameState.selectedRegionId];
-    const player = getCurrentPlayer();
-    
-    if (region.controller === null) {
-      await this._assumeControl(region, player);
-    } else if (region.controller === player.id) {
-      await this._exploreRegion(region, player);
-    } else {
-      this.main.showFeedback('Você não pode explorar regiões de outros jogadores.', 'error');
-    }
-    
-    this._finalizeAction();
+  // Método handleExplore permite explorar, dominar ou disputar uma região
+async handleExplore() {
+  if (this.main.preventActionIfModalOpen()) return;
+  if (!this.validateAction('explorar')) return;
+  
+  if (gameState.selectedRegionId === null) {
+    this.main.showFeedback('Selecione uma região primeiro.', 'error');
+    return;
   }
+  
+  const region = gameState.regions[gameState.selectedRegionId];
+  const player = getCurrentPlayer();
+  
+  // CASO 1: Região própria - Explorar
+  if (region.controller === player.id) {
+    await this._exploreRegion(region, player);
+  } 
+  // CASO 2: Região neutra - Dominar
+  else if (region.controller === null) {
+    await this._assumeControl(region, player);
+  } 
+  // CASO 3: Região inimiga - Disputar
+  else {
+    await this._initiateDispute(region, player);
+  }
+  
+  this._finalizeAction();
+}
+
+// Novo método para iniciar disputa
+async _initiateDispute(region, player) {
+  // Verificar se o jogo já terminou
+  if (this.main.turnLogic.gameEnded) {
+    this.main.showFeedback('O jogo já terminou!', 'warning');
+    return;
+  }
+  
+  // Verificar ações restantes
+  if (!this.consumeAction()) return;
+  
+  // Delegar para o sistema de disputa
+  if (this.main.disputeLogic) {
+    await this.main.disputeLogic.handleDispute(region, player);
+  } else {
+    this.main.showFeedback('Sistema de disputa não disponível.', 'error');
+    // Devolver a ação se o sistema não está disponível
+    gameState.actionsLeft++;
+    return;
+  }
+}
 
   async _assumeControl(region, player) {
     const pvCost = 2;
