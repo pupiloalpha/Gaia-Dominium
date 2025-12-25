@@ -566,23 +566,6 @@ function updateNegotiationStatus(negotiationId, status) {
   return null;
 }
 
-// Adicionar ao INITIAL_STATE:
-const INITIAL_STATE = {
-  // ... campos existentes
-  disputeHistory: [],
-  totalDisputes: 0,
-  successfulDisputes: 0,
-  failedDisputes: 0
-};
-
-// Adicionar ao INITIAL_ACHIEVEMENTS_STATE:
-const INITIAL_ACHIEVEMENTS_STATE = {
-  // ... campos existentes
-  totalDisputes: 0,
-  successfulDisputes: 0,
-  failedDisputes: 0
-};
-
 // Função para registrar disputa de regiões
 function addDisputeRecord(attackerId, defenderId, regionId, success, costs) {
   if (!gameState.disputeHistory) gameState.disputeHistory = [];
