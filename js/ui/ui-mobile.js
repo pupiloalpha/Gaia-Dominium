@@ -200,11 +200,33 @@ export class UIMobileManager {
                     z-index: 9980 !important;
                 }
                 
-                /* 6. Barra de ações mobile (NOVA) */
+                /* 6. Barra de ações mobile */
                 #gaia-mobile-action-bar {
                     z-index: 8000 !important;
                     transition: transform 0.3s ease !important;
                 }
+
+            @media (max-width: 768px) {
+            /* Estilos para botão de disputa mobile */
+            #mobile-dispute:disabled {
+                opacity: 0.3 !important;
+                cursor: not-allowed !important;
+            }
+            
+            #mobile-dispute.active {
+                animation: pulse-red-mobile 1.5s infinite !important;
+                box-shadow: 0 0 10px rgba(220, 38, 38, 0.5) !important;
+            }
+
+            @keyframes pulse-red-mobile {
+                0%, 100% { box-shadow: 0 0 5px rgba(220, 38, 38, 0.3); }
+                50% { box-shadow: 0 0 15px rgba(220, 38, 38, 0.7); }
+            }
+            
+                /* Ajustes para 5 botões na action bar */
+            #gaia-mobile-action-bar > div > div:first-child {
+                grid-template-columns: repeat(5, 1fr) !important;
+            }
                 
                 /* 7. Ajustes gerais */
                 .board-cell {
@@ -225,11 +247,16 @@ export class UIMobileManager {
             
             /* iPhone SE e telas pequenas */
             @media (max-width: 375px) {
+                #gaia-mobile-action-bar > div > div:first-child {
+                    grid-template-columns: repeat(5, 1fr) !important;
+                    gap: 4px !important;
+                }
                 .action-btn {
-                    font-size: 10px !important;
-                    padding: 6px 2px !important;
+                    font-size: 9px !important;
+                    padding: 6px 1px !important;
                 }
             }
+        }
         `;
         
         const style = document.createElement('style');
@@ -395,14 +422,15 @@ export class UIMobileManager {
         
         // Container de ações (4 botões)
         const actionsContainer = document.createElement('div');
-        actionsContainer.style.cssText = 'display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; width: 70%;';
+        actionsContainer.style.cssText = 'display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px; width: 85%;';
         
         // Botões de ação
         const actions = [
-            { id: 'mobile-explore', icon: '⛏️', text: 'Explorar', color: '#3b82f6' },
-            { id: 'mobile-collect', icon: '🌾', text: 'Coletar', color: '#10b981' },
-            { id: 'mobile-build', icon: '🏗️', text: 'Construir', color: '#f59e0b' },
-            { id: 'mobile-negotiate', icon: '🤝', text: 'Negociar', color: '#8b5cf6' }
+             { id: 'mobile-explore', icon: '⛏️', text: 'Explorar', color: '#3b82f6' },
+             { id: 'mobile-collect', icon: '🌾', text: 'Coletar', color: '#10b981' },
+             { id: 'mobile-build', icon: '🏗️', text: 'Construir', color: '#f59e0b' },
+             { id: 'mobile-dispute', icon: '⚔️', text: 'Disputar', color: '#dc2626' }, // NOVO BOTÃO
+             { id: 'mobile-negotiate', icon: '🤝', text: 'Negociar', color: '#8b5cf6' }
         ];
         
         actions.forEach(action => {
@@ -436,6 +464,9 @@ export class UIMobileManager {
                     case 'mobile-build':
                         this.handleBuild();
                         break;
+                    case 'mobile-dispute':
+                        this.handleDispute();
+                        break;
                     case 'mobile-negotiate':
                         this.handleNegotiate();
                         break;
@@ -450,7 +481,7 @@ export class UIMobileManager {
         endTurnBtn.id = 'mobile-end-turn';
         endTurnBtn.innerHTML = '🔄<br><span style="font-size:9px;">Terminar</span>';
         endTurnBtn.style.cssText = `
-            width: 30%;
+            width: 15%;
             padding: 10px 8px;
             background: linear-gradient(135deg,#ef4444,#dc2626);
             border: none;
@@ -672,23 +703,37 @@ export class UIMobileManager {
     }
     
     updateActionBarForPhase(phaseText) {
-        if (!this.mobileActionBar) return;
-        
-        const isNegotiationPhase = phaseText.includes('Negociação');
-        const negotiateBtn = document.getElementById('mobile-negotiate');
-        
-        if (negotiateBtn) {
-            if (isNegotiationPhase) {
-                negotiateBtn.style.opacity = '1';
-                negotiateBtn.style.pointerEvents = 'auto';
-                negotiateBtn.title = 'Abrir negociação';
-            } else {
-                negotiateBtn.style.opacity = '0.5';
-                negotiateBtn.style.pointerEvents = 'none';
-                negotiateBtn.title = 'Disponível apenas na fase de negociação';
-            }
+    if (!this.mobileActionBar) return;
+    
+    const isNegotiationPhase = phaseText.includes('Negociação');
+    const isActionPhase = phaseText.includes('Ações');
+    const negotiateBtn = document.getElementById('mobile-negotiate');
+    const disputeBtn = document.getElementById('mobile-dispute');
+    
+    if (negotiateBtn) {
+        if (isNegotiationPhase) {
+            negotiateBtn.style.opacity = '1';
+            negotiateBtn.style.pointerEvents = 'auto';
+            negotiateBtn.title = 'Abrir negociação';
+        } else {
+            negotiateBtn.style.opacity = '0.5';
+            negotiateBtn.style.pointerEvents = 'none';
+            negotiateBtn.title = 'Disponível apenas na fase de negociação';
         }
     }
+    
+    if (disputeBtn) {
+        if (isActionPhase) {
+            disputeBtn.style.opacity = '1';
+            disputeBtn.style.pointerEvents = 'auto';
+            disputeBtn.title = 'Disputar região inimiga';
+        } else {
+            disputeBtn.style.opacity = '0.5';
+            disputeBtn.style.pointerEvents = 'none';
+            disputeBtn.title = 'Disponível apenas na fase de ações';
+        }
+    }
+}
     
     updateActionsCounter() {
         if (!this.mobileActionBar || !window.gameState) return;
@@ -721,30 +766,60 @@ export class UIMobileManager {
     }
     
     updateActionButtons() {
-        // Atualizar estado dos botões baseado na região selecionada
-        if (!window.gameState || !this.currentRegionId) return;
-        
-        const region = window.gameState.regions[this.currentRegionId];
-        if (!region) return;
-        
-        const currentPlayer = getCurrentPlayer();
-        const isOwnRegion = region.controller === currentPlayer?.id;
-        const canCollect = isOwnRegion && region.explorationLevel > 0;
-        const canBuild = isOwnRegion;
-        
-        const collectBtn = document.getElementById('mobile-collect');
-        const buildBtn = document.getElementById('mobile-build');
-        
-        if (collectBtn) {
-            collectBtn.disabled = !canCollect;
-            collectBtn.style.opacity = canCollect ? '1' : '0.5';
-        }
-        
-        if (buildBtn) {
-            buildBtn.disabled = !canBuild;
-            buildBtn.style.opacity = canBuild ? '1' : '0.5';
+    // Atualizar estado dos botões baseado na região selecionada
+    if (!window.gameState || !this.currentRegionId) return;
+    
+    const region = window.gameState.regions[this.currentRegionId];
+    if (!region) return;
+    
+    const currentPlayer = getCurrentPlayer();
+    const isOwnRegion = region.controller === currentPlayer?.id;
+    const isNeutralRegion = region.controller === null;
+    const canCollect = isOwnRegion && region.explorationLevel > 0;
+    const canBuild = isOwnRegion;
+    
+    const exploreBtn = document.getElementById('mobile-explore');
+    const collectBtn = document.getElementById('mobile-collect');
+    const buildBtn = document.getElementById('mobile-build');
+    const disputeBtn = document.getElementById('mobile-dispute');
+    
+    if (exploreBtn) {
+        exploreBtn.disabled = false;
+        exploreBtn.style.opacity = '1';
+        // Atualizar ícone e texto baseado no tipo de região
+        if (isNeutralRegion) {
+            exploreBtn.innerHTML = '<span style="font-size:16px;">🏴</span><br><span style="font-size:9px;">Dominar</span>';
+            exploreBtn.style.background = 'rgba(217, 119, 6, 0.1)';
+            exploreBtn.style.borderColor = 'rgba(217, 119, 6, 0.3)';
+        } else if (isOwnRegion) {
+            exploreBtn.innerHTML = '<span style="font-size:16px;">⛏️</span><br><span style="font-size:9px;">Explorar</span>';
+            exploreBtn.style.background = 'rgba(59, 130, 246, 0.1)';
+            exploreBtn.style.borderColor = 'rgba(59, 130, 246, 0.3)';
+        } else {
+            exploreBtn.innerHTML = '<span style="font-size:16px;">⚔️</span><br><span style="font-size:9px;">Disputar</span>';
+            exploreBtn.style.background = 'rgba(220, 38, 38, 0.1)';
+            exploreBtn.style.borderColor = 'rgba(220, 38, 38, 0.3)';
         }
     }
+    
+    if (disputeBtn) {
+        // Só mostrar disputa para regiões inimigas
+        const isEnemyRegion = !isOwnRegion && !isNeutralRegion;
+        disputeBtn.disabled = !isEnemyRegion;
+        disputeBtn.style.opacity = isEnemyRegion ? '1' : '0.3';
+        disputeBtn.style.pointerEvents = isEnemyRegion ? 'auto' : 'none';
+    }
+    
+    if (collectBtn) {
+        collectBtn.disabled = !canCollect;
+        collectBtn.style.opacity = canCollect ? '1' : '0.5';
+    }
+    
+    if (buildBtn) {
+        buildBtn.disabled = !canBuild;
+        buildBtn.style.opacity = canBuild ? '1' : '0.5';
+    }
+}
 
     // ==================== HANDLERS DE AÇÕES ====================
     
@@ -777,6 +852,43 @@ export class UIMobileManager {
         window.gameLogic.handleCollect();
         this.closeSheet();
     }
+
+handleDispute() {
+    if (!window.uiManager?.disputeUI) {
+        console.error('❌ Sistema de disputa não disponível');
+        if (this.uiManager?.modals?.showFeedback) {
+            this.uiManager.modals.showFeedback('Sistema de disputa não disponível', 'error');
+        }
+        return;
+    }
+    
+    if (this.currentRegionId === null) {
+        this.showRegionSelectionPrompt();
+        return;
+    }
+    
+    const region = gameState.regions[this.currentRegionId];
+    const player = getCurrentPlayer();
+    
+    if (!region || !player) {
+        console.error('❌ Região ou jogador não encontrados');
+        return;
+    }
+    
+    // Verificar tipo de região para ação apropriada
+    if (region.controller === null) {
+        // Região neutra - abrir modal de dominação
+        window.uiManager.disputeUI.openDominationModal(region);
+    } else if (region.controller === player.id) {
+        // Região própria - explorar normalmente
+        window.gameLogic.handleExplore();
+    } else {
+        // Região inimiga - abrir modal de disputa
+        window.uiManager.disputeUI.openDisputeModal(region.id);
+    }
+    
+    this.closeSheet();
+}
     
     handleBuild() {
         if (!window.uiManager?.modals?.openStructureModal) {
@@ -837,100 +949,98 @@ export class UIMobileManager {
                 </div>
             `).join('');
         
-        const content = `
-            <div style="margin-bottom:20px;">
-                <h2 style="font-size:22px;font-weight:bold;color:white;margin-bottom:8px;">
-                    ${region.name}
-                    <span style="font-size:14px;color:#fbbf24;background:rgba(251,191,36,0.1);padding:4px 8px;border-radius:12px;margin-left:8px;">
-                        ${region.biome}
-                    </span>
-                </h2>
-                
-                <div style="display:flex;align-items:center;gap:8px;margin-top:12px;">
-                    <span style="font-size:14px;color:rgba(255,255,255,0.7);">Controlado por:</span>
-                    <span style="font-size:15px;font-weight:bold;color:${owner?.color || '#9ca3af'}">
-                        ${owner?.icon || '🏳️'} ${owner?.name || 'Neutro'}
-                    </span>
+    const content = `
+        <div style="margin-bottom:20px;">
+            <!-- ... código existente ... -->
+        </div>
+        
+        <div style="margin-bottom:20px;">
+            <h3 style="font-size:16px;font-weight:bold;color:#fbbf24;margin-bottom:12px;">Recursos Disponíveis</h3>
+            <div style="display:flex;gap:10px;overflow-x:auto;padding-bottom:8px;">
+                ${resourcesHTML || `
+                <div style="text-align:center;padding:20px;color:rgba(255,255,255,0.5);font-style:italic;width:100%;">
+                    Nenhum recurso disponível
                 </div>
-                
-                <div style="display:flex;align-items:center;gap:12px;margin-top:12px;">
-                    <div style="display:flex;align-items:center;gap:4px;background:rgba(0,0,0,0.3);padding:6px 10px;border-radius:8px;">
-                        <span style="color:#f59e0b;font-size:18px;">⭐</span>
-                        <span style="font-weight:bold;color:white;font-size:16px;">${region.explorationLevel}</span>
-                        <span style="font-size:11px;color:rgba(255,255,255,0.5);">Nível</span>
-                    </div>
-                    
-                    ${region.structures.length > 0 ? `
-                    <div style="display:flex;align-items:center;gap:4px;background:rgba(59,130,246,0.2);padding:6px 10px;border-radius:8px;">
-                        <span style="color:#93c5fd;font-size:18px;">🏗️</span>
-                        <span style="font-weight:bold;color:white;font-size:13px;">${region.structures[0]}</span>
-                        ${region.structures.length > 1 ? `<span style="font-size:10px;color:rgba(255,255,255,0.5);">+${region.structures.length-1}</span>` : ''}
-                    </div>
-                    ` : ''}
-                </div>
+                `}
             </div>
+        </div>
+        
+        <div style="border-top:1px solid rgba(255,255,255,0.1);padding-top:16px;">
+            <h3 style="font-size:14px;font-weight:bold;color:rgba(255,255,255,0.9);margin-bottom:12px;text-align:center;">Ações</h3>
             
-            <div style="margin-bottom:20px;">
-                <h3 style="font-size:16px;font-weight:bold;color:#fbbf24;margin-bottom:12px;">Recursos Disponíveis</h3>
-                <div style="display:flex;gap:10px;overflow-x:auto;padding-bottom:8px;">
-                    ${resourcesHTML || `
-                    <div style="text-align:center;padding:20px;color:rgba(255,255,255,0.5);font-style:italic;width:100%;">
-                        Nenhum recurso disponível
-                    </div>
-                    `}
-                </div>
-            </div>
-            
-            <div style="border-top:1px solid rgba(255,255,255,0.1);padding-top:16px;">
-                <h3 style="font-size:14px;font-weight:bold;color:rgba(255,255,255,0.9);margin-bottom:12px;text-align:center;">Ações</h3>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+                <button onclick="window.uiManager.mobileManager.executeRegionAction('${region.controller === null ? 'dominate' : region.controller === currentPlayer?.id ? 'explore' : 'dispute'}', ${region.id})"
+                        style="padding:14px;background:linear-gradient(135deg,${region.controller === null ? '#d97706' : region.controller === currentPlayer?.id ? '#3b82f6' : '#dc2626'});border:none;border-radius:12px;color:white;font-weight:bold;font-size:14px;display:flex;flex-direction:column;align-items:center;gap:4px;">
+                    <span style="font-size:20px;">${region.controller === null ? '🏴' : region.controller === currentPlayer?.id ? '⛏️' : '⚔️'}</span>
+                    <span style="font-size:12px;">${region.controller === null ? 'Dominar' : region.controller === currentPlayer?.id ? 'Explorar' : 'Disputar'}</span>
+                </button>
                 
-                <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
-                    <button onclick="window.uiManager.mobileManager.executeAction('explore', ${region.id})"
-                            style="padding:14px;background:linear-gradient(135deg,#3b82f6,#1d4ed8);border:none;border-radius:12px;color:white;font-weight:bold;font-size:14px;display:flex;flex-direction:column;align-items:center;gap:4px;">
-                        <span style="font-size:20px;">⛏️</span>
-                        <span style="font-size:12px;">${region.controller === null ? 'Dominar' : 'Explorar'}</span>
-                    </button>
-                    
-                    <button onclick="window.uiManager.mobileManager.executeAction('collect', ${region.id})"
-                            style="padding:14px;background:linear-gradient(135deg,#10b981,#059669);border:none;border-radius:12px;color:white;font-weight:bold;font-size:14px;display:flex;flex-direction:column;align-items:center;gap:4px;${!isOwnRegion ? 'opacity:0.5;cursor:not-allowed;' : ''}"
-                            ${!isOwnRegion ? 'disabled' : ''}>
-                        <span style="font-size:20px;">🌾</span>
-                        <span style="font-size:12px;">Coletar</span>
-                    </button>
-                </div>
-                
-                <button onclick="window.uiManager.mobileManager.executeAction('build', ${region.id})"
-                        style="width:100%;padding:14px;margin-top:10px;background:linear-gradient(135deg,#f59e0b,#d97706);border:none;border-radius:12px;color:white;font-weight:bold;font-size:14px;display:flex;justify-content:center;align-items:center;gap:8px;${!isOwnRegion ? 'opacity:0.5;cursor:not-allowed;' : ''}"
+                <button onclick="window.uiManager.mobileManager.executeRegionAction('collect', ${region.id})"
+                        style="padding:14px;background:linear-gradient(135deg,#10b981,#059669);border:none;border-radius:12px;color:white;font-weight:bold;font-size:14px;display:flex;flex-direction:column;align-items:center;gap:4px;${!isOwnRegion ? 'opacity:0.5;cursor:not-allowed;' : ''}"
                         ${!isOwnRegion ? 'disabled' : ''}>
-                    <span style="font-size:20px;">🏗️</span>
-                    <span>Construir</span>
+                    <span style="font-size:20px;">🌾</span>
+                    <span style="font-size:12px;">Coletar</span>
                 </button>
             </div>
-        `;
-        
-        this.sheetContent.innerHTML = content;
-        this.openSheet();
+            
+            <button onclick="window.uiManager.mobileManager.executeRegionAction('build', ${region.id})"
+                    style="width:100%;padding:14px;margin-top:10px;background:linear-gradient(135deg,#f59e0b,#d97706);border:none;border-radius:12px;color:white;font-weight:bold;font-size:14px;display:flex;justify-content:center;align-items:center;gap:8px;${!isOwnRegion ? 'opacity:0.5;cursor:not-allowed;' : ''}"
+                    ${!isOwnRegion ? 'disabled' : ''}>
+                <span style="font-size:20px;">🏗️</span>
+                <span>Construir</span>
+            </button>
+        </div>
+    `;
+    
+    this.sheetContent.innerHTML = content;
+    this.openSheet();
     }
     
-    executeAction(action, regionId) {
-        this.currentRegionId = regionId;
-        
-        if (window.gameState) {
-            window.gameState.selectedRegionId = regionId;
-        }
-        
-        switch(action) {
-            case 'explore':
-                this.handleExplore();
-                break;
-            case 'collect':
-                this.handleCollect();
-                break;
-            case 'build':
-                this.handleBuild();
-                break;
-        }
+executeRegionAction(action, regionId) {
+    this.currentRegionId = regionId;
+    
+    if (window.gameState) {
+        window.gameState.selectedRegionId = regionId;
     }
+    
+    const region = gameState.regions[regionId];
+    const player = getCurrentPlayer();
+    
+    if (!region || !player) {
+        console.error('❌ Região ou jogador não encontrados');
+        return;
+    }
+    
+    switch(action) {
+        case 'explore':
+            window.gameLogic.handleExplore();
+            break;
+        case 'collect':
+            this.handleCollect();
+            break;
+        case 'build':
+            this.handleBuild();
+            break;
+        case 'dominate':
+            // Abrir modal de dominação
+            if (window.uiManager?.disputeUI) {
+                window.uiManager.disputeUI.openDominationModal(region);
+            } else {
+                window.gameLogic.handleExplore(); // Fallback
+            }
+            break;
+        case 'dispute':
+            // Abrir modal de disputa
+            if (window.uiManager?.disputeUI) {
+                window.uiManager.disputeUI.openDisputeModal(regionId);
+            } else {
+                console.error('Sistema de disputa não disponível');
+            }
+            break;
+    }
+    
+    this.closeSheet();
+}
     
     showMobileMenu() {
         if (this.activeSheet) return;
