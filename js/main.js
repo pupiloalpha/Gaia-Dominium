@@ -168,7 +168,12 @@ function setupGlobalEventListeners() {
             window.uiManager.negotiation.openNegotiationModal();
           }
           break;
-        case 4: // Tecla 5 - Terminar Turno
+        case 4: // Tecla 5 - Disputar
+          if (window.gameLogic && typeof window.gameLogic.handleDispute === 'function') {
+            window.gameLogic.handleDispute();
+          }
+          break;
+        case 5: // Tecla 6 - Terminar Turno
           if (window.gameLogic && typeof window.gameLogic.handleEndTurn === 'function') {
             window.gameLogic.handleEndTurn();
           }
