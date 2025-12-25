@@ -18,7 +18,11 @@ const INITIAL_STATE = {
   turnsUntilNextEvent: 4,
   pendingNegotiations: [],
   activeNegotiation: null,
-  currentPhase: 'renda'
+  currentPhase: 'renda',
+  disputeHistory: [],
+  totalDisputes: 0,
+  successfulDisputes: 0,
+  failedDisputes: 0
 };
 
 const INITIAL_ACHIEVEMENTS_STATE = {
@@ -27,7 +31,10 @@ const INITIAL_ACHIEVEMENTS_STATE = {
   totalNegotiations: 0,
   wins: 0,
   unlockedAchievements: [],
-  playerAchievements: []
+  playerAchievements: [],
+  totalDisputes: 0,
+  successfulDisputes: 0,
+  failedDisputes: 0
 };
 
 const LOG_HISTORY_LIMIT = 50;
@@ -548,6 +555,44 @@ function updateNegotiationStatus(negotiationId, status) {
   return null;
 }
 
+// Adicionar ao INITIAL_STATE:
+const INITIAL_STATE = {
+  // ... campos existentes
+  disputeHistory: [],
+  totalDisputes: 0,
+  successfulDisputes: 0,
+  failedDisputes: 0
+};
+
+// Adicionar ao INITIAL_ACHIEVEMENTS_STATE:
+const INITIAL_ACHIEVEMENTS_STATE = {
+  // ... campos existentes
+  totalDisputes: 0,
+  successfulDisputes: 0,
+  failedDisputes: 0
+};
+
+// Função para registrar disputa de regiões
+function addDisputeRecord(attackerId, defenderId, regionId, success, costs) {
+  if (!gameState.disputeHistory) gameState.disputeHistory = [];
+  
+  gameState.disputeHistory.push({
+    id: Date.now(),
+    attackerId,
+    defenderId,
+    regionId,
+    success,
+    costs,
+    turn: gameState.turn,
+    timestamp: new Date().toISOString()
+  });
+  
+  // Limitar histórico
+  if (gameState.disputeHistory.length > 100) {
+    gameState.disputeHistory = gameState.disputeHistory.slice(-100);
+  }
+}
+
 // ==================== PERSISTÊNCIA ====================
 
 function saveGame() {
@@ -696,6 +741,7 @@ export {
   achievementsState,
   activityLogHistory,
   negotiationState,
+  addDisputeRecord,
   
   // Getters
   getGameState,
