@@ -7,6 +7,16 @@ class FactionLogic {
     this.main = gameLogic;
   }
 
+getPlayerFaction(player) {
+  // Verificar se o jogador tem facção atribuída
+  if (player.factionId !== undefined && FACTION_ABILITIES[player.factionId]) {
+    return FACTION_ABILITIES[player.factionId];
+  }
+  
+  // Fallback: usar o ID do jogador para determinar facção
+  const factionIndex = player.id % Object.keys(FACTION_ABILITIES).length;
+  return FACTION_ABILITIES[factionIndex];
+}
   // ==================== APLICAÇÃO DE HABILIDADES ====================
 
   applyFactionBonuses(player) {
