@@ -201,11 +201,12 @@ export class DisputeUI {
 
         // Calcular custos e chance de sucesso
         let disputeData;
-        
-        // Verificar se o sistema de disputa está disponível
-        if (window.gameLogic && window.gameLogic.disputeLogic) {
-            disputeData = window.gameLogic.disputeLogic.calculateDisputeCosts(attacker, region);
-        } else {
+        try {
+        // TENTAR usar a lógica real
+        disputeData = window.gameLogic.disputeLogic.calculateDisputeCosts(attacker, region);
+    } catch (error) {
+        console.warn('⚠️ Erro ao calcular custos de disputa, usando fallback:', error);
+    
             // Fallback: valores padrão
             disputeData = {
                 finalCost: {
@@ -301,19 +302,28 @@ export class DisputeUI {
         // Fechar modal de confirmação
         this.closeDisputeModal();
 
-        // Verificar se o sistema de disputa está disponível
-        if (window.gameLogic && window.gameLogic.disputeLogic && window.gameLogic.disputeLogic.handleDispute) {
-            // Chamar a lógica de disputa com os parâmetros corretos
-            window.gameLogic.disputeLogic.handleDispute(
-                this.currentDisputeData.region,
-                this.currentDisputeData.attacker
-            );
-        } else {
-            console.error('❌ Sistema de disputa não disponível');
-            this.uiManager.modals.showFeedback('Erro ao processar disputa', 'error');
+        // Obter os objetos necessários do currentDisputeData
+    const { region, attacker } = this.currentDisputeData;
+    
+    if (!region || !attacker) {
+        console.error('❌ Dados de disputa incompletos');
+        this.uiManager.modals.showFeedback('Erro: dados de disputa incompletos', 'error');
+        return;
+    }
+        // Chamar a lógica de disputa com os parâmetros CORRETOS
+    if (window.gameLogic && window.gameLogic.disputeLogic && window.gameLogic.disputeLogic.handleDispute) {
+        window.gameLogic.disputeLogic.handleDispute(region, attacker);
+    } else {
+        console.error('❌ Sistema de disputa não disponível');
+        this.uiManager.modals.showFeedback('Erro ao processar disputa', 'error');
+        
+// Fallback: devolver ação se não conseguiu processar
+        gameState.actionsLeft++;
+        if (window.uiManager && window.uiManager.gameManager) {
+            window.uiManager.gameManager.updateFooter();
         }
     }
-
+}
     confirmDomination() {
         if (!this.currentDominationData) return;
 
