@@ -131,7 +131,21 @@ class GameLogic {
   handleExplore() { this.actionsLogic.handleExplore(); }
   handleCollect() { this.actionsLogic.handleCollect(); }
   handleBuild(type) { this.actionsLogic.handleBuild(type); }
-  handleDispute() { this.disputeLogic.handleDispute(); }
+
+  
+handleDispute() { 
+    // Fallback para compatibilidade
+    if (this.disputeLogic) {
+        const region = gameState.regions[gameState.selectedRegionId];
+        const attacker = getCurrentPlayer();
+        
+        if (region && attacker) {
+            return this.disputeLogic.handleDispute(region, attacker);
+        }
+    }
+    return null;
+}
+
   performAction(type) { return this.actionsLogic.consumeAction(); }
   
   // Negociação
