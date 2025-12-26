@@ -678,8 +678,8 @@ handleExploreWithContext() {
     const player = getCurrentPlayer();
     
     if (region.controller === null) {
-        // Região neutra - abrir modal de dominação
-        this.uiManager.disputeUI.openDominationModal(region);
+        // Região neutra - dominar diretamente (SEM MODAL)
+        window.gameLogic.handleExplore();
     } else if (region.controller === player.id) {
         // Região própria - explorar diretamente
         window.gameLogic.handleExplore();
@@ -688,7 +688,7 @@ handleExploreWithContext() {
         this.uiManager.disputeUI.openDisputeModal(region.id);
     }
 }
-
+    
     // ==================== LOG DE ATIVIDADES ====================
 
     renderActivityLog(filter = 'all') {
