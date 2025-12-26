@@ -82,7 +82,21 @@ _getAIPlayerForCurrentPlayer() {
 async checkAndExecuteAITurn() {
     if (this.inProgress) return;
     const player = getCurrentPlayer();
-    if (!player || (!player.type === 'ai' && !player.isAI)) return;
+
+  // Verificar se jogador está eliminado
+  if (!player || player.eliminated) {
+    console.log(`🤖 Jogador ${player?.name || 'desconhecido'} está eliminado, pulando turno.`);
+    
+    // Pular turno automaticamente
+    setTimeout(() => {
+      if (this.main?.turnLogic?.handleEndTurn) {
+        this.main.turnLogic.handleEndTurn();
+      }
+    }, 1000);
+    return;
+  }
+  
+    if (!(player.type === 'ai' || player.isAI)) return;
 
     this.inProgress = true;
     console.log(`🤖 Iniciando loop IA para ${player.name} (ID: ${player.id})`);
