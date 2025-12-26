@@ -348,15 +348,33 @@ async handleDispute(region, attacker) {
 
   // Finalizar disputa
   _finalizeDispute() {
-    // Verificar vitória
-    this.main.turnLogic.checkVictory();
+  // Verificar vitória
+  this.main.turnLogic.checkVictory();
+  
+  // Forçar atualização completa da UI
+  if (window.uiManager) {
+    window.uiManager.updateUI();
     
-    // Atualizar UI
-    if (window.uiManager) {
-      window.uiManager.updateUI();
-      if (window.uiManager.gameManager) {
-        setTimeout(() => window.uiManager.gameManager.updateFooter(), 100);
-      }
+    // Atualização específica dos componentes
+    if (window.uiManager.gameManager) {
+      window.uiManager.gameManager.renderBoard(); // Renderizar tabuleiro imediatamente
+      window.uiManager.gameManager.updateFooter(); // Atualizar footer
+      window.uiManager.gameManager.updateTurnInfo(); // Atualizar info do turno
+      window.uiManager.gameManager.updatePhaseIndicator(); // Atualizar indicador de fase
+    }
+    
+    // Atualizar header de jogadores
+    if (window.uiManager.gameManager && window.uiManager.gameManager.renderHeaderPlayers) {
+      window.uiManager.gameManager.renderHeaderPlayers();
+    }
+    
+    // Atualizar sidebar
+    if (window.uiManager.gameManager && window.uiManager.gameManager.renderSidebar) {
+      window.uiManager.gameManager.renderSidebar(gameState.selectedPlayerForSidebar);
     }
   }
+  
+  // Log para debug
+  console.log('✅ Disputa finalizada - UI atualizada');
+}
 }
