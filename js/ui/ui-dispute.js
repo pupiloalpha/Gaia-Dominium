@@ -294,27 +294,35 @@ export class DisputeUI {
 
     // Confirmar disputa
     confirmDispute() {
-        if (!this.currentDisputeData) return;
+    if (!this.currentDisputeData) return;
 
-        const { region, attacker } = this.currentDisputeData;
-        
-        if (!region || !attacker) {
-            console.error('❌ Dados de disputa incompletos');
-            this.uiManager.modals.showFeedback('Erro ao processar disputa', 'error');
-            return;
-        }
-
-        // Fechar modal de confirmação
-        this.closeDisputeModal();
-
-        // Executar disputa
-        if (window.gameLogic && window.gameLogic.disputeLogic && window.gameLogic.disputeLogic.handleDispute) {
-            window.gameLogic.disputeLogic.handleDispute(region, attacker);
-        } else {
-            console.error('❌ Sistema de disputa não disponível');
-            this.uiManager.modals.showFeedback('Erro ao processar disputa', 'error');
-        }
+    const { region, attacker, disputeData } = this.currentDisputeData;
+    
+    if (!region || !attacker) {
+        console.error('❌ Dados de disputa incompletos');
+        this.uiManager.modals.showFeedback('Erro: dados de disputa incompletos', 'error');
+        return;
     }
+
+    // IMPORTANTE: Verificar se ainda tem ações disponíveis
+    if (gameState.actionsLeft <= 0) {
+        this.uiManager.modals.showFeedback('Sem ações restantes neste turno.', 'error');
+        this.closeDisputeModal();
+        return;
+    }
+
+    // Fechar modal de confirmação
+    this.closeDisputeModal();
+
+    // Executar a disputa
+    if (window.gameLogic && window.gameLogic.disputeLogic) {
+        // A ação será consumida dentro do handleDispute
+        window.gameLogic.disputeLogic.handleDispute(region, attacker);
+    } else {
+        console.error('❌ Sistema de disputa não disponível');
+        this.uiManager.modals.showFeedback('Erro ao processar disputa', 'error');
+    }
+}
 
     // Mostrar resultado da disputa
     openDisputeResultModal(success, region, attacker, defender, rewards = {}) {
