@@ -183,6 +183,13 @@ handleDispute() {
   
   canAffordAction(actionType) {
   const player = getCurrentPlayer();
+
+  // Verificar se jogador está eliminado
+  if (player?.eliminated) {
+    // Jogadores eliminados só podem tentar ressuscitar (dominar regiões neutras)
+    return actionType === 'explorar' && gameState.selectedRegionId !== null;
+  }
+    
   let cost = GAME_CONFIG.ACTION_DETAILS[actionType]?.cost || {};
 
   // Verificar descontos de facção
@@ -239,6 +246,21 @@ else {
     return (player.resources[resource] || 0) >= amount;
   });
 }
+
+// Adicionar validação em validateAction (se existir) ou criar nova:
+validatePlayerAction(playerId, actionType) {
+  const player = getPlayerById(playerId);
+  if (!player) return false;
+  
+  // Verificar se jogador está eliminado
+  if (player.eliminated) {
+    // Jogadores eliminados só podem dominar regiões neutras
+    return actionType === 'dominate' || actionType === 'explorar';
+  }
+  
+  return true;
+}
+
   
   preventActionIfModalOpen() {
     const modal = document.getElementById('negotiationModal');
