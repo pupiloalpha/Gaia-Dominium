@@ -176,6 +176,24 @@ export class DisputeLogic {
 
   // Executar disputa para receber região e jogador
 async handleDispute(region, attacker) {
+    // Verificar se o jogo já terminou
+    if (this.main.turnLogic && this.main.turnLogic.gameEnded) {
+        this.main.showFeedback('O jogo já terminou!', 'warning');
+        return;
+    }
+    
+    // Verificar ações restantes
+    if (gameState.actionsLeft <= 0) {
+        this.main.showFeedback('Sem ações restantes neste turno.', 'warning');
+        return;
+    }
+    
+    // Verificar se a região ainda é válida para disputa
+    if (region.controller === null || region.controller === attacker.id) {
+        this.main.showFeedback('Esta região não pode ser disputada.', 'error');
+        return;
+    }
+    
   // Calcular custos e chances
   const disputeData = this.calculateDisputeCosts(attacker, region);
   const defender = getPlayerById(region.controller);
