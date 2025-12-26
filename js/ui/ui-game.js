@@ -111,20 +111,49 @@ export class UIGameManager {
     }
 
     renderHeaderPlayers() {
-        if (!this.playerHeaderList) return;
-        
-        this.playerHeaderList.innerHTML = gameState.players.map((p, i) => `
-            <button data-index="${i}" 
-                    class="px-3 py-1 rounded-lg ${i === gameState.currentPlayerIndex ? 'ring-2 ring-yellow-300' : 'bg-white/5'} 
-                           text-white text-sm flex items-center gap-2">
-                <div class="text-xl">${p.icon}</div>
-                <div>
-                    <div class="font-medium">${p.name}</div>
-                    <div class="text-xs text-yellow-400">${p.victoryPoints} PV</div>
-                </div>
-            </button>
-        `).join('');
+  if (!this.playerHeaderList) return;
+  
+  this.playerHeaderList.innerHTML = gameState.players.map((p, i) => {
+    const isCurrent = i === gameState.currentPlayerIndex;
+    const isEliminated = p.eliminated;
+    
+    let buttonClass = 'px-3 py-1 rounded-lg text-white text-sm flex items-center gap-2 ';
+    let content = '';
+    
+    if (isEliminated) {
+      buttonClass += 'bg-gray-800/50 opacity-50 cursor-not-allowed ';
+      content = `
+        <div class="text-xl">💀</div>
+        <div>
+          <div class="font-medium line-through">${p.name}</div>
+          <div class="text-xs text-gray-300">ELIMINADO</div>
+        </div>
+      `;
+    } else if (isCurrent) {
+      buttonClass += 'ring-2 ring-yellow-300 bg-white/5 ';
+      content = `
+        <div class="text-xl">${p.icon}</div>
+        <div>
+          <div class="font-medium">${p.name}</div>
+          <div class="text-xs text-yellow-400">${p.victoryPoints} PV</div>
+        </div>
+      `;
+    } else {
+      buttonClass += 'bg-white/5 ';
+      content = `
+        <div class="text-xl">${p.icon}</div>
+        <div>
+          <div class="font-medium">${p.name}</div>
+          <div class="text-xs text-yellow-400">${p.victoryPoints} PV</div>
+        </div>
+      `;
     }
+    
+    return `<button data-index="${i}" class="${buttonClass}" ${isEliminated ? 'disabled' : ''}>
+      ${content}
+    </button>`;
+  }).join('');
+}
 
     renderBoard() {
         // VERIFICAÇÃO DE SEGURANÇA
@@ -304,47 +333,61 @@ export class UIGameManager {
     }
 
     renderSidebar(playerIndex = gameState.selectedPlayerForSidebar) {
-    const player = gameState.players[playerIndex];
-    if (!player) return;
-    
-    const isCurrentPlayer = playerIndex === gameState.currentPlayerIndex;
-    const faction = player.faction;
-    const factionColor = player.color; // Usar a cor do jogador (da facção)
-    
-    this.sidebarPlayerHeader.innerHTML = `
-        <div class="flex items-center gap-3 p-2 rounded-lg" 
-             style="border-left: 4px solid ${player.color}; background: rgba(${this.hexToRgb(player.color).join(', ')}, 0.05)">
-            <div class="text-3xl">${player.icon}</div>
-            <div class="flex-1">
-                <div class="text-base font-semibold text-white">${player.name}</div>
-                <div class="text-xs text-gray-300 mb-1">
-                    Jogador ${player.id + 1} ${isCurrentPlayer ? '• 🎮 TURNO' : ''}
-                </div>
-                ${faction ? `
-                <div class="text-xs font-medium flex items-center gap-1" style="color: ${factionColor}">
-                    <span class="text-sm">${faction.icon || '🏛️'}</span>
-                    <span>${faction.name}</span>
-                </div>
-                ` : '<div class="text-xs text-gray-400">Sem facção</div>'}
-            </div>
-            <div class="text-2xl font-bold text-yellow-400">${player.victoryPoints} PV</div>
+  const player = gameState.players[playerIndex];
+  if (!player) return;
+  
+  const isCurrentPlayer = playerIndex === gameState.currentPlayerIndex;
+  const isEliminated = player.eliminated;
+  const faction = player.faction;
+  const factionColor = player.color;
+  
+  this.sidebarPlayerHeader.innerHTML = `
+    <div class="flex items-center gap-3 p-2 rounded-lg" 
+         style="border-left: 4px solid ${isEliminated ? '#666666' : player.color}; 
+                background: rgba(${this.hexToRgb(isEliminated ? '#666666' : player.color).join(', ')}, 0.05)">
+      <div class="text-3xl">${isEliminated ? '💀' : player.icon}</div>
+      <div class="flex-1">
+        <div class="text-base font-semibold ${isEliminated ? 'text-gray-400 line-through' : 'text-white'}">
+          ${player.name} ${isEliminated ? '(ELIMINADO)' : ''}
         </div>
-    `;
-    
-    this.resourceList.innerHTML = Object.entries(player.resources)
-        .map(([key, value]) => `
-            <li class="flex justify-between items-center py-0.5">
-                <span class="text-sm text-gray-200 flex items-center gap-1.5">
-                    <span class="text-base">${RESOURCE_ICONS[key]}</span>
-                    <span class="capitalize">${key}</span>
-                </span>
-                <span class="text-sm font-bold text-white">${value}</span>
-                </li>
-            `).join('');
-    
-    this.renderControlledRegions(player);
-    this.renderAchievementsInSidebar(playerIndex);
-    this.renderActivityLog('all');
+        <div class="text-xs text-gray-300 mb-1">
+          Jogador ${player.id + 1} ${isCurrentPlayer && !isEliminated ? '• 🎮 TURNO' : ''}
+          ${isEliminated ? '• 💀 ELIMINADO' : ''}
+        </div>
+        ${faction && !isEliminated ? `
+        <div class="text-xs font-medium flex items-center gap-1" style="color: ${factionColor}">
+          <span class="text-sm">${faction.icon || '🏛️'}</span>
+          <span>${faction.name}</span>
+        </div>
+        ` : ''}
+        ${isEliminated ? `
+        <div class="text-xs text-yellow-300 mt-1 flex items-center gap-1">
+          <span>⚡ Para ressuscitar:</span>
+          <span>Domine uma região neutra (custo: 2 PV + recursos do bioma)</span>
+        </div>
+        ` : ''}
+      </div>
+      <div class="text-2xl font-bold ${isEliminated ? 'text-gray-400' : 'text-yellow-400'}">
+        ${player.victoryPoints} PV
+      </div>
+    </div>
+  `;
+  
+  // Restante da função permanece similar, mas adicionar verificação para eliminados
+  this.resourceList.innerHTML = Object.entries(player.resources)
+    .map(([key, value]) => `
+      <li class="flex justify-between items-center py-0.5 ${isEliminated ? 'opacity-50' : ''}">
+        <span class="text-sm ${isEliminated ? 'text-gray-400' : 'text-gray-200'} flex items-center gap-1.5">
+          <span class="text-base">${RESOURCE_ICONS[key]}</span>
+          <span class="capitalize">${key}</span>
+        </span>
+        <span class="text-sm font-bold ${isEliminated ? 'text-gray-400' : 'text-white'}">${value}</span>
+      </li>
+    `).join('');
+  
+  this.renderControlledRegions(player);
+  this.renderAchievementsInSidebar(playerIndex);
+  this.renderActivityLog('all');
 }
 
     renderAchievementsInSidebar(playerIndex) {
@@ -473,6 +516,54 @@ export class UIGameManager {
             return;
         }
 
+        const player = getCurrentPlayer();
+        const isEliminated = player?.eliminated;
+  
+  // Se jogador atual está eliminado, desabilitar todas as ações exceto explorar em regiões neutras
+  if (isEliminated) {
+    [this.actionExploreBtn, this.actionCollectBtn, this.actionBuildBtn, this.actionNegotiateBtn, this.endTurnBtn]
+      .forEach(btn => {
+        if (btn) {
+          if (btn === this.actionExploreBtn) {
+            // Explorar só habilitado se região selecionada for neutra
+            if (gameState.selectedRegionId !== null) {
+              const region = gameState.regions[gameState.selectedRegionId];
+              if (region && region.controller === null) {
+                btn.disabled = false;
+                btn.classList.remove('opacity-30', 'cursor-not-allowed');
+                btn.classList.add('bg-yellow-600');
+                btn.textContent = 'Ressuscitar';
+                btn.title = 'Dominar região neutra para ressuscitar (custo: 2 PV + recursos do bioma)';
+              } else {
+                btn.disabled = true;
+                btn.classList.add('opacity-30', 'cursor-not-allowed');
+                btn.textContent = 'Ressuscitar';
+                btn.title = 'Selecione uma região neutra para ressuscitar';
+              }
+            } else {
+              btn.disabled = true;
+              btn.classList.add('opacity-30', 'cursor-not-allowed');
+              btn.textContent = 'Ressuscitar';
+              btn.title = 'Selecione uma região neutra para ressuscitar';
+            }
+          } else {
+            btn.disabled = true;
+            btn.classList.add('opacity-30', 'cursor-not-allowed');
+            btn.title = 'Jogador eliminado não pode realizar esta ação';
+          }
+        }
+      });
+    
+    if (this.endTurnBtn) {
+      this.endTurnBtn.disabled = false;
+      this.endTurnBtn.textContent = 'Passar Turno';
+      this.endTurnBtn.title = 'Jogador eliminado pode passar o turno';
+    }
+    
+    return;
+  }
+
+        
         if (!gameState.gameStarted) {
             [this.actionExploreBtn, this.actionCollectBtn, this.actionBuildBtn, this.actionNegotiateBtn]
                 .forEach(b => {
@@ -486,7 +577,7 @@ export class UIGameManager {
             return;
         }
         
-        const player = gameState.players[gameState.currentPlayerIndex];
+        // const player = gameState.players[gameState.currentPlayerIndex];
         const regionId = gameState.selectedRegionId;
         const currentPhase = gameState.currentPhase || 'renda';
         const isActionPhase = currentPhase === 'acoes';
