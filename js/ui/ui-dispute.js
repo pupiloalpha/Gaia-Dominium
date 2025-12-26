@@ -1,4 +1,4 @@
-// ui-dispute.js - Interface para Disputas Territoriais
+// ui-dispute.js - Interface para Disputas Territoriais (APENAS DISPUTA)
 import { gameState, getCurrentPlayer, getPlayerById } from '../state/game-state.js';
 import { RESOURCE_ICONS } from '../state/game-config.js';
 
@@ -21,11 +21,7 @@ export class DisputeUI {
             this.createDisputeResultModal();
         }
 
-        // Modal de dominação (para regiões neutras)
-        this.dominationModal = document.getElementById('dominationModal');
-        if (!this.dominationModal) {
-            this.createDominationModal();
-        }
+        // NÃO CRIAR MODAL DE DOMINAÇÃO - remover esta parte
     }
 
     createDisputeModal() {
@@ -93,121 +89,24 @@ export class DisputeUI {
         document.getElementById('disputeResultOkBtn').addEventListener('click', () => this.closeDisputeResultModal());
     }
 
-    createDominationModal() {
-        // Criar o modal para dominação de regiões neutras
-        const modal = document.createElement('div');
-        modal.id = 'dominationModal';
-        modal.className = 'hidden fixed inset-0 z-[110] flex items-center justify-center p-6';
-        modal.innerHTML = `
-            <div class="absolute inset-0 bg-black/70"></div>
-            <div class="relative w-full max-w-md bg-gray-900/95 backdrop-blur-md border border-yellow-500/30 rounded-2xl shadow-xl p-6" style="background-color: rgba(17, 24, 39, 0.98) !important;">
-                <div class="flex justify-between items-center mb-6">
-                    <div>
-                        <h2 class="text-2xl text-yellow-300 font-semibold">🏴 Dominar Região</h2>
-                        <p id="dominationRegionName" class="text-gray-300 text-sm"></p>
-                    </div>
-                    <button id="dominationModalClose" class="text-gray-300 hover:text-white text-xl">✖</button>
-                </div>
-                
-                <div id="dominationModalContent" class="space-y-4">
-                    <!-- Conteúdo será preenchido dinamicamente -->
-                </div>
-
-                <div class="flex justify-end gap-3 mt-6">
-                    <button id="dominationCancelBtn" class="px-4 py-2 bg-gray-700 hover:bg-gray-600 rounded-lg text-white">Cancelar</button>
-                    <button id="dominationConfirmBtn" class="px-4 py-2 bg-yellow-600 hover:bg-yellow-700 rounded-lg text-white">Dominar</button>
-                </div>
-            </div>
-        `;
-        document.body.appendChild(modal);
-        this.dominationModal = modal;
-
-        // Event listeners
-        document.getElementById('dominationModalClose').addEventListener('click', () => this.closeDominationModal());
-        document.getElementById('dominationCancelBtn').addEventListener('click', () => this.closeDominationModal());
-        document.getElementById('dominationConfirmBtn').addEventListener('click', () => this.confirmDomination());
-    }
-
-    // Método para abrir modal de dominação (regiões neutras)
-    openDominationModal(region) {
-        const player = getCurrentPlayer();
-        
-        // Calcular custos
-        const pvCost = 2;
-        const resourceCosts = Object.entries(region.resources)
-            .filter(([key, value]) => value > 0)
-            .map(([key, value]) => `${value} ${RESOURCE_ICONS[key]}`)
-            .join(', ');
-
-        document.getElementById('dominationRegionName').textContent = `Região: ${region.name} (${region.biome})`;
-
-        const content = document.getElementById('dominationModalContent');
-        content.innerHTML = `
-            <div class="space-y-4">
-                <div class="bg-gray-800 p-4 rounded-lg">
-                    <h3 class="text-lg font-semibold text-white mb-2">Custos para Dominação</h3>
-                    <div class="space-y-2">
-                        <div class="flex justify-between">
-                            <span class="text-gray-300">Pontos de Vitória:</span>
-                            <span class="text-yellow-400 font-bold">${pvCost} ⭐</span>
-                        </div>
-                        <div class="flex justify-between">
-                            <span class="text-gray-300">Recursos do Bioma:</span>
-                            <div class="flex gap-1">${resourceCosts}</div>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="bg-yellow-900/30 p-4 rounded-lg">
-                    <h3 class="text-lg font-semibold text-white mb-2">Benefícios</h3>
-                    <ul class="text-sm text-gray-300 list-disc list-inside">
-                        <li>+1 Região controlada</li>
-                        <li>Acesso aos recursos da região</li>
-                        <li>Possibilidade de construir estruturas</li>
-                        <li>Bônus de PV por território</li>
-                    </ul>
-                </div>
-
-                <div class="text-sm text-gray-400">
-                    <p>⚠️ Você atualmente tem ${player.victoryPoints} PV e recursos:</p>
-                    <div class="flex gap-2 mt-1">
-                        ${Object.entries(player.resources)
-                            .filter(([key, value]) => value > 0)
-                            .map(([key, value]) => 
-                                `<span class="text-xs px-2 py-1 bg-gray-700 rounded">${value}${RESOURCE_ICONS[key]}</span>`
-                            ).join('')}
-                    </div>
-                </div>
-            </div>
-        `;
-
-        // Armazenar dados para uso posterior
-        this.currentDominationData = {
-            regionId: region.id,
-            pvCost,
-            resourceCosts: region.resources
-        };
-
-        // Mostrar modal
-        this.dominationModal.classList.remove('hidden');
-        this.uiManager.setModalMode(true);
-    }
-
     // Método para abrir modal de disputa (regiões inimigas)
     openDisputeModal(regionId) {
         const region = gameState.regions[regionId];
         const defender = getPlayerById(region.controller);
         const attacker = getCurrentPlayer();
 
+        if (!region || !defender || !attacker) {
+            console.error('❌ Dados de disputa inválidos');
+            return;
+        }
+
         // Calcular custos e chance de sucesso
         let disputeData;
         try {
-        // TENTAR usar a lógica real
-        disputeData = window.gameLogic.disputeLogic.calculateDisputeCosts(attacker, region);
-    } catch (error) {
-        console.warn('⚠️ Erro ao calcular custos de disputa, usando fallback:', error);
-    
-            // Fallback: valores padrão
+            disputeData = window.gameLogic.disputeLogic.calculateDisputeCosts(attacker, region);
+        } catch (error) {
+            console.warn('⚠️ Erro ao calcular custos de disputa:', error);
+            // Fallback
             disputeData = {
                 finalCost: {
                     pv: 3,
@@ -220,7 +119,6 @@ export class DisputeUI {
             };
         }
 
-        // Preencher o modal
         document.getElementById('disputeRegionName').textContent = `Região: ${region.name} (Controlada por ${defender.name})`;
 
         const content = document.getElementById('disputeModalContent');
@@ -263,7 +161,7 @@ export class DisputeUI {
             </div>
         `;
 
-        // Armazenar dados da disputa para uso posterior
+        // Armazenar dados da disputa
         this.currentDisputeData = {
             regionId,
             region,
@@ -284,65 +182,38 @@ export class DisputeUI {
         this.currentDisputeData = null;
     }
 
-    closeDominationModal() {
-        this.dominationModal.classList.add('hidden');
-        this.uiManager.setModalMode(false);
-        this.currentDominationData = null;
-    }
-
     closeDisputeResultModal() {
         this.disputeResultModal.classList.add('hidden');
         this.uiManager.setModalMode(false);
     }
 
-    // Confirmar ações
+    // Confirmar disputa - CORREÇÃO CRÍTICA
     confirmDispute() {
         if (!this.currentDisputeData) return;
+
+        const { region, attacker } = this.currentDisputeData;
+        
+        if (!region || !attacker) {
+            console.error('❌ Dados de disputa incompletos');
+            this.uiManager.modals.showFeedback('Erro ao processar disputa', 'error');
+            return;
+        }
 
         // Fechar modal de confirmação
         this.closeDisputeModal();
 
-        // Obter os objetos necessários do currentDisputeData
-    const { region, attacker } = this.currentDisputeData;
-    
-    if (!region || !attacker) {
-        console.error('❌ Dados de disputa incompletos');
-        this.uiManager.modals.showFeedback('Erro: dados de disputa incompletos', 'error');
-        return;
-    }
-        // Chamar a lógica de disputa com os parâmetros CORRETOS
-    if (window.gameLogic && window.gameLogic.disputeLogic && window.gameLogic.disputeLogic.handleDispute) {
-        window.gameLogic.disputeLogic.handleDispute(region, attacker);
-    } else {
-        console.error('❌ Sistema de disputa não disponível');
-        this.uiManager.modals.showFeedback('Erro ao processar disputa', 'error');
-        
-// Fallback: devolver ação se não conseguiu processar
-        gameState.actionsLeft++;
-        if (window.uiManager && window.uiManager.gameManager) {
-            window.uiManager.gameManager.updateFooter();
-        }
-    }
-}
-    confirmDomination() {
-        if (!this.currentDominationData) return;
-
-        // Fechar modal
-        this.closeDominationModal();
-
-        // Chamar a lógica de dominação (que já existe no handleExplore)
-        if (window.gameLogic && window.gameLogic.handleExplore) {
-            // Primeiro selecionar a região
-            gameState.selectedRegionId = this.currentDominationData.regionId;
-            
-            // Depois executar a ação de explorar/dominar
-            window.gameLogic.handleExplore();
+        // Executar disputa
+        if (window.gameLogic && window.gameLogic.disputeLogic && window.gameLogic.disputeLogic.handleDispute) {
+            // Chamar a lógica de disputa com os parâmetros CORRETOS
+            window.gameLogic.disputeLogic.handleDispute(region, attacker);
+        } else {
+            console.error('❌ Sistema de disputa não disponível');
+            this.uiManager.modals.showFeedback('Erro ao processar disputa', 'error');
         }
     }
 
     // Mostrar resultado da disputa
     openDisputeResultModal(success, region, attacker, defender, rewards = {}) {
-        // Atualizar o título e a cor da borda com base no resultado
         const title = document.getElementById('disputeResultTitle');
         const modalContent = this.disputeResultModal.querySelector('.relative');
 
@@ -356,7 +227,6 @@ export class DisputeUI {
             modalContent.classList.remove('border-green-500/30');
         }
 
-        // Preencher conteúdo
         const content = document.getElementById('disputeResultContent');
         content.innerHTML = `
             <div class="space-y-4">
@@ -397,7 +267,6 @@ export class DisputeUI {
             </div>
         `;
 
-        // Mostrar modal
         this.disputeResultModal.classList.remove('hidden');
         this.uiManager.setModalMode(true);
     }
