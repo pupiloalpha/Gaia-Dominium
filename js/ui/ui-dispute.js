@@ -35,7 +35,7 @@ export class DisputeUI {
         modal.className = 'hidden fixed inset-0 z-[110] flex items-center justify-center p-6';
         modal.innerHTML = `
             <div class="absolute inset-0 bg-black/70"></div>
-            <div class="relative w-full max-w-md bg-gray-900/95 backdrop-blur-md border border-red-500/30 rounded-2xl shadow-xl p-6">
+            <div class="relative w-full max-w-md bg-gray-900/95 backdrop-blur-md border border-red-500/30 rounded-2xl shadow-xl p-6" style="background-color: rgba(17, 24, 39, 0.98) !important;">
                 <div class="flex justify-between items-center mb-6">
                     <div>
                         <h2 class="text-2xl text-red-300 font-semibold">⚔️ Disputa Territorial</h2>
@@ -70,7 +70,7 @@ export class DisputeUI {
         modal.className = 'hidden fixed inset-0 z-[110] flex items-center justify-center p-6';
         modal.innerHTML = `
             <div class="absolute inset-0 bg-black/70"></div>
-            <div class="relative w-full max-w-md bg-gray-900/95 backdrop-blur-md border rounded-2xl shadow-xl p-6">
+            <div class="relative w-full max-w-md bg-gray-900/95 backdrop-blur-md border rounded-2xl shadow-xl p-6" style="background-color: rgba(17, 24, 39, 0.98) !important;">
                 <div class="flex justify-between items-center mb-6">
                     <h2 id="disputeResultTitle" class="text-2xl font-semibold">Resultado da Disputa</h2>
                     <button id="disputeResultClose" class="text-gray-300 hover:text-white text-xl">✖</button>
@@ -100,7 +100,7 @@ export class DisputeUI {
         modal.className = 'hidden fixed inset-0 z-[110] flex items-center justify-center p-6';
         modal.innerHTML = `
             <div class="absolute inset-0 bg-black/70"></div>
-            <div class="relative w-full max-w-md bg-gray-900/95 backdrop-blur-md border border-yellow-500/30 rounded-2xl shadow-xl p-6">
+            <div class="relative w-full max-w-md bg-gray-900/95 backdrop-blur-md border border-yellow-500/30 rounded-2xl shadow-xl p-6" style="background-color: rgba(17, 24, 39, 0.98) !important;">
                 <div class="flex justify-between items-center mb-6">
                     <div>
                         <h2 class="text-2xl text-yellow-300 font-semibold">🏴 Dominar Região</h2>
@@ -195,23 +195,29 @@ export class DisputeUI {
 
     // Método para abrir modal de disputa (regiões inimigas)
     openDisputeModal(regionId) {
-    try {
         const region = gameState.regions[regionId];
-        if (!region) {
-            console.error(`❌ Região ${regionId} não encontrada`);
-            return;
-        }
-        
         const defender = getPlayerById(region.controller);
         const attacker = getCurrentPlayer();
+
+        // Calcular custos e chance de sucesso
+        let disputeData;
         
-        if (!defender || !attacker) {
-            console.error('❌ Jogador não encontrado');
-            return;
+        // Verificar se o sistema de disputa está disponível
+        if (window.gameLogic && window.gameLogic.disputeLogic) {
+            disputeData = window.gameLogic.disputeLogic.calculateDisputeCosts(attacker, region);
+        } else {
+            // Fallback: valores padrão
+            disputeData = {
+                finalCost: {
+                    pv: 3,
+                    madeira: 2,
+                    pedra: 2,
+                    ouro: 3,
+                    agua: 1
+                },
+                successChance: 50
+            };
         }
-     
-        // Calcular custos e chance de sucesso (usando a lógica de disputa)
-        const disputeData = window.gameLogic.disputeLogic.calculateDisputeCosts(attacker, region);
 
         // Preencher o modal
         document.getElementById('disputeRegionName').textContent = `Região: ${region.name} (Controlada por ${defender.name})`;
@@ -259,17 +265,15 @@ export class DisputeUI {
         // Armazenar dados da disputa para uso posterior
         this.currentDisputeData = {
             regionId,
+            region,
+            attacker,
+            defender,
             disputeData
         };
 
         // Mostrar modal
         this.disputeModal.classList.remove('hidden');
         this.uiManager.setModalMode(true);
-        
-    } catch (error) {
-        console.error('❌ Erro ao abrir modal de disputa:', error);
-        this.uiManager.modals.showFeedback('Erro ao abrir disputa', 'error');
-    }
     }
 
     // Fechar modais
@@ -292,28 +296,23 @@ export class DisputeUI {
 
     // Confirmar ações
     confirmDispute() {
-    if (!this.currentDisputeData) return;
+        if (!this.currentDisputeData) return;
 
-    // Fechar modal de confirmação
-    this.closeDisputeModal();
+        // Fechar modal de confirmação
+        this.closeDisputeModal();
 
-    // Obter jogador atual e região
-    const attacker = getCurrentPlayer();
-    const region = gameState.regions[this.currentDisputeData.regionId];
-    
-    if (!attacker || !region) {
-        console.error('❌ Não foi possível obter atacante ou região');
-        return;
+        // Verificar se o sistema de disputa está disponível
+        if (window.gameLogic && window.gameLogic.disputeLogic && window.gameLogic.disputeLogic.handleDispute) {
+            // Chamar a lógica de disputa com os parâmetros corretos
+            window.gameLogic.disputeLogic.handleDispute(
+                this.currentDisputeData.region,
+                this.currentDisputeData.attacker
+            );
+        } else {
+            console.error('❌ Sistema de disputa não disponível');
+            this.uiManager.modals.showFeedback('Erro ao processar disputa', 'error');
+        }
     }
-
-    // Chamar a lógica de disputa com os parâmetros corretos
-    if (window.gameLogic && window.gameLogic.disputeLogic) {
-        window.gameLogic.disputeLogic.handleDispute(region, attacker);
-    } else {
-        console.error('❌ gameLogic ou disputeLogic não disponível');
-        this.main.showFeedback('Erro ao processar disputa', 'error');
-    }
-}
 
     confirmDomination() {
         if (!this.currentDominationData) return;
@@ -323,6 +322,10 @@ export class DisputeUI {
 
         // Chamar a lógica de dominação (que já existe no handleExplore)
         if (window.gameLogic && window.gameLogic.handleExplore) {
+            // Primeiro selecionar a região
+            gameState.selectedRegionId = this.currentDominationData.regionId;
+            
+            // Depois executar a ação de explorar/dominar
             window.gameLogic.handleExplore();
         }
     }
