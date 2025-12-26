@@ -257,6 +257,12 @@ async handleDispute(region, attacker) {
   } else {
     await this._handleFailedDispute(attacker, defender, region, disputeData);
   }
+  
+  // Atualizar visual da região IMEDIATAMENTE
+  this._updateRegionVisual(region.id);
+  
+  // Verificar vitória
+  this._finalizeDispute();
 
   // Verificar vitória
   this.main.turnLogic.checkVictory();
@@ -302,6 +308,25 @@ async handleDispute(region, attacker) {
       this._handlePlayerElimination(defender);
     }
   }
+
+_updateRegionVisual(regionId) {
+  const cell = document.querySelector(`.board-cell[data-region-id="${regionId}"]`);
+  if (cell && window.uiManager && window.uiManager.gameManager) {
+    // Remover e recriar a célula
+    const region = gameState.regions[regionId];
+    const newCell = window.uiManager.gameManager.createRegionCell(region, regionId);
+    
+    // Substituir a célula antiga
+    const parent = cell.parentNode;
+    parent.replaceChild(newCell, cell);
+    
+    // Adicionar animação de atualização
+    newCell.classList.add('region-updated');
+    setTimeout(() => {
+      newCell.classList.remove('region-updated');
+    }, 1000);
+  }
+}
 
   // Processar disputa falhada
   async _handleFailedDispute(attacker, defender, region, disputeData) {
