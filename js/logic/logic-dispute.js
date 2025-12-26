@@ -352,54 +352,52 @@ _updateRegionVisual(regionId) {
   }
 
   // Eliminar jogador sem regiões
-  _handlePlayerElimination(player) {
-    player.victoryPoints = Math.max(0, player.victoryPoints - 5); // Penalidade por eliminação
-    
-    // Distribuir recursos restantes? Opcional
-    // const totalPlayers = gameState.players.filter(p => p.regions.length > 0).length;
-    // if (totalPlayers > 0) {
-    //   // Distribuir recursos entre jogadores restantes
-    // }
-    
-    this.main.showFeedback(`💀 ${player.name} foi eliminado por perder todas as regiões! -5 PV`, 'warning');
+_handlePlayerElimination(player) {
+  // Usar a função do game-state para eliminar
+  const eliminated = window.gameState?.eliminatePlayer?.(player.id);
+  
+  if (eliminated) {
+    // A função eliminatePlayer já aplica penalidades e atualiza o estado
+    // Agora vamos registrar no log
     addActivityLog({
       type: 'elimination',
       playerName: 'SISTEMA',
       action: 'eliminou',
-      details: `${player.name} (sem regiões)`,
-      turn: gameState.turn
+      details: `${player.name} (perdeu todas as regiões)`,
+      turn: gameState.turn,
+      isEvent: true
     });
-  }
-
-  // Finalizar disputa
-  _finalizeDispute() {
-  // Verificar vitória
-  this.main.turnLogic.checkVictory();
-  
-  // Forçar atualização completa da UI
-  if (window.uiManager) {
-    window.uiManager.updateUI();
     
-    // Atualização específica dos componentes
-    if (window.uiManager.gameManager) {
-      window.uiManager.gameManager.renderBoard(); // Renderizar tabuleiro imediatamente
-      window.uiManager.gameManager.updateFooter(); // Atualizar footer
-      window.uiManager.gameManager.updateTurnInfo(); // Atualizar info do turno
-      window.uiManager.gameManager.updatePhaseIndicator(); // Atualizar indicador de fase
-    }
+    // Verificar vitória por eliminação
+    const victoryCheck = window.gameState?.checkEliminationVictory?.();
     
-    // Atualizar header de jogadores
-    if (window.uiManager.gameManager && window.uiManager.gameManager.renderHeaderPlayers) {
-      window.uiManager.gameManager.renderHeaderPlayers();
-    }
-    
-    // Atualizar sidebar
-    if (window.uiManager.gameManager && window.uiManager.gameManager.renderSidebar) {
-      window.uiManager.gameManager.renderSidebar(gameState.selectedPlayerForSidebar);
+    if (victoryCheck) {
+      if (victoryCheck.type === 'elimination_victory') {
+        // Declarar vitória do jogador restante
+        this.main.turnLogic._declareVictory(victoryCheck.winner);
+      } else if (victoryCheck.type === 'no_winner') {
+        // Todos eliminados - mostrar modal especial
+        this.main.showFeedback(victoryCheck.message, 'warning');
+        
+        if (window.uiManager?.modals?.showNoWinnerModal) {
+          window.uiManager.modals.showNoWinnerModal();
+        }
+      }
     }
   }
   
-  // Log para debug
-  console.log('✅ Disputa finalizada - UI atualizada');
+  // Mostrar feedback
+  const penalty = Math.max(
+    ELIMINATION_CONFIG.MIN_PENALTY_PV,
+    Math.min(
+      ELIMINATION_CONFIG.MAX_PENALTY_PV,
+      Math.floor(player.victoryPoints * ELIMINATION_CONFIG.PENALTY_PV_PERCENTAGE)
+    )
+  );
+  
+  this.main.showFeedback(
+    `💀 ${player.name} foi eliminado! -${penalty} PV de penalidade.`,
+    'warning'
+  );
 }
 }
