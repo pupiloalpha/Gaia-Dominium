@@ -12,24 +12,44 @@ export class ActionLogic {
 
   // Validação centralizada de fase
   validateAction(actionType) {
-    if (gameState.actionsLeft <= 0) {
-      this.main.showFeedback('Sem ações restantes neste turno.', 'warning');
+  // Verificar se jogador está eliminado
+  const currentPlayer = getCurrentPlayer();
+  const isEliminated = currentPlayer?.eliminated || 
+    window.gameState?.isPlayerEliminated?.(currentPlayer?.id);
+  
+  if (isEliminated) {
+    // Jogadores eliminados só podem tentar ressuscitar (dominar regiões neutras)
+    if (actionType !== 'explorar' || gameState.selectedRegionId === null) {
+      this.main.showFeedback('Jogador eliminado só pode dominar regiões neutras para ressuscitar.', 'warning');
       return false;
     }
-
-    const currentPhase = gameState.currentPhase;
-    // Ações permitidas apenas na fase de ações
-    const allowedInActions = ['explorar', 'recolher', 'construir', 'disputar'];
     
-    if (!allowedInActions.includes(actionType) || currentPhase !== 'acoes') {
-      // Se tentar negociar, valida fase negociação
-      if (actionType === 'negociar' && currentPhase === 'negociacao') return true;
-      
-      this.main.showFeedback(`Ação "${actionType}" não permitida na fase atual (${currentPhase}).`, 'warning');
+    // Verificar se a região selecionada é realmente neutra
+    const region = gameState.regions[gameState.selectedRegionId];
+    if (region && region.controller !== null) {
+      this.main.showFeedback('Jogador eliminado só pode dominar regiões neutras.', 'error');
       return false;
     }
-    return true;
   }
+  
+  // Restante da validação original...
+  if (gameState.actionsLeft <= 0) {
+    this.main.showFeedback('Sem ações restantes neste turno.', 'warning');
+    return false;
+  }
+  
+  const currentPhase = gameState.currentPhase;
+  const allowedInActions = ['explorar', 'recolher', 'construir', 'disputar'];
+  
+  if (!allowedInActions.includes(actionType) || currentPhase !== 'acoes') {
+    if (actionType === 'negociar' && currentPhase === 'negociacao') return true;
+    
+    this.main.showFeedback(`Ação "${actionType}" não permitida na fase atual (${currentPhase}).`, 'warning');
+    return false;
+  }
+  
+  return true;
+}
 
   consumeAction() {
     gameState.actionsLeft--;
@@ -89,31 +109,91 @@ async _initiateDispute(region, player) {
   }
 }
 
-  async _assumeControl(region, player) {
-    const pvCost = 2;
-    if (player.victoryPoints < pvCost) {
-      this.main.showFeedback(`Precisa de ${pvCost} PV para assumir domínio.`, 'error');
-      return;
-    }
-    
-    const canPay = Object.entries(region.resources).every(([k,v]) => player.resources[k] >= v);
-    if (!canPay) {
-      this.main.showFeedback(`Recursos insuficientes.`, 'error');
-      return;
-    }
-    
-    const confirm = await this.main.showConfirm('Assumir Domínio', `Gastar ${pvCost} PV e recursos para dominar ${region.name}?`);
-    if (!confirm || !this.consumeAction()) return;
-    
-    player.victoryPoints -= pvCost;
+// Modificar _assumeControl para permitir que jogadores eliminados dominem regiões neutras:
+async _assumeControl(region, player) {
+  // Verificar se jogador está eliminado
+  const isEliminated = player.eliminated || window.gameState?.isPlayerEliminated?.(player.id);
+  
+  if (isEliminated) {
+    // Jogador eliminado tentando ressuscitar
+    return await this._handleResurrection(region, player);
+  }
+  
+  // Código original para jogadores não eliminados
+  const pvCost = 2;
+  if (player.victoryPoints < pvCost) {
+    this.main.showFeedback(`Precisa de ${pvCost} PV para assumir domínio.`, 'error');
+    return;
+  }
+  
+  const canPay = Object.entries(region.resources).every(([k,v]) => player.resources[k] >= v);
+  if (!canPay) {
+    this.main.showFeedback(`Recursos insuficientes.`, 'error');
+    return;
+  }
+  
+  const confirm = await this.main.showConfirm('Assumir Domínio', `Gastar ${pvCost} PV e recursos para dominar ${region.name}?`);
+  if (!confirm || !this.consumeAction()) return;
+  
+  player.victoryPoints -= pvCost;
+  Object.entries(region.resources).forEach(([k,v]) => player.resources[k] -= v);
+  
+  region.controller = player.id;
+  player.regions.push(region.id);
+  
+  this.main.showFeedback(`${region.name} dominada! -${pvCost} PV`, 'success');
+  addActivityLog({ type: 'explore', playerName: player.name, action: 'assumiu domínio de', details: region.name, turn: gameState.turn });
+}
+
+// Nova função para lidar com ressurreição
+async _handleResurrection(region, player) {
+  const resurrectionCostPV = window.gameState?.ELIMINATION_CONFIG?.RESURRECTION_COST_PV || 2;
+  
+  // Verificar requisitos para ressuscitação
+  if (player.victoryPoints < resurrectionCostPV) {
+    this.main.showFeedback(
+      `Precisa de ${resurrectionCostPV} PV para ressuscitar dominando uma região.`,
+      'error'
+    );
+    return;
+  }
+  
+  const canPay = Object.entries(region.resources).every(([k,v]) => player.resources[k] >= v);
+  if (!canPay) {
+    this.main.showFeedback('Recursos insuficientes para ressuscitar.', 'error');
+    return;
+  }
+  
+  const confirm = await this.main.showConfirm(
+    '💀 Ressuscitar', 
+    `Gastar ${resurrectionCostPV} PV e recursos para dominar ${region.name} e voltar ao jogo?`
+  );
+  
+  if (!confirm || !this.consumeAction()) return;
+  
+  // Tentar ressuscitar usando a função do game-state
+  const resurrected = window.gameState?.resurrectPlayer?.(player.id, region.id);
+  
+  if (resurrected) {
+    // Pagar custos (a função resurrectPlayer já faz isso, mas mantemos por segurança)
+    player.victoryPoints -= resurrectionCostPV;
     Object.entries(region.resources).forEach(([k,v]) => player.resources[k] -= v);
     
-    region.controller = player.id;
-    player.regions.push(region.id);
+    this.main.showFeedback(`${player.name} ressuscitou dominando ${region.name}!`, 'success');
+    addActivityLog({ 
+      type: 'resurrection', 
+      playerName: player.name, 
+      action: 'ressuscitou dominando', 
+      details: region.name, 
+      turn: gameState.turn 
+    });
     
-    this.main.showFeedback(`${region.name} dominada! -${pvCost} PV`, 'success');
-    addActivityLog({ type: 'explore', playerName: player.name, action: 'assumiu domínio de', details: region.name, turn: gameState.turn });
+    // Atualizar UI
+    this._finalizeAction();
+  } else {
+    this.main.showFeedback('Não foi possível ressuscitar. Verifique os requisitos.', 'error');
   }
+}
 
   async _exploreRegion(region, player) {
     // 1. Obter custo base e aplicar descontos de facção (ex: Druidas)
