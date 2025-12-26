@@ -1195,8 +1195,96 @@ closeVictoryModal() {
   }
 }
 
-// Método para desabilitar ações ao término do jogo
+// ========== MODAL PARA FIM DE JOGO SEM VENCEDOR ==========°
 
+showNoWinnerModal() {
+  // Criar modal dinamicamente se não existir
+  let modal = document.getElementById('noWinnerModal');
+  
+  if (!modal) {
+    modal = document.createElement('div');
+    modal.id = 'noWinnerModal';
+    modal.className = 'hidden fixed inset-0 z-[110] flex items-center justify-center p-6';
+    modal.innerHTML = `
+      <div class="absolute inset-0 bg-black/80"></div>
+      <div class="relative w-full max-w-2xl bg-gray-900/95 backdrop-blur-md border border-gray-700 rounded-2xl shadow-xl p-8">
+        <div class="text-center">
+          <div class="text-6xl mb-4">💀</div>
+          <h2 class="text-3xl text-white font-bold mb-4">FIM DE JOGO</h2>
+          <p class="text-xl text-gray-300 mb-6">Todos os jogadores foram eliminados!</p>
+          
+          <div class="bg-gray-800/50 p-6 rounded-lg mb-6">
+            <h3 class="text-lg font-semibold text-white mb-4">Resumo do Jogo</h3>
+            <div class="space-y-3">
+              <div class="flex justify-between">
+                <span class="text-gray-400">Turno final:</span>
+                <span class="text-white font-bold">${gameState.turn}</span>
+              </div>
+              <div class="flex justify-between">
+                <span class="text-gray-400">Duração:</span>
+                <span class="text-white font-bold">${gameState.turn} turnos</span>
+              </div>
+              <div class="flex justify-between">
+                <span class="text-gray-400">Jogadores eliminados:</span>
+                <span class="text-white font-bold">${gameState.players.length}</span>
+              </div>
+            </div>
+          </div>
+          
+          <div class="mb-6">
+            <h3 class="text-lg font-semibold text-white mb-3">Linha do Tempo de Eliminação</h3>
+            <div class="space-y-2">
+              ${gameState.eliminatedPlayers?.map((elim, idx) => {
+                const player = gameState.players[elim.playerId];
+                if (!player) return '';
+                return `
+                  <div class="flex items-center justify-between p-2 bg-gray-800/30 rounded">
+                    <div class="flex items-center gap-2">
+                      <span class="text-xl">💀</span>
+                      <span class="text-white">${player.name}</span>
+                    </div>
+                    <div class="text-sm text-gray-400">
+                      Turno ${elim.turn} • -${elim.penalty} PV
+                    </div>
+                  </div>
+                `;
+              }).join('') || '<p class="text-gray-400">Nenhuma eliminação registrada</p>'}
+            </div>
+          </div>
+          
+          <div class="flex justify-center gap-4">
+            <button id="noWinnerCloseBtn" 
+                    class="px-6 py-3 bg-gray-700 hover:bg-gray-600 rounded-lg text-white font-semibold transition">
+              Fechar
+            </button>
+            <button id="noWinnerNewGameBtn" 
+                    class="px-6 py-3 bg-blue-600 hover:bg-blue-700 rounded-lg text-white font-semibold transition">
+              Novo Jogo
+            </button>
+          </div>
+        </div>
+      </div>
+    `;
+    document.body.appendChild(modal);
+    
+    // Event listeners
+    document.getElementById('noWinnerCloseBtn').addEventListener('click', () => {
+      modal.classList.add('hidden');
+    });
+    
+    document.getElementById('noWinnerNewGameBtn').addEventListener('click', () => {
+      modal.classList.add('hidden');
+      setTimeout(() => {
+        window.location.reload();
+      }, 500);
+    });
+  }
+  
+  // Mostrar modal
+  modal.classList.remove('hidden');
+}
+  
+// Método para desabilitar ações ao término do jogo
 disableAllGameActions() {
     // Desabilitar botões de ação
     const actionButtons = [
