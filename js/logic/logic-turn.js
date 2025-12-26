@@ -94,89 +94,117 @@ export class TurnLogic {
   }
 }
 
-  _finalizeTurn(currentPlayer) {
-    // Verificar vitória antes de finalizar
-    this.checkVictory();
+  // logic-turn.js - MODIFICAÇÕES PARA ELIMINAÇÃO
+
+// Substituir a função _finalizeTurn:
+_finalizeTurn(currentPlayer) {
+  // Verificar vitória antes de finalizar
+  this.checkVictory();
+  
+  if (this.gameEnded) {
+    return;
+  }
+  
+  addActivityLog({ 
+    type: 'turn', 
+    playerName: 'SISTEMA', 
+    action: 'Turno finalizado', 
+    details: currentPlayer.name, 
+    turn: gameState.turn 
+  });
+  
+  // Resetar bônus de turno (facções)
+  if (this.main.factionLogic) {
+    this.main.factionLogic.resetTurnBonuses(currentPlayer);
+  }
+
+  // USAR FUNÇÃO getNextActivePlayer para pular jogadores eliminados
+  gameState.currentPlayerIndex = window.gameState?.getNextActivePlayer?.(gameState.currentPlayerIndex) || 
+    (gameState.currentPlayerIndex + 1) % gameState.players.length;
+  
+  // Se voltou ao mesmo jogador, significa que só há um jogador ativo
+  if (gameState.currentPlayerIndex === gameState.currentPlayerIndex) {
+    // Isso significa que há apenas um jogador ativo - vitória por eliminação
+    const activePlayers = window.gameState?.getActivePlayers?.() || gameState.players.filter(p => !p.eliminated);
     
-    if (this.gameEnded) {
-        return;
+    if (activePlayers.length === 1) {
+      const winner = activePlayers[0];
+      this._declareVictory(winner);
+      return;
     }
+  }
+
+  if (gameState.currentPlayerIndex === 0) {
+    gameState.turn += 1;
+    this._handleEvents();
+  }
+
+  // Resetar estado para novo jogador
+  gameState.actionsLeft = GAME_CONFIG.ACTIONS_PER_TURN;
+  gameState.selectedRegionId = null;
+  gameState.currentPhase = 'renda';
+  gameState.selectedPlayerForSidebar = gameState.currentPlayerIndex;
+
+  const newPlayer = getCurrentPlayer();
+  
+  // Se o jogador está eliminado, não aplicar renda
+  if (newPlayer.eliminated) {
+    // Pular direto para ações? Ou mostrar mensagem?
+    this.main.showFeedback(`${newPlayer.name} está eliminado. Pulando turno...`, 'info');
     
-    addActivityLog({ 
-        type: 'turn', 
-        playerName: 'SISTEMA', 
-        action: 'Turno finalizado', 
-        details: currentPlayer.name, 
-        turn: gameState.turn 
-    });
-    
-    // Resetar bônus de turno (facções)
-    if (this.main.factionLogic) {
-        this.main.factionLogic.resetTurnBonuses(currentPlayer);
+    // Avançar novamente
+    setTimeout(() => {
+      this._finalizeTurn(newPlayer);
+    }, 1000);
+    return;
+  }
+  
+  // Aplicar renda ao novo jogador (se não estiver eliminado)
+  this.applyIncome(newPlayer);
+
+  addActivityLog({ 
+    type: 'turn', 
+    playerName: 'SISTEMA', 
+    action: 'Turno iniciado', 
+    details: newPlayer.name, 
+    turn: gameState.turn 
+  });
+  
+  // Verificar vitória novamente
+  this.checkVictory();
+  
+  // Atualizar UI
+  if (window.uiManager) {
+    window.uiManager.updateUI();
+    if (window.uiManager.gameManager) {
+      window.uiManager.gameManager.updateFooter();
     }
+  }
+  
+  this.main.showFeedback(`Turno de ${newPlayer.name}`, 'info');
 
-    // Avançar para próximo jogador
-    gameState.currentPlayerIndex = (gameState.currentPlayerIndex + 1) % gameState.players.length;
-    
-    if (gameState.currentPlayerIndex === 0) {
-        gameState.turn += 1;
-        this._handleEvents();
-    }
-
-    // Resetar estado para novo jogador
-    gameState.actionsLeft = GAME_CONFIG.ACTIONS_PER_TURN;
-    gameState.selectedRegionId = null;
-    gameState.currentPhase = 'renda';
-    gameState.selectedPlayerForSidebar = gameState.currentPlayerIndex;
-
-    const newPlayer = getCurrentPlayer();
-    
-    // Aplicar renda ao novo jogador
-    this.applyIncome(newPlayer);
-
-    addActivityLog({ 
-        type: 'turn', 
-        playerName: 'SISTEMA', 
-        action: 'Turno iniciado', 
-        details: newPlayer.name, 
-        turn: gameState.turn 
-    });
-    
-    // Verificar vitória novamente
-    this.checkVictory();
-    
-    // Atualizar UI
-    if (window.uiManager) {
-        window.uiManager.updateUI();
-        if (window.uiManager.gameManager) {
-            window.uiManager.gameManager.updateFooter();
-        }
-    }
-    
-    this.main.showFeedback(`Turno de ${newPlayer.name}`, 'info');
-
-    // GATILHO CRÍTICO PARA IA
-    if (!this.gameEnded) {
+  // GATILHO CRÍTICO PARA IA
+  if (!this.gameEnded) {
+    setTimeout(() => {
+      const nextPlayer = getCurrentPlayer();
+      
+      // Se o próximo jogador for IA, iniciar seu turno (se não estiver eliminado)
+      if (nextPlayer && !nextPlayer.eliminated && (nextPlayer.type === 'ai' || nextPlayer.isAI)) {
+        console.log(`🤖 Iniciando turno da IA: ${nextPlayer.name}`);
+        
+        // Pequeno delay para UI atualizar
         setTimeout(() => {
-            const nextPlayer = getCurrentPlayer();
-            
-            // Se o próximo jogador for IA, iniciar seu turno
-            if (nextPlayer && (nextPlayer.type === 'ai' || nextPlayer.isAI)) {
-                console.log(`🤖 Iniciando turno da IA: ${nextPlayer.name}`);
-                
-                // Pequeno delay para UI atualizar
-                setTimeout(() => {
-                    if (this.main.aiCoordinator) {
-                        this.main.aiCoordinator.checkAndExecuteAITurn();
-                    } else if (window.aiCoordinator) {
-                        window.aiCoordinator.checkAndExecuteAITurn();
-                    }
-                }, 1500);
-            }
-        }, 1000);
-    }
-    
-    saveGame();
+          if (this.main.aiCoordinator) {
+            this.main.aiCoordinator.checkAndExecuteAITurn();
+          } else if (window.aiCoordinator) {
+            window.aiCoordinator.checkAndExecuteAITurn();
+          }
+        }, 1500);
+      }
+    }, 1000);
+  }
+  
+  saveGame();
 }
   
   applyIncome(player) {
@@ -338,15 +366,45 @@ export class TurnLogic {
   }
 
   checkVictory() {
-    if (this.gameEnded) return;
-    
-    const winner = gameState.players.find(p => p.victoryPoints >= GAME_CONFIG.VICTORY_POINTS);
-    if (winner) {
-      console.log(`🎉 Vitória detectada: ${winner.name} com ${winner.victoryPoints} PV`);
-      this._declareVictory(winner);
-      this._stopGameAfterVictory();
-    }
+  if (this.gameEnded) return;
+  
+  // Verificar vitória por pontos
+  const winner = gameState.players.find(p => p.victoryPoints >= GAME_CONFIG.VICTORY_POINTS);
+  if (winner) {
+    console.log(`🎉 Vitória detectada: ${winner.name} com ${winner.victoryPoints} PV`);
+    this._declareVictory(winner);
+    this._stopGameAfterVictory();
+    return;
   }
+  
+  // Verificar vitória por eliminação
+  const activePlayers = window.gameState?.getActivePlayers?.() || 
+    gameState.players.filter(p => !p.eliminated);
+  
+  if (activePlayers.length === 1) {
+    const eliminationWinner = activePlayers[0];
+    console.log(`🎉 Vitória por eliminação: ${eliminationWinner.name} é o único jogador ativo`);
+    this._declareVictory(eliminationWinner);
+    this._stopGameAfterVictory();
+    return;
+  }
+  
+  if (activePlayers.length === 0) {
+    // Todos os jogadores eliminados
+    console.log('💀 Todos os jogadores foram eliminados!');
+    this.gameEnded = true;
+    
+    // Mostrar modal de fim de jogo sem vencedor
+    if (window.uiManager?.modals?.showNoWinnerModal) {
+      window.uiManager.modals.showNoWinnerModal();
+    } else {
+      this.main.showFeedback('Todos os jogadores foram eliminados! Jogo terminou sem vencedor.', 'warning');
+    }
+    
+    this._disableGameActions();
+    return;
+  }
+}
   
   _declareVictory(winner) {
     this.gameEnded = true;
