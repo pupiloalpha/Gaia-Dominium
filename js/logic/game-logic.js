@@ -213,16 +213,16 @@ handleDispute() {
       });
     }
     // CASO 3: Região inimiga - usar verificação de disputa
-    else {
-      // Delegar para o sistema de disputa calcular se pode disputar
-      if (this.disputeLogic && this.disputeLogic.canAffordDispute) {
+else {
+    // Verificar se temos disputeLogic disponível
+    if (this.disputeLogic && this.disputeLogic.canAffordDispute) {
         return this.disputeLogic.canAffordDispute(player);
-      }
-      // Fallback: verificação básica
-      return player.victoryPoints >= 3 && 
-             player.resources.ouro >= 2 &&
-             player.resources.madeira >= 1 &&
-             player.resources.pedra >= 1;
+    }
+    // Fallback: verificação básica
+    return player.victoryPoints >= 3 && 
+           player.resources.ouro >= 2 &&
+           player.resources.madeira >= 1 &&
+           player.resources.pedra >= 1;
     }
   } 
   else if (actionType === 'construir') {
