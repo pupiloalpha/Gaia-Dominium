@@ -60,13 +60,13 @@ export class DisputeLogic {
       pv: 3, // Custo base em pontos de vitória
       madeira: 2,
       pedra: 2,
-      ouro: 3, // Mais caro para evitar spam
+      ouro: 3,
       agua: 1
     };
 
-    // Modificadores baseados na região
+    // Modificadores baseados na região - USAR Math.floor para valores inteiros
     let modifiers = {
-      exploration: region.explorationLevel * 0.5, // +0.5 PV por nível de exploração
+      exploration: Math.floor(region.explorationLevel * 0.5), // Arredondar para baixo
       structures: 0,
       defenderAdvantage: 0
     };
@@ -74,21 +74,21 @@ export class DisputeLogic {
     // Bônus por estruturas defensivas
     region.structures.forEach(structure => {
       if (structure === 'Torre de Vigia') {
-        modifiers.structures += 2; // +2 PV para regiões com torre
+        modifiers.structures += 2;
       } else if (structure === 'Santuário') {
-        modifiers.structures += 1; // +1 PV para regiões com santuário
+        modifiers.structures += 1;
       }
     });
 
-    // Diferença de PV entre jogadores
+    // Diferença de PV entre jogadores - USAR Math.floor
     const pvDifference = defender.victoryPoints - player.victoryPoints;
     if (pvDifference > 0) {
-      modifiers.defenderAdvantage = Math.floor(pvDifference * 0.1); // 10% da diferença
+      modifiers.defenderAdvantage = Math.floor(pvDifference * 0.1);
     }
 
-    // Custo final
+    // Custo final - USAR Math.max para garantir inteiros
     const finalCost = {
-      pv: baseCost.pv + modifiers.exploration + modifiers.structures + modifiers.defenderAdvantage,
+      pv: Math.max(1, Math.floor(baseCost.pv + modifiers.exploration + modifiers.structures + modifiers.defenderAdvantage)),
       madeira: baseCost.madeira,
       pedra: baseCost.pedra,
       ouro: baseCost.ouro,
@@ -101,12 +101,12 @@ export class DisputeLogic {
       Object.assign(finalCost, factionModifier);
     }
 
-    // Garantir valores mínimos
-    finalCost.pv = Math.max(1, finalCost.pv);
-    finalCost.madeira = Math.max(1, finalCost.madeira);
-    finalCost.pedra = Math.max(1, finalCost.pedra);
-    finalCost.ouro = Math.max(1, finalCost.ouro);
-    finalCost.agua = Math.max(0, finalCost.agua);
+    // Garantir valores mínimos e inteiros
+    finalCost.pv = Math.max(1, Math.floor(finalCost.pv));
+    finalCost.madeira = Math.max(1, Math.floor(finalCost.madeira));
+    finalCost.pedra = Math.max(1, Math.floor(finalCost.pedra));
+    finalCost.ouro = Math.max(1, Math.floor(finalCost.ouro));
+    finalCost.agua = Math.max(0, Math.floor(finalCost.agua));
 
     return {
       baseCost,
