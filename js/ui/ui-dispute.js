@@ -195,10 +195,21 @@ export class DisputeUI {
 
     // Método para abrir modal de disputa (regiões inimigas)
     openDisputeModal(regionId) {
+    try {
         const region = gameState.regions[regionId];
+        if (!region) {
+            console.error(`❌ Região ${regionId} não encontrada`);
+            return;
+        }
+        
         const defender = getPlayerById(region.controller);
         const attacker = getCurrentPlayer();
-
+        
+        if (!defender || !attacker) {
+            console.error('❌ Jogador não encontrado');
+            return;
+        }
+     
         // Calcular custos e chance de sucesso (usando a lógica de disputa)
         const disputeData = window.gameLogic.disputeLogic.calculateDisputeCosts(attacker, region);
 
@@ -254,6 +265,11 @@ export class DisputeUI {
         // Mostrar modal
         this.disputeModal.classList.remove('hidden');
         this.uiManager.setModalMode(true);
+        
+    } catch (error) {
+        console.error('❌ Erro ao abrir modal de disputa:', error);
+        this.uiManager.modals.showFeedback('Erro ao abrir disputa', 'error');
+    }
     }
 
     // Fechar modais
