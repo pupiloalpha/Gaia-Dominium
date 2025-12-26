@@ -1323,6 +1323,34 @@ p {
   cursor: not-allowed !important;
 }
 
+/* Animações para disputa */
+@keyframes regionUpdate {
+  0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7); }
+  70% { box-shadow: 0 0 0 10px rgba(239, 68, 68, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); }
+}
+
+.region-updated {
+  animation: regionUpdate 1s ease-out;
+}
+
+/* Estilos para modais de disputa */
+#disputeModal .relative,
+#disputeResultModal .relative {
+  animation: modalAppear 0.3s ease-out;
+}
+
+@keyframes modalAppear {
+  from {
+    opacity: 0;
+    transform: scale(0.95) translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
 /* ============================================
    10. TOOLTIPS E BANNERS
    ============================================ */
