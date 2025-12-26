@@ -25,6 +25,16 @@ const INITIAL_STATE = {
   failedDisputes: 0
 };
 
+const ELIMINATION_CONFIG = {
+  ELIMINATION_ICON: '💀',
+  ELIMINATED_COLOR: '#666666',
+  ELIMINATED_OPACITY: 0.5,
+  RESURRECTION_COST_PV: 2,
+  PENALTY_PV_PERCENTAGE: 0.3, // 30% dos PV atuais
+  MIN_PENALTY_PV: 1,
+  MAX_PENALTY_PV: 5
+};
+
 const INITIAL_ACHIEVEMENTS_STATE = {
   totalExplored: 0,
   totalBuilt: 0,
@@ -685,9 +695,187 @@ function migrateSaveData(data) {
   return data;
 }
 
+// ==================== FUNÇÕES DE ELIMINAÇÃO ====================
+
+// Função para marcar um jogador como eliminado
+function eliminatePlayer(playerId) {
+  const player = getPlayerById(playerId);
+  if (!player || player.eliminated) return false;
+  
+  // Calcular penalidade de PV
+  const penalty = Math.max(
+    ELIMINATION_CONFIG.MIN_PENALTY_PV,
+    Math.min(
+      ELIMINATION_CONFIG.MAX_PENALTY_PV,
+      Math.floor(player.victoryPoints * ELIMINATION_CONFIG.PENALTY_PV_PERCENTAGE)
+    )
+  );
+  
+  // Aplicar penalidade
+  player.victoryPoints = Math.max(0, player.victoryPoints - penalty);
+  
+  // Marcar como eliminado
+  player.eliminated = true;
+  player.eliminatedTurn = gameState.turn;
+  
+  // Limpar regiões (já deveriam estar vazias, mas por segurança)
+  player.regions.forEach(regionId => {
+    const region = gameState.regions[regionId];
+    if (region && region.controller === playerId) {
+      region.controller = null;
+    }
+  });
+  player.regions = [];
+  
+  // Se for IA, desativar
+  if (player.type === 'ai' || player.isAI) {
+    const ai = getAIPlayer(playerId);
+    if (ai && ai.deactivate) {
+      ai.deactivate();
+    }
+  }
+  
+  // Adicionar ao histórico de eliminações
+  if (!gameState.eliminatedPlayers) {
+    gameState.eliminatedPlayers = [];
+  }
+  gameState.eliminatedPlayers.push({
+    playerId,
+    turn: gameState.turn,
+    penalty
+  });
+  
+  // Verificar se o jogo terminou por eliminação
+  checkEliminationVictory();
+  
+  return true;
+}
+
+// Função para ressuscitar um jogador
+function resurrectPlayer(playerId, regionId) {
+  const player = getPlayerById(playerId);
+  const region = gameState.regions[regionId];
+  
+  if (!player || !player.eliminated || !region || region.controller !== null) {
+    return false;
+  }
+  
+  // Verificar se o jogador pode pagar o custo de ressurreição
+  const pvCost = ELIMINATION_CONFIG.RESURRECTION_COST_PV;
+  const resourceCost = region.resources;
+  
+  if (player.victoryPoints < pvCost) return false;
+  
+  const canPay = Object.entries(resourceCost).every(([resource, amount]) => 
+    (player.resources[resource] || 0) >= amount
+  );
+  
+  if (!canPay) return false;
+  
+  // Pagar custos
+  player.victoryPoints -= pvCost;
+  Object.entries(resourceCost).forEach(([resource, amount]) => {
+    player.resources[resource] = Math.max(0, (player.resources[resource] || 0) - amount);
+  });
+  
+  // Remover status de eliminado
+  player.eliminated = false;
+  delete player.eliminatedTurn;
+  
+  // Adicionar região
+  region.controller = playerId;
+  player.regions.push(regionId);
+  
+  // Remover da lista de eliminados
+  if (gameState.eliminatedPlayers) {
+    gameState.eliminatedPlayers = gameState.eliminatedPlayers.filter(
+      p => p.playerId !== playerId
+    );
+  }
+  
+  // Se for IA, reativar
+  if (player.type === 'ai' || player.isAI) {
+    const ai = getAIPlayer(playerId);
+    if (ai && ai.activate) {
+      ai.activate();
+    }
+  }
+  
+  return true;
+}
+
+// Função para verificar vitória por eliminação
+function checkEliminationVictory() {
+  if (gameState.gameEndedByElimination) return;
+  
+  // Contar jogadores ativos (não eliminados)
+  const activePlayers = gameState.players.filter(p => !p.eliminated);
+  
+  if (activePlayers.length === 0) {
+    // Todos os jogadores foram eliminados
+    gameState.gameEndedByElimination = true;
+    return { type: 'no_winner', message: 'Todos os jogadores foram eliminados!' };
+  }
+  
+  if (activePlayers.length === 1) {
+    // Apenas um jogador restante - vencedor por eliminação
+    gameState.gameEndedByElimination = true;
+    return { 
+      type: 'elimination_victory', 
+      winner: activePlayers[0],
+      message: `${activePlayers[0].name} venceu por eliminação!`
+    };
+  }
+  
+  return null;
+}
+
+// Função para verificar se um jogador está eliminado
+function isPlayerEliminated(playerId) {
+  const player = getPlayerById(playerId);
+  return player ? player.eliminated : false;
+}
+
+// Função para obter jogadores ativos
+function getActivePlayers() {
+  return gameState.players.filter(p => !p.eliminated);
+}
+
+// Função para obter o próximo jogador ativo
+function getNextActivePlayer(currentIndex) {
+  if (!gameState.players.length) return 0;
+  
+  let nextIndex = (currentIndex + 1) % gameState.players.length;
+  let attempts = 0;
+  
+  // Procurar próximo jogador não eliminado
+  while (gameState.players[nextIndex].eliminated && attempts < gameState.players.length) {
+    nextIndex = (nextIndex + 1) % gameState.players.length;
+    attempts++;
+  }
+  
+  // Se todos estão eliminados, retornar o atual
+  if (gameState.players[nextIndex].eliminated) {
+    return currentIndex;
+  }
+  
+  return nextIndex;
+}
+
+// Função para verificar se ação é permitida para jogador eliminado
+function canEliminatedPlayerAct(playerId, actionType) {
+  const player = getPlayerById(playerId);
+  if (!player || !player.eliminated) return true;
+  
+  // Jogadores eliminados só podem dominar regiões neutras (ressuscitar)
+  return actionType === 'dominate' || actionType === 'explorar';
+}
+
 // ==================== INICIALIZAÇÃO DO JOGO ====================
+
 function initializeGame(playersData) {
   gameState = { ...INITIAL_STATE };
+  gameState.eliminatedPlayers = [];
   achievementsState = { ...INITIAL_ACHIEVEMENTS_STATE };
   activityLogHistory = [];
   negotiationState = { ...NEGOTIATION_INITIAL_STATE };
@@ -701,7 +889,9 @@ function initializeGame(playersData) {
       resources: { ...GAME_CONFIG.INITIAL_RESOURCES },
       victoryPoints: 0,
       regions: [],
-      consecutiveNoActionTurns: 0
+      consecutiveNoActionTurns: 0,
+      eliminated: false,
+      eliminatedTurn: null
     });
   });
 
@@ -812,6 +1002,18 @@ export {
   getAIPlayer,
   isPlayerAI,
   getAllAIPlayers,
+
+  // Novas funções de eliminação
+  eliminatePlayer,
+  resurrectPlayer,
+  checkEliminationVictory,
+  isPlayerEliminated,
+  getActivePlayers,
+  getNextActivePlayer,
+  canEliminatedPlayerAct,
+  
+  // Constante de configuração
+  ELIMINATION_CONFIG,
 
   // Inicialização
   initializeGame
