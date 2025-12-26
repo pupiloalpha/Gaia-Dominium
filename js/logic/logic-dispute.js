@@ -176,71 +176,50 @@ export class DisputeLogic {
 
   // Executar disputa para receber região e jogador
 async handleDispute(region, attacker) {
-    // Verificar se o jogo já terminou
-    if (this.main.turnLogic && this.main.turnLogic.gameEnded) {
-        this.main.showFeedback('O jogo já terminou!', 'warning');
-        return;
-    }
-    
-    // Verificar ações restantes
-    if (gameState.actionsLeft <= 0) {
-        this.main.showFeedback('Sem ações restantes neste turno.', 'warning');
-        return;
-    }
-    
-    // Verificar se a região ainda é válida para disputa
-    if (region.controller === null || region.controller === attacker.id) {
-        this.main.showFeedback('Esta região não pode ser disputada.', 'error');
-        return;
-    }
-    
-  // Calcular custos e chances
-  const disputeData = this.calculateDisputeCosts(attacker, region);
+  // Verificar se o jogo já terminou
+  if (this.main.turnLogic && this.main.turnLogic.gameEnded) {
+    this.main.showFeedback('O jogo já terminou!', 'warning');
+    return;
+  }
+  
+  // Verificar ações restantes
+  if (gameState.actionsLeft <= 0) {
+    this.main.showFeedback('Sem ações restantes neste turno.', 'warning');
+    return;
+  }
+  
   const defender = getPlayerById(region.controller);
   
-  // Modal de confirmação
-  const confirmMessage = `
-    <div class="space-y-2">
-      <p class="font-semibold">Disputar ${region.name} com ${defender.name}?</p>
-      <div class="bg-gray-800 p-3 rounded">
-        <p class="text-sm">Custos da Disputa:</p>
-        <div class="grid grid-cols-2 gap-1 text-sm mt-1">
-          <div>PV: ${disputeData.finalCost.pv} ⭐</div>
-          <div>Madeira: ${disputeData.finalCost.madeira} 🪵</div>
-          <div>Pedra: ${disputeData.finalCost.pedra} 🪨</div>
-          <div>Ouro: ${disputeData.finalCost.ouro} 🪙</div>
-          ${disputeData.finalCost.agua > 0 ? `<div>Água: ${disputeData.finalCost.agua} 💧</div>` : ''}
-        </div>
-      </div>
-      <div class="bg-blue-900/30 p-3 rounded">
-        <p class="text-sm">Chance de Sucesso:</p>
-        <div class="flex items-center mt-1">
-          <div class="w-full bg-gray-700 rounded-full h-4">
-            <div class="bg-green-600 h-4 rounded-full" style="width: ${disputeData.successChance}%"></div>
-          </div>
-          <span class="ml-2 font-bold">${Math.round(disputeData.successChance)}%</span>
-        </div>
-        <p class="text-xs mt-2 text-gray-300">
-          ${disputeData.successChance >= 70 ? 'Alta chance de sucesso!' : 
-            disputeData.successChance >= 40 ? 'Chance moderada.' : 
-            'Baixa chance - considere fortalecer-se primeiro.'}
-        </p>
-      </div>
-      <p class="text-xs text-yellow-300">Atenção: Em caso de falha, você perde os recursos gastos!</p>
-    </div>
-  `;
-
-  const confirmed = await this.main.showConfirm(
-    '🗡️ Disputa Territorial', 
-    confirmMessage
-  );
-
-  if (!confirmed) {
-    // Se cancelar, devolver a ação
+  // Calcular custos e chance de sucesso
+  const disputeData = this.calculateDisputeCosts(attacker, region);
+  
+  // VERIFICAÇÃO DIRETA - SEM CONFIRMAÇÃO DUPLICADA
+  // Verificar se pode pagar os custos
+  if (attacker.victoryPoints < disputeData.finalCost.pv) {
+    this.main.showFeedback('PV insuficientes para iniciar a disputa.', 'error');
+    // Devolver a ação se não puder pagar
     gameState.actionsLeft++;
     return;
   }
-
+  
+  // Verificar recursos
+  const canPay = Object.entries(disputeData.finalCost).every(([resource, amount]) => {
+    if (resource === 'pv') return true; // PV já verificado acima
+    return (attacker.resources[resource] || 0) >= amount;
+  });
+  
+  if (!canPay) {
+    this.main.showFeedback('Recursos insuficientes para iniciar a disputa.', 'error');
+    // Devolver a ação se não puder pagar
+    gameState.actionsLeft++;
+    return;
+  }
+  
+  // Consumir ação (já foi consumida ao abrir o modal? Verificar ui-dispute.js)
+  // IMPORTANTE: A ação deve ser consumida apenas se a disputa prosseguir
+  // Se chegou até aqui, o jogador confirmou no modal, então consumir ação
+  if (!this.consumeAction()) return;
+  
   // Pagar custos
   attacker.victoryPoints -= disputeData.finalCost.pv;
   Object.entries(disputeData.finalCost).forEach(([resource, amount]) => {
@@ -257,7 +236,7 @@ async handleDispute(region, attacker) {
   } else {
     await this._handleFailedDispute(attacker, defender, region, disputeData);
   }
-  
+    
   // Atualizar visual da região IMEDIATAMENTE
   this._updateRegionVisual(region.id);
   
