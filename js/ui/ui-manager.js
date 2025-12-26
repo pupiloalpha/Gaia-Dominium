@@ -88,7 +88,18 @@ preloadCriticalAssets() {
         this.modals.showFeedback('São necessários ao menos 2 jogadores.', 'error');
         return;
     }
-    
+
+    // Inicializar sistema de eliminação
+  if (!gameState.eliminatedPlayers) {
+    gameState.eliminatedPlayers = [];
+  }
+  
+  // Garantir que nenhum jogador comece eliminado
+  gameState.players.forEach(player => {
+    player.eliminated = false;
+    player.eliminatedTurn = null;
+  });
+        
     console.log('🚀 Iniciando jogo - Escondendo tela inicial...');
     
     // 1. FORÇAR que a tela inicial fique completamente invisível
@@ -198,6 +209,12 @@ initializeAISystem() {
     
     const aiPlayers = gameState.players
         .map((player, index) => {
+
+            // Ignorar jogadores eliminados
+      if (player.eliminated) {
+        console.log(`🚫 Ignorando jogador eliminado: ${player.name}`);
+        return null;
+      }
             console.log(`🔍 Verificando jogador ${index}: ${player.name}`, {
                 type: player.type,
                 isAI: player.isAI,
@@ -216,12 +233,12 @@ initializeAISystem() {
         })
         .filter(Boolean);
     
-    console.log(`🎯 ${aiPlayers.length} jogador(es) IA identificados:`, aiPlayers);
-    
-    if (aiPlayers.length === 0) {
-        console.log('🤖 Nenhum jogador IA encontrado. Verifique a configuração dos jogadores.');
-        return;
-    }
+    console.log(`🎯 ${aiPlayers.length} jogador(es) IA ativos identificados:`, aiPlayers);
+  
+  if (aiPlayers.length === 0) {
+    console.log('🤖 Nenhum jogador IA ativo encontrado.');
+    return;
+  }
     
     try {
         const aiInstances = aiPlayers.map(({ index, difficulty }) => {
