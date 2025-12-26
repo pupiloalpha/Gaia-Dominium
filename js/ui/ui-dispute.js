@@ -276,16 +276,28 @@ export class DisputeUI {
 
     // Confirmar ações
     confirmDispute() {
-        if (!this.currentDisputeData) return;
+    if (!this.currentDisputeData) return;
 
-        // Fechar modal de confirmação
-        this.closeDisputeModal();
+    // Fechar modal de confirmação
+    this.closeDisputeModal();
 
-        // Chamar a lógica de disputa
-        if (window.gameLogic && window.gameLogic.disputeLogic) {
-            window.gameLogic.disputeLogic.handleDispute(this.currentDisputeData.regionId);
-        }
+    // Obter jogador atual e região
+    const attacker = getCurrentPlayer();
+    const region = gameState.regions[this.currentDisputeData.regionId];
+    
+    if (!attacker || !region) {
+        console.error('❌ Não foi possível obter atacante ou região');
+        return;
     }
+
+    // Chamar a lógica de disputa com os parâmetros corretos
+    if (window.gameLogic && window.gameLogic.disputeLogic) {
+        window.gameLogic.disputeLogic.handleDispute(region, attacker);
+    } else {
+        console.error('❌ gameLogic ou disputeLogic não disponível');
+        this.main.showFeedback('Erro ao processar disputa', 'error');
+    }
+}
 
     confirmDomination() {
         if (!this.currentDominationData) return;
