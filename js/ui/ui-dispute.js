@@ -293,37 +293,63 @@ export class DisputeUI {
     }
 
     // Confirmar disputa
-    confirmDispute() {
+confirmDispute() {
     if (!this.currentDisputeData) return;
 
     const { region, attacker, disputeData } = this.currentDisputeData;
     
-    if (!region || !attacker) {
-        console.error('❌ Dados de disputa incompletos');
-        this.uiManager.modals.showFeedback('Erro: dados de disputa incompletos', 'error');
-        return;
-    }
-
-    // IMPORTANTE: Verificar se ainda tem ações disponíveis
-    if (gameState.actionsLeft <= 0) {
-        this.uiManager.modals.showFeedback('Sem ações restantes neste turno.', 'error');
-        this.closeDisputeModal();
-        return;
-    }
-
     // Fechar modal de confirmação
     this.closeDisputeModal();
-
-    // Executar a disputa
-    if (window.gameLogic && window.gameLogic.disputeLogic) {
-        // A ação será consumida dentro do handleDispute
-        window.gameLogic.disputeLogic.handleDispute(region, attacker);
-    } else {
-        console.error('❌ Sistema de disputa não disponível');
-        this.uiManager.modals.showFeedback('Erro ao processar disputa', 'error');
-    }
+    
+    // Pequeno delay para UI
+    setTimeout(async () => {
+        // Executar a disputa
+        if (window.gameLogic && window.gameLogic.disputeLogic) {
+            try {
+                await window.gameLogic.disputeLogic.handleDispute(region, attacker);
+            } catch (error) {
+                console.error('❌ Erro ao executar disputa:', error);
+                this.uiManager.modals.showFeedback('Erro ao processar disputa.', 'error');
+            }
+        } else {
+            console.error('❌ Sistema de disputa não disponível');
+            this.uiManager.modals.showFeedback('Erro: sistema de disputa não disponível', 'error');
+        }
+    }, 300);
 }
 
+    // Método para mostrar resultado da disputa (após confirmDispute):
+showDisputeResult(success, region, attacker, defender, rewards = {}) {
+    // Chamar o modal de resultado existente
+    this.openDisputeResultModal(success, region, attacker, defender, rewards);
+    
+    // Atualizar visual da região
+    this._updateRegionVisual(region.id);
+    
+    // Feedback no console
+    console.log(`🎮 Disputa: ${success ? '✅ VITÓRIA' : '❌ DERROTA'} - ${attacker.name} vs ${defender.name} em ${region.name}`);
+}
+
+// ADICIONAR método auxiliar:
+_updateRegionVisual(regionId) {
+    const cell = document.querySelector(`.board-cell[data-region-id="${regionId}"]`);
+    if (cell && window.uiManager && window.uiManager.gameManager) {
+        // Remover e recriar a célula
+        const region = gameState.regions[regionId];
+        const newCell = window.uiManager.gameManager.createRegionCell(region, regionId);
+        
+        // Substituir a célula antiga
+        const parent = cell.parentNode;
+        parent.replaceChild(newCell, cell);
+        
+        // Adicionar animação de atualização
+        newCell.classList.add('region-updated');
+        setTimeout(() => {
+            newCell.classList.remove('region-updated');
+        }, 1000);
+    }
+}
+    
     // Mostrar resultado da disputa
     openDisputeResultModal(success, region, attacker, defender, rewards = {}) {
         const title = document.getElementById('disputeResultTitle');
