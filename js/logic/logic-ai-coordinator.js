@@ -166,33 +166,92 @@ async _runAILoop(ai) {
 }
 
 async _executeActions(ai) {
-    const currentPlayer = getCurrentPlayer();
+  const maxIterations = 20; // Limite máximo para evitar loop infinito
+  let iterations = 0;
+  
+  while (gameState.actionsLeft > 0 && iterations < maxIterations && !this.main.turnLogic.gameEnded) {
+    iterations++;
+    await this._delay(1000);
     
-    while (gameState.actionsLeft > 0 && !this.main.turnLogic.gameEnded) {
-        await this._delay(1000);
-        try {
-            // Verificar disputas primeiro
-            if (this._shouldAIDispute(ai)) {
-                await this._executeAIDispute(ai);
-            } else {
-                // Executar ação normal da IA
-                if (ai.takeTurn) {
-                    await ai.takeTurn(gameState, window.uiManager);
-                }
+    try {
+      // 1. Verificar se ainda é turno da IA
+      const currentPlayer = getCurrentPlayer();
+      if (!currentPlayer || currentPlayer.type !== 'ai') {
+        console.log(`🤖 Turno não é mais da IA ${currentPlayer?.name}, parando execução`);
+        break;
+      }
+      
+      // 2. Verificar se a IA foi eliminada
+      if (currentPlayer.eliminated) {
+        console.log(`🤖 IA ${currentPlayer.name} está eliminada, pulando turno`);
+        this.forceAIEndTurn();
+        break;
+      }
+      
+      // 3. Verificar disputas primeiro
+      const shouldDispute = this._shouldAIDispute(ai);
+      
+      if (shouldDispute) {
+        await this._executeAIDispute(ai);
+      } else {
+        // 4. Executar ação normal da IA
+        if (ai.takeTurn) {
+          // Verificar se a IA pode realizar alguma ação
+          const canTakeAnyAction = this._canAITakeAnyAction(ai);
+          
+          if (canTakeAnyAction) {
+            await ai.takeTurn(gameState, window.uiManager);
+          } else {
+            // Se não pode fazer nada, decrementar ação e continuar
+            console.log(`🤖 ${currentPlayer.name} não pode realizar nenhuma ação, passando...`);
+            if (gameState.actionsLeft > 0) {
+              gameState.actionsLeft--;
             }
-            
-            // Atualizar UI
-            if (window.uiManager) {
-                window.uiManager.updateUI();
-                if (window.uiManager.gameManager) {
-                    window.uiManager.gameManager.updateFooter();
-                }
-            }
-        } catch (e) {
-            console.error('Erro ação IA:', e);
-            break;
+          }
         }
+      }
+      
+      // 5. Atualizar UI
+      if (window.uiManager) {
+        window.uiManager.updateUI();
+        if (window.uiManager.gameManager) {
+          window.uiManager.gameManager.updateFooter();
+        }
+      }
+      
+    } catch (e) {
+      console.error('Erro ação IA:', e);
+      // Em caso de erro, decrementar ação para evitar loop
+      if (gameState.actionsLeft > 0) {
+        gameState.actionsLeft--;
+      }
+      break;
     }
+  }
+  
+  // Se excedeu o limite de iterações, forçar término
+  if (iterations >= maxIterations) {
+    console.warn(`⚠️ IA ${getCurrentPlayer()?.name} excedeu limite de iterações, forçando término`);
+    this.forceAIEndTurn();
+  }
+}
+
+// ADICIONAR método auxiliar para verificar se IA pode realizar alguma ação
+_canAITakeAnyAction(ai) {
+  const currentPlayer = getCurrentPlayer();
+  if (!currentPlayer) return false;
+  
+  // Verificar se tem ações restantes
+  if (gameState.actionsLeft <= 0) return false;
+  
+  // Verificar se tem recursos para alguma ação básica
+  const hasResourcesForAnyAction = 
+    currentPlayer.resources.ouro >= 1 || 
+    currentPlayer.resources.madeira >= 1 ||
+    currentPlayer.resources.pedra >= 1 ||
+    currentPlayer.victoryPoints >= 2;
+  
+  return hasResourcesForAnyAction;
 }
   
 // Método para avaliar disputa
@@ -221,15 +280,45 @@ _shouldAIDispute(ai) {
 }
 
 // Método para executar disputa da IA
+
 async _executeAIDispute(ai) {
   const currentPlayer = getCurrentPlayer();
   
   try {
     // Encontrar melhor disputa
-    const opportunities = ai.findDisputeOpportunities(currentPlayer, gameState);
-    if (opportunities.length === 0) return;
+    const opportunities = ai.findDisputeOpportunities ? 
+      ai.findDisputeOpportunities(currentPlayer, gameState) : [];
+    
+    if (opportunities.length === 0) {
+      console.log(`🤖 ${currentPlayer.name} não encontrou oportunidades de disputa`);
+      return;
+    }
     
     const bestDispute = opportunities[0];
+    const region = gameState.regions[bestDispute.regionId];
+    
+    // VALIDAÇÃO RIGOROSA: Verificar se pode pagar a disputa
+    if (window.gameLogic?.disputeLogic) {
+      const disputeData = window.gameLogic.disputeLogic.calculateDisputeCosts(currentPlayer, region);
+      const finalCost = disputeData.finalCost;
+      
+      // Verificar PV
+      if (currentPlayer.victoryPoints < finalCost.pv) {
+        console.log(`🤖 ${currentPlayer.name} não tem PV suficientes para disputa`);
+        return;
+      }
+      
+      // Verificar recursos
+      const canPay = Object.entries(finalCost).every(([resource, amount]) => {
+        if (resource === 'pv') return true; // Já verificado
+        return (currentPlayer.resources[resource] || 0) >= amount;
+      });
+      
+      if (!canPay) {
+        console.log(`🤖 ${currentPlayer.name} não tem recursos para disputa`);
+        return;
+      }
+    }
     
     console.log(`🤖 ${currentPlayer.name} iniciando disputa contra região ${bestDispute.regionId}`);
     
@@ -240,13 +329,17 @@ async _executeAIDispute(ai) {
     // Executar disputa
     if (window.gameLogic?.handleDispute) {
       await window.gameLogic.handleDispute();
+    } else if (window.gameLogic?.disputeLogic?.handleDispute) {
+      await window.gameLogic.disputeLogic.handleDispute(region, currentPlayer);
     }
     
   } catch (error) {
-    console.error(`🤖 Erro na disputa:`, error);
+    console.error(`🤖 Erro na disputa da IA ${currentPlayer.name}:`, error);
+    // Não consumir ação se houve erro
+    return;
   }
 }
-
+  
 async _executeNegotiations(ai) {
     console.log(`🤖 ${ai.personality?.name || 'IA'} processando negociações`);
     
@@ -409,7 +502,14 @@ async _sendSimpleProposal(ai, player, gameState) {
             this.forceAIEndTurn();
             return;
         }
-        
+      
+        // VERIFICAÇÃO DE SEGURANÇA: Se jogador está eliminado, pular
+    if (currentPlayer.eliminated) {
+      console.log(`🤖 ${currentPlayer.name} está eliminado, pulando negociação`);
+      this.forceAIEndTurn();
+      return;
+    }
+      
         console.log(`🤖 ${currentPlayer.name} (${ai.personality?.type || 'IA'}) iniciando fase de negociação`);
         console.log(`📊 Status: Ações: ${gameState.actionsLeft}, Ouro: ${currentPlayer.resources.ouro}`);
         
