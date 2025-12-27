@@ -73,42 +73,32 @@ async handleExplore() {
     const region = gameState.regions[gameState.selectedRegionId];
     const player = getCurrentPlayer();
     
-    // NOTA: A UI agora lida com a abertura de modais
-    // Este método será chamado apenas quando o jogador confirmar
-    // no modal de dominação ou disputa
+    // Verificar se jogador está eliminado
+    const isEliminated = player.eliminated || window.gameState?.isPlayerEliminated?.(player.id);
     
-    // Se chegou aqui, é porque o jogador confirmou no modal
+    if (isEliminated) {
+        // Jogador eliminado só pode dominar regiões neutras
+        if (region.controller === null) {
+            await this._handleResurrection(region, player);
+        } else {
+            this.main.showFeedback('Jogador eliminado só pode dominar regiões neutras.', 'error');
+        }
+        return;
+    }
+    
+    // Lógica para jogadores ativos
     if (region.controller === null) {
         await this._assumeControl(region, player);
     } else if (region.controller === player.id) {
         await this._exploreRegion(region, player);
+    } else {
+        // Região de outro jogador - iniciar disputa
+        await this._initiateDispute(region, player);
     }
     
-    this._finalizeAction();
+    // Não chamar _finalizeAction aqui - cada método já o faz
 }
   
-// Novo método para iniciar disputa
-async _initiateDispute(region, player) {
-  // Verificar se o jogo já terminou
-  if (this.main.turnLogic.gameEnded) {
-    this.main.showFeedback('O jogo já terminou!', 'warning');
-    return;
-  }
-  
-  // Verificar ações restantes
-  if (!this.consumeAction()) return;
-  
-  // Delegar para o sistema de disputa
-  if (this.main.disputeLogic) {
-    await this.main.disputeLogic.handleDispute(region, player);
-  } else {
-    this.main.showFeedback('Sistema de disputa não disponível.', 'error');
-    // Devolver a ação se o sistema não está disponível
-    gameState.actionsLeft++;
-    return;
-  }
-}
-
 // Modificar _assumeControl para permitir que jogadores eliminados dominem regiões neutras:
 async _assumeControl(region, player) {
   // Verificar se jogador está eliminado
@@ -145,6 +135,30 @@ async _assumeControl(region, player) {
   addActivityLog({ type: 'explore', playerName: player.name, action: 'assumiu domínio de', details: region.name, turn: gameState.turn });
 }
 
+async _initiateDispute(region, player) {
+    // Verificar se o jogo já terminou
+    if (this.main.turnLogic && this.main.turnLogic.gameEnded) {
+        this.main.showFeedback('O jogo já terminou!', 'warning');
+        return;
+    }
+    
+    // Verificar se o jogador está tentando disputar contra si mesmo
+    if (region.controller === player.id) {
+        this.main.showFeedback('Você já controla esta região.', 'error');
+        return;
+    }
+    
+    // Delegar para o sistema de disputa
+    if (this.main.disputeLogic) {
+        await this.main.disputeLogic.handleDispute(region, player);
+        this._finalizeAction();
+    } else {
+        this.main.showFeedback('Sistema de disputa não disponível.', 'error');
+        // Devolver a ação se o sistema não está disponível
+        gameState.actionsLeft++;
+    }
+}
+  
 // Nova função para lidar com ressurreição
 async _handleResurrection(region, player) {
   const resurrectionCostPV = window.gameState?.ELIMINATION_CONFIG?.RESURRECTION_COST_PV || 2;
