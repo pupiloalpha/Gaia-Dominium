@@ -211,10 +211,10 @@ initializeAISystem() {
         .map((player, index) => {
 
             // Ignorar jogadores eliminados
-      if (player.eliminated) {
-        console.log(`🚫 Ignorando jogador eliminado: ${player.name}`);
-        return null;
-      }
+          if (player.eliminated) {
+              console.log(`🚫 Ignorando jogador eliminado: ${player.name}`);
+               return null;
+          }
             console.log(`🔍 Verificando jogador ${index}: ${player.name}`, {
                 type: player.type,
                 isAI: player.isAI,
