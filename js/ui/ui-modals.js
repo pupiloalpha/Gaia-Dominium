@@ -689,6 +689,17 @@ addStructureSelectionFeedback(structureName) {
 
 showIncomeModal(player, bonuses) {
   console.log('💰 showIncomeModal chamado para:', player.name);
+
+  // VERIFICAR SE JOGADOR ESTÁ ELIMINADO
+    if (player.eliminated) {
+        console.log(`💰 Jogador ${player.name} está eliminado, pulando modal de renda.`);
+        
+        // Pular renda e ir direto para fase de ações (ou passar turno)
+        if (this.uiManager && this.uiManager.setModalMode) {
+            this.uiManager.setModalMode(false);
+        }
+        return;
+    }
   
   // Garantir que o modal está cacheado
   if (!this.modals.income) {
