@@ -176,15 +176,15 @@ export class DisputeLogic {
 
   // Executar disputa para receber região e jogador
 async handleDispute(region, attacker) {
-  // Verificar se o jogo já terminou
-  if (this.main.turnLogic && this.main.turnLogic.gameEnded) {
-    this.main.showFeedback('O jogo já terminou!', 'warning');
+  // VALIDAÇÃO EXTRA: Verificar se jogador ainda tem ações
+  if (gameState.actionsLeft <= 0) {
+    this.main.showFeedback('Sem ações restantes neste turno.', 'warning');
     return;
   }
   
-  // Verificar ações restantes
-  if (gameState.actionsLeft <= 0) {
-    this.main.showFeedback('Sem ações restantes neste turno.', 'warning');
+  // VALIDAÇÃO EXTRA: Verificar se jogador não foi eliminado
+  if (attacker.eliminated) {
+    this.main.showFeedback('Jogador eliminado não pode disputar.', 'error');
     return;
   }
   
@@ -193,16 +193,12 @@ async handleDispute(region, attacker) {
   // Calcular custos e chance de sucesso
   const disputeData = this.calculateDisputeCosts(attacker, region);
   
-  // VERIFICAÇÃO DIRETA - SEM CONFIRMAÇÃO DUPLICADA
-  // Verificar se pode pagar os custos
+  // VERIFICAÇÃO FINAL DE RECURSOS (redundante para segurança)
   if (attacker.victoryPoints < disputeData.finalCost.pv) {
-    this.main.showFeedback('PV insuficientes para iniciar a disputa.', 'error');
-    // Devolver a ação se não puder pagar
-    gameState.actionsLeft++;
+    this.main.showFeedback(`PV insuficientes para iniciar a disputa (necessário: ${disputeData.finalCost.pv}).`, 'error');
     return;
   }
   
-  // Verificar recursos
   const canPay = Object.entries(disputeData.finalCost).every(([resource, amount]) => {
     if (resource === 'pv') return true; // PV já verificado acima
     return (attacker.resources[resource] || 0) >= amount;
@@ -210,11 +206,9 @@ async handleDispute(region, attacker) {
   
   if (!canPay) {
     this.main.showFeedback('Recursos insuficientes para iniciar a disputa.', 'error');
-    // Devolver a ação se não puder pagar
-    gameState.actionsLeft++;
     return;
   }
-  
+ 
   // Consumir ação (já foi consumida ao abrir o modal? Verificar ui-dispute.js)
   // IMPORTANTE: A ação deve ser consumida apenas se a disputa prosseguir
   // Se chegou até aqui, o jogador confirmou no modal, então consumir ação
