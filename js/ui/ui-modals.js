@@ -531,6 +531,20 @@ setupEventFilters() {
   }
 
   renderStructureOptions(region) {
+  const player = gameState.players[gameState.currentPlayerIndex];
+  // VERIFICAR SE JOGADOR ESTÁ ELIMINADO
+    if (player.eliminated) {
+        this.structureOptions.innerHTML = `
+            <div class="text-center py-8">
+                <p class="text-gray-400">💀 Jogador eliminado não pode construir.</p>
+                <p class="text-sm text-gray-500 mt-2">
+                    Para ressuscitar: domine uma região neutra
+                </p>
+            </div>
+        `;
+        return;
+    }
+    
   this.structureOptions.innerHTML = '';
   
   const colorClasses = {
