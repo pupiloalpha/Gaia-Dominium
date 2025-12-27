@@ -246,7 +246,21 @@ async handleDispute(region, attacker) {
   // Verificar vitória
   this.main.turnLogic.checkVictory();
 }
-
+  
+// Método auxiliar (antes de _handleSuccessfulDispute):
+consumeAction() {
+    if (gameState.actionsLeft <= 0) {
+        return false;
+    }
+    gameState.actionsLeft--;
+    
+    if (window.uiManager && window.uiManager.gameManager) {
+        setTimeout(() => window.uiManager.gameManager.updateFooter(), 10);
+    }
+    
+    return true;
+}
+  
   // Processar disputa bem-sucedida
   async _handleSuccessfulDispute(attacker, defender, region, disputeData) {
     // Remover região do defensor
@@ -330,53 +344,53 @@ _updateRegionVisual(regionId) {
     });
   }
 
-  // Eliminar jogador sem regiões
+  // Eliminar jogador sem regiões dominadas
 _handlePlayerElimination(player) {
-  // Usar a função do game-state para eliminar
-  const eliminated = window.gameState?.eliminatePlayer?.(player.id);
-  
-  if (eliminated) {
-    // A função eliminatePlayer já aplica penalidades e atualiza o estado
-    // Agora vamos registrar no log
-    addActivityLog({
-      type: 'elimination',
-      playerName: 'SISTEMA',
-      action: 'eliminou',
-      details: `${player.name} (perdeu todas as regiões)`,
-      turn: gameState.turn,
-      isEvent: true
-    });
+    // Usar a função do game-state para eliminar
+    const eliminated = window.gameState?.eliminatePlayer?.(player.id);
     
-    // Verificar vitória por eliminação
-    const victoryCheck = window.gameState?.checkEliminationVictory?.();
-    
-    if (victoryCheck) {
-      if (victoryCheck.type === 'elimination_victory') {
-        // Declarar vitória do jogador restante
-        this.main.turnLogic._declareVictory(victoryCheck.winner);
-      } else if (victoryCheck.type === 'no_winner') {
-        // Todos eliminados - mostrar modal especial
-        this.main.showFeedback(victoryCheck.message, 'warning');
+    if (eliminated) {
+        // A função eliminatePlayer já aplica penalidades e atualiza o estado
+        // Agora vamos registrar no log
+        addActivityLog({
+            type: 'elimination',
+            playerName: 'SISTEMA',
+            action: 'eliminou',
+            details: `${player.name} (perdeu todas as regiões)`,
+            turn: gameState.turn,
+            isEvent: true
+        });
         
-        if (window.uiManager?.modals?.showNoWinnerModal) {
-          window.uiManager.modals.showNoWinnerModal();
+        // Verificar vitória por eliminação
+        const victoryCheck = window.gameState?.checkEliminationVictory?.();
+        
+        if (victoryCheck) {
+            if (victoryCheck.type === 'elimination_victory') {
+                // Declarar vitória do jogador restante
+                this.main.turnLogic._declareVictory(victoryCheck.winner);
+            } else if (victoryCheck.type === 'no_winner') {
+                // Todos eliminados - mostrar modal especial
+                this.main.showFeedback(victoryCheck.message, 'warning');
+                
+                if (window.uiManager?.modals?.showNoWinnerModal) {
+                    window.uiManager.modals.showNoWinnerModal();
+                }
+            }
         }
-      }
     }
+    
+    // Mostrar feedback
+    const penalty = Math.max(
+        ELIMINATION_CONFIG.MIN_PENALTY_PV,
+        Math.min(
+            ELIMINATION_CONFIG.MAX_PENALTY_PV,
+            Math.floor(player.victoryPoints * ELIMINATION_CONFIG.PENALTY_PV_PERCENTAGE)
+        )
+    );
+    
+    this.main.showFeedback(
+        `💀 ${player.name} foi eliminado! -${penalty} PV de penalidade.`,
+        'warning'
+    );
   }
-  
-  // Mostrar feedback
-  const penalty = Math.max(
-    ELIMINATION_CONFIG.MIN_PENALTY_PV,
-    Math.min(
-      ELIMINATION_CONFIG.MAX_PENALTY_PV,
-      Math.floor(player.victoryPoints * ELIMINATION_CONFIG.PENALTY_PV_PERCENTAGE)
-    )
-  );
-  
-  this.main.showFeedback(
-    `💀 ${player.name} foi eliminado! -${penalty} PV de penalidade.`,
-    'warning'
-  );
-}
 }
