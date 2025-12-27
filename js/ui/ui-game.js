@@ -179,7 +179,14 @@ export class UIGameManager {
         cell.className = 'board-cell';
         cell.dataset.regionId = region.id;
         cell.dataset.region = String.fromCharCode(65 + region.id);
-        
+
+        // VERIFICAÇÃO DE ELIMINAÇÃO DO CONTROLADOR
+    if (region.controller !== null) {
+        const controllerPlayer = gameState.players[region.controller];
+        if (controllerPlayer && controllerPlayer.eliminated) {
+            cell.classList.add('eliminated-controlled');
+        }
+    }
         // Adicionar classes baseadas no estado
         if (region.controller === gameState.currentPlayerIndex) {
             cell.classList.add('player-owned');
@@ -520,50 +527,48 @@ export class UIGameManager {
         const isEliminated = player?.eliminated;
   
   // Se jogador atual está eliminado, desabilitar todas as ações exceto explorar em regiões neutras
-  if (isEliminated) {
+if (isEliminated) {
     [this.actionExploreBtn, this.actionCollectBtn, this.actionBuildBtn, this.actionNegotiateBtn, this.endTurnBtn]
-      .forEach(btn => {
-        if (btn) {
-          if (btn === this.actionExploreBtn) {
-            // Explorar só habilitado se região selecionada for neutra
-            if (gameState.selectedRegionId !== null) {
-              const region = gameState.regions[gameState.selectedRegionId];
-              if (region && region.controller === null) {
-                btn.disabled = false;
-                btn.classList.remove('opacity-30', 'cursor-not-allowed');
-                btn.classList.add('bg-yellow-600');
-                btn.textContent = 'Ressuscitar';
-                btn.title = 'Dominar região neutra para ressuscitar (custo: 2 PV + recursos do bioma)';
-              } else {
-                btn.disabled = true;
-                btn.classList.add('opacity-30', 'cursor-not-allowed');
-                btn.textContent = 'Ressuscitar';
-                btn.title = 'Selecione uma região neutra para ressuscitar';
-              }
-            } else {
-              btn.disabled = true;
-              btn.classList.add('opacity-30', 'cursor-not-allowed');
-              btn.textContent = 'Ressuscitar';
-              btn.title = 'Selecione uma região neutra para ressuscitar';
+        .forEach(btn => {
+            if (btn) {
+                if (btn === this.actionExploreBtn) {
+                    // Explorar só habilitado se região selecionada for neutra
+                    if (gameState.selectedRegionId !== null) {
+                        const region = gameState.regions[gameState.selectedRegionId];
+                        if (region && region.controller === null) {
+                            btn.disabled = false;
+                            btn.classList.remove('opacity-30', 'cursor-not-allowed');
+                            btn.classList.add('bg-yellow-600');
+                            btn.textContent = '💀 Ressuscitar';
+                            btn.title = 'Dominar região neutra para ressuscitar (custo: 2 PV + recursos do bioma)';
+                        } else {
+                            btn.disabled = true;
+                            btn.classList.add('opacity-30', 'cursor-not-allowed');
+                            btn.textContent = '💀 Ressuscitar';
+                            btn.title = 'Selecione uma região neutra para ressuscitar';
+                        }
+                    } else {
+                        btn.disabled = true;
+                        btn.classList.add('opacity-30', 'cursor-not-allowed');
+                        btn.textContent = '💀 Ressuscitar';
+                        btn.title = 'Selecione uma região neutra para ressuscitar';
+                    }
+                } else {
+                    btn.disabled = true;
+                    btn.classList.add('opacity-30', 'cursor-not-allowed');
+                    btn.title = 'Jogador eliminado não pode realizar esta ação';
+                }
             }
-          } else {
-            btn.disabled = true;
-            btn.classList.add('opacity-30', 'cursor-not-allowed');
-            btn.title = 'Jogador eliminado não pode realizar esta ação';
-          }
-        }
-      });
+        });
     
     if (this.endTurnBtn) {
-      this.endTurnBtn.disabled = false;
-      this.endTurnBtn.textContent = 'Passar Turno';
-      this.endTurnBtn.title = 'Jogador eliminado pode passar o turno';
+        this.endTurnBtn.disabled = false;
+        this.endTurnBtn.textContent = 'Passar Turno';
+        this.endTurnBtn.title = 'Jogador eliminado pode passar o turno';
     }
     
     return;
-  }
-
-        
+}      
         if (!gameState.gameStarted) {
             [this.actionExploreBtn, this.actionCollectBtn, this.actionBuildBtn, this.actionNegotiateBtn]
                 .forEach(b => {
@@ -763,10 +768,24 @@ export class UIGameManager {
     }
     
 handleExploreWithContext() {
-    if (gameState.selectedRegionId === null) return;
+    if (gameState.selectedRegionId === null) {
+        this.uiManager.modals.showFeedback('Selecione uma região primeiro.', 'error');
+        return;
+    }
     
     const region = gameState.regions[gameState.selectedRegionId];
     const player = getCurrentPlayer();
+    
+    // Verificar se jogador está eliminado
+    if (player.eliminated) {
+        // Jogador eliminado só pode dominar regiões neutras
+        if (region.controller === null) {
+            window.gameLogic.handleExplore(); // Isso chamará a ressurreição
+        } else {
+            this.uiManager.modals.showFeedback('Jogador eliminado só pode dominar regiões neutras.', 'error');
+        }
+        return;
+    }
     
     if (region.controller === null) {
         // Região neutra - dominar diretamente (SEM MODAL)
