@@ -132,20 +132,30 @@ class GameLogic {
   handleCollect() { this.actionsLogic.handleCollect(); }
   handleBuild(type) { this.actionsLogic.handleBuild(type); }
 
-  
-handleDispute() { 
-    // Fallback para compatibilidade
-    if (this.disputeLogic) {
-        const region = gameState.regions[gameState.selectedRegionId];
-        const attacker = getCurrentPlayer();
-        
-        if (region && attacker) {
-            return this.disputeLogic.handleDispute(region, attacker);
-        }
+async handleDispute(region, attacker) {
+    if (!this.disputeLogic) {
+        this.showFeedback('Sistema de disputa não inicializado.', 'error');
+        return null;
     }
-    return null;
+    
+    // Verificar se já temos a região
+    if (!region && gameState.selectedRegionId !== null) {
+        region = gameState.regions[gameState.selectedRegionId];
+    }
+    
+    // Obter atacante se não fornecido
+    if (!attacker) {
+        attacker = getCurrentPlayer();
+    }
+    
+    if (!region || !attacker) {
+        this.showFeedback('Dados insuficientes para disputa.', 'error');
+        return null;
+    }
+    
+    return await this.disputeLogic.handleDispute(region, attacker);
 }
-
+  
   performAction(type) { return this.actionsLogic.consumeAction(); }
   
   // Negociação
@@ -219,18 +229,25 @@ handleDispute() {
         return (player.resources[resource] || 0) >= amount;
       });
     }
-    // CASO 3: Região inimiga - usar verificação de disputa
+// CASO 3: Região inimiga - usar verificação de disputa
 else {
-    // Verificar se temos disputeLogic disponível
+    // Usar o disputeLogic para verificar custo
     if (this.disputeLogic && this.disputeLogic.canAffordDispute) {
         return this.disputeLogic.canAffordDispute(player);
     }
-    // Fallback: verificação básica
+    // Fallback: verificação básica (DEVE SER CONSISTENTE COM logic-dispute.js)
+    const disputeCosts = this.disputeLogic?.calculateDisputeCosts?.(player, region)?.finalCost;
+    if (disputeCosts) {
+        return Object.entries(disputeCosts).every(([resource, amount]) => {
+            if (resource === 'pv') return player.victoryPoints >= amount;
+            return (player.resources[resource] || 0) >= amount;
+        });
+    }
     return player.victoryPoints >= 3 && 
            player.resources.ouro >= 2 &&
            player.resources.madeira >= 1 &&
            player.resources.pedra >= 1;
-    }
+   }
   } 
   else if (actionType === 'construir') {
     // Nota: Para construção genérica na UI, usamos custo base. 
