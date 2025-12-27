@@ -44,6 +44,27 @@ export class TurnLogic {
     return gameState.currentPhase;
   }
 
+
+  // Método auxiliar para verificar se jogador pode realizar ações
+_canPlayerTakeActions(player) {
+  if (!player || player.eliminated) return false;
+  
+  // Verificar se tem recursos para alguma ação
+  const hasBasicResources = 
+    player.resources.madeira >= 1 || 
+    player.resources.pedra >= 1 || 
+    player.resources.ouro >= 1 ||
+    player.victoryPoints >= 2;
+  
+  // Verificar se controla regiões exploráveis
+  const hasExplorableRegions = player.regions.some(regionId => {
+    const region = gameState.regions[regionId];
+    return region && region.explorationLevel < 3;
+  });
+  
+  return hasBasicResources || hasExplorableRegions;
+}
+  
   async handleEndTurn() {
   if (this.gameEnded) {
     this.main.showFeedback('O jogo já terminou!', 'warning');
@@ -51,6 +72,13 @@ export class TurnLogic {
   }
   
   const currentPlayer = getCurrentPlayer();
+
+  // VERIFICAÇÃO: Se jogador está eliminado ou não pode fazer ações, forçar término
+  if (currentPlayer.eliminated || !this._canPlayerTakeActions(currentPlayer)) {
+    console.log(`🔄 ${currentPlayer.name} não pode realizar ações, forçando término do turno`);
+    this._finalizeTurn(currentPlayer);
+    return;
+  }
   
   // Lógica para IA é interceptada no AI Coordinator
   // MAS se chegarmos aqui, deixamos o fluxo normal continuar
