@@ -368,6 +368,9 @@ initializeAISystem() {
         // Status de cada IA
         aiPlayers.forEach((player, idx) => {
             const ai = getAIPlayer(player.id);
+            // VERIFICAÇÃO DE ELIMINAÇÃO
+            const isEliminated = player.eliminated;
+            
             if (ai) {
                 const debugInfo = ai.getDebugInfo?.() || {};
                 const isCurrent = gameState.currentPlayerIndex === player.id;
