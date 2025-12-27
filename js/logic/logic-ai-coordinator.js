@@ -119,9 +119,8 @@ async checkAndExecuteAITurn() {
     }
 }
 
-  async _runAILoop() {
+async _runAILoop(ai) {
     const currentPlayer = getCurrentPlayer();
-    const ai = this._getAIPlayerForCurrentPlayer();
     
     if (!ai) {
         console.error(`🤖 IA não encontrada para ${currentPlayer?.name || 'desconhecido'}`);
@@ -135,12 +134,19 @@ async checkAndExecuteAITurn() {
         // Executar baseado na fase atual
         switch(gameState.currentPhase) {
             case 'renda':
-                await this.handleIncomePhaseAI(currentPlayer);
+                // A renda já foi aplicada, avançar para ações
+                gameState.currentPhase = 'acoes';
+                gameState.actionsLeft = GAME_CONFIG.ACTIONS_PER_TURN;
+                await this._delay(1000);
+                // Continuar para ações
+                await this._executeActions(ai);
                 break;
             case 'acoes':
                 await this._executeActions(ai);
                 // Avançar para negociação
-                this.main.negotiationLogic.setupPhase();
+                if (this.main.negotiationLogic) {
+                    this.main.negotiationLogic.setupPhase();
+                }
                 await this._delay(1000);
                 // Chamar negociação imediatamente
                 await this._executeNegotiationPhaseForAI();
@@ -160,26 +166,35 @@ async checkAndExecuteAITurn() {
 }
 
 async _executeActions(ai) {
-  while (gameState.actionsLeft > 0) {
-    await this._delay(1000);
-    try {
-      // Verificar disputas antes de ação normal
-      const shouldDispute = this._shouldAIDispute(ai);
-      
-      if (shouldDispute) {
-        await this._executeAIDispute(ai);
-      } else {
-        await ai.takeTurn(gameState, window.uiManager);
-      }
-      
-      if(window.uiManager) window.uiManager.updateUI();
-    } catch (e) {
-      console.error('Erro ação IA:', e);
-      break;
+    const currentPlayer = getCurrentPlayer();
+    
+    while (gameState.actionsLeft > 0 && !this.main.turnLogic.gameEnded) {
+        await this._delay(1000);
+        try {
+            // Verificar disputas primeiro
+            if (this._shouldAIDispute(ai)) {
+                await this._executeAIDispute(ai);
+            } else {
+                // Executar ação normal da IA
+                if (ai.takeTurn) {
+                    await ai.takeTurn(gameState, window.uiManager);
+                }
+            }
+            
+            // Atualizar UI
+            if (window.uiManager) {
+                window.uiManager.updateUI();
+                if (window.uiManager.gameManager) {
+                    window.uiManager.gameManager.updateFooter();
+                }
+            }
+        } catch (e) {
+            console.error('Erro ação IA:', e);
+            break;
+        }
     }
-  }
 }
-
+  
 // Método para avaliar disputa
 _shouldAIDispute(ai) {
   const currentPlayer = getCurrentPlayer();
