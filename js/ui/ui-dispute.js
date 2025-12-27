@@ -154,7 +154,32 @@ export class DisputeUI {
                 successChance: 50
             };
         }
+ 
+            // VERIFICAÇÃO RIGOROSA DE RECURSOS
+    const canPay = Object.entries(disputeData.finalCost).every(([resource, amount]) => {
+        if (resource === 'pv') {
+            if (attacker.victoryPoints < amount) {
+                this.uiManager.modals.showFeedback(`Necessário ${amount} PV para disputar (você tem: ${attacker.victoryPoints})`, 'error');
+                return false;
+            }
+            return true;
+        }
+        if ((attacker.resources[resource] || 0) < amount) {
+            this.uiManager.modals.showFeedback(
+                `Necessário ${amount} ${RESOURCE_ICONS[resource]} ${resource} (você tem: ${attacker.resources[resource] || 0})`, 
+                'error'
+            );
+            return false;
+        }
+        return true;
+    });
 
+    if (!canPay) {
+        // Não abrir modal se não pode pagar
+        console.log('❌ Jogador não tem recursos para disputa, modal não será aberto');
+        return;
+    }
+        
         document.getElementById('disputeRegionName').textContent = 
             `Região: ${region.name} (${region.biome}) • Controlada por: ${defender.name}`;
 
@@ -267,6 +292,13 @@ export class DisputeUI {
             disputeData
         };
 
+        const confirmBtn = document.getElementById('disputeConfirmBtn');
+    if (confirmBtn) {
+        confirmBtn.disabled = false;
+        confirmBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+        confirmBtn.title = `Iniciar disputa por ${region.name}`;
+    }
+        
         // Mostrar modal com animação
         this.disputeModal.classList.remove('hidden');
         this.uiManager.setModalMode(true);
