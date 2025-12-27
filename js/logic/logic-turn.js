@@ -405,6 +405,24 @@ _finalizeTurn(currentPlayer) {
     return;
   }
 }
+
+_getNextActivePlayer(startIndex) {
+    const players = gameState.players;
+    let nextIndex = (startIndex + 1) % players.length;
+    let attempts = 0;
+    
+    // Procurar próximo jogador não eliminado
+    while (attempts < players.length) {
+        if (!players[nextIndex].eliminated) {
+            return nextIndex;
+        }
+        nextIndex = (nextIndex + 1) % players.length;
+        attempts++;
+    }
+    
+    // Se todos eliminados, retornar -1
+    return -1;
+}
   
   _declareVictory(winner) {
     this.gameEnded = true;
