@@ -34,6 +34,7 @@
      15.1 Botões de Ação
      15.2 Badges e Indicadores
      15.3 Efeitos de Edição
+     15.4 Estilos para jogadores eliminados 
    16. EMOJIS E ÍCONES
    17. RESPONSIVIDADE
      17.1 Desktop
@@ -1914,6 +1915,53 @@ input[type="text"]:focus, select:focus, input[type="number"]:focus {
 .editing-mode .player-name-input {
   border-color: #3b82f6 !important;
   box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2);
+}
+
+/* 15.4 ESTILOS PARA JOGADORES ELIMINADOS*/
+/* Estilos para eliminação */
+.eliminated-controlled {
+    position: relative;
+    opacity: 0.6;
+    filter: grayscale(0.5);
+}
+
+.eliminated-controlled::after {
+    content: '💀';
+    position: absolute;
+    top: 5px;
+    right: 5px;
+    font-size: 12px;
+    z-index: 10;
+    filter: drop-shadow(0 1px 2px rgba(0,0,0,0.8));
+}
+
+/* Estilo para botão de ressuscitar */
+.btn-ressurect {
+    background: linear-gradient(135deg, #f59e0b, #d97706) !important;
+    animation: pulse-gold 2s infinite;
+}
+
+@keyframes pulse-gold {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.7; }
+}
+
+/* Estilo para célula atualizada após disputa */
+.region-updated {
+    animation: region-update 1s ease-out;
+}
+
+@keyframes region-update {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.05); box-shadow: 0 0 20px rgba(255, 215, 0, 0.5); }
+    100% { transform: scale(1); }
+}
+
+/* Estilo para jogador eliminado no header */
+.player-eliminated {
+    background-color: rgba(75, 85, 99, 0.3) !important;
+    text-decoration: line-through;
+    opacity: 0.6;
 }
 
 /* ============================================
