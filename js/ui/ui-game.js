@@ -642,16 +642,63 @@ if (isEliminated) {
                     this.actionExploreBtn.classList.add('bg-green-600');
                     this.actionExploreBtn.title = 'Explorar região própria (ação gratuita)';
                 }
-            } else if (isEnemyRegion) {
-                // Lógica para Disputar
-                const enemyPlayer = gameState.players[region.controller];
-                if (this.actionExploreBtn) {
-                     this.actionExploreBtn.disabled = !baseEnabled;
-                     this.actionExploreBtn.textContent = 'Disputar';
-                     this.actionExploreBtn.classList.remove('bg-green-600', 'bg-yellow-600');
-                     this.actionExploreBtn.classList.add('bg-red-600');
-                     this.actionExploreBtn.title = `Disputar região controlada por ${enemyPlayer.name}`;
-                }      
+            } // Substituir a seção de botão de explorar/disputar no updateFooter (linhas ~334-360):
+// CASO: Região inimiga
+else if (isEnemyRegion) {
+    // Lógica para Disputar
+    const enemyPlayer = gameState.players[region.controller];
+    
+    // VALIDAÇÃO CRÍTICA: Verificar se pode pagar a disputa
+    let canAffordDispute = false;
+    let disputeCostInfo = '';
+    
+    if (window.gameLogic?.disputeLogic) {
+        const disputeData = window.gameLogic.disputeLogic.calculateDisputeCosts(player, region);
+        const finalCost = disputeData.finalCost;
+        
+        canAffordDispute = Object.entries(finalCost).every(([resource, amount]) => {
+            if (resource === 'pv') {
+                if (player.victoryPoints < amount) {
+                    disputeCostInfo = `Necessário ${amount} PV (você tem: ${player.victoryPoints})`;
+                    return false;
+                }
+                return true;
+            }
+            if ((player.resources[resource] || 0) < amount) {
+                disputeCostInfo = `Necessário ${amount} ${RESOURCE_ICONS[resource]} ${resource} (você tem: ${player.resources[resource] || 0})`;
+                return false;
+            }
+            return true;
+        });
+        
+        // Adicionar informação detalhada do custo
+        if (canAffordDispute) {
+            disputeCostInfo = `Custo: ${finalCost.pv} PV, `;
+            Object.entries(finalCost).forEach(([res, amt]) => {
+                if (res !== 'pv' && amt > 0) {
+                    disputeCostInfo += `${amt}${RESOURCE_ICONS[res]} ${res}, `;
+                }
+            });
+            disputeCostInfo = disputeCostInfo.slice(0, -2); // Remover última vírgula
+        }
+    }
+    
+    if (this.actionExploreBtn) {
+        this.actionExploreBtn.disabled = !baseEnabled || !canAffordDispute;
+        this.actionExploreBtn.textContent = 'Disputar';
+        this.actionExploreBtn.classList.remove('bg-green-600', 'bg-yellow-600');
+        this.actionExploreBtn.classList.add(canAffordDispute ? 'bg-red-600 hover:bg-red-700' : 'bg-gray-600');
+        this.actionExploreBtn.title = canAffordDispute ? 
+            `Disputar ${region.name} de ${enemyPlayer.name}\n${disputeCostInfo}` : 
+            `Recursos insuficientes para disputar\n${disputeCostInfo}`;
+        
+        // Adicionar feedback visual imediato
+        if (!canAffordDispute) {
+            this.actionExploreBtn.classList.add('opacity-70', 'cursor-not-allowed');
+        } else {
+            this.actionExploreBtn.classList.remove('opacity-70', 'cursor-not-allowed');
+        }
+    }      
             } else {
                 // Não é neutro, nem sua região.
                 if (this.actionExploreBtn) {
