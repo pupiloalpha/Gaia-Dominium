@@ -18,14 +18,21 @@ import { UIPlayersManager } from '../ui/ui-players.js';
 import { UIGameManager } from '../ui/ui-game.js';
 import { UIMobileManager } from '../ui/ui-mobile.js';
 import { DisputeUI } from '../ui/ui-dispute.js';
+import { BoardRenderer } from '../ui/components/board-renderer.js';
+import { SidebarRenderer } from '../ui/components/sidebar-renderer.js';
+import { FooterManager } from '../ui/components/footer-manager.js';
 
 class UIManager {
     constructor() {
     this.modals = new ModalManager(this);
     this.negotiation = new NegotiationUI(this);
     this.playersManager = new UIPlayersManager(this);
-    this.gameManager = new UIGameManager(this);
-    this.mobileManager = new UIMobileManager(this);
+
+    setTimeout(() => {
+      this.gameManager = new UIGameManager(this);
+      this.mobileManager = new UIMobileManager(this);
+    }, 200);
+        
     this.disputeUI = new DisputeUI(this);
     
     this.cacheElements();
