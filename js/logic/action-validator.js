@@ -2,11 +2,9 @@
 import { 
   gameState, 
   getCurrentPlayer, 
-  getPlayerById,
-  isPlayerEliminated,
-  getActivePlayers
+  getPlayerById 
 } from '../state/game-state.js';
-import { GAME_CONFIG } from '../state/game-config.js';
+import { GAME_CONFIG, STRUCTURE_COSTS } from '../state/game-config.js';
 
 class ActionValidator {
   constructor(gameLogic = null) {
@@ -57,8 +55,11 @@ class ActionValidator {
     }
     
     // Jogador eliminado só pode dominar regiões neutras
-    if (player.eliminated && region.controller !== null) {
-      return { valid: false, reason: 'Jogador eliminado só pode dominar regiões neutras' };
+    if (player.eliminated) {
+      if (region.controller !== null) {
+        return { valid: false, reason: 'Jogador eliminado só pode dominar regiões neutras' };
+      }
+      return { valid: true, reason: '' };
     }
     
     return { valid: true, reason: '' };
@@ -196,15 +197,24 @@ class ActionValidator {
         break;
       
       case 'construir':
-        if (structureType && this.main?.factionLogic) {
-          const baseCost = this.main.getStructureCost(structureType);
-          cost = this.main.factionLogic.modifyBuildCost(player, baseCost);
+        if (structureType) {
+          const baseCost = STRUCTURE_COSTS[structureType];
+          if (baseCost) {
+            cost = { ...baseCost };
+            if (this.main?.factionLogic) {
+              cost = this.main.factionLogic.modifyBuildCost(player, cost);
+            }
+          }
         }
         break;
       
       case 'negociar':
         const negCost = this.main?.factionLogic?.getNegotiationCost(player) || 1;
         return player.resources.ouro >= negCost;
+        
+      case 'disputar':
+        // Custo dinâmico - validado pelo disputeLogic
+        return true;
     }
     
     return Object.entries(cost).every(([resource, amount]) => {
