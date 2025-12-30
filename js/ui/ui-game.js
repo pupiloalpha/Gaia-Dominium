@@ -1,45 +1,24 @@
-// ui-game.js - Interface do Jogo (Navbar, Sidebar, Board, Footer)
+// ui-game.js - Interface do Jogo (Refatorado)
 import {
     gameState,
     achievementsState,
     getCurrentPlayer,
-    activityLogHistory,
-    getPendingNegotiationsForPlayer
+    activityLogHistory
 } from '../state/game-state.js';
 import { GAME_CONFIG, RESOURCE_ICONS, ACHIEVEMENTS_CONFIG } from '../state/game-config.js';
-
-const LOG_ICONS = {
-    'action': '⚡',
-    'build': '🏗️',
-    'explore': '⛏️',
-    'collect': '🌾',
-    'negotiate': '🤝',
-    'event': '🎴',
-    'victory': '🏆',
-    'phase': '🔄',
-    'turn': '📅',
-    'system': '⚙️',
-    'income': '💰',
-    'default': '📝'
-};
-
-const PHASE_NAMES = {
-    'renda': '💰 Renda',
-    'acoes': '⚡ Ações',
-    'negociacao': '🤝 Negociação'
-};
-
-const ACTION_COSTS = {
-    'explorar': { madeira: 2, agua: 1 },
-    'recolher': { madeira: 1 },
-    'construir': { madeira: 3, pedra: 2, ouro: 1 },
-    'negociar': { ouro: 1 }
-};
+import { Utils } from '../utils/utils.js';
+import { LOG_ICONS } from './ui-constants.js';
+import { RegionRenderer } from './ui-region-renderer.js';
+import { SidebarManager } from './ui-sidebar-manager.js';
+import { FooterManager } from './ui-footer-manager.js';
 
 export class UIGameManager {
     constructor(uiManager) {
         this.uiManager = uiManager;
         this.cacheElements();
+        this.regionRenderer = new RegionRenderer(this);
+        this.sidebarManager = new SidebarManager(this);
+        this.footerManager = new FooterManager(this);
     }
 
     cacheElements() {
@@ -58,22 +37,6 @@ export class UIGameManager {
         
         // Elementos da interface do jogo
         this.playerHeaderList = document.getElementById('playerHeaderList');
-        this.sidebarPlayerHeader = document.getElementById('sidebarPlayerHeader');
-        this.resourceList = document.getElementById('resourceList');
-        this.controlledRegions = document.getElementById('controlledRegions');
-        this.achievementsList = document.getElementById('achievementsList');
-        
-        // Botões de ação
-        this.actionExploreBtn = document.getElementById('actionExplore');
-        this.actionCollectBtn = document.getElementById('actionCollect');
-        this.actionBuildBtn = document.getElementById('actionBuild');
-        this.actionNegotiateBtn = document.getElementById('actionNegotiate');
-        this.endTurnBtn = document.getElementById('endTurnBtn');
-        
-        // Elementos de informação
-        this.actionsLeftEl = document.getElementById('actionsLeft');
-        this.phaseIndicator = document.getElementById('phaseIndicator');
-        this.turnInfo = document.getElementById('turnInfo');
         
         // Elementos do log de atividades
         this.logEntriesSidebar = document.getElementById('logEntriesSidebar');
@@ -86,10 +49,12 @@ export class UIGameManager {
         this.tooltipTitle = document.getElementById('tooltipTitle');
         this.tooltipBody = document.getElementById('tooltipBody');
         
+        // Elementos de informação
+        this.turnInfo = document.getElementById('turnInfo');
+        
         console.log("✅ Elementos do jogo cacheados:", {
             boardContainer: !!this.boardContainer,
-            playerHeaderList: !!this.playerHeaderList,
-            sidebarPlayerHeader: !!this.sidebarPlayerHeader
+            playerHeaderList: !!this.playerHeaderList
         });
     }
 
@@ -103,60 +68,58 @@ export class UIGameManager {
     updateUI() {
         this.renderHeaderPlayers();
         this.renderBoard();
-        this.renderSidebar(gameState.selectedPlayerForSidebar);
-        this.updateFooter();
+        this.sidebarManager.renderSidebar(gameState.selectedPlayerForSidebar);
+        this.footerManager.updateFooter();
         this.updateTurnInfo();
-        this.updatePhaseIndicator();
         this.renderActivityLog();
     }
 
     renderHeaderPlayers() {
-  if (!this.playerHeaderList) return;
-  
-  this.playerHeaderList.innerHTML = gameState.players.map((p, i) => {
-    const isCurrent = i === gameState.currentPlayerIndex;
-    const isEliminated = p.eliminated;
-    
-    let buttonClass = 'px-3 py-1 rounded-lg text-white text-sm flex items-center gap-2 ';
-    let content = '';
-    
-    if (isEliminated) {
-      buttonClass += 'bg-gray-800/50 opacity-50 cursor-not-allowed ';
-      content = `
-        <div class="text-xl">💀</div>
-        <div>
-          <div class="font-medium line-through">${p.name}</div>
-          <div class="text-xs text-gray-300">ELIMINADO</div>
-        </div>
-      `;
-    } else if (isCurrent) {
-      buttonClass += 'ring-2 ring-yellow-300 bg-white/5 ';
-      content = `
-        <div class="text-xl">${p.icon}</div>
-        <div>
-          <div class="font-medium">${p.name}</div>
-          <div class="text-xs text-yellow-400">${p.victoryPoints} PV</div>
-        </div>
-      `;
-    } else {
-      buttonClass += 'bg-white/5 ';
-      content = `
-        <div class="text-xl">${p.icon}</div>
-        <div>
-          <div class="font-medium">${p.name}</div>
-          <div class="text-xs text-yellow-400">${p.victoryPoints} PV</div>
-        </div>
-      `;
+        if (!this.playerHeaderList) return;
+        
+        this.playerHeaderList.innerHTML = gameState.players.map((p, i) => {
+            const isCurrent = i === gameState.currentPlayerIndex;
+            const isEliminated = p.eliminated;
+            
+            let buttonClass = 'px-3 py-1 rounded-lg text-white text-sm flex items-center gap-2 ';
+            let content = '';
+            
+            if (isEliminated) {
+                buttonClass += 'bg-gray-800/50 opacity-50 cursor-not-allowed ';
+                content = `
+                    <div class="text-xl">💀</div>
+                    <div>
+                        <div class="font-medium line-through">${p.name}</div>
+                        <div class="text-xs text-gray-300">ELIMINADO</div>
+                    </div>
+                `;
+            } else if (isCurrent) {
+                buttonClass += 'ring-2 ring-yellow-300 bg-white/5 ';
+                content = `
+                    <div class="text-xl">${p.icon}</div>
+                    <div>
+                        <div class="font-medium">${p.name}</div>
+                        <div class="text-xs text-yellow-400">${p.victoryPoints} PV</div>
+                    </div>
+                `;
+            } else {
+                buttonClass += 'bg-white/5 ';
+                content = `
+                    <div class="text-xl">${p.icon}</div>
+                    <div>
+                        <div class="font-medium">${p.name}</div>
+                        <div class="text-xs text-yellow-400">${p.victoryPoints} PV</div>
+                    </div>
+                `;
+            }
+            
+            return `<button data-index="${i}" class="${buttonClass}" ${isEliminated ? 'disabled' : ''}>
+                ${content}
+            </button>`;
+        }).join('');
     }
-    
-    return `<button data-index="${i}" class="${buttonClass}" ${isEliminated ? 'disabled' : ''}>
-      ${content}
-    </button>`;
-  }).join('');
-}
 
     renderBoard() {
-        // VERIFICAÇÃO DE SEGURANÇA
         if (!this.boardContainer) {
             console.error("❌ boardContainer não disponível. Tentando recachear...");
             this.boardContainer = document.getElementById('boardContainer');
@@ -169,635 +132,9 @@ export class UIGameManager {
         
         this.boardContainer.innerHTML = '';
         gameState.regions.forEach((region, index) => {
-            const cell = this.createRegionCell(region, index);
+            const cell = this.regionRenderer.createRegionCell(region, index);
             this.boardContainer.appendChild(cell);
         });
-    }
-
-    createRegionCell(region, index) {
-        const cell = document.createElement('div');
-        cell.className = 'board-cell';
-        cell.dataset.regionId = region.id;
-        cell.dataset.region = String.fromCharCode(65 + region.id);
-
-        // VERIFICAÇÃO DE ELIMINAÇÃO DO CONTROLADOR
-    if (region.controller !== null) {
-        const controllerPlayer = gameState.players[region.controller];
-        if (controllerPlayer && controllerPlayer.eliminated) {
-            cell.classList.add('eliminated-controlled');
-        }
-    }
-        // Adicionar classes baseadas no estado
-        if (region.controller === gameState.currentPlayerIndex) {
-            cell.classList.add('player-owned');
-        }
-
-        if (region.controller === null) {
-            cell.classList.add('neutral-available');
-        }
-
-        // Verificar se há ações disponíveis nesta região
-        const currentPlayer = getCurrentPlayer();
-        if (currentPlayer && region.controller === currentPlayer.id && region.explorationLevel > 0) {
-            cell.classList.add('action-available');
-            cell.classList.add('clickable');
-        }
-
-        // Adicionar contador de ações disponíveis (se aplicável)
-        if (gameState.actionsLeft > 0) {
-            const actionCounter = document.createElement('div');
-            actionCounter.className = 'action-counter';
-            actionCounter.textContent = `${gameState.actionsLeft}A`;
-            cell.appendChild(actionCounter);
-        }
-
-        if (region.controller !== null) {
-            cell.classList.add('controlled');
-            const player = gameState.players[region.controller];
-            const rgb = this.hexToRgb(player.color);
-            cell.style.setProperty('--player-rgb', rgb.join(', '));
-            cell.style.setProperty('--player-color', player.color);
-        } else {
-            cell.classList.add('neutral');
-        }
-        
-        const header = document.createElement('div');
-        header.className = 'flex items-start justify-between mb-1';
-        header.innerHTML = `
-            <div>
-                <div class="text-xs font-bold text-white leading-tight">${region.name}</div>
-                <div class="text-[9px] text-gray-300 mt-0.5">${region.biome}</div>
-            </div>
-            <div class="text-xs text-yellow-300 font-bold flex items-center gap-0.5">
-                ${region.explorationLevel}<span class="text-[10px]">⭐</span>
-            </div>
-        `;
-        
-        const resourcesLine = document.createElement('div');
-        resourcesLine.className = 'flex items-center justify-between gap-1 mt-1';
-        
-        const resourceOrder = ['madeira', 'pedra', 'ouro', 'agua'];
-        const resourcePairs = [];
-        
-        resourceOrder.forEach(key => {
-            const value = region.resources[key] || 0;
-            if (value > 0) {
-                resourcePairs.push({
-                    icon: RESOURCE_ICONS[key],
-                    value: value,
-                    key: key
-                });
-            }
-        });
-        
-        resourcePairs.forEach((resource, idx) => {
-            const pair = document.createElement('div');
-            pair.className = 'flex items-center gap-0.5 flex-1 justify-center';
-            pair.innerHTML = `
-                <span class="text-xs">${resource.icon}</span>
-                <span class="text-xs font-bold text-white">${resource.value}</span>
-            `;
-            resourcesLine.appendChild(pair);
-        });
-        
-        if (resourcePairs.length === 0) {
-            const placeholder = document.createElement('div');
-            placeholder.className = 'text-[9px] text-gray-400 italic flex-1 text-center';
-            placeholder.textContent = 'Sem recursos';
-            resourcesLine.appendChild(placeholder);
-        }
-        
-        const footer = document.createElement('div');
-        footer.className = 'flex items-center justify-between mt-2 pt-1 border-t border-white/5';
-        
-        const controller = region.controller !== null 
-            ? gameState.players[region.controller].icon
-            : '<span class="text-gray-400 text-xs">🏳️</span>';
-
-        let structureDisplay = '—';
-        if (region.structures.length > 0) {
-            const structureIcons = {
-                'Abrigo': '🛖',
-                'Torre de Vigia': '🏯',
-                'Mercado': '🏪',
-                'Laboratório': '🔬',
-                'Santuário': '🛐'
-            };
-            
-            structureDisplay = structureIcons[region.structures[0]] || '🏗️';
-            if (region.structures.length > 1) {
-                structureDisplay += `+${region.structures.length - 1}`;
-            }
-        }
-
-        footer.innerHTML = `
-            <div class="text-xs font-medium text-white">${controller}</div>
-            <div class="text-xs">${structureDisplay}</div>
-        `;
-        
-        cell.appendChild(header);
-        cell.appendChild(resourcesLine);
-        cell.appendChild(footer);
-        
-        cell.addEventListener('click', (e) => {
-            e.stopPropagation();
-            
-            const regionId = Number(cell.dataset.regionId);
-            
-            // Verificar se não está clicando em um modal
-            const clickedInModal = e.target.closest('[id$="Modal"]') || 
-                                e.target.closest('#negotiationModal') || 
-                                e.target.closest('#negResponseModal');
-            
-            if (clickedInModal) return;
-            
-            // Alternar seleção
-            if (gameState.selectedRegionId === regionId) {
-                gameState.selectedRegionId = null;
-                cell.classList.remove('region-selected');
-            } else {
-                const previousSelected = gameState.selectedRegionId;
-                gameState.selectedRegionId = regionId;
-                
-                if (previousSelected !== null) {
-                    const prevCell = document.querySelector(`.board-cell[data-region-id="${previousSelected}"]`);
-                    if (prevCell) prevCell.classList.remove('region-selected');
-                }
-                
-                cell.classList.add('region-selected');
-            }
-            
-            this.renderSidebar(gameState.selectedPlayerForSidebar);
-            this.updateFooter();
-        });
-        
-        // Tooltip events
-        cell.addEventListener('mouseenter', (e) => this.showRegionTooltip(region, e.currentTarget));
-        cell.addEventListener('mousemove', (e) => this.positionTooltip(e.currentTarget));
-        cell.addEventListener('mouseleave', () => this.hideRegionTooltip());
-        
-        return cell;
-    }
-
-    renderSidebar(playerIndex = gameState.selectedPlayerForSidebar) {
-  const player = gameState.players[playerIndex];
-  if (!player) return;
-  
-  const isCurrentPlayer = playerIndex === gameState.currentPlayerIndex;
-  const isEliminated = player.eliminated;
-  const faction = player.faction;
-  const factionColor = player.color;
-  
-  this.sidebarPlayerHeader.innerHTML = `
-    <div class="flex items-center gap-3 p-2 rounded-lg" 
-         style="border-left: 4px solid ${isEliminated ? '#666666' : player.color}; 
-                background: rgba(${this.hexToRgb(isEliminated ? '#666666' : player.color).join(', ')}, 0.05)">
-      <div class="text-3xl">${isEliminated ? '💀' : player.icon}</div>
-      <div class="flex-1">
-        <div class="text-base font-semibold ${isEliminated ? 'text-gray-400 line-through' : 'text-white'}">
-          ${player.name} ${isEliminated ? '(ELIMINADO)' : ''}
-        </div>
-        <div class="text-xs text-gray-300 mb-1">
-          Jogador ${player.id + 1} ${isCurrentPlayer && !isEliminated ? '• 🎮 TURNO' : ''}
-          ${isEliminated ? '• 💀 ELIMINADO' : ''}
-        </div>
-        ${faction && !isEliminated ? `
-        <div class="text-xs font-medium flex items-center gap-1" style="color: ${factionColor}">
-          <span class="text-sm">${faction.icon || '🏛️'}</span>
-          <span>${faction.name}</span>
-        </div>
-        ` : ''}
-        ${isEliminated ? `
-        <div class="text-xs text-yellow-300 mt-1 flex items-center gap-1">
-          <span>⚡ Para ressuscitar:</span>
-          <span>Domine uma região neutra (custo: 2 PV + recursos do bioma)</span>
-        </div>
-        ` : ''}
-      </div>
-      <div class="text-2xl font-bold ${isEliminated ? 'text-gray-400' : 'text-yellow-400'}">
-        ${player.victoryPoints} PV
-      </div>
-    </div>
-  `;
-  
-  // Restante da função permanece similar, mas adicionar verificação para eliminados
-  this.resourceList.innerHTML = Object.entries(player.resources)
-    .map(([key, value]) => `
-      <li class="flex justify-between items-center py-0.5 ${isEliminated ? 'opacity-50' : ''}">
-        <span class="text-sm ${isEliminated ? 'text-gray-400' : 'text-gray-200'} flex items-center gap-1.5">
-          <span class="text-base">${RESOURCE_ICONS[key]}</span>
-          <span class="capitalize">${key}</span>
-        </span>
-        <span class="text-sm font-bold ${isEliminated ? 'text-gray-400' : 'text-white'}">${value}</span>
-      </li>
-    `).join('');
-  
-  this.renderControlledRegions(player);
-  this.renderAchievementsInSidebar(playerIndex);
-  this.renderActivityLog('all');
-}
-
-    renderAchievementsInSidebar(playerIndex) {
-        const achievementsList = document.getElementById('achievementsList');
-        if (!achievementsList || !achievementsState) return;
-
-        // Verificação de segurança
-        if (typeof achievementsState === 'undefined' || !achievementsState.playerAchievements) {
-            achievementsList.innerHTML = '<p class="text-xs text-gray-400">Carregando conquistas...</p>';
-            return;
-        }
-        
-        const playerStats = achievementsState.playerAchievements?.[playerIndex] || {
-            explored: 0,
-            built: 0,
-            negotiated: 0,
-            collected: 0,
-            controlledBiomes: new Set(),
-            maxResources: { madeira: 0, pedra: 0, ouro: 0, agua: 0 }
-        };
-        
-        const unlocked = achievementsState.unlockedAchievements?.[playerIndex] || [];
-        
-        if (unlocked.length === 0) {
-            achievementsList.innerHTML = '<p class="text-xs text-gray-400">Nenhuma conquista ainda</p>';
-            return;
-        }
-        
-        let html = '';
-        const achievementsToShow = unlocked.slice(0, 3);
-        
-        achievementsToShow.forEach(achievementId => {
-            // Encontrar a conquista pelo ID
-            let achievement;
-            for (const key in ACHIEVEMENTS_CONFIG) {
-                if (ACHIEVEMENTS_CONFIG[key].id === achievementId) {
-                    achievement = ACHIEVEMENTS_CONFIG[key];
-                    break;
-                }
-            }
-            
-            if (achievement) {
-                html += `
-                    <div class="flex items-center gap-2 p-2 bg-gray-800/30 rounded border border-yellow-500/20">
-                        <span class="text-lg">${achievement.icon}</span>
-                        <div class="text-xs">
-                            <div class="text-yellow-300 font-semibold">${achievement.name}</div>
-                            <div class="text-gray-400 truncate">${achievement.description}</div>
-                        </div>
-                    </div>
-                `;
-            }
-        });
-        
-        if (unlocked.length > 3) {
-            html += `<div class="text-center text-xs text-gray-500 mt-1">
-                +${unlocked.length - 3} mais conquistas
-            </div>`;
-        }
-        
-        achievementsList.innerHTML = html;
-    }
-
-    renderControlledRegions(player) {
-        if (player.regions.length === 0) {
-            this.controlledRegions.innerHTML = `
-                <div class="text-sm text-gray-400 italic">Nenhuma região controlada</div>
-            `;
-            return;
-        }
-        
-        const regionsByBiome = {};
-        player.regions.forEach(regionId => {
-            const region = gameState.regions[regionId];
-            if (!regionsByBiome[region.biome]) {
-                regionsByBiome[region.biome] = [];
-            }
-            regionsByBiome[region.biome].push(region);
-        });
-        
-        const biomeEmojis = {
-            'Floresta Tropical': '🌴',
-            'Floresta Temperada': '🌲',
-            'Savana': '🏜️',
-            'Pântano': '🌊'
-        };
-        
-        this.controlledRegions.innerHTML = Object.entries(regionsByBiome)
-            .map(([biome, regions]) => {
-                const regionLetters = regions.map(r => r.name.split(' ').pop());
-                return `
-                    <div class="mb-2">
-                        <div class="text-xs font-semibold text-gray-400 mb-1 flex items-center gap-1">
-                            <span>${biomeEmojis[biome] || '🗺️'}</span>
-                            <span>${biome}</span>
-                            <span class="text-yellow-400">(${regions.length})</span>
-                        </div>
-                        <div class="flex flex-wrap gap-1">
-                            ${regionLetters.map(letter => `
-                                <span class="text-xs font-medium bg-white/5 px-1.5 py-0.5 rounded border border-white/10" 
-                                      style="border-left: 3px solid ${player.color}">
-                                    ${letter}
-                                </span>
-                            `).join('')}
-                        </div>
-                    </div>
-                `;
-            }).join('');
-    }
-
-    updateFooter() {
-        // Se o jogo terminou, desabilitar tudo
-        if (this.gameEnded || (window.gameLogic && window.gameLogic.turnLogic && window.gameLogic.turnLogic.gameEnded)) {
-            [this.actionExploreBtn, this.actionCollectBtn, this.actionBuildBtn, this.actionNegotiateBtn, this.endTurnBtn]
-                .forEach(b => {
-                    if (b) {
-                        b.disabled = true;
-                        b.classList.add('opacity-30', 'cursor-not-allowed');
-                    }
-                });
-            
-            if (this.phaseIndicator) {
-                this.phaseIndicator.textContent = '🎉 JOGO TERMINADO!';
-                this.phaseIndicator.classList.add('text-yellow-400', 'font-bold');
-            }
-            return;
-        }
-
-        const player = getCurrentPlayer();
-        const isEliminated = player?.eliminated;
-  
-  // Se jogador atual está eliminado, desabilitar todas as ações exceto explorar em regiões neutras
-if (isEliminated) {
-    [this.actionExploreBtn, this.actionCollectBtn, this.actionBuildBtn, this.actionNegotiateBtn, this.endTurnBtn]
-        .forEach(btn => {
-            if (btn) {
-                if (btn === this.actionExploreBtn) {
-                    // Explorar só habilitado se região selecionada for neutra
-                    if (gameState.selectedRegionId !== null) {
-                        const region = gameState.regions[gameState.selectedRegionId];
-                        if (region && region.controller === null) {
-                            btn.disabled = false;
-                            btn.classList.remove('opacity-30', 'cursor-not-allowed');
-                            btn.classList.add('bg-yellow-600');
-                            btn.textContent = '💀 Ressuscitar';
-                            btn.title = 'Dominar região neutra para ressuscitar (custo: 2 PV + recursos do bioma)';
-                        } else {
-                            btn.disabled = true;
-                            btn.classList.add('opacity-30', 'cursor-not-allowed');
-                            btn.textContent = '💀 Ressuscitar';
-                            btn.title = 'Selecione uma região neutra para ressuscitar';
-                        }
-                    } else {
-                        btn.disabled = true;
-                        btn.classList.add('opacity-30', 'cursor-not-allowed');
-                        btn.textContent = '💀 Ressuscitar';
-                        btn.title = 'Selecione uma região neutra para ressuscitar';
-                    }
-                } else {
-                    btn.disabled = true;
-                    btn.classList.add('opacity-30', 'cursor-not-allowed');
-                    btn.title = 'Jogador eliminado não pode realizar esta ação';
-                }
-            }
-        });
-    
-    if (this.endTurnBtn) {
-        this.endTurnBtn.disabled = false;
-        this.endTurnBtn.textContent = 'Passar Turno';
-        this.endTurnBtn.title = 'Jogador eliminado pode passar o turno';
-    }
-    
-    return;
-}      
-        if (!gameState.gameStarted) {
-            [this.actionExploreBtn, this.actionCollectBtn, this.actionBuildBtn, this.actionNegotiateBtn]
-                .forEach(b => {
-                    if (b) b.disabled = true;
-                });
-            
-            if (this.endTurnBtn) {
-                this.endTurnBtn.disabled = true;
-                this.endTurnBtn.textContent = 'Jogo não iniciado';
-            }
-            return;
-        }
-        
-        // const player = gameState.players[gameState.currentPlayerIndex];
-        const regionId = gameState.selectedRegionId;
-        const currentPhase = gameState.currentPhase || 'renda';
-        const isActionPhase = currentPhase === 'acoes';
-        const isNegotiationPhase = currentPhase === 'negociacao';
-        
-        this.updatePhaseIndicator();
-        
-        if (!player) return;
-        
-        const baseEnabled = gameState.actionsLeft > 0;
-        
-        // Botão Explorar
-        if (regionId === null || regionId === undefined) {
-            if (this.actionExploreBtn) this.actionExploreBtn.disabled = true;
-            if (this.actionCollectBtn) this.actionCollectBtn.disabled = true;
-            if (this.actionBuildBtn) this.actionBuildBtn.disabled = true;
-        } else {
-            const region = gameState.regions[regionId];
-            if (!region) return;
-            
-            const isOwnRegion = region.controller === player.id;
-            const isNeutral = region.controller === null;
-            const isEnemyRegion = !isOwnRegion && !isNeutral;
-            const canCollect = isOwnRegion && region.explorationLevel > 0;
-            
-            const actionExploreCost = ACTION_COSTS['explorar'];
-            let exploreReason = '';
-
-            if (!isActionPhase) {
-                exploreReason = 'Ação permitida apenas na fase de Ações (⚡).';
-            } else if (regionId == null) {
-                exploreReason = 'Selecione uma região para Explorar ou Dominar.';
-            } else if (isNeutral) {
-                // Lógica para Dominar
-                const hasEnoughPV = player.victoryPoints >= 2;
-                const canPayBiome = Object.entries(region.resources)
-                    .every(([key, value]) => player.resources[key] >= value);
-
-                if (this.actionExploreBtn) {
-                    this.actionExploreBtn.disabled = !baseEnabled || !hasEnoughPV || !canPayBiome;
-                    this.actionExploreBtn.textContent = 'Dominar';
-                    this.actionExploreBtn.classList.remove('bg-green-600', 'bg-red-600');
-                    this.actionExploreBtn.classList.add('bg-yellow-600');
-                    this.actionExploreBtn.title = 'Dominar região neutra (custo: 2 PV + recursos do bioma)';
-                    
-                    if (this.actionExploreBtn.disabled) {
-                        if (!hasEnoughPV) exploreReason = 'Requer 2 PVs (Pontos de Vitória).';
-                        else if (!canPayBiome) exploreReason = 'Recursos de Bioma insuficientes.';
-                    }
-                }
-            } else if (isOwnRegion) {
-                // Lógica para Explorar - GRATUITO em regiões próprias!
-                if (this.actionExploreBtn) {
-                    this.actionExploreBtn.disabled = !baseEnabled;
-                    this.actionExploreBtn.textContent = 'Explorar';
-                    this.actionExploreBtn.classList.remove('bg-yellow-600', 'bg-red-600');
-                    this.actionExploreBtn.classList.add('bg-green-600');
-                    this.actionExploreBtn.title = 'Explorar região própria (ação gratuita)';
-                }
-            } // Substituir a seção de botão de explorar/disputar no updateFooter (linhas ~334-360):
-// CASO: Região inimiga
-else if (isEnemyRegion) {
-    // Lógica para Disputar
-    const enemyPlayer = gameState.players[region.controller];
-    
-    // VALIDAÇÃO CRÍTICA: Verificar se pode pagar a disputa
-    let canAffordDispute = false;
-    let disputeCostInfo = '';
-    
-    if (window.gameLogic?.disputeLogic) {
-        const disputeData = window.gameLogic.disputeLogic.calculateDisputeCosts(player, region);
-        const finalCost = disputeData.finalCost;
-        
-        canAffordDispute = Object.entries(finalCost).every(([resource, amount]) => {
-            if (resource === 'pv') {
-                if (player.victoryPoints < amount) {
-                    disputeCostInfo = `Necessário ${amount} PV (você tem: ${player.victoryPoints})`;
-                    return false;
-                }
-                return true;
-            }
-            if ((player.resources[resource] || 0) < amount) {
-                disputeCostInfo = `Necessário ${amount} ${RESOURCE_ICONS[resource]} ${resource} (você tem: ${player.resources[resource] || 0})`;
-                return false;
-            }
-            return true;
-        });
-        
-        // Adicionar informação detalhada do custo
-        if (canAffordDispute) {
-            disputeCostInfo = `Custo: ${finalCost.pv} PV, `;
-            Object.entries(finalCost).forEach(([res, amt]) => {
-                if (res !== 'pv' && amt > 0) {
-                    disputeCostInfo += `${amt}${RESOURCE_ICONS[res]} ${res}, `;
-                }
-            });
-            disputeCostInfo = disputeCostInfo.slice(0, -2); // Remover última vírgula
-        }
-    }
-    
-    if (this.actionExploreBtn) {
-        this.actionExploreBtn.disabled = !baseEnabled || !canAffordDispute;
-        this.actionExploreBtn.textContent = 'Disputar';
-        this.actionExploreBtn.classList.remove('bg-green-600', 'bg-yellow-600');
-        this.actionExploreBtn.classList.add(canAffordDispute ? 'bg-red-600 hover:bg-red-700' : 'bg-gray-600');
-        this.actionExploreBtn.title = canAffordDispute ? 
-            `Disputar ${region.name} de ${enemyPlayer.name}\n${disputeCostInfo}` : 
-            `Recursos insuficientes para disputar\n${disputeCostInfo}`;
-        
-        // Adicionar feedback visual imediato
-        if (!canAffordDispute) {
-            this.actionExploreBtn.classList.add('opacity-70', 'cursor-not-allowed');
-        } else {
-            this.actionExploreBtn.classList.remove('opacity-70', 'cursor-not-allowed');
-        }
-    }      
-            } else {
-                // Não é neutro, nem sua região.
-                if (this.actionExploreBtn) {
-                    this.actionExploreBtn.disabled = true;
-                    this.actionExploreBtn.textContent = 'Explorar';
-                    exploreReason = `Região controlada por ${gameState.players[region.controller].name}.`;
-                }
-            }
-
-            // Aplica a dica visual (tooltip)
-            if (this.actionExploreBtn) {
-                this.actionExploreBtn.title = exploreReason;
-            }
-            
-            if (this.actionBuildBtn) {
-                this.actionBuildBtn.disabled = !baseEnabled || !isActionPhase || !isOwnRegion || 
-                                            !this.canPlayerAffordAction('construir', player);
-            }
-            
-            if (this.actionCollectBtn) {
-                this.actionCollectBtn.disabled = !baseEnabled || !isActionPhase || !canCollect || 
-                                            !this.canPlayerAffordAction('recolher', player);
-            }
-        }
-        
-        // Botão Negociar (só disponível na fase de negociação)
-        if (this.actionNegotiateBtn) {
-            if (isNegotiationPhase) {
-                const hasGold = player.resources.ouro >= 1;
-                const hasActions = gameState.actionsLeft > 0;
-                
-                this.actionNegotiateBtn.disabled = !hasGold || !hasActions;
-                
-                if (!hasGold) {
-                    this.actionNegotiateBtn.title = 'Necessita 1 Ouro';
-                } else if (!hasActions) {
-                    this.actionNegotiateBtn.title = 'Sem ações restantes';
-                } else {
-                    this.actionNegotiateBtn.title = 'Abrir negociação';
-                }
-                
-                this.actionNegotiateBtn.classList.remove('bg-gray-600', 'opacity-50');
-                this.actionNegotiateBtn.classList.add('bg-green-600');
-            } else {
-                this.actionNegotiateBtn.disabled = true;
-                this.actionNegotiateBtn.classList.remove('bg-green-600');
-                this.actionNegotiateBtn.classList.add('bg-gray-600', 'opacity-50');
-                this.actionNegotiateBtn.title = 'Disponível apenas na fase de negociação';
-            }
-        }
-        
-        // Atualizar contador de ações
-        if (this.actionsLeftEl) {
-            this.actionsLeftEl.textContent = `Ações restantes: ${gameState.actionsLeft}`;
-        }
-        
-        // Botão Terminar Turno
-        if (this.endTurnBtn) {
-            const currentPlayer = getCurrentPlayer();
-            const pendingNegotiations = getPendingNegotiationsForPlayer(currentPlayer.id);
-            const hasPending = pendingNegotiations.length > 0;
-            
-            switch(gameState.currentPhase) {
-                case 'acoes':
-                    this.endTurnBtn.disabled = false;
-                    this.endTurnBtn.textContent = 'Ir para Negociação';
-                    this.endTurnBtn.className = 'px-4 py-2 bg-blue-600 hover:bg-blue-700 rounded-md text-white font-semibold transition';
-                    break;
-                case 'negociacao':
-                    this.endTurnBtn.disabled = false;
-                    
-                    // Indicador visual de propostas pendentes
-                    if (hasPending) {
-                        this.endTurnBtn.textContent = `Terminar Turno (${pendingNegotiations.length} pendente(s))`;
-                        this.endTurnBtn.className = 'px-4 py-2 bg-yellow-600 hover:bg-yellow-700 rounded-md text-white font-semibold transition animate-pulse';
-                        this.endTurnBtn.title = `Você tem ${pendingNegotiations.length} proposta(s) de negociação pendente(s). Clique para verificar antes de terminar o turno.`;
-                    } else {
-                        this.endTurnBtn.textContent = 'Terminar Turno';
-                        this.endTurnBtn.className = 'px-4 py-2 bg-green-600 hover:bg-green-700 rounded-md text-white font-semibold transition';
-                        this.endTurnBtn.title = 'Finalizar seu turno e passar para o próximo jogador';
-                    }
-                    break;
-                case 'renda':
-                    this.endTurnBtn.disabled = true;
-                    this.endTurnBtn.textContent = 'Aguardando...';
-                    this.endTurnBtn.className = 'px-4 py-2 bg-gray-600 rounded-md text-white font-semibold';
-                    break;
-                default:
-                    this.endTurnBtn.disabled = false;
-                    this.endTurnBtn.textContent = 'Terminar Turno';
-                    this.endTurnBtn.className = 'px-4 py-2 bg-blue-600 hover:bg-blue-700 rounded-md text-white font-semibold transition';
-            }
-        }
-    }
-
-    updatePhaseIndicator() {
-        if (this.phaseIndicator) {
-            this.phaseIndicator.textContent = `Fase: ${PHASE_NAMES[gameState.currentPhase] || 'Renda'}`;
-        }
     }
 
     updateTurnInfo() {
@@ -814,37 +151,37 @@ else if (isEnemyRegion) {
         });
     }
     
-handleExploreWithContext() {
-    if (gameState.selectedRegionId === null) {
-        this.uiManager.modals.showFeedback('Selecione uma região primeiro.', 'error');
-        return;
-    }
-    
-    const region = gameState.regions[gameState.selectedRegionId];
-    const player = getCurrentPlayer();
-    
-    // Verificar se jogador está eliminado
-    if (player.eliminated) {
-        // Jogador eliminado só pode dominar regiões neutras
-        if (region.controller === null) {
-            window.gameLogic.handleExplore(); // Isso chamará a ressurreição
-        } else {
-            this.uiManager.modals.showFeedback('Jogador eliminado só pode dominar regiões neutras.', 'error');
+    handleExploreWithContext() {
+        if (gameState.selectedRegionId === null) {
+            this.uiManager.modals.showFeedback('Selecione uma região primeiro.', 'error');
+            return;
         }
-        return;
+        
+        const region = gameState.regions[gameState.selectedRegionId];
+        const player = getCurrentPlayer();
+        
+        // Verificar se jogador está eliminado
+        if (player.eliminated) {
+            // Jogador eliminado só pode dominar regiões neutras
+            if (region.controller === null) {
+                window.gameLogic.handleExplore(); // Isso chamará a ressurreição
+            } else {
+                this.uiManager.modals.showFeedback('Jogador eliminado só pode dominar regiões neutras.', 'error');
+            }
+            return;
+        }
+        
+        if (region.controller === null) {
+            // Região neutra - dominar diretamente (SEM MODAL)
+            window.gameLogic.handleExplore();
+        } else if (region.controller === player.id) {
+            // Região própria - explorar diretamente
+            window.gameLogic.handleExplore();
+        } else {
+            // Região inimiga - abrir modal de disputa
+            this.uiManager.disputeUI.openDisputeModal(region.id);
+        }
     }
-    
-    if (region.controller === null) {
-        // Região neutra - dominar diretamente (SEM MODAL)
-        window.gameLogic.handleExplore();
-    } else if (region.controller === player.id) {
-        // Região própria - explorar diretamente
-        window.gameLogic.handleExplore();
-    } else {
-        // Região inimiga - abrir modal de disputa
-        this.uiManager.disputeUI.openDisputeModal(region.id);
-    }
-}
     
     // ==================== LOG DE ATIVIDADES ====================
 
@@ -1061,17 +398,8 @@ handleExploreWithContext() {
         }
     }
 
-    hexToRgb(hex) {
-        const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
-        return result ? [
-            parseInt(result[1], 16),
-            parseInt(result[2], 16),
-            parseInt(result[3], 16)
-        ] : [255, 255, 255];
-    }
-
     isMobile() {
-    return window.innerWidth <= 768;
+        return window.innerWidth <= 768;
     }
     
     clearRegionSelection() {
@@ -1084,15 +412,15 @@ handleExploreWithContext() {
     // ==================== EVENT LISTENERS ====================
 
     setupEventListeners() {
-        this.actionExploreBtn?.addEventListener('click', () => this.handleExploreWithContext());
+        this.footerManager.actionExploreBtn?.addEventListener('click', () => this.handleExploreWithContext());
        
         // Ações principais (delegam para game-logic.js)
-        this.actionCollectBtn?.addEventListener('click', () => window.gameLogic.handleCollect());
-        this.endTurnBtn?.addEventListener('click', () => window.gameLogic.handleEndTurn());
+        this.footerManager.actionCollectBtn?.addEventListener('click', () => window.gameLogic.handleCollect());
+        this.footerManager.endTurnBtn?.addEventListener('click', () => window.gameLogic.handleEndTurn());
         
         // Ações principais (que estão em ui-modals.js)
-        this.actionNegotiateBtn?.addEventListener('click', () => this.uiManager.negotiation.openNegotiationModal());
-        this.actionBuildBtn?.addEventListener('click', () => this.uiManager.modals.openStructureModal());
+        this.footerManager.actionNegotiateBtn?.addEventListener('click', () => this.uiManager.negotiation.openNegotiationModal());
+        this.footerManager.actionBuildBtn?.addEventListener('click', () => this.uiManager.modals.openStructureModal());
 
         // Navegação
         document.getElementById('manualIcon')?.addEventListener('click', () => this.uiManager.modals.openManual());
@@ -1111,7 +439,7 @@ handleExploreWithContext() {
                 if (button) {
                     const idx = Number(button.dataset.index);
                     gameState.selectedPlayerForSidebar = idx;
-                    this.renderSidebar(idx);
+                    this.sidebarManager.renderSidebar(idx);
                 }
             });
         }
@@ -1128,8 +456,8 @@ handleExploreWithContext() {
                 !isStructureOption && gameState.selectedRegionId !== null) {
                 
                 this.clearRegionSelection();
-                this.updateFooter();
-                this.renderSidebar(gameState.selectedPlayerForSidebar);
+                this.footerManager.updateFooter();
+                this.sidebarManager.renderSidebar(gameState.selectedPlayerForSidebar);
             }
         });
 
