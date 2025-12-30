@@ -1,8 +1,10 @@
 // ui-sidebar-manager.js - Gerenciamento da Sidebar
 import { gameState, achievementsState } from '../state/game-state.js';
-import { RESOURCE_ICONS, ACHIEVEMENTS_CONFIG } from '../state/game-config.js';
+import { RESOURCE_ICONS, ACHIEVEMENTS_CONFIG, UI_CONSTANTS } from '../state/game-config.js';
 import { Utils } from '../utils/utils.js';
-import { BIOME_EMOJIS } from './ui-constants.js';
+
+// Desestruturação das constantes de UI
+const { BIOME_EMOJIS, STRUCTURE_ICONS } = UI_CONSTANTS;
 
 export class SidebarManager {
     constructor(uiGameManager) {
