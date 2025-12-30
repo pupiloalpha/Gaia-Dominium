@@ -1,7 +1,9 @@
 // ui-footer-manager.js - Gerenciamento do Footer
 import { gameState, getCurrentPlayer, getPendingNegotiationsForPlayer } from '../state/game-state.js';
-import { RESOURCE_ICONS } from '../state/game-config.js';
-import { ACTION_COSTS, PHASE_NAMES } from './ui-constants.js';
+import { RESOURCE_ICONS, UI_CONSTANTS } from '../state/game-config.js';
+
+// Desestruturação das constantes de UI
+const { ACTION_COSTS, PHASE_NAMES } = UI_CONSTANTS;
 
 export class FooterManager {
     constructor(uiGameManager) {
