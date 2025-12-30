@@ -6,7 +6,10 @@ import { DisputeLogic } from './logic-dispute.js';
 import { TurnLogic } from './logic-turn.js';
 import { AICoordinator } from './logic-ai-coordinator.js';
 import { gameState, addActivityLog, getCurrentPlayer, saveGame } from '../state/game-state.js';
-import { GAME_CONFIG } from '../state/game-config.js'; // Importação essencial para configurar o mapa
+import { GAME_CONFIG, UI_CONSTANTS } from '../state/game-config.js'; // Importação essencial para configurar o mapa
+
+// Desestruturação das constantes de UI
+const { ACTION_COSTS } = UI_CONSTANTS;
 
 class GameLogic {
   constructor() {
