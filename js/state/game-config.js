@@ -597,6 +597,58 @@ const FACTION_ABILITIES = {
   }
 };
 
+// ==================== CONSTANTES DE UI ====================
+const UI_CONSTANTS = {
+  LOG_ICONS: {
+    'action': '⚡',
+    'build': '🏗️',
+    'explore': '⛏️',
+    'collect': '🌾',
+    'negotiate': '🤝',
+    'event': '🎴',
+    'victory': '🏆',
+    'phase': '🔄',
+    'turn': '📅',
+    'system': '⚙️',
+    'income': '💰',
+    'default': '📝'
+  },
+  
+  PHASE_NAMES: {
+    'renda': '💰 Renda',
+    'acoes': '⚡ Ações',
+    'negociacao': '🤝 Negociação'
+  },
+  
+  ACTION_COSTS: {
+    'explorar': { madeira: 2, agua: 1 },
+    'recolher': { madeira: 1 },
+    'construir': { madeira: 3, pedra: 2, ouro: 1 },
+    'negociar': { ouro: 1 }
+  },
+  
+  BIOME_EMOJIS: {
+    'Floresta Tropical': '🌴',
+    'Floresta Temperada': '🌲',
+    'Savana': '🏜️',
+    'Pântano': '🌊'
+  },
+  
+  STRUCTURE_ICONS: {
+    'Abrigo': '🛖',
+    'Torre de Vigia': '🏯',
+    'Mercado': '🏪',
+    'Laboratório': '🔬',
+    'Santuário': '🛐'
+  },
+  
+  PLAYER_STATUS: {
+    ELIMINATED: '💀 ELIMINADO',
+    CURRENT_TURN: '🎮 TURNO',
+    DEFAULT: '🏹 ATIVO'
+  }
+};
+
 // EXPOSTAÇÃO DE TODAS AS INFORMAÇÕES
 export { 
   GAME_CONFIG, 
@@ -615,5 +667,6 @@ export {
   GAME_EVENTS,
   ACHIEVEMENTS,
   EVENT_CATEGORIES,
-  FACTION_ABILITIES
+  FACTION_ABILITIES,
+  UI_CONSTANTS
 };
