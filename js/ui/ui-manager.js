@@ -79,6 +79,13 @@ preloadCriticalAssets() {
 
         // Inicializar mobile por último para que possa sobrescrever/adaptar o que foi criado
         this.mobileManager.init();
+
+        // GARANTIR que o footer seja atualizado inicialmente
+        setTimeout(() => {
+            if (this.gameManager && this.gameManager.footerManager) {
+                this.gameManager.footerManager.updateFooter();
+            }
+        }, 500);
     }
 
     // ==================== INICIALIZAÇÃO DO JOGO ====================
