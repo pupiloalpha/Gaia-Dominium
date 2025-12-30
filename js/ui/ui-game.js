@@ -427,17 +427,16 @@ renderSidebar(playerIndex = gameState.selectedPlayerForSidebar) {
 
     // ==================== EVENT LISTENERS ====================
 
-    setupEventListeners() {
+setupEventListeners() {
+    // Delegar para o footerManager
+    if (this.footerManager) {
         this.footerManager.actionExploreBtn?.addEventListener('click', () => this.handleExploreWithContext());
-       
-        // Ações principais (delegam para game-logic.js)
         this.footerManager.actionCollectBtn?.addEventListener('click', () => window.gameLogic.handleCollect());
         this.footerManager.endTurnBtn?.addEventListener('click', () => window.gameLogic.handleEndTurn());
-        
-        // Ações principais (que estão em ui-modals.js)
         this.footerManager.actionNegotiateBtn?.addEventListener('click', () => this.uiManager.negotiation.openNegotiationModal());
         this.footerManager.actionBuildBtn?.addEventListener('click', () => this.uiManager.modals.openStructureModal());
-
+    }
+    
         // Navegação
         document.getElementById('manualIcon')?.addEventListener('click', () => this.uiManager.modals.openManual());
         document.getElementById('manualIconNavbar')?.addEventListener('click', () => this.uiManager.modals.openManual());
