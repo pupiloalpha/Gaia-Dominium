@@ -175,8 +175,13 @@ export class RegionRenderer {
         if (clickedInModal) return;
         
         this._toggleRegionSelection(regionId, cell);
-        this.uiGameManager.renderSidebar?.(gameState.selectedPlayerForSidebar);
-        this.uiGameManager.updateFooter?.();
+        if (this.uiGameManager && this.uiGameManager.footerManager) {
+            this.uiGameManager.footerManager.updateFooter();
+        }
+    
+        if (this.uiGameManager && this.uiGameManager.sidebarManager) {
+            this.uiGameManager.sidebarManager.renderSidebar(gameState.selectedPlayerForSidebar);
+        }
     }
 
     _toggleRegionSelection(regionId, cell) {
