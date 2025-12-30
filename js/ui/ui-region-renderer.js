@@ -2,7 +2,6 @@
 import { gameState } from '../state/game-state.js';
 import { RESOURCE_ICONS } from '../state/game-config.js';
 import { Utils } from '../utils/utils.js';
-import { STRUCTURE_ICONS } from './ui-constants.js';
 
 export class RegionRenderer {
     constructor(uiGameManager) {
@@ -135,7 +134,14 @@ export class RegionRenderer {
 
         let structureDisplay = '—';
         if (region.structures.length > 0) {
-            structureDisplay = STRUCTURE_ICONS[region.structures[0]] || '🏗️';
+            const structureIcons = {
+                'Abrigo': '🛖',
+                'Torre de Vigia': '🏯',
+                'Mercado': '🏪',
+                'Laboratório': '🔬',
+                'Santuário': '🛐'
+            };
+            structureDisplay = structureIcons[region.structures[0]] || '🏗️';
             if (region.structures.length > 1) {
                 structureDisplay += `+${region.structures.length - 1}`;
             }
