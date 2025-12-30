@@ -75,7 +75,21 @@ export class UIGameManager {
         this.updateTurnInfo();
         this.renderActivityLog();
     }
+    
+// Método para garantir compatibilidade:
+updateFooter() {
+    if (this.footerManager) {
+        this.footerManager.updateFooter();
+    }
+}
 
+// Método para garantir compatibilidade:
+renderSidebar(playerIndex = gameState.selectedPlayerForSidebar) {
+    if (this.sidebarManager) {
+        this.sidebarManager.renderSidebar(playerIndex);
+    }
+}
+    
     renderHeaderPlayers() {
         if (!this.playerHeaderList) return;
         
