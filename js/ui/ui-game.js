@@ -5,12 +5,14 @@ import {
     getCurrentPlayer,
     activityLogHistory
 } from '../state/game-state.js';
-import { GAME_CONFIG, RESOURCE_ICONS, ACHIEVEMENTS_CONFIG } from '../state/game-config.js';
+import { GAME_CONFIG, RESOURCE_ICONS, ACHIEVEMENTS_CONFIG, UI_CONSTANTS } from '../state/game-config.js';
 import { Utils } from '../utils/utils.js';
-import { LOG_ICONS } from './ui-constants.js';
 import { RegionRenderer } from './ui-region-renderer.js';
 import { SidebarManager } from './ui-sidebar-manager.js';
 import { FooterManager } from './ui-footer-manager.js';
+
+// Desestruturação das constantes de UI
+const { LOG_ICONS, PHASE_NAMES, ACTION_COSTS } = UI_CONSTANTS;
 
 export class UIGameManager {
     constructor(uiManager) {
