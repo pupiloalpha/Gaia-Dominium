@@ -1,19 +1,27 @@
-// game-logic.js - Fachada Principal
+// game-logic.js - Fachada Principal (Refatorada)
 import { ActionLogic } from './logic-actions.js';
 import { FactionLogic } from './logic-factions.js';
 import { NegotiationLogic } from './logic-negotiation.js';
 import { DisputeLogic } from './logic-dispute.js';
 import { TurnLogic } from './logic-turn.js';
 import { AICoordinator } from './logic-ai-coordinator.js';
+import { GameInitializer } from './game-initializer.js';
+import { GameCoordinator } from './game-coordinator.js';
+import { ValidationService } from './validation-service.js';
+import { GameUtils } from './game-utils.js';
 import { gameState, addActivityLog, getCurrentPlayer, saveGame } from '../state/game-state.js';
-import { GAME_CONFIG, UI_CONSTANTS } from '../state/game-config.js'; // Importação essencial para configurar o mapa
-
-// Desestruturação das constantes de UI
-const { ACTION_COSTS } = UI_CONSTANTS;
 
 class GameLogic {
   constructor() {
-    // Inicializar submódulos
+    console.log("🎮 GameLogic inicializando...");
+    
+    // Inicializar serviços
+    this.initializer = new GameInitializer();
+    this.coordinator = new GameCoordinator(this);
+    this.validator = new ValidationService(this);
+    this.utils = GameUtils;
+    
+    // Inicializar submódulos de lógica
     this.actionsLogic = new ActionLogic(this);
     this.negotiationLogic = new NegotiationLogic(this);
     this.turnLogic = new TurnLogic(this);
@@ -21,165 +29,200 @@ class GameLogic {
     this.factionLogic = new FactionLogic(this);
     this.disputeLogic = new DisputeLogic(this);
     
-    this.feedbackHistory = []; // Compatibilidade com logs antigos
+    this.feedbackHistory = [];
+    
+    console.log("✅ GameLogic inicializado");
   }
 
-  // ==================== INICIALIZAÇÃO DO JOGO ====================
+  // ==================== INICIALIZAÇÃO (FACHADA) ====================
 
   initializeGame() {
-    console.log("🎮 Inicializando lógica do jogo...");
+    console.log("🎮 Inicializando jogo via GameLogic...");
     
-    // 1. Configurar o Mapa (Isso estava faltando)
-    this.setupRegions();
+    // Delegar para o initializer
+    const success = this.initializer.initializeGame(this);
     
-    // 2. Distribuir Regiões Iniciais
-    this.distributeInitialRegions();
+    if (!success) {
+      this.showFeedback('Erro ao inicializar o jogo', 'error');
+      return false;
+    }
     
-    // 3. Configurar Estado Inicial
-    gameState.gameStarted = true;
-    gameState.turn = 1;
-    gameState.actionsLeft = GAME_CONFIG.ACTIONS_PER_TURN;
-    gameState.currentPhase = 'renda';
-    
-    addActivityLog({
-      type: 'system',
-      playerName: 'SISTEMA',
-      action: 'Jogo iniciado',
-      details: '',
-      turn: gameState.turn
-    });
-    
-    // 4. Iniciar Monitor de IA
+    // Iniciar monitor de IA
     this.aiCoordinator.startHealthMonitor();
     
-    // 5. Aplicar Renda Inicial
+    // Aplicar renda inicial ao jogador atual
     const currentPlayer = getCurrentPlayer();
+    this.turnLogic.applyIncome(currentPlayer);
     
-    // Pequeno delay para garantir que a UI carregou o DOM novo
+    // Configurar timeout de segurança
     setTimeout(() => {
-        this.turnLogic.applyIncome(currentPlayer);
-        
-        // Fallback de segurança
-        setTimeout(() => {
-            if (gameState.currentPhase === 'renda') {
-                gameState.currentPhase = 'acoes';
-                gameState.actionsLeft = GAME_CONFIG.ACTIONS_PER_TURN;
-                if (window.uiManager) {
-                    window.uiManager.updateUI();
-                    if (window.uiManager.gameManager) {
-                        window.uiManager.gameManager.updateFooter();
-                    }
-                }
-            }
-        }, 5000);
-    }, 1500);
-  }
-
-  // ==================== GERAÇÃO DO MAPA (Restaurado) ====================
-
-  setupRegions() {
-    gameState.regions = [];
-    const total = GAME_CONFIG.GRID_SIZE * GAME_CONFIG.GRID_SIZE;
-    
-    for (let i = 0; i < total; i++) {
-      const biome = GAME_CONFIG.BIOMES[Math.floor(Math.random() * GAME_CONFIG.BIOMES.length)];
-      const resources = this.generateResourcesForBiome(biome);
-      
-      gameState.regions.push({
-        id: i,
-        name: GAME_CONFIG.REGION_NAMES[i] || `Região ${i}`,
-        biome,
-        explorationLevel: Math.floor(Math.random() * 2), // 0 ou 1 inicial
-        resources,
-        controller: null,
-        structures: []
-      });
-    }
-    console.log(`🗺️ ${total} regiões geradas.`);
-  }
-
-  generateResourcesForBiome(biome) {
-    switch(biome) {
-      case 'Floresta Tropical': return { madeira:6, pedra:1, ouro:0, agua:3 };
-      case 'Floresta Temperada': return { madeira:5, pedra:2, ouro:0, agua:2 };
-      case 'Savana': return { madeira:2, pedra:1, ouro:3, agua:1 };
-      case 'Pântano': return { madeira:1, pedra:3, ouro:0, agua:4 };
-      default: return { madeira:2, pedra:2, ouro:1, agua:1 };
-    }
-  }
-
-  distributeInitialRegions() {
-    const total = gameState.regions.length;
-    // Embaralhar índices
-    const indices = [...Array(total).keys()].sort(() => Math.random() - 0.5);
-    let idx = 0;
-    
-    // Limpar regiões anteriores dos jogadores
-    gameState.players.forEach(p => p.regions = []);
-    
-    // Distribuir 4 regiões para cada jogador
-    for (let p = 0; p < gameState.players.length; p++) {
-      for (let r = 0; r < 4 && idx < indices.length; r++) {
-        const regionId = indices[idx++];
-        gameState.regions[regionId].controller = p;
-        gameState.players[p].regions.push(regionId);
+      if (gameState.currentPhase === 'renda') {
+        this.coordinator.setCurrentPhase('acoes');
+        this._updateUI();
       }
-    }
-    console.log("🗺️ Regiões iniciais distribuídas.");
+    }, 5000);
+    
+    return true;
   }
 
-  // ==================== DELEGAÇÃO (FACHADA) ====================
+  // ==================== AÇÕES DO JOGADOR (FACHADA) ====================
 
-  // Ações Físicas
-  handleExplore() { this.actionsLogic.handleExplore(); }
-  handleCollect() { this.actionsLogic.handleCollect(); }
-  handleBuild(type) { this.actionsLogic.handleBuild(type); }
+  handleExplore() { 
+    const validation = this.validator.validateAction('explorar');
+    if (!validation.valid) {
+      this.showFeedback(validation.reason, 'error');
+      return;
+    }
+    this.actionsLogic.handleExplore(); 
+  }
+  
+  handleCollect() { 
+    const validation = this.validator.validateAction('recolher');
+    if (!validation.valid) {
+      this.showFeedback(validation.reason, 'error');
+      return;
+    }
+    this.actionsLogic.handleCollect(); 
+  }
+  
+  handleBuild(type) { 
+    const validation = this.validator.validateAction('construir', { structureType: type });
+    if (!validation.valid) {
+      this.showFeedback(validation.reason, 'error');
+      return;
+    }
+    this.actionsLogic.handleBuild(type); 
+  }
 
-async handleDispute(region, attacker) {
+  async handleDispute(region, attacker) {
     if (!this.disputeLogic) {
-        this.showFeedback('Sistema de disputa não inicializado.', 'error');
-        return null;
+      this.showFeedback('Sistema de disputa não inicializado.', 'error');
+      return null;
     }
     
-    // Verificar se já temos a região
+    // Se região não for fornecida, usar a selecionada
     if (!region && gameState.selectedRegionId !== null) {
-        region = gameState.regions[gameState.selectedRegionId];
+      region = gameState.regions[gameState.selectedRegionId];
     }
     
-    // Obter atacante se não fornecido
+    // Se atacante não for fornecido, usar jogador atual
     if (!attacker) {
-        attacker = getCurrentPlayer();
+      attacker = getCurrentPlayer();
     }
     
     if (!region || !attacker) {
-        this.showFeedback('Dados insuficientes para disputa.', 'error');
-        return null;
+      this.showFeedback('Dados insuficientes para disputa.', 'error');
+      return null;
+    }
+    
+    // Validar disputa
+    const validation = this.validator.validateAction('disputar', {
+      player: attacker,
+      regionId: region.id
+    });
+    
+    if (!validation.valid) {
+      this.showFeedback(validation.reason, 'error');
+      return null;
     }
     
     return await this.disputeLogic.handleDispute(region, attacker);
-}
+  }
   
-  performAction(type) { return this.actionsLogic.consumeAction(); }
-  
-  // Negociação
-  handleNegotiate() { this.negotiationLogic.handleNegotiate(); }
-  handleSendNegotiation() { return this.negotiationLogic.handleSendNegotiation(); }
-  handleNegResponse(accepted) { this.negotiationLogic.handleResponse(accepted); }
-  executeNegotiation(neg) { return this.negotiationLogic._executeTrade(neg); }
+  performAction(type) { 
+    return this.actionsLogic.consumeAction(); 
+  }
 
-  // Turno e Fases
-  handleEndTurn() { this.turnLogic.handleEndTurn(); }
-  advancePhase() { return this.turnLogic.advancePhase(); }
-  applyIncomeForPlayer(player) { this.turnLogic.applyIncome(player); }
+  // ==================== NEGOCIAÇÃO (FACHADA) ====================
+
+  handleNegotiate() { 
+    const validation = this.validator.validateAction('negociar');
+    if (!validation.valid) {
+      this.showFeedback(validation.reason, 'error');
+      return;
+    }
+    this.negotiationLogic.handleNegotiate(); 
+  }
   
-  // IA Bridge
-  handleAITurn() { this.aiCoordinator.checkAndExecuteAITurn(); } // Compatibilidade com main.js
-  checkAndExecuteAITurn() { this.aiCoordinator.checkAndExecuteAITurn(); }
-  forceAIEndTurn() { this.aiCoordinator.forceAIEndTurn(); }
+  handleSendNegotiation() { 
+    return this.negotiationLogic.handleSendNegotiation(); 
+  }
   
-  // Utils de Feedback (Centralizado)
+  handleNegResponse(accepted) { 
+    this.negotiationLogic.handleResponse(accepted); 
+  }
+  
+  executeNegotiation(neg) { 
+    return this.negotiationLogic._executeTrade(neg); 
+  }
+
+  // ==================== TURNO E FASES (FACHADA) ====================
+
+  handleEndTurn() { 
+    this.turnLogic.handleEndTurn(); 
+  }
+  
+  advancePhase() { 
+    return this.coordinator.advancePhase(); 
+  }
+  
+  applyIncomeForPlayer(player) { 
+    this.turnLogic.applyIncome(player); 
+  }
+
+  // ==================== IA (FACHADA) ====================
+
+  handleAITurn() { 
+    this.aiCoordinator.checkAndExecuteAITurn(); 
+  }
+  
+  checkAndExecuteAITurn() { 
+    this.aiCoordinator.checkAndExecuteAITurn(); 
+  }
+  
+  forceAIEndTurn() { 
+    this.aiCoordinator.forceAIEndTurn(); 
+  }
+
+  // ==================== VALIDAÇÕES (FACHADA) ====================
+
+  canAffordAction(actionType) {
+    const player = getCurrentPlayer();
+    
+    // Verificar se jogador está eliminado
+    if (player?.eliminated) {
+      return actionType === 'explorar' && gameState.selectedRegionId !== null;
+    }
+    
+    // Usar o validator
+    const validation = this.validator.validateAction(actionType);
+    return validation.valid;
+  }
+
+  validatePlayerAction(playerId, actionType) {
+    const player = getPlayerById(playerId);
+    
+    if (!player) return false;
+    
+    // Verificar se jogador está eliminado
+    if (player.eliminated) {
+      return actionType === 'dominate' || actionType === 'explorar';
+    }
+    
+    return true;
+  }
+
+  // ==================== UTILITÁRIOS (FACHADA) ====================
+
   showFeedback(message, type = 'info') {
-    this.aiCoordinator.captureFeedback(message, type);
+    // Registrar no histórico
+    this.feedbackHistory.push({ message, type, timestamp: Date.now() });
+    if (this.feedbackHistory.length > 20) this.feedbackHistory.shift();
+    
+    // Capturar feedback na IA
+    this.aiCoordinator?.captureFeedback?.(message, type);
+    
+    // Mostrar na UI
     if (window.uiManager?.modals?.showFeedback) {
       window.uiManager.modals.showFeedback(message, type);
     } else {
@@ -194,94 +237,6 @@ async handleDispute(region, attacker) {
     return confirm(message);
   }
   
-  canAffordAction(actionType) {
-  const player = getCurrentPlayer();
-
-  // Verificar se jogador está eliminado
-  if (player?.eliminated) {
-    // Jogadores eliminados só podem tentar ressuscitar (dominar regiões neutras)
-    return actionType === 'explorar' && gameState.selectedRegionId !== null;
-  }
-    
-  let cost = GAME_CONFIG.ACTION_DETAILS[actionType]?.cost || {};
-
-  // Verificar descontos de facção
-  if (actionType === 'explorar') {
-    // IMPORTANTE: Verificar primeiro se há região selecionada
-    if (gameState.selectedRegionId === null) {
-      return false; // Não há região para avaliar
-    }
-    
-    const region = gameState.regions[gameState.selectedRegionId];
-    
-    // CASO 1: Região própria - usar custo de exploração
-    if (region.controller === player.id) {
-      cost = this.factionLogic.modifyExploreCost(player, cost);
-      return Object.entries(cost).every(([resource, amount]) => {
-        return (player.resources[resource] || 0) >= amount;
-      });
-    }
-    // CASO 2: Região neutra - usar custo de dominação
-    else if (region.controller === null) {
-      // Dominação custa 2 PV + recursos da região
-      const pvCost = 2;
-      if (player.victoryPoints < pvCost) return false;
-      
-      // Verificar se pode pagar os recursos da região
-      return Object.entries(region.resources).every(([resource, amount]) => {
-        return (player.resources[resource] || 0) >= amount;
-      });
-    }
-// CASO 3: Região inimiga - usar verificação de disputa
-else {
-    // Usar o disputeLogic para verificar custo
-    if (this.disputeLogic && this.disputeLogic.canAffordDispute) {
-        return this.disputeLogic.canAffordDispute(player);
-    }
-    // Fallback: verificação básica (DEVE SER CONSISTENTE COM logic-dispute.js)
-    const disputeCosts = this.disputeLogic?.calculateDisputeCosts?.(player, region)?.finalCost;
-    if (disputeCosts) {
-        return Object.entries(disputeCosts).every(([resource, amount]) => {
-            if (resource === 'pv') return player.victoryPoints >= amount;
-            return (player.resources[resource] || 0) >= amount;
-        });
-    }
-    return player.victoryPoints >= 3 && 
-           player.resources.ouro >= 2 &&
-           player.resources.madeira >= 1 &&
-           player.resources.pedra >= 1;
-   }
-  } 
-  else if (actionType === 'construir') {
-    // Nota: Para construção genérica na UI, usamos custo base. 
-    // A verificação real ocorre dentro do handleBuild com o tipo específico.
-  } 
-  else if (actionType === 'negociar') {
-    const negCost = this.factionLogic.modifyNegotiationCost(player);
-    return player.resources.ouro >= negCost;
-  }
-  // NOTA: Não há 'disputar' separado - é parte de 'explorar'
-
-  return Object.entries(cost).every(([resource, amount]) => {
-    return (player.resources[resource] || 0) >= amount;
-  });
-}
-
-// Adicionar validação em validateAction (se existir) ou criar nova:
-validatePlayerAction(playerId, actionType) {
-  const player = getPlayerById(playerId);
-  if (!player) return false;
-  
-  // Verificar se jogador está eliminado
-  if (player.eliminated) {
-    // Jogadores eliminados só podem dominar regiões neutras
-    return actionType === 'dominate' || actionType === 'explorar';
-  }
-  
-  return true;
-}
-
-  
   preventActionIfModalOpen() {
     const modal = document.getElementById('negotiationModal');
     const responseModal = document.getElementById('negResponseModal');
@@ -289,9 +244,45 @@ validatePlayerAction(playerId, actionType) {
            (responseModal && !responseModal.classList.contains('hidden'));
   }
   
-  // Auto-save wrapper
+  // ==================== PERSISTÊNCIA (FACHADA) ====================
+
   autoSave() {
     if (gameState?.gameStarted) saveGame();
+  }
+
+  // ==================== GETTERS ÚTEIS ====================
+
+  getGameState() {
+    return { ...gameState };
+  }
+
+  getCurrentPlayer() {
+    return getCurrentPlayer();
+  }
+
+  getValidationReport() {
+    return this.validator.getValidationReport();
+  }
+
+  getDebugInfo() {
+    return {
+      coordinator: this.coordinator.getDebugInfo(),
+      initializer: this.initializer.validateGameState(),
+      actionsLeft: this.coordinator.getRemainingActions(),
+      selectedRegion: gameState.selectedRegionId,
+      feedbackHistory: this.feedbackHistory.length
+    };
+  }
+
+  // ==================== MÉTODOS DE ATUALIZAÇÃO ====================
+
+  _updateUI() {
+    if (window.uiManager) {
+      window.uiManager.updateUI();
+      if (window.uiManager.gameManager) {
+        setTimeout(() => window.uiManager.gameManager.updateFooter(), 100);
+      }
+    }
   }
 }
 
