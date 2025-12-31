@@ -1,17 +1,10 @@
 // ui-manager.js - Core da Interface do Usuário (Coordenador)
 import {
     gameState,
-    achievementsState,
-    getCurrentPlayer,
-    activityLogHistory,
-    setAIPlayers,
-    getAIPlayer,
-    isPlayerAI,
-    aiInstances,
-    getPendingNegotiationsForPlayer
+    getCurrentPlayer
 } from '../state/game-state.js';
-import { GAME_CONFIG, RESOURCE_ICONS, ACHIEVEMENTS_CONFIG, FACTION_ABILITIES } from '../state/game-config.js';
-import { AIFactory, AI_DIFFICULTY_SETTINGS } from '../ai/ai-system.js';
+import { GAME_CONFIG } from '../state/game-config.js';
+import { AIManager } from '../ai/ai-manager.js';
 import { ModalManager } from '../ui/ui-modals.js';
 import { NegotiationUI } from '../ui/ui-negotiation.js';
 import { UIPlayersManager } from '../ui/ui-players.js';
@@ -19,16 +12,19 @@ import { UIGameManager } from '../ui/ui-game.js';
 import { UIMobileManager } from '../ui/ui-mobile.js';
 import { DisputeUI } from '../ui/ui-dispute.js';
 
-class UIManager {
-    constructor() {
+export class UIManager {
+    constructor(gameLogic = null) {
+    this.gameLogic = gameLogic;
+    this.aiManager = null;
+    this.initialized = false;
+    
+    // Inicializar componentes
     this.modals = new ModalManager(this);
     this.negotiation = new NegotiationUI(this);
     this.playersManager = new UIPlayersManager(this);
-    this.gameManager = new UIGameManager(this);
+    this.gameManager = null; // Será inicializado após cache
     this.mobileManager = new UIMobileManager(this);
     this.disputeUI = new DisputeUI(this);
-    
-    this.cacheElements();
     
     // Preload de recursos críticos
     this.preloadCriticalAssets();
@@ -57,22 +53,14 @@ preloadCriticalAssets() {
     video.src = './assets/videos/gaia-video-inicio.mp4';
 }
 
-    cacheElements() {
-        console.log("🔄 Cacheando elementos principais...");
-        
-        // Elementos principais
-        this.startGameBtn = document.getElementById('startGameBtn');
-        this.initialScreen = document.getElementById('initialScreen');
-        this.gameNavbar = document.getElementById('gameNavbar');
-        this.gameContainer = document.getElementById('gameContainer');
-        this.sidebar = document.getElementById('sidebar');
-        this.gameMap = document.getElementById('gameMap');
-        this.gameFooter = document.getElementById('gameFooter');
-        
-        console.log("✅ Elementos principais cacheados");
-    }
-
     initUI() {
+        if (this.initialized) return;
+        
+        this.cacheElements();
+        
+        // Inicializar gameManager depois do cache
+        this.gameManager = new UIGameManager(this);
+        
         this.playersManager.init();
         this.gameManager.init();
         this.setupGlobalEventListeners();
@@ -86,6 +74,24 @@ preloadCriticalAssets() {
                 this.gameManager.footerManager.updateFooter();
             }
         }, 500);
+        
+        this.initialized = true;
+        console.log("✅ UI Manager inicializado");
+    }
+
+    cacheElements() {
+        console.log("🔄 Cacheando elementos principais...");
+        
+        // Elementos principais
+        this.startGameBtn = document.getElementById('startGameBtn');
+        this.initialScreen = document.getElementById('initialScreen');
+        this.gameNavbar = document.getElementById('gameNavbar');
+        this.gameContainer = document.getElementById('gameContainer');
+        this.sidebar = document.getElementById('sidebar');
+        this.gameMap = document.getElementById('gameMap');
+        this.gameFooter = document.getElementById('gameFooter');
+        
+        console.log("✅ Elementos principais cacheados");
     }
 
     // ==================== INICIALIZAÇÃO DO JOGO ====================
@@ -145,7 +151,9 @@ preloadCriticalAssets() {
     
     // 4. Inicializar jogo com pequeno delay para garantir renderização
     setTimeout(() => {
-        window.gameLogic.initializeGame();
+        if (window.gameLogic) {
+            window.gameLogic.initializeGame();
+        }
         
         // 5. Inicializar sistema de IA
         this.initializeAISystem();
@@ -214,97 +222,45 @@ initializeAISystem() {
         aiDifficulty: p.aiDifficulty
     })));
     
-    const aiPlayers = gameState.players
-        .map((player, index) => {
-
-            // Ignorar jogadores eliminados
-          if (player.eliminated) {
-              console.log(`🚫 Ignorando jogador eliminado: ${player.name}`);
-               return null;
-          }
-            console.log(`🔍 Verificando jogador ${index}: ${player.name}`, {
-                type: player.type,
-                isAI: player.isAI,
-                aiDifficulty: player.aiDifficulty
-            });
-            
-            if (player.type === 'ai' || player.isAI === true) {
-                return { 
-                    index: player.id,
-                    difficulty: player.aiDifficulty || 'medium',
-                    name: player.name,
-                    playerObject: player
-                };
-            }
-            return null;
-        })
-        .filter(Boolean);
+    // Inicializar AIManager
+    this.aiManager = new AIManager(this.gameLogic || window.gameLogic);
+    const aiInstances = this.aiManager.initialize(gameState.players);
     
-    console.log(`🎯 ${aiPlayers.length} jogador(es) IA ativos identificados:`, aiPlayers);
-  
-  if (aiPlayers.length === 0) {
-    console.log('🤖 Nenhum jogador IA ativo encontrado.');
-    return;
-  }
+    console.log(`✅ ${aiInstances.length} instância(s) de IA criadas`);
     
-    try {
-        const aiInstances = aiPlayers.map(({ index, difficulty }) => {
-            console.log(`🤖 Criando IA para jogador ID: ${index} (${difficulty})...`);
-            
-            // Verificar se o índice é válido
-            if (index === undefined || index === null) {
-                console.error(`❌ Índice inválido para IA: ${index}`);
-                return null;
+    // Log detalhado de cada IA
+    aiInstances.forEach((ai, idx) => {
+        console.log(`   ${idx + 1}. ${ai.personality.name} - Jogador ID: ${ai.playerId}`);
+    });
+    
+    // Expor globalmente
+    window.aiManager = this.aiManager;
+    
+    // Adicionar ao gameState para acesso fácil
+    gameState.aiManager = this.aiManager;
+    
+    console.log('🤖 AIManager registrado e exposto globalmente');
+    
+    // Verificar se o primeiro jogador é IA
+    const firstPlayer = getCurrentPlayer();
+    const isFirstPlayerAI = firstPlayer && (firstPlayer.type === 'ai' || firstPlayer.isAI);
+    
+    if (isFirstPlayerAI) {
+        console.log(`🤖 Primeiro jogador é IA: ${firstPlayer.name}, iniciando em 3 segundos...`);
+        
+        setTimeout(() => {
+            if (this.aiManager) {
+                console.log('🤖 Iniciando turno da primeira IA via AIManager...');
+                this.aiManager.executeAITurn();
+            } else {
+                console.error('❌ AIManager não disponível');
             }
-            
-            const ai = AIFactory.createAI(index, difficulty);
-            console.log(`✅ IA criada: ${ai.personality.name} (ID: ${ai.playerId}, Dif: ${difficulty})`);
-            return ai;
-        }).filter(Boolean); // Filtrar nulos
-        
-        console.log(`✅ ${aiInstances.length} instância(s) de IA criadas`);
-        
-        // Log detalhado de cada IA
-        aiInstances.forEach((ai, idx) => {
-            console.log(`   ${idx + 1}. ${ai.personality.name} - Jogador ID: ${ai.playerId}`);
-        });
-        
-        // Registrar IAs no estado do jogo
-        setAIPlayers(aiInstances);
-        
-        // Expor globalmente
-        window.aiInstances = aiInstances;
-        
-        // Adicionar ao gameState para acesso fácil
-        gameState.aiInstances = aiInstances;
-        
-        console.log('🤖 IAs registradas e expostas globalmente');
-        
-        // Verificar se o primeiro jogador é IA
-        const firstPlayer = gameState.players[gameState.currentPlayerIndex];
-        const isFirstPlayerAI = firstPlayer && (firstPlayer.type === 'ai' || firstPlayer.isAI);
-        
-        if (isFirstPlayerAI) {
-            console.log(`🤖 Primeiro jogador é IA: ${firstPlayer.name}, iniciando em 3 segundos...`);
-            
-            setTimeout(() => {
-                if (window.gameLogic && window.gameLogic.checkAndExecuteAITurn) {
-                    console.log('🤖 Iniciando turno da primeira IA...');
-                    window.gameLogic.checkAndExecuteAITurn();
-                } else {
-                    console.error('❌ gameLogic ou checkAndExecuteAITurn não disponível');
-                }
-            }, 3000);
-        } else {
-            console.log(`🤖 Primeiro jogador é humano: ${firstPlayer?.name}`);
-        }
-        
-        this.modals.showFeedback(`Sistema de IA inicializado com ${aiInstances.length} jogador(es)`, 'info');
-        
-    } catch (error) {
-        console.error('🤖 Erro ao inicializar IA:', error);
-        this.modals.showFeedback('Erro ao inicializar sistema de IA', 'error');
+        }, 3000);
+    } else {
+        console.log(`🤖 Primeiro jogador é humano: ${firstPlayer?.name}`);
     }
+    
+    this.modals.showFeedback(`Sistema de IA inicializado com ${aiInstances.length} jogador(es)`, 'info');
 }
     
     setupAIDebugButton() {
@@ -353,11 +309,11 @@ initializeAISystem() {
         html += `<div class="mb-4 p-2 bg-gray-800/50 rounded">
             <div class="text-xs font-semibold text-gray-300 mb-2">Controles</div>
             <div class="flex flex-wrap gap-2">
-                <button onclick="window.gameLogic?.checkAndExecuteAITurn?.()" 
+                <button onclick="window.aiManager?.executeAITurn?.()" 
                         class="px-2 py-1 text-xs bg-blue-600 hover:bg-blue-700 rounded">
                     Executar IA
                 </button>
-                <button onclick="window.gameLogic?.completeAITurn?.()" 
+                <button onclick="window.aiManager?.forceEndTurn?.()" 
                         class="px-2 py-1 text-xs bg-green-600 hover:bg-green-700 rounded">
                     Forçar Término
                 </button>
@@ -372,83 +328,23 @@ initializeAISystem() {
             </div>
         </div>`;
         
-        // Status de cada IA
-        aiPlayers.forEach((player, idx) => {
-            const ai = getAIPlayer(player.id);
-            // VERIFICAÇÃO DE ELIMINAÇÃO
-            const isEliminated = player.eliminated;
-            
-            if (ai) {
-                const debugInfo = ai.getDebugInfo?.() || {};
-                const isCurrent = gameState.currentPlayerIndex === player.id;
-                const statusColor = isCurrent ? 'text-yellow-300' : 'text-gray-300';
-                const bgColor = isCurrent ? 'bg-purple-900/40' : 'bg-gray-800/30';
-                
-                html += `<div class="mb-3 p-3 rounded-lg border ${isCurrent ? 'border-purple-500/50' : 'border-gray-700/50'} ${bgColor}">
-                    <div class="flex justify-between items-start mb-2">
-                        <div>
-                            <div class="flex items-center gap-2">
-                                <span class="text-lg">${player.icon}</span>
-                                <span class="text-sm font-bold ${statusColor}">
-                                    ${player.name} ${isCurrent ? '🎮' : ''}
-                                </span>
-                            </div>
-                            <div class="text-xs text-gray-400 mt-1">
-                                ${ai.personality?.name || 'Sem personalidade'} • ${ai.difficulty || 'N/A'}
-                            </div>
-                        </div>
-                        <div class="flex flex-col items-end">
-                            <span class="text-xs px-2 py-1 rounded ${this.getAIDifficultyClass(player.aiDifficulty)}">
-                                ${player.aiDifficulty || 'medium'}
-                            </span>
-                            <span class="text-xs text-gray-400 mt-1">${player.victoryPoints} PV</span>
-                        </div>
+        // Status de cada IA (usando aiManager)
+        if (this.aiManager) {
+            const debugInfo = this.aiManager.getDebugInfo();
+            html += `<div class="mb-3 p-3 rounded-lg border border-purple-500/50 bg-purple-900/20">
+                <div class="text-xs font-bold text-purple-300 mb-2">AIManager Status</div>
+                <div class="grid grid-cols-2 gap-2 text-xs">
+                    <div>
+                        <div class="text-gray-500">Turno em Progresso:</div>
+                        <div class="text-gray-300 font-medium">${debugInfo.aiTurnInProgress ? 'Sim' : 'Não'}</div>
                     </div>
-                    
-                    <div class="grid grid-cols-2 gap-2 text-xs">
-                        <div>
-                            <div class="text-gray-500">Fase:</div>
-                            <div class="text-gray-300 font-medium">${debugInfo.phase || 'idle'}</div>
-                        </div>
-                        <div>
-                            <div class="text-gray-500">Regiões:</div>
-                            <div class="text-gray-300 font-medium">${player.regions.length}</div>
-                        </div>
-                        <div>
-                            <div class="text-gray-500">Ações Memória:</div>
-                            <div class="text-gray-300 font-medium">${debugInfo.memory?.lastActions || 0}</div>
-                        </div>
-                        <div>
-                            <div class="text-gray-500">Negociações:</div>
-                            <div class="text-gray-300 font-medium">${debugInfo.memory?.negotiationHistory?.length || 0}</div>
-                        </div>
+                    <div>
+                        <div class="text-gray-500">Instâncias IA:</div>
+                        <div class="text-gray-300 font-medium">${debugInfo.totalAIInstances}</div>
                     </div>
-                    
-                    ${debugInfo.currentPlan ? `
-                    <div class="mt-2 pt-2 border-t border-gray-700/50">
-                        <div class="text-xs text-gray-500 mb-1">Plano Atual:</div>
-                        <div class="text-xs text-gray-300">
-                            ${debugInfo.currentPlan.actions?.length || 0} ações planejadas
-                        </div>
-                        <div class="text-xs text-gray-400 mt-1">
-                            ${debugInfo.currentPlan.turnGoals?.join(', ') || 'Sem metas'}
-                        </div>
-                    </div>
-                    ` : ''}
-                    
-                    <div class="mt-2 pt-2 border-t border-gray-700/50">
-                        <div class="text-xs text-gray-500">Recursos:</div>
-                        <div class="flex flex-wrap gap-1 mt-1">
-                            ${Object.entries(player.resources || {}).map(([res, val]) => `
-                                <span class="text-xs px-1.5 py-0.5 rounded bg-gray-700/50">
-                                    ${val}${RESOURCE_ICONS[res] || '📦'}
-                                </span>
-                            `).join('')}
-                        </div>
-                    </div>
-                </div>`;
-            }
-        });
+                </div>
+            </div>`;
+        }
         
         // Status do jogo
         html += `<div class="mt-4 pt-3 border-t border-white/10">
@@ -475,15 +371,6 @@ initializeAISystem() {
                     </div>
                 </div>
             </div>
-            
-            <div class="mt-3 p-2 bg-gray-800/20 rounded text-xs">
-                <div class="text-gray-400 mb-1">Evento Atual:</div>
-                <div class="text-gray-300">
-                    ${gameState.currentEvent ? 
-                    `${gameState.currentEvent.name} (${gameState.eventTurnsLeft} turnos)` : 
-                    'Nenhum evento ativo'}
-                </div>
-            </div>
         </div>`;
         
         debugContent.innerHTML = html;
@@ -496,39 +383,31 @@ initializeAISystem() {
         }, 2000);
     }
 
-    getAIDifficultyClass(difficulty) {
-        const classes = {
-            easy: 'ai-easy',
-            medium: 'ai-medium', 
-            hard: 'ai-hard',
-            master: 'ai-master'
-        };
-        return classes[difficulty] || 'ai-medium';
-    }
-
     // ==================== MÉTODOS PRINCIPAIS ====================
 
     updateUI() {
-        this.gameManager.updateUI();
+        if (this.gameManager) {
+            this.gameManager.updateUI();
+        }
     }
 
     setModalMode(enabled) {
         if (enabled) {
             document.body.classList.add('modal-active');
-            if (this.gameManager.boardContainer) {
+            if (this.gameManager && this.gameManager.boardContainer) {
                 this.gameManager.boardContainer.style.pointerEvents = 'none';
             }
         } else {
             document.body.classList.remove('modal-active');
-            if (this.gameManager.boardContainer) {
+            if (this.gameManager && this.gameManager.boardContainer) {
                 this.gameManager.boardContainer.style.pointerEvents = 'auto';
             }
             // Pequeno delay para garantir que a UI seja atualizada
-    setTimeout(() => {
-      if (this.gameManager && this.gameManager.updateFooter) {
-        this.gameManager.updateFooter();
-      }
-    }, 50);
+            setTimeout(() => {
+                if (this.gameManager && this.gameManager.footerManager) {
+                    this.gameManager.footerManager.updateFooter();
+                }
+            }, 50);
         }
     }
 
@@ -555,12 +434,6 @@ initializeAISystem() {
                 }
             }
             
-            // Verificar se ACHIEVEMENTS_CONFIG existe
-            if (typeof ACHIEVEMENTS_CONFIG === 'undefined') {
-                console.error('ACHIEVEMENTS_CONFIG não está disponível');
-                return false;
-            }
-            
             return true;
         } catch (error) {
             console.error('Erro na inicialização segura:', error);
@@ -568,5 +441,3 @@ initializeAISystem() {
         }
     }
 }
-
-export { UIManager };

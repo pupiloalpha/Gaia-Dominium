@@ -1,11 +1,9 @@
 // ui-game.js - Interface do Jogo (Refatorado)
 import {
     gameState,
-    achievementsState,
-    getCurrentPlayer,
-    activityLogHistory
+    getCurrentPlayer
 } from '../state/game-state.js';
-import { GAME_CONFIG, RESOURCE_ICONS, ACHIEVEMENTS_CONFIG, UI_CONSTANTS } from '../state/game-config.js';
+import { GAME_CONFIG, RESOURCE_ICONS, UI_CONSTANTS } from '../state/game-config.js';
 import { Utils } from '../utils/utils.js';
 import { RegionRenderer } from './ui-region-renderer.js';
 import { SidebarManager } from './ui-sidebar-manager.js';
@@ -17,7 +15,14 @@ const { LOG_ICONS, PHASE_NAMES, ACTION_COSTS } = UI_CONSTANTS;
 export class UIGameManager {
     constructor(uiManager) {
         this.uiManager = uiManager;
+        this.regionRenderer = null;
+        this.sidebarManager = null;
+        this.footerManager = null;
         this.cacheElements();
+        this.initializeComponents();
+    }
+
+    initializeComponents() {
         this.regionRenderer = new RegionRenderer(this);
         this.sidebarManager = new SidebarManager(this);
         this.footerManager = new FooterManager(this);
@@ -36,6 +41,17 @@ export class UIGameManager {
         
         // Container do tabuleiro - ESSENCIAL
         this.boardContainer = document.getElementById('boardContainer');
+        if (!this.boardContainer) {
+            console.warn("⚠️ boardContainer não encontrado, criando dinamicamente...");
+            this.boardContainer = document.createElement('div');
+            this.boardContainer.id = 'boardContainer';
+            this.boardContainer.className = 'board-container grid grid-cols-8 gap-1 p-2';
+            if (this.gameMap) {
+                this.gameMap.appendChild(this.boardContainer);
+            } else {
+                console.error("❌ gameMap não disponível para adicionar boardContainer");
+            }
+        }
         
         // Elementos da interface do jogo
         this.playerHeaderList = document.getElementById('playerHeaderList');
@@ -76,19 +92,19 @@ export class UIGameManager {
         this.renderActivityLog();
     }
     
-// Método para garantir compatibilidade:
-updateFooter() {
-    if (this.footerManager) {
-        this.footerManager.updateFooter();
+    // Método para garantir compatibilidade:
+    updateFooter() {
+        if (this.footerManager) {
+            this.footerManager.updateFooter();
+        }
     }
-}
 
-// Método para garantir compatibilidade:
-renderSidebar(playerIndex = gameState.selectedPlayerForSidebar) {
-    if (this.sidebarManager) {
-        this.sidebarManager.renderSidebar(playerIndex);
+    // Método para garantir compatibilidade:
+    renderSidebar(playerIndex = gameState.selectedPlayerForSidebar) {
+        if (this.sidebarManager) {
+            this.sidebarManager.renderSidebar(playerIndex);
+        }
     }
-}
     
     renderHeaderPlayers() {
         if (!this.playerHeaderList) return;
@@ -137,8 +153,8 @@ renderSidebar(playerIndex = gameState.selectedPlayerForSidebar) {
 
     renderBoard() {
         if (!this.boardContainer) {
-            console.error("❌ boardContainer não disponível. Tentando recachear...");
-            this.boardContainer = document.getElementById('boardContainer');
+            console.error("❌ boardContainer não disponível. Recacheando elementos...");
+            this.cacheElements();
             
             if (!this.boardContainer) {
                 console.error("❌ boardContainer ainda não encontrado após recache!");
@@ -146,11 +162,98 @@ renderSidebar(playerIndex = gameState.selectedPlayerForSidebar) {
             }
         }
         
-        this.boardContainer.innerHTML = '';
+        // Limpar apenas se necessário
+        if (gameState.regions.length !== this.boardContainer.children.length) {
+            this.boardContainer.innerHTML = '';
+        }
+        
+        // Renderizar regiões
         gameState.regions.forEach((region, index) => {
-            const cell = this.regionRenderer.createRegionCell(region, index);
-            this.boardContainer.appendChild(cell);
+            let cell = this.boardContainer.querySelector(`.board-cell[data-region-id="${region.id}"]`);
+            
+            if (!cell) {
+                cell = this.regionRenderer.createRegionCell(region, index);
+                this.boardContainer.appendChild(cell);
+            } else {
+                // Atualizar célula existente
+                this._updateRegionCell(cell, region);
+            }
         });
+    }
+
+    _updateRegionCell(cell, region) {
+        // Atualizar classes CSS
+        cell.classList.remove('player-owned', 'neutral-available', 'controlled', 'neutral');
+        
+        if (region.controller === gameState.currentPlayerIndex) {
+            cell.classList.add('player-owned');
+        }
+
+        if (region.controller === null) {
+            cell.classList.add('neutral-available');
+        }
+
+        const currentPlayer = getCurrentPlayer();
+        if (currentPlayer && region.controller === currentPlayer.id && region.explorationLevel > 0) {
+            cell.classList.add('action-available', 'clickable');
+        }
+
+        if (region.controller !== null) {
+            cell.classList.add('controlled');
+            const player = gameState.players[region.controller];
+            const rgb = Utils.hexToRgb(player.color);
+            cell.style.setProperty('--player-rgb', rgb.join(', '));
+            cell.style.setProperty('--player-color', player.color);
+        } else {
+            cell.classList.add('neutral');
+        }
+        
+        // Atualizar conteúdo
+        const header = cell.querySelector('.region-header');
+        const resourcesLine = cell.querySelector('.region-resources');
+        const footer = cell.querySelector('.region-footer');
+        
+        if (header) {
+            header.innerHTML = `
+                <div>
+                    <div class="text-xs font-bold text-white leading-tight">${region.name}</div>
+                    <div class="text-[9px] text-gray-300 mt-0.5">${region.biome}</div>
+                </div>
+                <div class="text-xs text-yellow-300 font-bold flex items-center gap-0.5">
+                    ${region.explorationLevel}<span class="text-[10px]">⭐</span>
+                </div>
+            `;
+        }
+        
+        if (resourcesLine) {
+            const resourcePairs = [];
+            const resourceOrder = ['madeira', 'pedra', 'ouro', 'agua'];
+            
+            resourceOrder.forEach(key => {
+                const value = region.resources[key] || 0;
+                if (value > 0) {
+                    resourcePairs.push({
+                        icon: RESOURCE_ICONS[key],
+                        value: value
+                    });
+                }
+            });
+            
+            if (resourcePairs.length > 0) {
+                resourcesLine.innerHTML = resourcePairs.map(resource => `
+                    <div class="flex items-center gap-0.5 flex-1 justify-center">
+                        <span class="text-xs">${resource.icon}</span>
+                        <span class="text-xs font-bold text-white">${resource.value}</span>
+                    </div>
+                `).join('');
+            } else {
+                resourcesLine.innerHTML = `
+                    <div class="text-[9px] text-gray-400 italic flex-1 text-center">
+                        Sem recursos
+                    </div>
+                `;
+            }
+        }
     }
 
     updateTurnInfo() {
@@ -180,7 +283,9 @@ renderSidebar(playerIndex = gameState.selectedPlayerForSidebar) {
         if (player.eliminated) {
             // Jogador eliminado só pode dominar regiões neutras
             if (region.controller === null) {
-                window.gameLogic.handleExplore(); // Isso chamará a ressurreição
+                if (window.gameLogic?.handleExplore) {
+                    window.gameLogic.handleExplore(); // Isso chamará a ressurreição
+                }
             } else {
                 this.uiManager.modals.showFeedback('Jogador eliminado só pode dominar regiões neutras.', 'error');
             }
@@ -189,10 +294,14 @@ renderSidebar(playerIndex = gameState.selectedPlayerForSidebar) {
         
         if (region.controller === null) {
             // Região neutra - dominar diretamente (SEM MODAL)
-            window.gameLogic.handleExplore();
+            if (window.gameLogic?.handleExplore) {
+                window.gameLogic.handleExplore();
+            }
         } else if (region.controller === player.id) {
             // Região própria - explorar diretamente
-            window.gameLogic.handleExplore();
+            if (window.gameLogic?.handleExplore) {
+                window.gameLogic.handleExplore();
+            }
         } else {
             // Região inimiga - abrir modal de disputa
             this.uiManager.disputeUI.openDisputeModal(region.id);
@@ -202,7 +311,7 @@ renderSidebar(playerIndex = gameState.selectedPlayerForSidebar) {
     // ==================== LOG DE ATIVIDADES ====================
 
     renderActivityLog(filter = 'all') {
-        const logs = activityLogHistory;
+        const logs = window.activityLogHistory || [];
         
         if (this.logEntriesSidebar) {
             this.logEntriesSidebar.innerHTML = '';
@@ -238,6 +347,7 @@ renderSidebar(playerIndex = gameState.selectedPlayerForSidebar) {
             });
         }
         
+        // Atualizar botões de filtro
         document.querySelectorAll('.log-filter-sidebar').forEach(btn => {
             if (btn.dataset.filter === filter) {
                 btn.classList.add('active');
@@ -250,6 +360,11 @@ renderSidebar(playerIndex = gameState.selectedPlayerForSidebar) {
     // ==================== TOOLTIP ====================
 
     showRegionTooltip(region, targetEl) {
+        if (!this.regionTooltip || !this.tooltipTitle || !this.tooltipBody) {
+            console.warn("Tooltip elements not available");
+            return;
+        }
+        
         const owner = region.controller !== null 
             ? `${gameState.players[region.controller].icon} ${gameState.players[region.controller].name}`
             : 'Neutro';
@@ -298,6 +413,8 @@ renderSidebar(playerIndex = gameState.selectedPlayerForSidebar) {
     }
 
     positionTooltip(targetEl) {
+        if (!this.regionTooltip) return;
+        
         const rect = targetEl.getBoundingClientRect();
         const tooltipRect = this.regionTooltip.getBoundingClientRect();
         
@@ -339,8 +456,10 @@ renderSidebar(playerIndex = gameState.selectedPlayerForSidebar) {
     }
 
     hideRegionTooltip() {
-        this.regionTooltip.classList.add('hidden');
-        this.regionTooltip.classList.remove('visible');
+        if (this.regionTooltip) {
+            this.regionTooltip.classList.add('hidden');
+            this.regionTooltip.classList.remove('visible');
+        }
     }
 
     // ==================== UTILITÁRIOS ====================
@@ -427,16 +546,24 @@ renderSidebar(playerIndex = gameState.selectedPlayerForSidebar) {
 
     // ==================== EVENT LISTENERS ====================
 
-setupEventListeners() {
-    // Delegar para o footerManager
-    if (this.footerManager) {
-        this.footerManager.actionExploreBtn?.addEventListener('click', () => this.handleExploreWithContext());
-        this.footerManager.actionCollectBtn?.addEventListener('click', () => window.gameLogic.handleCollect());
-        this.footerManager.endTurnBtn?.addEventListener('click', () => window.gameLogic.handleEndTurn());
-        this.footerManager.actionNegotiateBtn?.addEventListener('click', () => this.uiManager.negotiation.openNegotiationModal());
-        this.footerManager.actionBuildBtn?.addEventListener('click', () => this.uiManager.modals.openStructureModal());
-    }
-    
+    setupEventListeners() {
+        // Delegar para o footerManager
+        if (this.footerManager) {
+            this.footerManager.actionExploreBtn?.addEventListener('click', () => this.handleExploreWithContext());
+            this.footerManager.actionCollectBtn?.addEventListener('click', () => {
+                if (window.gameLogic?.handleCollect) {
+                    window.gameLogic.handleCollect();
+                }
+            });
+            this.footerManager.endTurnBtn?.addEventListener('click', () => {
+                if (window.gameLogic?.handleEndTurn) {
+                    window.gameLogic.handleEndTurn();
+                }
+            });
+            this.footerManager.actionNegotiateBtn?.addEventListener('click', () => this.uiManager.negotiation.openNegotiationModal());
+            this.footerManager.actionBuildBtn?.addEventListener('click', () => this.uiManager.modals.openStructureModal());
+        }
+        
         // Navegação
         document.getElementById('manualIcon')?.addEventListener('click', () => this.uiManager.modals.openManual());
         document.getElementById('manualIconNavbar')?.addEventListener('click', () => this.uiManager.modals.openManual());
@@ -489,9 +616,11 @@ setupEventListeners() {
             if (e.ctrlKey && e.shiftKey && e.key === 'I') {
                 e.preventDefault();
                 const panel = document.getElementById('aiDebugPanel');
-                panel.classList.toggle('hidden');
-                if (!panel.classList.contains('hidden') && window.aiDebugUpdate) {
-                    window.aiDebugUpdate();
+                if (panel) {
+                    panel.classList.toggle('hidden');
+                    if (!panel.classList.contains('hidden') && window.aiDebugUpdate) {
+                        window.aiDebugUpdate();
+                    }
                 }
             }
         });
