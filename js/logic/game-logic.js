@@ -4,6 +4,9 @@ import { FactionLogic } from './logic-factions.js';
 import { NegotiationLogic } from './logic-negotiation.js';
 import { DisputeLogic } from './logic-dispute.js';
 import { TurnLogic } from './logic-turn.js';
+import { EventManager } from './event-manager.js';
+import { IncomeCalculator } from './income-calculator.js';
+import { PhaseManager } from './phase-manager.js';
 import { AICoordinator } from './logic-ai-coordinator.js';
 import { GameInitializer } from './game-initializer.js';
 import { GameCoordinator } from './game-coordinator.js';
@@ -53,7 +56,7 @@ constructor() {
     console.log("🎮 Inicializando jogo via GameLogic...");
     
     // Delegar para o initializer
-    const success = this.initializer.initializeGame(this);
+    const success = this.initializer.initializeGame();
     
     if (!success) {
       this.showFeedback('Erro ao inicializar o jogo', 'error');
