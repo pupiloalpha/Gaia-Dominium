@@ -1,71 +1,85 @@
-// validation-service.js - Serviço de Validações do Jogo
+// validation-service.js - Serviço de Validações Unificado
 import { gameState, getCurrentPlayer, getPlayerById } from '../state/game-state.js';
-import { GAME_CONFIG, UI_CONSTANTS } from '../state/game-config.js';
+import { GAME_CONFIG, TURN_PHASES } from '../state/game-config.js';
 
 export class ValidationService {
   constructor(gameLogic) {
     this.main = gameLogic;
   }
 
-  // ==================== VALIDAÇÃO DE AÇÕES ====================
+  // ==================== VALIDAÇÃO COMPLETA DE AÇÃO ====================
 
   validateAction(actionType, options = {}) {
     const player = options.player || getCurrentPlayer();
     const regionId = options.regionId || gameState.selectedRegionId;
     
-    // Validações básicas
-    const basicChecks = this._validateBasicChecks(actionType, player);
-    if (!basicChecks.valid) return basicChecks;
+    // 1. Validações básicas
+    const basicResult = this._validateBasicChecks(actionType, player);
+    if (!basicResult.valid) return basicResult;
     
-    // Validações específicas por ação
+    // 2. Validação de fase
+    const phaseResult = this._validatePhase(actionType);
+    if (!phaseResult.valid) return phaseResult;
+    
+    // 3. Validações específicas por ação
     switch(actionType) {
       case 'explorar':
-        return this._validateExploreAction(player, regionId);
+        return this._validateExplore(player, regionId);
       case 'recolher':
-        return this._validateCollectAction(player, regionId);
+        return this._validateCollect(player, regionId);
       case 'construir':
-        return this._validateBuildAction(player, regionId, options.structureType);
+        return this._validateBuild(player, regionId, options.structureType);
       case 'negociar':
-        return this._validateNegotiateAction(player);
+        return this._validateNegotiate(player);
       case 'disputar':
-        return this._validateDisputeAction(player, regionId);
+        return this._validateDispute(player, regionId);
       default:
         return { valid: false, reason: `Tipo de ação desconhecida: ${actionType}` };
     }
   }
 
   _validateBasicChecks(actionType, player) {
-    // Verificar se jogador existe
     if (!player) {
       return { valid: false, reason: 'Jogador não encontrado' };
     }
     
-    // Verificar se jogador está eliminado
-    if (player.eliminated && !this._isValidForEliminated(actionType)) {
+    if (player.eliminated && !this._isActionAllowedForEliminated(actionType)) {
       return { valid: false, reason: 'Jogador eliminado não pode realizar esta ação' };
     }
     
-    // Verificar se tem ações restantes
     if (gameState.actionsLeft <= 0) {
       return { valid: false, reason: 'Sem ações restantes neste turno' };
-    }
-    
-    // Verificar fase atual
-    if (!this.main.coordinator?.isActionAllowedInPhase(actionType)) {
-      const currentPhase = gameState.currentPhase;
-      return { valid: false, reason: `Ação não permitida na fase "${currentPhase}"` };
     }
     
     return { valid: true, reason: '' };
   }
 
-  _isValidForEliminated(actionType) {
+  _validatePhase(actionType) {
+    const currentPhase = gameState.currentPhase;
+    const phaseActions = {
+      [TURN_PHASES.RENDA]: [],
+      [TURN_PHASES.ACOES]: ['explorar', 'recolher', 'construir', 'disputar'],
+      [TURN_PHASES.NEGOCIACAO]: ['negociar']
+    };
+    
+    if (!phaseActions[currentPhase]?.includes(actionType)) {
+      return { 
+        valid: false, 
+        reason: `Ação "${actionType}" não permitida na fase "${currentPhase}"` 
+      };
+    }
+    
+    return { valid: true, reason: '' };
+  }
+
+  _isActionAllowedForEliminated(actionType) {
+    // Jogadores eliminados só podem dominar regiões neutras
     return actionType === 'explorar' && gameState.selectedRegionId !== null;
   }
 
   // ==================== VALIDAÇÕES ESPECÍFICAS ====================
 
-  _validateExploreAction(player, regionId) {
+  _validateExplore(player, regionId) {
     if (regionId === null) {
       return { valid: false, reason: 'Selecione uma região primeiro' };
     }
@@ -75,24 +89,22 @@ export class ValidationService {
       return { valid: false, reason: 'Região não encontrada' };
     }
     
-    // Verificar recursos para explorar região própria
-    if (region.controller === player.id) {
-      const cost = GAME_CONFIG.ACTION_DETAILS.explorar?.cost || {};
-      const modifiedCost = this.main.factionLogic?.modifyExploreCost?.(player, cost) || cost;
-      
-      const canAfford = Object.entries(modifiedCost).every(([resource, amount]) => {
-        return (player.resources[resource] || 0) >= amount;
-      });
-      
-      if (!canAfford) {
-        return { valid: false, reason: 'Recursos insuficientes para explorar' };
-      }
+    // Verificar recursos para explorar
+    const cost = GAME_CONFIG.ACTION_DETAILS.explorar?.cost || {};
+    const modifiedCost = this.main.factionLogic?.modifyExploreCost?.(player, cost) || cost;
+    
+    const canAfford = Object.entries(modifiedCost).every(([resource, amount]) => {
+      return (player.resources[resource] || 0) >= amount;
+    });
+    
+    if (!canAfford) {
+      return { valid: false, reason: 'Recursos insuficientes para explorar' };
     }
     
     return { valid: true, reason: '' };
   }
 
-  _validateCollectAction(player, regionId) {
+  _validateCollect(player, regionId) {
     if (regionId === null) {
       return { valid: false, reason: 'Selecione uma região' };
     }
@@ -122,7 +134,7 @@ export class ValidationService {
     return { valid: true, reason: '' };
   }
 
-  _validateBuildAction(player, regionId, structureType = 'Abrigo') {
+  _validateBuild(player, regionId, structureType = 'Abrigo') {
     if (regionId === null) {
       return { valid: false, reason: 'Selecione uma região' };
     }
@@ -159,21 +171,15 @@ export class ValidationService {
     return { valid: true, reason: '' };
   }
 
-  _validateNegotiateAction(player) {
-    if (gameState.currentPhase !== 'negociacao') {
-      return { valid: false, reason: 'Negociação permitida apenas na fase de Negociação' };
-    }
-    
-    const negCost = this.main.factionLogic?.modifyNegotiationCost?.(player) || 1;
-    
-    if (player.resources.ouro < negCost) {
-      return { valid: false, reason: `Necessário ${negCost} Ouro para negociar` };
+  _validateNegotiate(player) {
+    if (player.resources.ouro < 1) {
+      return { valid: false, reason: 'Necessário 1 Ouro para negociar' };
     }
     
     return { valid: true, reason: '' };
   }
 
-  _validateDisputeAction(player, regionId) {
+  _validateDispute(player, regionId) {
     if (regionId === null) {
       return { valid: false, reason: 'Selecione uma região para disputar' };
     }
@@ -191,16 +197,9 @@ export class ValidationService {
       return { valid: false, reason: 'Você já domina esta região' };
     }
     
-    // Usar disputeLogic se disponível
-    if (this.main.disputeLogic?.canAffordDispute) {
-      if (!this.main.disputeLogic.canAffordDispute(player)) {
-        return { valid: false, reason: 'Recursos insuficientes para iniciar disputa' };
-      }
-    } else {
-      // Fallback básico
-      if (player.victoryPoints < 3 || player.resources.ouro < 2) {
-        return { valid: false, reason: 'Recursos insuficientes para iniciar disputa' };
-      }
+    // Verificar recursos mínimos para disputa
+    if (player.victoryPoints < 3 || player.resources.ouro < 2) {
+      return { valid: false, reason: 'Recursos insuficientes para iniciar disputa' };
     }
     
     return { valid: true, reason: '' };
@@ -216,47 +215,7 @@ export class ValidationService {
     });
   }
 
-  // ==================== VALIDAÇÃO DE JOGADOR ====================
-
-  isPlayerActive(playerId) {
-    const player = getPlayerById(playerId);
-    return player && !player.eliminated;
-  }
-
-  // ==================== VALIDAÇÃO DE REGIÃO ====================
-
-  isRegionControlledBy(regionId, playerId) {
-    const region = gameState.regions[regionId];
-    return region && region.controller === playerId;
-  }
-
-  // ==================== VALIDAÇÃO DE ESTRUTURA ====================
-
-  canBuildStructureInRegion(regionId, structureType) {
-    const region = gameState.regions[regionId];
-    if (!region) return false;
-    
-    // Verificar se a estrutura já existe
-    if (region.structures.includes(structureType)) return false;
-    
-    // Verificar limites de estrutura
-    const structureLimits = window.STRUCTURE_LIMITS || {};
-    if (structureLimits[structureType]) {
-      const player = getCurrentPlayer();
-      const playerStructures = player.regions.reduce((count, rid) => {
-        const r = gameState.regions[rid];
-        return count + (r.structures.includes(structureType) ? 1 : 0);
-      }, 0);
-      
-      if (playerStructures >= structureLimits[structureType]) {
-        return false;
-      }
-    }
-    
-    return true;
-  }
-
-  // ==================== DEBUG E RELATÓRIOS ====================
+  // ==================== GETTERS DE STATUS ====================
 
   getValidationReport() {
     const currentPlayer = getCurrentPlayer();
@@ -270,7 +229,7 @@ export class ValidationService {
       },
       phase: gameState.currentPhase,
       selectedRegion: gameState.selectedRegionId,
-      canAffordActions: {
+      canPerformActions: {
         explorar: this.validateAction('explorar').valid,
         recolher: this.validateAction('recolher').valid,
         construir: this.validateAction('construir', { structureType: 'Abrigo' }).valid,

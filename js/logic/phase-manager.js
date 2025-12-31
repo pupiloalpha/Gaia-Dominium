@@ -1,6 +1,6 @@
-// phase-manager.js - Gerenciador de Fases do Jogo
+// phase-manager.js - Gerenciador Consolidado de Fases
 import { addActivityLog } from '../state/game-state.js';
-import { UI_CONSTANTS, TURN_PHASES } from '../state/game-config.js';
+import { UI_CONSTANTS, TURN_PHASES, GAME_CONFIG } from '../state/game-config.js';
 
 export class PhaseManager {
   constructor(gameLogic) {
@@ -8,6 +8,7 @@ export class PhaseManager {
     this.currentPhase = TURN_PHASES.RENDA;
     this.phaseHistory = [];
     this.phaseTimers = new Map();
+    this.actionsLeft = GAME_CONFIG.ACTIONS_PER_TURN;
   }
 
   // ==================== CONTROLE DE FASES ====================
@@ -20,21 +21,18 @@ export class PhaseManager {
     const oldPhase = this.currentPhase;
     
     if (oldPhase === phase) {
-      return phase; // Sem mudança
+      return phase;
     }
 
-    // Validar transição
-    if (!this._validatePhaseTransition(oldPhase, phase)) {
+    if (!this.validatePhaseTransition(oldPhase, phase)) {
       console.warn(`Transição de fase inválida: ${oldPhase} -> ${phase}`);
       return this.currentPhase;
     }
 
-    // Registrar mudança
     this.currentPhase = phase;
     this._recordPhaseChange(oldPhase, phase);
-    
-    // Executar lógica específica da fase
     this._executePhaseLogic(phase);
+    this._logPhaseChange(phase);
 
     return phase;
   }
@@ -54,37 +52,45 @@ export class PhaseManager {
 
   // ==================== VALIDAÇÃO ====================
 
-  _validatePhaseTransition(fromPhase, toPhase) {
-    // Definir transições válidas
+  validatePhaseTransition(fromPhase, toPhase) {
     const validTransitions = {
       [TURN_PHASES.RENDA]: [TURN_PHASES.ACOES],
       [TURN_PHASES.ACOES]: [TURN_PHASES.NEGOCIACAO],
       [TURN_PHASES.NEGOCIACAO]: [TURN_PHASES.RENDA]
     };
-
     return validTransitions[fromPhase]?.includes(toPhase) || false;
   }
 
   validateActionForPhase(actionType) {
-    const phase = this.currentPhase;
-    
     const phaseActions = {
       [TURN_PHASES.RENDA]: [],
       [TURN_PHASES.ACOES]: ['explorar', 'recolher', 'construir', 'disputar'],
       [TURN_PHASES.NEGOCIACAO]: ['negociar']
     };
-
-    return phaseActions[phase]?.includes(actionType) || false;
+    return phaseActions[this.currentPhase]?.includes(actionType) || false;
   }
 
-  getPhaseActions() {
-    const phaseActions = {
-      [TURN_PHASES.RENDA]: [],
-      [TURN_PHASES.ACOES]: ['explorar', 'recolher', 'construir', 'disputar'],
-      [TURN_PHASES.NEGOCIACAO]: ['negociar']
-    };
+  // ==================== GERENCIAMENTO DE AÇÕES ====================
 
-    return phaseActions[this.currentPhase] || [];
+  getRemainingActions() {
+    return this.actionsLeft;
+  }
+
+  consumeAction() {
+    if (this.actionsLeft <= 0) return false;
+    this.actionsLeft--;
+    return this.actionsLeft;
+  }
+
+  resetActions() {
+    const oldCount = this.actionsLeft;
+    this.actionsLeft = GAME_CONFIG.ACTIONS_PER_TURN;
+    
+    if (oldCount !== this.actionsLeft) {
+      console.log(`🔄 Ações resetadas: ${oldCount} → ${this.actionsLeft}`);
+    }
+    
+    return this.actionsLeft;
   }
 
   // ==================== LÓGICA DE FASE ====================
@@ -101,49 +107,21 @@ export class PhaseManager {
         this._handleNegotiationPhase();
         break;
     }
-
-    // Log da mudança de fase
-    this._logPhaseChange(phase);
   }
 
   _handleIncomePhase() {
     console.log(`🔄 Entrando na fase de Renda`);
-    
-    // Notificar UI
-    if (window.uiManager?.gameManager?.updateFooter) {
-      setTimeout(() => window.uiManager.gameManager.updateFooter(), 100);
-    }
+    this.resetActions();
   }
 
   _handleActionsPhase() {
     console.log(`🔄 Entrando na fase de Ações`);
-    
-    // Notificar UI
-    if (window.uiManager) {
-      window.uiManager.updateUI();
-      if (window.uiManager.gameManager?.updateFooter) {
-        setTimeout(() => window.uiManager.gameManager.updateFooter(), 100);
-      }
-    }
+    this.resetActions();
   }
 
   _handleNegotiationPhase() {
     console.log(`🔄 Entrando na fase de Negociação`);
-    
-    // Verificar propostas pendentes
-    setTimeout(() => {
-      if (window.uiManager?.negotiation?.checkPendingNegotiationsForCurrentPlayer) {
-        window.uiManager.negotiation.checkPendingNegotiationsForCurrentPlayer();
-      }
-    }, 500);
-
-    // Notificar UI
-    if (window.uiManager) {
-      window.uiManager.updateUI();
-      if (window.uiManager.gameManager?.updateFooter) {
-        setTimeout(() => window.uiManager.gameManager.updateFooter(), 100);
-      }
-    }
+    this.actionsLeft = 1; // Apenas uma ação de negociação por turno
   }
 
   // ==================== REGISTRO E LOG ====================
@@ -159,12 +137,10 @@ export class PhaseManager {
 
     this.phaseHistory.unshift(phaseEntry);
     
-    // Limitar histórico
     if (this.phaseHistory.length > 50) {
       this.phaseHistory = this.phaseHistory.slice(0, 50);
     }
 
-    // Registrar timer da fase
     this.phaseTimers.set(newPhase, Date.now());
   }
 
@@ -184,7 +160,7 @@ export class PhaseManager {
     });
   }
 
-  // ==================== GETTERS E UTILITÁRIOS ====================
+  // ==================== UTILITÁRIOS ====================
 
   getPhaseDisplayName(phase = null) {
     const targetPhase = phase || this.currentPhase;
@@ -193,46 +169,22 @@ export class PhaseManager {
       [TURN_PHASES.ACOES]: '⚡ Ações',
       [TURN_PHASES.NEGOCIACAO]: '🤝 Negociação'
     };
-
     return phaseNames[targetPhase] || targetPhase;
-  }
-
-  getPhaseDuration(phase) {
-    const startTime = this.phaseTimers.get(phase);
-    if (!startTime) return null;
-
-    return Date.now() - startTime;
   }
 
   getPhaseStatistics() {
     const phaseCounts = {};
-    const phaseDurations = {};
-
     this.phaseHistory.forEach(entry => {
       phaseCounts[entry.newPhase] = (phaseCounts[entry.newPhase] || 0) + 1;
-      
-      // Calcular duração se tivermos tempo de início
-      const startTime = this.phaseTimers.get(entry.newPhase);
-      if (startTime && entry.timestamp) {
-        const duration = entry.timestamp - startTime;
-        phaseDurations[entry.newPhase] = (phaseDurations[entry.newPhase] || 0) + duration;
-      }
-    });
-
-    // Calcular médias
-    const averages = {};
-    Object.keys(phaseDurations).forEach(phase => {
-      averages[phase] = phaseDurations[phase] / phaseCounts[phase];
     });
 
     return {
       totalTransitions: this.phaseHistory.length,
       phaseCounts,
-      averageDurations: averages,
       currentPhase: {
         name: this.currentPhase,
         displayName: this.getPhaseDisplayName(),
-        duration: this.getPhaseDuration(this.currentPhase)
+        actionsLeft: this.actionsLeft
       }
     };
   }
@@ -243,17 +195,9 @@ export class PhaseManager {
     return {
       currentPhase: this.currentPhase,
       displayName: this.getPhaseDisplayName(),
-      allowedActions: this.getPhaseActions(),
+      actionsLeft: this.actionsLeft,
       historyLength: this.phaseHistory.length,
-      lastTransition: this.phaseHistory[0] || null,
-      phaseStatistics: this.getPhaseStatistics()
+      lastTransition: this.phaseHistory[0] || null
     };
-  }
-
-  getPhaseTimeline() {
-    return this.phaseHistory.map(entry => ({
-      ...entry,
-      displayName: this.getPhaseDisplayName(entry.newPhase)
-    }));
   }
 }
