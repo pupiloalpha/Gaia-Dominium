@@ -12,27 +12,40 @@ import { GameUtils } from './game-utils.js';
 import { gameState, addActivityLog, getCurrentPlayer, saveGame } from '../state/game-state.js';
 
 class GameLogic {
-  constructor() {
-    console.log("🎮 GameLogic inicializando...");
-    
-    // Inicializar serviços
-    this.initializer = new GameInitializer();
-    this.coordinator = new GameCoordinator(this);
-    this.validator = new ValidationService(this);
-    this.utils = GameUtils;
-    
-    // Inicializar submódulos de lógica
-    this.actionsLogic = new ActionLogic(this);
-    this.negotiationLogic = new NegotiationLogic(this);
-    this.turnLogic = new TurnLogic(this);
-    this.aiCoordinator = new AICoordinator(this);
-    this.factionLogic = new FactionLogic(this);
-    this.disputeLogic = new DisputeLogic(this);
-    
-    this.feedbackHistory = [];
-    
-    console.log("✅ GameLogic inicializado");
-  }
+
+constructor() {
+  console.log("🎮 GameLogic inicializando...");
+  
+  // Inicializar serviços principais (FASE 2)
+  this.initializer = new GameInitializer();
+  this.coordinator = new GameCoordinator(this);
+  this.validator = new ValidationService(this);
+  this.utils = GameUtils;
+  
+  // Inicializar submódulos de lógica
+  this.actionsLogic = new ActionLogic(this);
+  this.negotiationLogic = new NegotiationLogic(this);
+  
+  // Inicializar serviços do TurnLogic (FASE 4)
+  this.eventManager = new EventManager(this);
+  this.incomeCalculator = new IncomeCalculator(this);
+  this.phaseManager = new PhaseManager(this);
+  
+  // Inicializar TurnLogic com serviços injetados
+  this.turnLogic = new TurnLogic(this);
+  this.turnLogic.eventManager = this.eventManager;
+  this.turnLogic.incomeCalculator = this.incomeCalculator;
+  this.turnLogic.phaseManager = this.phaseManager;
+  
+  // Inicializar demais módulos
+  this.aiCoordinator = new AICoordinator(this);
+  this.factionLogic = new FactionLogic(this);
+  this.disputeLogic = new DisputeLogic(this);
+  
+  this.feedbackHistory = [];
+  
+  console.log("✅ GameLogic inicializado com todos os serviços");
+}
 
   // ==================== INICIALIZAÇÃO (FACHADA) ====================
 
