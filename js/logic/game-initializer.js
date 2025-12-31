@@ -75,7 +75,7 @@ export class GameInitializer {
 
   // ==================== INICIALIZAÇÃO COMPLETA ====================
 
-  initializeGame(gameLogic) {
+  initializeGame() {
     console.log("🎮 GameInitializer: Iniciando jogo...");
     
     try {
