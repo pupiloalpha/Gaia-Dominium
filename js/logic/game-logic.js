@@ -1,4 +1,4 @@
-// game-logic.js - Fachada Principal (Refatorada)
+// game-logic.js - Fachada Principal (ATUALIZADO)
 import { ActionLogic } from './logic-actions.js';
 import { FactionLogic } from './logic-factions.js';
 import { NegotiationLogic } from './logic-negotiation.js';
@@ -15,42 +15,40 @@ import { GameUtils } from './game-utils.js';
 import { gameState, addActivityLog, getCurrentPlayer, saveGame } from '../state/game-state.js';
 
 class GameLogic {
+  constructor() {
+    console.log("🎮 GameLogic inicializando...");
+    
+    // Inicializar serviços principais
+    this.initializer = new GameInitializer();
+    this.coordinator = new GameCoordinator(this);
+    this.validator = new ValidationService(this);
+    this.utils = GameUtils;
+    
+    // Inicializar submódulos de lógica
+    this.actionsLogic = new ActionLogic(this);
+    this.negotiationLogic = new NegotiationLogic(this);
+    
+    // Inicializar serviços do TurnLogic
+    this.eventManager = new EventManager(this);
+    this.incomeCalculator = new IncomeCalculator(this);
+    this.phaseManager = new PhaseManager(this); // Instanciar diretamente
+    
+    // Inicializar TurnLogic
+    this.turnLogic = new TurnLogic(this);
+    
+    // Inicializar IA ANTES de outros serviços
+    this.aiCoordinator = new AICoordinator(this);
+    
+    // Inicializar demais módulos
+    this.factionLogic = new FactionLogic(this);
+    this.disputeLogic = new DisputeLogic(this);
+    
+    this.feedbackHistory = [];
+    
+    console.log("✅ GameLogic inicializado com todos os serviços");
+  }
 
-constructor() {
-  console.log("🎮 GameLogic inicializando...");
-  
-  // Inicializar serviços principais (FASE 2)
-  this.initializer = new GameInitializer();
-  this.coordinator = new GameCoordinator(this);
-  this.validator = new ValidationService(this);
-  this.utils = GameUtils;
-  
-  // Inicializar submódulos de lógica
-  this.actionsLogic = new ActionLogic(this);
-  this.negotiationLogic = new NegotiationLogic(this);
-  
-  // Inicializar serviços do TurnLogic (FASE 4)
-  this.eventManager = new EventManager(this);
-  this.incomeCalculator = new IncomeCalculator(this);
-  this.phaseManager = new PhaseManager(this);
-  
-  // Inicializar TurnLogic com serviços injetados
-  this.turnLogic = new TurnLogic(this);
-  this.turnLogic.eventManager = this.eventManager;
-  this.turnLogic.incomeCalculator = this.incomeCalculator;
-  this.turnLogic.phaseManager = this.phaseManager;
-  
-  // Inicializar demais módulos
-  this.aiCoordinator = new AICoordinator(this);
-  this.factionLogic = new FactionLogic(this);
-  this.disputeLogic = new DisputeLogic(this);
-  
-  this.feedbackHistory = [];
-  
-  console.log("✅ GameLogic inicializado com todos os serviços");
-}
-
-  // ==================== INICIALIZAÇÃO (FACHADA) ====================
+  // ==================== INICIALIZAÇÃO ====================
 
   initializeGame() {
     console.log("🎮 Inicializando jogo via GameLogic...");
@@ -63,12 +61,21 @@ constructor() {
       return false;
     }
     
+    // Configurar IA com jogadores
+    if (gameState.players && this.aiCoordinator) {
+      this.aiCoordinator.initialize(gameState.players);
+    }
+    
     // Iniciar monitor de IA
-    this.aiCoordinator.startHealthMonitor();
+    if (this.aiCoordinator?.startHealthMonitor) {
+      this.aiCoordinator.startHealthMonitor();
+    }
     
     // Aplicar renda inicial ao jogador atual
     const currentPlayer = getCurrentPlayer();
-    this.turnLogic.applyIncome(currentPlayer);
+    if (currentPlayer) {
+      this.turnLogic.applyIncome(currentPlayer);
+    }
     
     // Configurar timeout de segurança
     setTimeout(() => {
@@ -78,157 +85,51 @@ constructor() {
       }
     }, 5000);
     
-    return true;
-  }
-
-  // ==================== AÇÕES DO JOGADOR (FACHADA) ====================
-
-  handleExplore() { 
-    const validation = this.validator.validateAction('explorar');
-    if (!validation.valid) {
-      this.showFeedback(validation.reason, 'error');
-      return;
-    }
-    this.actionsLogic.handleExplore(); 
-  }
-  
-  handleCollect() { 
-    const validation = this.validator.validateAction('recolher');
-    if (!validation.valid) {
-      this.showFeedback(validation.reason, 'error');
-      return;
-    }
-    this.actionsLogic.handleCollect(); 
-  }
-  
-  handleBuild(type) { 
-    const validation = this.validator.validateAction('construir', { structureType: type });
-    if (!validation.valid) {
-      this.showFeedback(validation.reason, 'error');
-      return;
-    }
-    this.actionsLogic.handleBuild(type); 
-  }
-
-  async handleDispute(region, attacker) {
-    if (!this.disputeLogic) {
-      this.showFeedback('Sistema de disputa não inicializado.', 'error');
-      return null;
-    }
-    
-    // Se região não for fornecida, usar a selecionada
-    if (!region && gameState.selectedRegionId !== null) {
-      region = gameState.regions[gameState.selectedRegionId];
-    }
-    
-    // Se atacante não for fornecido, usar jogador atual
-    if (!attacker) {
-      attacker = getCurrentPlayer();
-    }
-    
-    if (!region || !attacker) {
-      this.showFeedback('Dados insuficientes para disputa.', 'error');
-      return null;
-    }
-    
-    // Validar disputa
-    const validation = this.validator.validateAction('disputar', {
-      player: attacker,
-      regionId: region.id
-    });
-    
-    if (!validation.valid) {
-      this.showFeedback(validation.reason, 'error');
-      return null;
-    }
-    
-    return await this.disputeLogic.handleDispute(region, attacker);
-  }
-  
-  performAction(type) { 
-    return this.actionsLogic.consumeAction(); 
-  }
-
-  // ==================== NEGOCIAÇÃO (FACHADA) ====================
-
-  handleNegotiate() { 
-    const validation = this.validator.validateAction('negociar');
-    if (!validation.valid) {
-      this.showFeedback(validation.reason, 'error');
-      return;
-    }
-    this.negotiationLogic.handleNegotiate(); 
-  }
-  
-  handleSendNegotiation() { 
-    return this.negotiationLogic.handleSendNegotiation(); 
-  }
-  
-  handleNegResponse(accepted) { 
-    this.negotiationLogic.handleResponse(accepted); 
-  }
-  
-  executeNegotiation(neg) { 
-    return this.negotiationLogic._executeTrade(neg); 
-  }
-
-  // ==================== TURNO E FASES (FACHADA) ====================
-
-  handleEndTurn() { 
-    this.turnLogic.handleEndTurn(); 
-  }
-  
-  advancePhase() { 
-    return this.coordinator.advancePhase(); 
-  }
-  
-  applyIncomeForPlayer(player) { 
-    this.turnLogic.applyIncome(player); 
-  }
-
-  // ==================== IA (FACHADA) ====================
-
-  handleAITurn() { 
-    this.aiCoordinator.checkAndExecuteAITurn(); 
-  }
-  
-  checkAndExecuteAITurn() { 
-    this.aiCoordinator.checkAndExecuteAITurn(); 
-  }
-  
-  forceAIEndTurn() { 
-    this.aiCoordinator.forceAIEndTurn(); 
-  }
-
-  // ==================== VALIDAÇÕES (FACHADA) ====================
-
-  canAffordAction(actionType) {
-    const player = getCurrentPlayer();
-    
-    // Verificar se jogador está eliminado
-    if (player?.eliminated) {
-      return actionType === 'explorar' && gameState.selectedRegionId !== null;
-    }
-    
-    // Usar o validator
-    const validation = this.validator.validateAction(actionType);
-    return validation.valid;
-  }
-
-  validatePlayerAction(playerId, actionType) {
-    const player = getPlayerById(playerId);
-    
-    if (!player) return false;
-    
-    // Verificar se jogador está eliminado
-    if (player.eliminated) {
-      return actionType === 'dominate' || actionType === 'explorar';
-    }
+    // Notificar início do jogo
+    this.showFeedback('Jogo inicializado!', 'success');
     
     return true;
   }
 
-  // ==================== UTILITÁRIOS (FACHADA) ====================
+  // ==================== CONTROLE DE IA ====================
+
+  handleAITurn() {
+    if (!this.aiCoordinator) {
+      console.error('❌ AICoordinator não inicializado');
+      return;
+    }
+    
+    // Verificar se é realmente turno de IA
+    const currentPlayer = getCurrentPlayer();
+    if (!currentPlayer || !(currentPlayer.type === 'ai' || currentPlayer.isAI)) {
+      console.log('⏸️ Não é turno de IA');
+      return;
+    }
+    
+    this.aiCoordinator.checkAndExecuteAITurn();
+  }
+  
+  checkAndExecuteAITurn() {
+    this.handleAITurn();
+  }
+  
+  forceAIEndTurn() {
+    if (this.aiCoordinator) {
+      this.aiCoordinator.forceAIEndTurn();
+    }
+  }
+
+  // ==================== GETTERS IMPORTANTES ====================
+
+  getRemainingActions() {
+    return this.coordinator?.getRemainingActions() || 0;
+  }
+
+  getCurrentPhase() {
+    return this.coordinator?.getCurrentPhase() || 'renda';
+  }
+
+  // ==================== UTILITÁRIOS ====================
 
   showFeedback(message, type = 'info') {
     // Registrar no histórico
@@ -236,7 +137,9 @@ constructor() {
     if (this.feedbackHistory.length > 20) this.feedbackHistory.shift();
     
     // Capturar feedback na IA
-    this.aiCoordinator?.captureFeedback?.(message, type);
+    if (this.aiCoordinator?.captureFeedback) {
+      this.aiCoordinator.captureFeedback(message, type);
+    }
     
     // Mostrar na UI
     if (window.uiManager?.modals?.showFeedback) {
@@ -244,6 +147,9 @@ constructor() {
     } else {
       console.log(`[${type.toUpperCase()}] ${message}`);
     }
+    
+    // Atualizar UI imediatamente
+    this._updateUI();
   }
 
   async showConfirm(title, message) {
