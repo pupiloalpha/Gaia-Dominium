@@ -125,6 +125,9 @@ export class TurnLogic {
     // Aplicar renda ao novo jogador
     this.applyIncome(newPlayer);
 
+    // NOTIFICAÇÃO IMPORTANTE
+    this._notifyPlayerChange(currentPlayer, newPlayer);
+
     addActivityLog({
       type: 'turn',
       playerName: 'SISTEMA',
@@ -162,10 +165,71 @@ export class TurnLogic {
   }
 
   _resetPlayerTurn() {
-    // Resetar fase e ações
-    this.main.coordinator?.setCurrentPhase('renda');
-    this.main.coordinator?.clearRegionSelection();
+  const newPlayer = window.getCurrentPlayer?.();
+  const playerId = newPlayer?.id;
+  const playerName = newPlayer?.name || 'jogador desconhecido';
+  
+  console.log(`🔄 Resetando turno para ${playerName} (ID: ${playerId})`);
+  
+  // PASSO 1: Resetar fase para 'renda'
+  this.main.coordinator?.setCurrentPhase('renda');
+  
+  // PASSO 2: Resetar ações ESPECÍFICAS para este jogador
+  if (this.main.coordinator?.phaseManager) {
+    // Forçar reset completo
+    this.main.coordinator.phaseManager.actionsLeft = GAME_CONFIG.ACTIONS_PER_TURN;
+    
+    // Sincronizar com gameState
+    if (window.gameState) {
+      window.gameState.actionsLeft = GAME_CONFIG.ACTIONS_PER_TURN;
+    }
+    
+    console.log(`✅ Ações resetadas para ${playerName}: ${GAME_CONFIG.ACTIONS_PER_TURN}`);
+  } else {
+    console.error('❌ PhaseManager não encontrado');
   }
+  
+  // PASSO 3: Limpar seleção de região
+  this.main.coordinator?.clearRegionSelection();
+  
+  // PASSO 4: Resetar estado da negociação
+  if (window.gameState) {
+    window.gameState.selectedRegionId = null;
+    window.gameState.pendingNegotiation = null;
+  }
+  
+  // Log final de verificação
+  const finalActions = this.main.coordinator?.getRemainingActions() || 0;
+  console.log(`✅ Turno resetado: ${playerName} tem ${finalActions} ações disponíveis`);
+}
+
+_notifyPlayerChange(oldPlayer, newPlayer) {
+  // Atualizar UI imediatamente
+  this._updateGameUI();
+  
+  // Feedback específico baseado no tipo de jogador
+  if (newPlayer.type === 'ai' || newPlayer.isAI) {
+    this.main.showFeedback(`🤖 Turno de ${newPlayer.name}`, 'info');
+  } else {
+    // JOGADOR HUMANO - garantir que ações estão visíveis
+    const actionsLeft = this.main.coordinator?.getRemainingActions() || 0;
+    
+    // Feedback importante
+    this.main.showFeedback(`🎮 SUA VEZ, ${newPlayer.name}!`, 'success');
+    this.main.showFeedback(`Você tem ${actionsLeft} ações disponíveis`, 'info');
+    
+    // Verificar se ações estão realmente disponíveis
+    if (actionsLeft <= 0) {
+      console.warn(`⚠️ Jogador humano ${newPlayer.name} tem 0 ações! Forçando reset...`);
+      
+      // Forçar reset de emergência
+      if (this.main.coordinator?.phaseManager) {
+        this.main.coordinator.phaseManager.resetActions(newPlayer.id);
+        this._updateGameUI();
+      }
+    }
+  }
+}
 
   _handleGlobalEvents() {
     // Atualizar eventos globais
