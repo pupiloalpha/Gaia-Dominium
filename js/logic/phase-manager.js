@@ -4,12 +4,15 @@ import { UI_CONSTANTS, TURN_PHASES, GAME_CONFIG } from '../state/game-config.js'
 
 export class PhaseManager {
   constructor(gameLogic) {
-    this.main = gameLogic;
-    this.currentPhase = TURN_PHASES.RENDA;
-    this.phaseHistory = [];
-    this.phaseTimers = new Map();
-    this.actionsLeft = GAME_CONFIG.ACTIONS_PER_TURN;
-  }
+  this.main = gameLogic;
+  this.currentPhase = TURN_PHASES.RENDA;
+  this.phaseHistory = [];
+  this.phaseTimers = new Map();
+  this.actionsLeft = GAME_CONFIG.ACTIONS_PER_TURN;
+  
+  // SINCRONIZAÇÃO INICIAL
+  this._syncWithGameState();
+}
 
   // ==================== CONTROLE DE FASES ====================
 
@@ -82,16 +85,27 @@ export class PhaseManager {
     return this.actionsLeft;
   }
 
-  resetActions() {
-    const oldCount = this.actionsLeft;
-    this.actionsLeft = GAME_CONFIG.ACTIONS_PER_TURN;
-    
-    if (oldCount !== this.actionsLeft) {
-      console.log(`🔄 Ações resetadas: ${oldCount} → ${this.actionsLeft}`);
-    }
-    
-    return this.actionsLeft;
+  resetActions(playerId = null) {
+  const oldCount = this.getRemainingActions();
+  const newCount = GAME_CONFIG.ACTIONS_PER_TURN;
+  
+  // SINCRONIZAÇÃO CRÍTICA: Atualizar gameState E this.actionsLeft
+  if (window.gameState) {
+    window.gameState.actionsLeft = newCount;
   }
+  
+  this.actionsLeft = newCount;
+  
+  // Log para debug
+  if (oldCount !== newCount) {
+    console.log(`🔄 Ações resetadas para ${playerId ? `jogador ${playerId}` : 'geral'}: ${oldCount} → ${newCount}`);
+  }
+  
+  // Atualizar UI imediatamente
+  this._updateUI();
+  
+  return newCount;
+}
 
   // ==================== LÓGICA DE FASE ====================
 
@@ -187,6 +201,22 @@ export class PhaseManager {
         actionsLeft: this.actionsLeft
       }
     };
+  }
+
+  _syncWithGameState() {
+  // Garantir que o PhaseManager e gameState estão sincronizados
+  if (window.gameState) {
+    // Se actionsLeft estiver diferente, corrigir
+    if (this.actionsLeft !== window.gameState.actionsLeft) {
+      console.log(`🔄 Corrigindo sincronização: PhaseManager=${this.actionsLeft}, gameState=${window.gameState.actionsLeft}`);
+      this.actionsLeft = window.gameState.actionsLeft;
+    }
+    
+    // Sincronizar fase atual
+    if (this.currentPhase !== window.gameState.currentPhase) {
+      window.gameState.currentPhase = this.currentPhase;
+    }
+  }
   }
 
   // ==================== DEBUG ====================
