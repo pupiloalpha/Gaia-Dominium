@@ -1,11 +1,40 @@
-// game-coordinator.js - Coordenador Simplificado de Turnos
-import { gameState, getCurrentPlayer, addActivityLog } from '../state/game-state.js';
+// game-coordinator.js - Coordenador Simplificado de Turnos (Refatorado)
+import { 
+  gameState, 
+  getCurrentPlayer, 
+  addActivityLog,
+  setSelectedRegion,
+  clearRegionSelection as clearRegionSelectionState
+} from '../state/game-state.js';
 import { PhaseManager } from './phase-manager.js';
 
 export class GameCoordinator {
   constructor(gameLogic) {
     this.main = gameLogic;
     this.phaseManager = new PhaseManager(gameLogic);
+    this.setupPhaseEventListeners();
+  }
+
+  // ==================== CONFIGURAÇÃO DE EVENTOS ====================
+
+  setupPhaseEventListeners() {
+    window.addEventListener('phaseChanged', (event) => {
+      this.handlePhaseChange(event.detail);
+    });
+  }
+
+  handlePhaseChange({ oldPhase, newPhase, player }) {
+    console.log(`🔄 GameCoordinator: Fase alterada ${oldPhase} → ${newPhase} para ${player?.name}`);
+    
+    // Atualizar UI quando a fase mudar
+    setTimeout(() => {
+      if (window.uiManager) {
+        window.uiManager.updateUI();
+        if (window.uiManager.gameManager && window.uiManager.gameManager.footerManager) {
+          window.uiManager.gameManager.footerManager.updateFooter();
+        }
+      }
+    }, 100);
   }
 
   // ==================== CONTROLE DE FASES (DELEGADO) ====================
@@ -15,11 +44,25 @@ export class GameCoordinator {
   }
 
   setCurrentPhase(phase) {
-    return this.phaseManager.setCurrentPhase(phase);
+    const result = this.phaseManager.setCurrentPhase(phase);
+    
+    // Forçar atualização do gameState
+    if (gameState) {
+      gameState.currentPhase = result;
+    }
+    
+    return result;
   }
 
   advancePhase() {
-    return this.phaseManager.advancePhase();
+    const result = this.phaseManager.advancePhase();
+    
+    // Forçar atualização do gameState
+    if (gameState) {
+      gameState.currentPhase = result;
+    }
+    
+    return result;
   }
 
   // ==================== VALIDAÇÃO DE FASES ====================
@@ -33,11 +76,10 @@ export class GameCoordinator {
   startPlayerTurn(player) {
     if (!player) return false;
     
-    console.log(`▶️ Iniciando turno de ${player.name} (Turno ${gameState.turn})`);
+    console.log(`▶️ GameCoordinator: Iniciando turno de ${player.name} (Turno ${gameState.turn})`);
     
-    // Resetar fase e ações
-    this.phaseManager.setCurrentPhase('renda');
-    this.phaseManager.resetActions();
+    // Resetar fase para renda
+    this.setCurrentPhase('renda');
     
     addActivityLog({
       type: 'turn',
@@ -53,7 +95,7 @@ export class GameCoordinator {
   endPlayerTurn(player) {
     if (!player) return false;
     
-    console.log(`⏹️ Finalizando turno de ${player.name}`);
+    console.log(`⏹️ GameCoordinator: Finalizando turno de ${player.name}`);
     
     addActivityLog({
       type: 'turn',
@@ -80,7 +122,7 @@ export class GameCoordinator {
 
   selectRegion(regionId) {
     if (regionId === null || regionId === undefined) {
-      gameState.selectedRegionId = null;
+      clearRegionSelectionState();
       return null;
     }
     
@@ -90,12 +132,13 @@ export class GameCoordinator {
       return false;
     }
     
-    gameState.selectedRegionId = regionId;
+    setSelectedRegion(regionId);
     return regionId;
   }
 
   clearRegionSelection() {
-    return this.selectRegion(null);
+    clearRegionSelectionState();
+    return true;
   }
 
   // ==================== UTILITÁRIOS ====================
@@ -109,16 +152,35 @@ export class GameCoordinator {
     return player && (player.type === 'ai' || player.isAI);
   }
 
+  // ==================== MÉTODOS DE AJUDA ====================
+
+  forcePhaseUpdate() {
+    // Forçar sincronização entre PhaseManager e gameState
+    const currentPhase = this.getCurrentPhase();
+    if (gameState && gameState.currentPhase !== currentPhase) {
+      console.log(`🔄 Forçando sincronização de fase: ${gameState.currentPhase} → ${currentPhase}`);
+      gameState.currentPhase = currentPhase;
+    }
+    
+    // Forçar atualização da UI
+    if (window.uiManager) {
+      window.uiManager.updateUI();
+    }
+  }
+
   // ==================== DEBUG ====================
 
   getDebugInfo() {
     return {
       currentPhase: this.getCurrentPhase(),
+      gameStatePhase: gameState.currentPhase,
       remainingActions: this.getRemainingActions(),
+      gameStateActionsLeft: gameState.actionsLeft,
       currentPlayer: this.getCurrentPlayer()?.name || 'Nenhum',
       selectedRegion: gameState.selectedRegionId,
       turn: gameState.turn,
-      phaseManager: this.phaseManager.getDebugInfo()
+      phaseManager: this.phaseManager.getDebugInfo(),
+      isSynchronized: this.getCurrentPhase() === gameState.currentPhase
     };
   }
 }

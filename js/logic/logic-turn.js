@@ -1,4 +1,4 @@
-// logic-turn.js - Gerenciador de Turnos Simplificado
+// logic-turn.js - Gerenciador de Turnos Simplificado (Refatorado)
 import { 
   gameState, 
   addActivityLog, 
@@ -14,6 +14,7 @@ export class TurnLogic {
   constructor(gameLogic) {
     this.main = gameLogic;
     this.gameEnded = false;
+    this.incomeApplied = false;
   }
 
   // ==================== CONTROLE DE TURNOS ====================
@@ -32,6 +33,9 @@ export class TurnLogic {
       this._advanceToNextPlayer(currentPlayer);
       return;
     }
+    
+    const currentPhase = gameState.currentPhase;
+    console.log(`⏹️ Tentativa de finalizar turno na fase: ${currentPhase}`);
     
     // Verificar pendências na negociação (apenas humanos)
     if (!(currentPlayer.type === 'ai' || currentPlayer.isAI)) {
@@ -52,8 +56,39 @@ export class TurnLogic {
       }
     }
     
-    // Finalizar turno e avançar
-    this._finalizeTurn(currentPlayer);
+    // Processar baseado na fase atual
+    switch(currentPhase) {
+      case 'renda':
+        // Avançar para fase de ações
+        this.main.coordinator?.setCurrentPhase('acoes');
+        this.main.showFeedback('Fase de Ações iniciada!', 'info');
+        break;
+        
+      case 'acoes':
+        // Verificar se ainda há ações disponíveis
+        if (gameState.actionsLeft > 0) {
+          const confirm = await this.main.showConfirm(
+            'Avançar para Negociação',
+            `Você ainda tem ${gameState.actionsLeft} ação(ões) disponível(is).\n\nDeseja avançar para a fase de negociação mesmo assim?`
+          );
+          
+          if (!confirm) return;
+        }
+        
+        // Avançar para fase de negociação
+        this.main.coordinator?.setCurrentPhase('negociacao');
+        this.main.showFeedback('Fase de Negociação iniciada!', 'info');
+        break;
+        
+      case 'negociacao':
+        // Finalizar turno
+        this._finalizeTurn(currentPlayer);
+        break;
+        
+      default:
+        console.warn(`Fase desconhecida: ${currentPhase}, forçando finalização`);
+        this._finalizeTurn(currentPlayer);
+    }
   }
 
   // ==================== FINALIZAÇÃO DE TURNO ====================
@@ -125,9 +160,6 @@ export class TurnLogic {
     // Aplicar renda ao novo jogador
     this.applyIncome(newPlayer);
 
-    // NOTIFICAÇÃO IMPORTANTE
-    this._notifyPlayerChange(currentPlayer, newPlayer);
-
     addActivityLog({
       type: 'turn',
       playerName: 'SISTEMA',
@@ -165,71 +197,13 @@ export class TurnLogic {
   }
 
   _resetPlayerTurn() {
-  const newPlayer = window.getCurrentPlayer?.();
-  const playerId = newPlayer?.id;
-  const playerName = newPlayer?.name || 'jogador desconhecido';
-  
-  console.log(`🔄 Resetando turno para ${playerName} (ID: ${playerId})`);
-  
-  // PASSO 1: Resetar fase para 'renda'
-  this.main.coordinator?.setCurrentPhase('renda');
-  
-  // PASSO 2: Resetar ações ESPECÍFICAS para este jogador
-  if (this.main.coordinator?.phaseManager) {
-    // Forçar reset completo
-    this.main.coordinator.phaseManager.actionsLeft = GAME_CONFIG.ACTIONS_PER_TURN;
+    // Resetar flag de renda aplicada
+    this.incomeApplied = false;
     
-    // Sincronizar com gameState
-    if (window.gameState) {
-      window.gameState.actionsLeft = GAME_CONFIG.ACTIONS_PER_TURN;
-    }
-    
-    console.log(`✅ Ações resetadas para ${playerName}: ${GAME_CONFIG.ACTIONS_PER_TURN}`);
-  } else {
-    console.error('❌ PhaseManager não encontrado');
+    // Resetar fase para renda
+    this.main.coordinator?.setCurrentPhase('renda');
+    this.main.coordinator?.clearRegionSelection();
   }
-  
-  // PASSO 3: Limpar seleção de região
-  this.main.coordinator?.clearRegionSelection();
-  
-  // PASSO 4: Resetar estado da negociação
-  if (window.gameState) {
-    window.gameState.selectedRegionId = null;
-    window.gameState.pendingNegotiation = null;
-  }
-  
-  // Log final de verificação
-  const finalActions = this.main.coordinator?.getRemainingActions() || 0;
-  console.log(`✅ Turno resetado: ${playerName} tem ${finalActions} ações disponíveis`);
-}
-
-_notifyPlayerChange(oldPlayer, newPlayer) {
-  // Atualizar UI imediatamente
-  this._updateGameUI();
-  
-  // Feedback específico baseado no tipo de jogador
-  if (newPlayer.type === 'ai' || newPlayer.isAI) {
-    this.main.showFeedback(`🤖 Turno de ${newPlayer.name}`, 'info');
-  } else {
-    // JOGADOR HUMANO - garantir que ações estão visíveis
-    const actionsLeft = this.main.coordinator?.getRemainingActions() || 0;
-    
-    // Feedback importante
-    this.main.showFeedback(`🎮 SUA VEZ, ${newPlayer.name}!`, 'success');
-    this.main.showFeedback(`Você tem ${actionsLeft} ações disponíveis`, 'info');
-    
-    // Verificar se ações estão realmente disponíveis
-    if (actionsLeft <= 0) {
-      console.warn(`⚠️ Jogador humano ${newPlayer.name} tem 0 ações! Forçando reset...`);
-      
-      // Forçar reset de emergência
-      if (this.main.coordinator?.phaseManager) {
-        this.main.coordinator.phaseManager.resetActions(newPlayer.id);
-        this._updateGameUI();
-      }
-    }
-  }
-}
 
   _handleGlobalEvents() {
     // Atualizar eventos globais
@@ -241,7 +215,10 @@ _notifyPlayerChange(oldPlayer, newPlayer) {
   // ==================== RENDA ====================
 
   applyIncome(player) {
-    if (this.gameEnded) return;
+    if (this.gameEnded || this.incomeApplied) return;
+    
+    // Marcar que a renda foi aplicada
+    this.incomeApplied = true;
     
     let bonuses = { madeira: 0, pedra: 0, ouro: 0, agua: 0, pv: 0 };
     
@@ -263,6 +240,15 @@ _notifyPlayerChange(oldPlayer, newPlayer) {
       return;
     }
 
+    // Log da renda
+    addActivityLog({
+      type: 'income',
+      playerName: player.name,
+      action: 'recebeu renda',
+      details: `+${bonuses.pv} PV, Recursos: ${JSON.stringify(bonuses)}`,
+      turn: gameState.turn
+    });
+
     // Modal de renda para humanos
     if (player.id === gameState.currentPlayerIndex && 
         this.main.coordinator?.getCurrentPhase() === 'renda' &&
@@ -272,10 +258,21 @@ _notifyPlayerChange(oldPlayer, newPlayer) {
         if (window.uiManager?.modals?.showIncomeModal) {
           window.uiManager.modals.showIncomeModal(player, bonuses);
         } else {
-          // Fallback: avançar para fase de ações
-          this.main.coordinator?.setCurrentPhase('acoes');
+          // Fallback: avançar para fase de ações após 2 segundos
+          setTimeout(() => {
+            this.main.coordinator?.setCurrentPhase('acoes');
+            this.main.showFeedback('Renda aplicada! Fase de Ações iniciada.', 'info');
+          }, 2000);
         }
       }, 500);
+    } else if (player.type === 'ai' || player.isAI) {
+      // IA: log apenas
+      console.log(`🤖 ${player.name} recebeu renda: ${JSON.stringify(bonuses)}`);
+      
+      // Avançar para fase de ações após pequeno delay
+      setTimeout(() => {
+        this.main.coordinator?.setCurrentPhase('acoes');
+      }, 1000);
     }
   }
 
@@ -409,8 +406,10 @@ _notifyPlayerChange(oldPlayer, newPlayer) {
   getDebugInfo() {
     return {
       gameEnded: this.gameEnded,
+      incomeApplied: this.incomeApplied,
       currentTurn: gameState.turn,
       currentPlayer: getCurrentPlayer()?.name,
+      currentPhase: gameState.currentPhase,
       activePlayers: getActivePlayers?.()?.length || gameState.players.filter(p => !p.eliminated).length
     };
   }
