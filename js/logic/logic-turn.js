@@ -1,4 +1,4 @@
-// logic-turn.js - Gerenciador de Turnos (ATUALIZADO)
+// logic-turn.js - Gerenciador de Turnos Simplificado
 import { 
   gameState, 
   addActivityLog, 
@@ -14,7 +14,6 @@ export class TurnLogic {
   constructor(gameLogic) {
     this.main = gameLogic;
     this.gameEnded = false;
-    this.lastPlayerType = null; // Rastrear tipo do último jogador
   }
 
   // ==================== CONTROLE DE TURNOS ====================
@@ -60,10 +59,14 @@ export class TurnLogic {
   // ==================== FINALIZAÇÃO DE TURNO ====================
 
   _finalizeTurn(currentPlayer) {
-    // Armazenar tipo do jogador atual
-    this.lastPlayerType = currentPlayer.type === 'ai' || currentPlayer.isAI ? 'ai' : 'human';
+    // Verificar vitória antes de finalizar
+    this.checkVictory();
     
-    console.log(`⏹️ Finalizando turno de ${currentPlayer.name} (${this.lastPlayerType})`);
+    if (this.gameEnded) {
+      return;
+    }
+    
+    console.log(`⏹️ Finalizando turno de ${currentPlayer.name}`);
     
     addActivityLog({
       type: 'turn',
@@ -133,21 +136,24 @@ export class TurnLogic {
     // Verificar vitória novamente
     this.checkVictory();
     
-    // Notificar mudança de jogador
-    this._notifyPlayerChange(currentPlayer, newPlayer);
+    // Notificar UI
+    this._updateGameUI();
     
+    this.main.showFeedback(`Turno de ${newPlayer.name}`, 'info');
+
     // GATILHO PARA IA
     if (!this.gameEnded) {
       setTimeout(() => {
-        if (newPlayer && !newPlayer.eliminated && (newPlayer.type === 'ai' || newPlayer.isAI)) {
-          console.log(`🤖 Iniciando turno da IA: ${newPlayer.name}`);
+        const nextPlayer = getCurrentPlayer();
+        
+        if (nextPlayer && !nextPlayer.eliminated && (nextPlayer.type === 'ai' || nextPlayer.isAI)) {
+          console.log(`🤖 Iniciando turno da IA: ${nextPlayer.name}`);
           
-          // Pequeno delay antes de iniciar IA
           setTimeout(() => {
             if (this.main.aiCoordinator) {
               this.main.aiCoordinator.checkAndExecuteAITurn();
             }
-          }, 2000);
+          }, 1500);
         }
       }, 1000);
     }
@@ -155,75 +161,162 @@ export class TurnLogic {
     saveGame();
   }
 
-  // ==================== RESET DE TURNO ====================
-
   _resetPlayerTurn() {
-    const newPlayer = getCurrentPlayer();
-    const playerId = newPlayer?.id;
-    
-    console.log(`🔄 Resetando turno para ${newPlayer?.name || 'jogador desconhecido'}`);
-    
-    // Resetar fase para 'renda'
+    // Resetar fase e ações
     this.main.coordinator?.setCurrentPhase('renda');
-    
-    // Resetar ações especificamente para este jogador
-    if (this.main.coordinator?.phaseManager) {
-      this.main.coordinator.phaseManager.resetActions(playerId);
-    }
-    
-    // Limpar seleção de região
     this.main.coordinator?.clearRegionSelection();
-    
-    // Resetar estado da negociação
-    if (gameState) {
-      gameState.selectedRegionId = null;
-      gameState.pendingNegotiation = null;
-    }
-    
-    console.log(`✅ Turno resetado: ${newPlayer?.name} tem ${this.main.coordinator?.getRemainingActions()} ações`);
   }
 
-  // ==================== NOTIFICAÇÃO DE MUDANÇA ====================
+  _handleGlobalEvents() {
+    // Atualizar eventos globais
+    if (this.main.eventManager) {
+      this.main.eventManager.updateEventTurn(gameState);
+    }
+  }
 
-  _notifyPlayerChange(oldPlayer, newPlayer) {
-    // Atualizar UI imediatamente
-    this._updateGameUI();
+  // ==================== RENDA ====================
+
+  applyIncome(player) {
+    if (this.gameEnded) return;
     
-    // Feedback específico baseado no tipo de jogador
-    if (newPlayer.type === 'ai' || newPlayer.isAI) {
-      this.main.showFeedback(`🤖 Turno de ${newPlayer.name}`, 'info');
+    let bonuses = { madeira: 0, pedra: 0, ouro: 0, agua: 0, pv: 0 };
+    
+    // Usar o IncomeCalculator se disponível
+    if (this.main.incomeCalculator) {
+      bonuses = this.main.incomeCalculator.calculatePlayerIncome(player, gameState);
     } else {
-      this.main.showFeedback(`🎮 Sua vez, ${newPlayer.name}!`, 'success');
+      // Fallback para cálculo básico
+      bonuses = this._calculateBasicIncome(player);
+    }
+    
+    // Aplicar bônus
+    this._applyIncomeBonuses(player, bonuses);
+    
+    // Verificar vitória IMEDIATAMENTE
+    if (player.victoryPoints >= GAME_CONFIG.VICTORY_POINTS) {
+      console.log(`🎯 Vitória na renda: ${player.name} atingiu ${player.victoryPoints} PV`);
+      this._declareVictory(player);
+      return;
+    }
+
+    // Modal de renda para humanos
+    if (player.id === gameState.currentPlayerIndex && 
+        this.main.coordinator?.getCurrentPhase() === 'renda' &&
+        !(player.type === 'ai' || player.isAI)) {
       
-      // Se vinha de uma IA, garantir que ações estão disponíveis
-      if (this.lastPlayerType === 'ai') {
-        const actionsLeft = this.main.coordinator?.getRemainingActions() || 0;
-        this.main.showFeedback(`Você tem ${actionsLeft} ações disponíveis`, 'info');
-      }
+      setTimeout(() => {
+        if (window.uiManager?.modals?.showIncomeModal) {
+          window.uiManager.modals.showIncomeModal(player, bonuses);
+        } else {
+          // Fallback: avançar para fase de ações
+          this.main.coordinator?.setCurrentPhase('acoes');
+        }
+      }, 500);
     }
   }
 
-  // ==================== ATUALIZAÇÃO DE UI ====================
+  _calculateBasicIncome(player) {
+    const bonuses = { madeira: 2, pedra: 1, ouro: 1, agua: 2, pv: 1 };
+    
+    // Adicionar bônus por região
+    player.regions.forEach(regionId => {
+      const region = gameState.regions[regionId];
+      if (!region) return;
+      
+      switch(region.biome) {
+        case 'Floresta Tropical':
+        case 'Floresta Temperada':
+          bonuses.madeira += 1;
+          break;
+        case 'Savana':
+          bonuses.ouro += 1;
+          break;
+        case 'Pântano':
+          bonuses.agua += 2;
+          bonuses.pedra += 1;
+          break;
+      }
+    });
+    
+    return bonuses;
+  }
+
+  _applyIncomeBonuses(player, bonuses) {
+    Object.keys(bonuses).forEach(k => {
+      if (k === 'pv') {
+        player.victoryPoints += bonuses[k];
+      } else {
+        player.resources[k] = (player.resources[k] || 0) + bonuses[k];
+      }
+    });
+  }
+
+  // ==================== VITÓRIA ====================
+
+  checkVictory() {
+    if (this.gameEnded) return;
+    
+    // Verificar vitória por pontos
+    const winner = gameState.players.find(p => p.victoryPoints >= GAME_CONFIG.VICTORY_POINTS);
+    if (winner) {
+      console.log(`🎉 Vitória detectada: ${winner.name} com ${winner.victoryPoints} PV`);
+      this._declareVictory(winner);
+      return;
+    }
+    
+    // Verificar vitória por eliminação
+    const activePlayers = getActivePlayers?.() || gameState.players.filter(p => !p.eliminated);
+    
+    if (activePlayers.length === 1) {
+      const eliminationWinner = activePlayers[0];
+      console.log(`🎉 Vitória por eliminação: ${eliminationWinner.name} é o único jogador ativo`);
+      this._declareVictory(eliminationWinner);
+      return;
+    }
+    
+    if (activePlayers.length === 0) {
+      console.log('💀 Todos os jogadores foram eliminados!');
+      this.gameEnded = true;
+      
+      if (window.uiManager?.modals?.showNoWinnerModal) {
+        window.uiManager.modals.showNoWinnerModal();
+      }
+      
+      this._disableGameActions();
+    }
+  }
+
+  _declareVictory(winner) {
+    this.gameEnded = true;
+    
+    const victoryMessage = `${winner.name} venceu o jogo com ${winner.victoryPoints} PV!`;
+    this.main.showFeedback(victoryMessage, 'success');
+    
+    addActivityLog({
+      type: 'victory',
+      playerName: winner.name,
+      action: '🏆 VENCEU O JOGO 🏆',
+      details: victoryMessage,
+      turn: gameState.turn
+    });
+    
+    setTimeout(() => {
+      if (window.uiManager?.modals?.openVictoryModal) {
+        window.uiManager.modals.openVictoryModal(winner);
+      }
+    }, 1000);
+    
+    this._disableGameActions();
+    saveGame();
+  }
+
+  // ==================== UTILITÁRIOS ====================
 
   _updateGameUI() {
-    // Atualização imediata da interface
     if (window.uiManager) {
       window.uiManager.updateUI();
-      
-      // Forçar atualização do footer
-      if (window.uiManager.gameManager?.updateFooter) {
-        setTimeout(() => {
-          window.uiManager.gameManager.updateFooter();
-          
-          // Atualizar também o indicador de fase
-          const phaseIndicator = document.getElementById('phaseIndicator');
-          if (phaseIndicator && this.main.coordinator) {
-            const phaseName = this.main.coordinator.phaseManager?.getPhaseDisplayName();
-            if (phaseName) {
-              phaseIndicator.textContent = phaseName;
-            }
-          }
-        }, 50);
+      if (window.uiManager.gameManager) {
+        setTimeout(() => window.uiManager.gameManager.updateFooter(), 100);
       }
     }
   }
