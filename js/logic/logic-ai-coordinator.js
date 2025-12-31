@@ -127,26 +127,60 @@ export class AICoordinator {
   }
 
   async _handleActionsPhaseAI(player, ai) {
-    console.log(`🤖 ${player.name} executando ações`);
+  const totalActions = this.main.coordinator?.getRemainingActions() || 0;
+  
+  // Mostrar início das ações
+  this._showAIFeedback(`🤖 ${player.name} começando ${totalActions} ação(ões)...`, 'info');
+  
+  let actionCount = 0;
+  
+  // Executar ações enquanto houver disponíveis
+  while (this.main.coordinator?.getRemainingActions() > 0) {
+    actionCount++;
     
-    // Executar até esgotar ações
-    while (this.main.coordinator?.getRemainingActions() > 0) {
-      await this._delay(800);
+    // Pequeno delay entre ações
+    await this._delay(1200);
+    
+    try {
+      // Mostrar ação atual
+      this._showAIFeedback(`🤖 ${player.name} executando ação ${actionCount}/${totalActions}`, 'info');
       
-      try {
-        await ai.takeTurn?.(gameState, window.uiManager);
-      } catch (error) {
-        console.error(`🤖 Erro na ação da IA:`, error);
+      // Executar ação
+      const success = await ai.executeActionPhase?.(window.gameState, window.uiManager);
+      
+      if (success !== false) {
+        // Consumir ação
+        this.main.coordinator?.consumeAction();
+        
+        // Atualizar UI após cada ação
+        this._updateUI();
+        
+        // Feedback da ação
+        this._showAIFeedback(`✅ ${player.name} completou ação ${actionCount}`, 'success');
+      } else {
+        this._showAIFeedback(`⚠️ ${player.name} não pôde executar ação ${actionCount}`, 'warning');
         break;
       }
       
-      // Atualizar contador de ações
-      this.main.coordinator?.consumeAction();
+    } catch (error) {
+      console.error(`🤖 Erro na ação da IA:`, error);
+      this._showAIFeedback(`❌ Erro na ação de ${player.name}`, 'error');
+      break;
     }
-    
-    // Avançar para negociação
+  }
+  
+  // Feedback final
+  if (actionCount > 0) {
+    this._showAIFeedback(`✅ ${player.name} completou ${actionCount} ação(ões)`, 'success');
+  } else {
+    this._showAIFeedback(`⚠️ ${player.name} não executou ações`, 'warning');
+  }
+  
+  // Avançar para negociação se ainda houver ações
+  if (this.main.coordinator?.getRemainingActions() > 0) {
     this._setupNegotiationPhase();
   }
+}
 
   async _handleNegotiationPhaseAI(player, ai) {
     console.log(`🤖 ${player.name} na fase de negociação`);
@@ -264,6 +298,45 @@ export class AICoordinator {
     console.log(`📝 Feedback IA [${type}]: ${message}`);
   }
 
+  // ==================== FEEDBACK E UI ====================
+
+_showAIFeedback(message, type = 'info') {
+  // Mostrar feedback na interface
+  if (this.main?.showFeedback) {
+    this.main.showFeedback(message, type);
+  } else if (window.uiManager?.modals?.showFeedback) {
+    window.uiManager.modals.showFeedback(message, type);
+  }
+  
+  // Registrar no log de atividades
+  if (window.addActivityLog) {
+    window.addActivityLog({
+      type: 'ai_action',
+      playerName: '🤖 IA',
+      action: message,
+      details: '',
+      turn: window.gameState?.turn || 0,
+      isEvent: true
+    });
+  }
+  
+  console.log(`🤖 [${type.toUpperCase()}] ${message}`);
+}
+
+_updateUI() {
+  // Forçar atualização imediata da interface
+  if (window.uiManager) {
+    window.uiManager.updateUI();
+    
+    // Atualizar footer especificamente
+    if (window.uiManager.gameManager?.updateFooter) {
+      setTimeout(() => {
+        window.uiManager.gameManager.updateFooter();
+      }, 50);
+    }
+  }
+}
+  
   // ==================== UTILITÁRIOS ====================
 
   _delay(ms) {
