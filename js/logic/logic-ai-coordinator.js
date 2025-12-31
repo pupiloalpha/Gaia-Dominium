@@ -1,6 +1,7 @@
-// logic-ai-coordinator.js - Coordenador Unificado de IA
+// logic-ai-coordinator.js - Coordenador Unificado de IA (ATUALIZADO)
 import { 
-  gameState, getCurrentPlayer, getAllAIPlayers, getActivePlayers
+  gameState, getCurrentPlayer, getAllAIPlayers, getActivePlayers,
+  addActivityLog
 } from '../state/game-state.js';
 
 export class AICoordinator {
@@ -11,6 +12,7 @@ export class AICoordinator {
     this.feedbackHistory = [];
     this.aiInstances = new Map();
     this.MAX_TURN_TIME = 30000;
+    this.currentAIActions = 0;
   }
 
   // ==================== INICIALIZAÇÃO ====================
@@ -25,17 +27,6 @@ export class AICoordinator {
     });
     
     this.startHealthMonitor();
-  }
-
-  _createAIBrain(playerId, difficulty) {
-    // Usar o AIBrain existente do sistema
-    const ai = window.aiSystem?.createAI?.(playerId, difficulty) || {
-      playerId,
-      difficulty,
-      takeTurn: async () => { console.log('🤖 Turno de IA simulado'); }
-    };
-    
-    return ai;
   }
 
   // ==================== CONTROLE DE TURNOS ====================
@@ -53,6 +44,7 @@ export class AICoordinator {
     }
 
     this.inProgress = true;
+    this.currentAIActions = 0;
     const startTime = Date.now();
 
     try {
@@ -64,13 +56,13 @@ export class AICoordinator {
         return;
       }
 
-      console.log(`🤖 Executando turno para ${currentPlayer.name}`);
+      console.log(`🤖 Executando turno para ${currentPlayer.name} (Fase: ${gameState.currentPhase})`);
+      
+      // Notificar início do turno da IA
+      this._showAIFeedback(`🤖 Turno de ${currentPlayer.name} iniciado`, 'info');
       
       // Executar baseado na fase atual
       await this._executePhaseAI(currentPlayer, ai);
-      
-      // Verificar conclusão
-      await this._ensureAITurnCompletion(currentPlayer);
       
     } catch (error) {
       console.error('🤖 Erro no turno da IA:', error);
@@ -82,20 +74,10 @@ export class AICoordinator {
       if (elapsed > this.MAX_TURN_TIME) {
         console.warn(`⚠️ Turno de IA demorou muito: ${elapsed}ms`);
       }
+      
+      // Atualizar UI final
+      this._updateUI();
     }
-  }
-
-  _shouldExecuteAI(player) {
-    if (!player) return false;
-    if (player.eliminated) return false;
-    
-    const isAI = player.type === 'ai' || player.isAI;
-    if (!isAI) {
-      console.log(`⏸️ Não é turno de IA. Jogador: ${player.name}`);
-      return false;
-    }
-    
-    return true;
   }
 
   // ==================== EXECUÇÃO POR FASE ====================
@@ -119,152 +101,187 @@ export class AICoordinator {
   }
 
   async _handleIncomePhaseAI(player) {
-    console.log(`🤖 ${player.name} na fase de renda`);
-    await this._delay(1000);
+    this._showAIFeedback(`🤖 ${player.name} recebendo renda...`, 'info');
+    await this._delay(1500);
     
     // Avançar para fase de ações
     this.main.coordinator?.setCurrentPhase('acoes');
+    this._updateUI();
   }
 
   async _handleActionsPhaseAI(player, ai) {
-    console.log(`🤖 ${player.name} executando ações`);
+    const totalActions = this.main.coordinator?.getRemainingActions() || 0;
+    this._showAIFeedback(`🤖 ${player.name} executando ${totalActions} ações...`, 'info');
     
-    // Executar até esgotar ações
+    // Executar ações enquanto houver disponíveis
     while (this.main.coordinator?.getRemainingActions() > 0) {
-      await this._delay(800);
+      this.currentAIActions++;
+      
+      // Pequeno delay entre ações
+      await this._delay(1200);
       
       try {
-        await ai.takeTurn?.(gameState, window.uiManager);
+        // Mostrar ação atual
+        this._showAIFeedback(`🤖 ${player.name} executando ação ${this.currentAIActions}/${totalActions}`, 'info');
+        
+        // Executar ação
+        const success = await ai.takeTurn?.(gameState, window.uiManager);
+        
+        if (success) {
+          // Consumir ação
+          this.main.coordinator?.consumeAction();
+          
+          // Atualizar UI após cada ação
+          this._updateUI();
+          
+          // Feedback da ação
+          this._showAIFeedback(`🤖 ${player.name} completou ação ${this.currentAIActions}`, 'success');
+        } else {
+          this._showAIFeedback(`🤖 ${player.name} não pôde executar ação`, 'warning');
+          break;
+        }
+        
       } catch (error) {
         console.error(`🤖 Erro na ação da IA:`, error);
+        this._showAIFeedback(`🤖 Erro na ação de ${player.name}`, 'error');
         break;
       }
-      
-      // Atualizar contador de ações
-      this.main.coordinator?.consumeAction();
     }
     
-    // Avançar para negociação
-    this._setupNegotiationPhase();
+    // Avançar para negociação se ainda houver ações
+    if (this.main.coordinator?.getRemainingActions() > 0) {
+      this._setupNegotiationPhase();
+    } else {
+      this._showAIFeedback(`🤖 ${player.name} completou todas as ações`, 'success');
+    }
   }
 
   async _handleNegotiationPhaseAI(player, ai) {
-    console.log(`🤖 ${player.name} na fase de negociação`);
+    this._showAIFeedback(`🤖 ${player.name} na fase de negociação`, 'info');
     
     try {
       // Processar propostas pendentes
       if (ai.processPendingNegotiations) {
+        this._showAIFeedback(`🤖 ${player.name} processando propostas...`, 'info');
         await ai.processPendingNegotiations(gameState);
         await this._delay(1000);
       }
       
       // Enviar proposta se possível
       if (this.main.coordinator?.getRemainingActions() > 0 && player.resources.ouro >= 1) {
+        this._showAIFeedback(`🤖 ${player.name} preparando proposta...`, 'info');
         await this._sendAINegotiationProposal(ai, player);
+      }
+      
+      // Consumir ação de negociação
+      if (this.main.coordinator?.getRemainingActions() > 0) {
+        this.main.coordinator?.consumeAction();
       }
       
     } catch (error) {
       console.error(`🤖 Erro na negociação da IA:`, error);
     }
+    
+    this._showAIFeedback(`🤖 ${player.name} completou negociação`, 'success');
   }
 
-  // ==================== GERENCIAMENTO DE NEGOCIAÇÃO ====================
+  // ==================== FEEDBACK E UI ====================
 
-  async _sendAINegotiationProposal(ai, player) {
-    const target = this._findNegotiationTarget(player);
-    if (!target) {
-      console.log(`🤖 ${player.name} não encontrou alvo para negociação`);
-      return;
+  _showAIFeedback(message, type = 'info') {
+    // Mostrar feedback na interface
+    if (this.main?.showFeedback) {
+      this.main.showFeedback(message, type);
+    } else if (window.uiManager?.modals?.showFeedback) {
+      window.uiManager.modals.showFeedback(message, type);
     }
-
-    console.log(`🤖 ${player.name} enviando proposta para ${target.name}`);
     
-    // Usar o serviço de negociação da IA
-    if (ai.negotiationService?._createProposal) {
-      const proposal = ai.negotiationService._createProposal(player, target, gameState);
-      if (proposal && ai.negotiationService._sendProposal) {
-        await ai.negotiationService._sendProposal(proposal, target.id, gameState);
+    // Registrar no log de atividades
+    addActivityLog({
+      type: 'ai_action',
+      playerName: '🤖 IA',
+      action: message,
+      details: '',
+      turn: gameState.turn,
+      isEvent: true
+    });
+    
+    console.log(`🤖 [${type.toUpperCase()}] ${message}`);
+  }
+
+  _updateUI() {
+    // Forçar atualização imediata da interface
+    if (window.uiManager) {
+      window.uiManager.updateUI();
+      
+      // Atualizar footer especificamente
+      if (window.uiManager.gameManager?.updateFooter) {
+        setTimeout(() => {
+          window.uiManager.gameManager.updateFooter();
+        }, 50);
+      }
+      
+      // Atualizar mapa
+      if (window.uiManager.mapManager?.renderRegions) {
+        setTimeout(() => {
+          window.uiManager.mapManager.renderRegions();
+        }, 100);
       }
     }
   }
 
-  _findNegotiationTarget(currentPlayer) {
-    const otherPlayers = gameState.players.filter(p => 
-      p.id !== currentPlayer.id && 
-      p.resources.ouro >= 1 &&
-      !p.eliminated
-    );
-    
-    if (otherPlayers.length === 0) return null;
-    
-    // Priorizar jogadores com menos PV
-    return otherPlayers.sort((a, b) => a.victoryPoints - b.victoryPoints)[0];
-  }
+  // ==================== CONTROLE DE NEGOCIAÇÃO ====================
 
-  // ==================== CONTROLE DE SAÚDE ====================
-
-  startHealthMonitor() {
-    if (this.healthMonitor) clearInterval(this.healthMonitor);
+  _setupNegotiationPhase() {
+    this._showAIFeedback(`🤖 Avançando para fase de negociação`, 'info');
     
-    this.healthMonitor = setInterval(() => {
-      if (!this.inProgress) return;
-      
-      // Verificar se a IA está travada
-      const recentErrors = this.feedbackHistory.filter(f => 
-        f.type === 'error' && (Date.now() - f.timestamp) < 10000
-      );
-      
-      if (recentErrors.length > 3) {
-        console.warn('⚠️ IA com muitos erros recentes - forçando término');
-        this.forceAIEndTurn();
-      }
-    }, 5000);
+    // Avançar fase
+    this.main.coordinator?.setCurrentPhase('negociacao');
+    
+    // Resetar ações para 1 (apenas negociação)
+    if (this.main.coordinator?.phaseManager) {
+      this.main.coordinator.phaseManager.resetActions();
+    }
+    
+    this._updateUI();
   }
 
   // ==================== CONCLUSÃO DE TURNO ====================
 
   async _ensureAITurnCompletion(player) {
-    // Se não há mais ações, finalizar turno
+    // Verificar se todas as ações foram usadas
     if (this.main.coordinator?.getRemainingActions() <= 0) {
-      console.log(`🤖 ${player.name} finalizando turno`);
+      this._showAIFeedback(`🤖 ${player.name} finalizando turno...`, 'info');
       
+      // Pequeno delay antes de finalizar
+      await this._delay(1000);
+      
+      // Finalizar turno
       if (this.main.turnLogic?.handleEndTurn) {
         await this.main.turnLogic.handleEndTurn();
       }
     }
   }
 
-  _setupNegotiationPhase() {
-    this.main.coordinator?.setCurrentPhase('negociacao');
-    this.main.coordinator?.consumeAction(); // Usar a ação de negociação
-    
-    console.log(`🤖 ${getCurrentPlayer()?.name} entrou na fase de negociação`);
-  }
-
-  // ==================== CONTROLE DE ERROS ====================
-
-  _handleAIError() {
-    console.log('🤖 Lidando com erro da IA');
-    this.forceAIEndTurn();
-  }
-
-  forceAIEndTurn() {
-    console.log('🚨 Forçando término do turno da IA');
-    this.inProgress = false;
-    
-    if (this.main.turnLogic?.handleEndTurn) {
-      this.main.turnLogic.handleEndTurn();
-    }
-  }
-
-  captureFeedback(message, type) {
-    this.feedbackHistory.push({ message, type, timestamp: Date.now() });
-    if (this.feedbackHistory.length > 10) this.feedbackHistory.shift();
-    
-    console.log(`📝 Feedback IA [${type}]: ${message}`);
-  }
-
   // ==================== UTILITÁRIOS ====================
+
+  _shouldExecuteAI(player) {
+    if (!player) return false;
+    if (player.eliminated) return false;
+    
+    const isAI = player.type === 'ai' || player.isAI;
+    if (!isAI) {
+      console.log(`⏸️ Não é turno de IA. Jogador: ${player.name}`);
+      return false;
+    }
+    
+    // Verificar se o jogo está em andamento
+    if (!gameState.gameStarted) {
+      console.log('⏸️ Jogo não iniciado');
+      return false;
+    }
+    
+    return true;
+  }
 
   _delay(ms) {
     return new Promise(resolve => setTimeout(resolve, ms));
