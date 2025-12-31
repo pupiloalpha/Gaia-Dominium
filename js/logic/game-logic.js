@@ -228,23 +228,41 @@ constructor() {
     return true;
   }
 
+  // ==================== GETTERS IMPORTANTES ====================
+
+getRemainingActions() {
+  return this.coordinator?.getRemainingActions() || 0;
+}
+
+getCurrentPhase() {
+  return this.coordinator?.getCurrentPhase() || 'renda';
+}
+
+isCurrentPlayerAI() {
+  const player = this.getCurrentPlayer();
+  return player && (player.type === 'ai' || player.isAI);
+}
+  
   // ==================== UTILITÁRIOS (FACHADA) ====================
 
   showFeedback(message, type = 'info') {
-    // Registrar no histórico
-    this.feedbackHistory.push({ message, type, timestamp: Date.now() });
-    if (this.feedbackHistory.length > 20) this.feedbackHistory.shift();
-    
-    // Capturar feedback na IA
-    this.aiCoordinator?.captureFeedback?.(message, type);
-    
-    // Mostrar na UI
-    if (window.uiManager?.modals?.showFeedback) {
-      window.uiManager.modals.showFeedback(message, type);
-    } else {
-      console.log(`[${type.toUpperCase()}] ${message}`);
-    }
+  // Registrar no histórico
+  this.feedbackHistory.push({ message, type, timestamp: Date.now() });
+  if (this.feedbackHistory.length > 20) this.feedbackHistory.shift();
+  
+  // Capturar feedback na IA
+  this.aiCoordinator?.captureFeedback?.(message, type);
+  
+  // Mostrar na UI
+  if (window.uiManager?.modals?.showFeedback) {
+    window.uiManager.modals.showFeedback(message, type);
+  } else {
+    console.log(`[${type.toUpperCase()}] ${message}`);
   }
+  
+  // ATUALIZAÇÃO CRÍTICA: Forçar atualização da UI
+  this._updateUI();
+}
 
   async showConfirm(title, message) {
     if (window.uiManager?.modals?.showConfirm) {
