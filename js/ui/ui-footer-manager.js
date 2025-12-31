@@ -296,40 +296,56 @@ export class FooterManager {
         }
     }
 
-    _updateEndTurnButton(player) {
-        if (!this.endTurnBtn) return;
-        
-        const pendingNegotiations = getPendingNegotiationsForPlayer(player.id);
-        const hasPending = pendingNegotiations.length > 0;
-        
-        switch(gameState.currentPhase) {
-            case 'acoes':
-                this.endTurnBtn.disabled = false;
+_updateEndTurnButton(player) {
+    if (!this.endTurnBtn) return;
+    
+    const pendingNegotiations = getPendingNegotiationsForPlayer(player.id);
+    const hasPending = pendingNegotiations.length > 0;
+    const currentPhase = gameState.currentPhase || 'renda';
+    
+    // Resetar classes
+    this.endTurnBtn.className = 'px-4 py-2 rounded-md text-white font-semibold transition';
+    
+    switch(currentPhase) {
+        case 'renda':
+            this.endTurnBtn.disabled = false;
+            this.endTurnBtn.textContent = 'Avançar para Ações';
+            this.endTurnBtn.classList.add('bg-blue-600', 'hover:bg-blue-700');
+            this.endTurnBtn.title = 'Avançar para a fase de Ações';
+            break;
+            
+        case 'acoes':
+            this.endTurnBtn.disabled = false;
+            
+            if (gameState.actionsLeft > 0) {
+                this.endTurnBtn.textContent = `Ir para Negociação (${gameState.actionsLeft} ação(ões) restante(s))`;
+                this.endTurnBtn.classList.add('bg-yellow-600', 'hover:bg-yellow-700');
+                this.endTurnBtn.title = `Avançar para Negociação (ainda tem ${gameState.actionsLeft} ação(ões))`;
+            } else {
                 this.endTurnBtn.textContent = 'Ir para Negociação';
-                this.endTurnBtn.className = 'px-4 py-2 bg-blue-600 hover:bg-blue-700 rounded-md text-white font-semibold transition';
-                break;
-            case 'negociacao':
-                this.endTurnBtn.disabled = false;
-                
-                if (hasPending) {
-                    this.endTurnBtn.textContent = `Terminar Turno (${pendingNegotiations.length} pendente(s))`;
-                    this.endTurnBtn.className = 'px-4 py-2 bg-yellow-600 hover:bg-yellow-700 rounded-md text-white font-semibold transition animate-pulse';
-                    this.endTurnBtn.title = `Você tem ${pendingNegotiations.length} proposta(s) de negociação pendente(s). Clique para verificar antes de terminar o turno.`;
-                } else {
-                    this.endTurnBtn.textContent = 'Terminar Turno';
-                    this.endTurnBtn.className = 'px-4 py-2 bg-green-600 hover:bg-green-700 rounded-md text-white font-semibold transition';
-                    this.endTurnBtn.title = 'Finalizar seu turno e passar para o próximo jogador';
-                }
-                break;
-            case 'renda':
-                this.endTurnBtn.disabled = true;
-                this.endTurnBtn.textContent = 'Aguardando...';
-                this.endTurnBtn.className = 'px-4 py-2 bg-gray-600 rounded-md text-white font-semibold';
-                break;
-            default:
-                this.endTurnBtn.disabled = false;
+                this.endTurnBtn.classList.add('bg-green-600', 'hover:bg-green-700');
+                this.endTurnBtn.title = 'Avançar para a fase de Negociação';
+            }
+            break;
+            
+        case 'negociacao':
+            this.endTurnBtn.disabled = false;
+            
+            if (hasPending) {
+                this.endTurnBtn.textContent = `Terminar Turno (${pendingNegotiations.length} pendente(s))`;
+                this.endTurnBtn.classList.add('bg-yellow-600', 'hover:bg-yellow-700', 'animate-pulse');
+                this.endTurnBtn.title = `Você tem ${pendingNegotiations.length} proposta(s) pendente(s). Clique para verificar antes de terminar o turno.`;
+            } else {
                 this.endTurnBtn.textContent = 'Terminar Turno';
-                this.endTurnBtn.className = 'px-4 py-2 bg-blue-600 hover:bg-blue-700 rounded-md text-white font-semibold transition';
-        }
+                this.endTurnBtn.classList.add('bg-green-600', 'hover:bg-green-700');
+                this.endTurnBtn.title = 'Finalizar seu turno e passar para o próximo jogador';
+            }
+            break;
+            
+        default:
+            this.endTurnBtn.disabled = true;
+            this.endTurnBtn.textContent = 'Aguardando...';
+            this.endTurnBtn.classList.add('bg-gray-600');
     }
+}
 }
