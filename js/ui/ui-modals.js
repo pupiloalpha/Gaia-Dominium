@@ -702,6 +702,21 @@ addStructureSelectionFeedback(structureName) {
   // ==================== MODAL DE RENDA ====================
 
 showIncomeModal(player, bonuses) {
+    // VERIFICAÇÃO DE SEGURANÇA
+    if (gameState.currentPhase !== 'renda' || gameState.currentPlayerIndex !== player.id) {
+        console.error(`❌ Tentativa de abrir modal de renda em fase incorreta: ${gameState.currentPhase} para jogador ${player.id}`);
+        
+        // Fechar modal se estiver aberto
+        this.closeIncomeModal();
+        
+        // Avançar para fase de ações automaticamente
+        gameState.currentPhase = 'acoes';
+        if (window.uiManager) {
+            window.uiManager.updateUI();
+        }
+        return;
+    }
+ 
   console.log('💰 showIncomeModal chamado para:', player.name);
 
   // VERIFICAR SE JOGADOR ESTÁ ELIMINADO
