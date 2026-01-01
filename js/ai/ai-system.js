@@ -789,7 +789,7 @@ class AIBrain {
                 type: 'collect',
                 regionId: regionToCollect,
                 priority: priority.weight,
-                description: `Recolher recursos de ${gameState.regions[regionToCollect].name}`
+                description: `Coletar recursos de ${gameState.regions[regionToCollect].name}`
               });
               remainingActions--;
             }
@@ -1198,7 +1198,7 @@ class AIBrain {
           return { valid: false, reason: 'Região não explorada (nível 0)' };
         }
         if (player.resources.madeira < 1) {
-          return { valid: false, reason: 'Madeira insuficiente para recolher' };
+          return { valid: false, reason: 'Madeira insuficiente para coletar' };
         }
         break;
         
