@@ -919,6 +919,98 @@ function initializeGame(playersData) {
   gameState.currentPhase = 'renda';
 }
 
+// Função para verificar se ação pode ser realizada
+function canPerformAction(playerId, actionType, context = {}) {
+  const player = getPlayerById(playerId);
+  if (!player) return { can: false, reason: 'Jogador não encontrado' };
+  
+  const isEliminated = player.eliminated;
+  const currentPhase = gameState.currentPhase;
+  const hasActions = gameState.actionsLeft > 0;
+  
+  // Verificações básicas
+  if (isEliminated && !['dominate', 'resurrect'].includes(actionType)) {
+    return { can: false, reason: 'Jogador eliminado' };
+  }
+  
+  if (!hasActions) {
+    return { can: false, reason: 'Sem ações restantes' };
+  }
+  
+  // Verificações específicas por ação
+  switch(actionType) {
+    case 'explore':
+    case 'collect':
+    case 'build':
+      if (currentPhase !== 'acoes') {
+        return { can: false, reason: 'Ação permitida apenas na fase de Ações' };
+      }
+      break;
+    case 'negotiate':
+      if (currentPhase !== 'negociacao') {
+        return { can: false, reason: 'Negociação permitida apenas na fase de Negociação' };
+      }
+      break;
+    case 'dispute':
+      if (currentPhase !== 'acoes') {
+        return { can: false, reason: 'Disputa permitida apenas na fase de Ações' };
+      }
+      if (!context.regionId) {
+        return { can: false, reason: 'Região não especificada' };
+      }
+      const region = gameState.regions[context.regionId];
+      if (!region) {
+        return { can: false, reason: 'Região não encontrada' };
+      }
+      if (region.controller === playerId) {
+        return { can: false, reason: 'Você já controla esta região' };
+      }
+      if (region.controller === null) {
+        return { can: false, reason: 'Região neutra (use Dominar)' };
+      }
+      break;
+  }
+  
+  return { can: true, reason: '' };
+}
+
+// Função para consumir ação com validação
+function consumeActionWithValidation(playerId, actionType) {
+  const validation = canPerformAction(playerId, actionType);
+  if (!validation.can) {
+    return { success: false, reason: validation.reason };
+  }
+  
+  if (consumeAction()) {
+    return { success: true, reason: 'Ação consumida' };
+  } else {
+    return { success: false, reason: 'Falha ao consumir ação' };
+  }
+}
+
+// Função para obter estado resumido do jogo
+function getGameSummary() {
+  return {
+    turn: gameState.turn,
+    phase: gameState.currentPhase,
+    actionsLeft: gameState.actionsLeft,
+    currentPlayer: gameState.players[gameState.currentPlayerIndex]?.name,
+    players: gameState.players.map(p => ({
+      id: p.id,
+      name: p.name,
+      victoryPoints: p.victoryPoints,
+      regions: p.regions.length,
+      eliminated: p.eliminated,
+      resources: { ...p.resources }
+    })),
+    regions: {
+      total: gameState.regions.length,
+      controlled: gameState.regions.filter(r => r.controller !== null).length,
+      neutral: gameState.regions.filter(r => r.controller === null).length
+    }
+  };
+}
+
 // ==================== EXPORTAÇÕES ====================
 export {
   gameState,
@@ -1014,6 +1106,11 @@ export {
   
   // Constante de configuração
   ELIMINATION_CONFIG,
+
+  // Novas funções
+  canPerformAction,
+  consumeActionWithValidation,
+  getGameSummary,
 
   // Inicialização
   initializeGame
