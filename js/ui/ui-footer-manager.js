@@ -142,10 +142,10 @@ export class FooterManager {
       const region = gameState.regions[regionId];
       if (!region) return;
       
-      // Usar validação centralizada para o botão de explorar
+      // Usar validação centralizada para todos os botões
       this._updateExploreButton(region, player, isActionPhase, baseEnabled);
-      this._updateBuildButton(region, player, isActionPhase, baseEnabled);
       this._updateCollectButton(region, player, isActionPhase, baseEnabled);
+      this._updateBuildButton(region, player, isActionPhase, baseEnabled);
     }
     
     this._updateNegotiateButton(player, isNegotiationPhase, baseEnabled);
@@ -170,23 +170,22 @@ export class FooterManager {
     }
     
     // Configurar botão baseado no tipo de ação
+    this.actionExploreBtn.disabled = false;
+    
     switch(validation.type) {
       case 'resurrect':
-        this.actionExploreBtn.disabled = false;
         this.actionExploreBtn.textContent = '💀 Ressuscitar';
         this.actionExploreBtn.classList.remove('bg-green-600', 'bg-yellow-600', 'bg-red-600');
         this.actionExploreBtn.classList.add('bg-purple-600');
         this.actionExploreBtn.title = 'Dominar região neutra para ressuscitar (custo: 2 PV + recursos do bioma)';
         break;
       case 'dominate':
-        this.actionExploreBtn.disabled = false;
         this.actionExploreBtn.textContent = 'Dominar';
         this.actionExploreBtn.classList.remove('bg-green-600', 'bg-red-600', 'bg-purple-600');
         this.actionExploreBtn.classList.add('bg-yellow-600');
         this.actionExploreBtn.title = 'Dominar região neutra (custo: 2 PV + recursos do bioma)';
         break;
       case 'explore':
-        this.actionExploreBtn.disabled = false;
         this.actionExploreBtn.textContent = 'Explorar';
         this.actionExploreBtn.classList.remove('bg-yellow-600', 'bg-red-600', 'bg-purple-600');
         this.actionExploreBtn.classList.add('bg-green-600');
@@ -203,7 +202,6 @@ export class FooterManager {
         });
         costInfo = costInfo.slice(0, -2);
         
-        this.actionExploreBtn.disabled = false;
         this.actionExploreBtn.textContent = 'Disputar';
         this.actionExploreBtn.classList.remove('bg-green-600', 'bg-yellow-600', 'bg-purple-600');
         this.actionExploreBtn.classList.add('bg-red-600');
@@ -216,27 +214,54 @@ export class FooterManager {
     }
   }
 
+  _updateCollectButton(region, player, isActionPhase, baseEnabled) {
+    if (!this.actionCollectBtn) return;
+    
+    const validation = window.gameLogic?.getActionValidation?.('collect');
+    const isOwnRegion = region.controller === player.id;
+    
+    if (!isActionPhase) {
+      this.actionCollectBtn.disabled = true;
+      this.actionCollectBtn.title = 'Ação permitida apenas na fase de Ações (⚡).';
+      return;
+    }
+    
+    this.actionCollectBtn.disabled = !baseEnabled || !isOwnRegion || !validation?.valid;
+    this.actionCollectBtn.title = validation?.reason || 'Coletar recursos da região';
+    
+    // Ajustar aparência do botão
+    if (this.actionCollectBtn.disabled) {
+      this.actionCollectBtn.classList.remove('bg-blue-600');
+      this.actionCollectBtn.classList.add('bg-gray-600', 'opacity-50');
+    } else {
+      this.actionCollectBtn.classList.remove('bg-gray-600', 'opacity-50');
+      this.actionCollectBtn.classList.add('bg-blue-600');
+    }
+  }
+
   _updateBuildButton(region, player, isActionPhase, baseEnabled) {
     if (!this.actionBuildBtn) return;
     
     const validation = window.gameLogic?.getActionValidation?.('build');
     const isOwnRegion = region.controller === player.id;
     
-    this.actionBuildBtn.disabled = !baseEnabled || !isActionPhase || !isOwnRegion || 
-                                  !validation?.valid;
+    if (!isActionPhase) {
+      this.actionBuildBtn.disabled = true;
+      this.actionBuildBtn.title = 'Ação permitida apenas na fase de Ações (⚡).';
+      return;
+    }
+    
+    this.actionBuildBtn.disabled = !baseEnabled || !isOwnRegion || !validation?.valid;
     this.actionBuildBtn.title = validation?.reason || 'Construir estrutura';
-  }
-
-  _updateCollectButton(region, player, isActionPhase, baseEnabled) {
-    if (!this.actionCollectBtn) return;
     
-    const validation = window.gameLogic?.getActionValidation?.('collect');
-    const isOwnRegion = region.controller === player.id;
-    const canCollect = isOwnRegion && region.explorationLevel > 0;
-    
-    this.actionCollectBtn.disabled = !baseEnabled || !isActionPhase || !canCollect || 
-                                    !validation?.valid;
-    this.actionCollectBtn.title = validation?.reason || 'Coletar recursos da região';
+    // Ajustar aparência do botão
+    if (this.actionBuildBtn.disabled) {
+      this.actionBuildBtn.classList.remove('bg-orange-600');
+      this.actionBuildBtn.classList.add('bg-gray-600', 'opacity-50');
+    } else {
+      this.actionBuildBtn.classList.remove('bg-gray-600', 'opacity-50');
+      this.actionBuildBtn.classList.add('bg-orange-600');
+    }
   }
 
   _updateNegotiateButton(player, isNegotiationPhase, baseEnabled) {
@@ -249,12 +274,13 @@ export class FooterManager {
       
       if (!validation?.valid) {
         this.actionNegotiateBtn.title = validation?.reason || 'Negociação não disponível';
+        this.actionNegotiateBtn.classList.remove('bg-green-600');
+        this.actionNegotiateBtn.classList.add('bg-gray-600', 'opacity-50');
       } else {
         this.actionNegotiateBtn.title = 'Abrir negociação';
+        this.actionNegotiateBtn.classList.remove('bg-gray-600', 'opacity-50');
+        this.actionNegotiateBtn.classList.add('bg-green-600');
       }
-      
-      this.actionNegotiateBtn.classList.remove('bg-gray-600', 'opacity-50');
-      this.actionNegotiateBtn.classList.add('bg-green-600');
     } else {
       this.actionNegotiateBtn.disabled = true;
       this.actionNegotiateBtn.classList.remove('bg-green-600');
