@@ -4,44 +4,40 @@ import {
   gameState,
   getCurrentPlayer,
   getAIPlayer,
-  setAIPlayers
+  getPendingNegotiationsForPlayer,
+  setActiveNegotiation,
+  clearActiveNegotiation,
+  removePendingNegotiation,
+  updateNegotiationStatus,
+  resetNegotiationState,
+  setNegotiationTarget,
+  updateNegotiationResource,
+  validateNegotiationState,
+  getNegotiationValidationErrors
 } from '../state/game-state.js';
 
 import { AIBrain } from './ai-system.js';
 
-export class AIManager {
-  constructor(gameLogic = null) {
+class AIManager {
+  constructor() {
     this.aiTurnInProgress = false;
     this.aiHealthMonitor = null;
     this.feedbackHistory = [];
     this.lastFeedback = null;
     this.aiInstances = new Map();
-    this.gameLogic = gameLogic;
   }
 
   // ==================== INICIALIZAÇÃO ====================
 
-  initialize(players, gameLogic = null) {
-    if (gameLogic) this.gameLogic = gameLogic;
-    
+  initialize(players) {
     players.forEach((player, index) => {
       if (player.type === 'ai' || player.isAI) {
         const difficulty = player.aiDifficulty || 'medium';
-        const ai = new AIBrain(index, difficulty, this.gameLogic);
-        ai.initialize(this.gameLogic);
+        const ai = new AIBrain(index, difficulty);
         this.aiInstances.set(index, ai);
         console.log(`🤖 IA inicializada: ${player.name} (${difficulty})`);
       }
     });
-    
-    // Registrar IAs no estado global
-    const aiInstances = Array.from(this.aiInstances.values());
-    setAIPlayers(aiInstances);
-    
-    // Iniciar monitor de saúde
-    this.startHealthMonitor();
-    
-    return aiInstances;
   }
 
   getAI(playerIndex) {
@@ -57,12 +53,10 @@ export class AIManager {
     }
 
     const currentPlayer = getCurrentPlayer();
-    if (!currentPlayer) return false;
-    
-    const isAI = currentPlayer.type === 'ai' || currentPlayer.isAI;
+    const isAI = currentPlayer && (currentPlayer.type === 'ai' || currentPlayer.isAI);
     
     if (!isAI) {
-      console.log(`⏸️ Não é turno de IA. Jogador: ${currentPlayer.name}`);
+      console.log(`⏸️ Não é turno de IA. Jogador: ${currentPlayer?.name}`);
       return false;
     }
 
@@ -70,7 +64,7 @@ export class AIManager {
   }
 
   async executeAITurn() {
-    if (!this.shouldExecuteAI()) return false;
+    if (!this.shouldExecuteAI()) return;
 
     this.aiTurnInProgress = true;
     const startTime = Date.now();
@@ -83,7 +77,7 @@ export class AIManager {
       if (!ai) {
         console.warn(`🤖 Instância de IA não encontrada para ${currentPlayer.name}`);
         this.handleAIError();
-        return false;
+        return;
       }
 
       console.log(`🤖 Executando turno para ${currentPlayer.name} (Fase: ${gameState.currentPhase})`);
@@ -106,12 +100,9 @@ export class AIManager {
         await this.completeAITurn();
       }
 
-      return true;
-
     } catch (error) {
       console.error('🤖 Erro no turno da IA:', error);
       this.handleAIError();
-      return false;
     } finally {
       this.aiTurnInProgress = false;
       
@@ -136,7 +127,12 @@ export class AIManager {
     gameState.actionsLeft = 3;
     
     // Atualizar UI
-    this._updateUI();
+    if (window.uiManager) {
+      window.uiManager.updateUI();
+      if (window.uiManager.gameManager) {
+       window.uiManager.gameManager.updateFooter();
+      }
+    }
     
     // Executar ações imediatamente
     const ai = this.getAI(gameState.currentPlayerIndex);
@@ -155,19 +151,16 @@ export class AIManager {
         // Pequeno delay entre ações
         await this.delay(800);
         
-        // ADICIONAR: Verificar se há disputas antes de executar ação padrão
-        const shouldDispute = this.shouldExecuteDispute(ai, gameState);
-        
-        if (shouldDispute) {
-          console.log(`🤖 ${player.name} decidiu disputar território`);
-          await this.executeDisputeAI(ai);
-        } else {
-          // Executar uma ação usando o AIBrain
-          await ai.executeActionPhase(gameState, window.uiManager);
-        }
+        // Executar uma ação usando o AIBrain
+        await ai.executeActionPhase(gameState, window.uiManager);
         
         // Atualizar UI
-        this._updateUI();
+        if (window.uiManager) {
+          window.uiManager.updateUI();
+          if (window.uiManager.gameManager) {
+            window.uiManager.gameManager.updateFooter();
+          }
+        }
         
       } catch (error) {
         console.error(`🤖 Erro na ação da IA:`, error);
@@ -183,102 +176,43 @@ export class AIManager {
     this.setupNegotiationPhase();
   }
 
-  // Método para avaliar disputa
-  shouldExecuteDispute(ai, gameState) {
-    const player = getCurrentPlayer();
-    
-    // Verificar se a IA pode disputar
-    if (player.victoryPoints < 3 || 
-        player.resources.ouro < 2 || 
-        gameState.actionsLeft <= 0) {
-      return false;
-    }
-    
-    // Usar a lógica do AIBrain para avaliar disputas
-    if (ai.findDisputeOpportunities) {
-      const opportunities = ai.findDisputeOpportunities(player, gameState);
-      if (opportunities.length > 0) {
-        const bestOpportunity = opportunities[0];
-        
-        // Verificar se atende ao threshold baseado na dificuldade
-        const threshold = ai._getDisputeThreshold ? ai._getDisputeThreshold() : 40;
-        return bestOpportunity.score >= threshold;
-      }
-    }
-    
-    return false;
-  }
-
-  // Método para executar disputa
-  async executeDisputeAI(ai) {
-    const player = getCurrentPlayer();
-    
-    try {
-      // Encontrar melhor oportunidade de disputa
-      const opportunities = ai.findDisputeOpportunities(player, gameState);
-      if (opportunities.length === 0) return;
-      
-      const bestOpportunity = opportunities[0];
-      
-      console.log(`🤖 ${player.name} disputando região ${bestOpportunity.regionId} de ${gameState.players[bestOpportunity.defenderId].name}`);
-      
-      // Configurar região selecionada
-      gameState.selectedRegionId = bestOpportunity.regionId;
-      await this.delay(500);
-      
-      // Executar disputa
-      if (this.gameLogic?.handleDispute) {
-        await this.gameLogic.handleDispute();
-      } else if (window.gameLogic?.handleDispute) {
-        await window.gameLogic.handleDispute();
-      }
-      
-    } catch (error) {
-      console.error(`🤖 Erro ao executar disputa:`, error);
-    }
-  }
-
-  async handleNegotiationPhaseAI(ai) {
+async handleNegotiationPhaseAI(ai) {
     const player = getCurrentPlayer();
     console.log(`🤖 ${player.name} (${ai.personality.type}) na fase de negociação`);
     
     try {
-      // 1. PROCESSAR PROPOSTAS PENDENTES
-      if (ai.processPendingNegotiations) {
-        console.log(`🤖 Processando propostas pendentes para ${player.name}...`);
-        await ai.processPendingNegotiations(gameState);
-        await this.delay(1000);
-      } else {
-        console.log(`⚠️ IA ${player.name} não tem método processPendingNegotiations`);
-      }
-      
-      // 2. DEPOIS: Enviar proposta se possível
-      if (gameState.actionsLeft > 0 && player.resources.ouro >= 1) {
-        console.log(`🤖 ${player.name} pode enviar proposta`);
-        await this.sendAINegotiationProposal(ai);
-      }
-      
-      // 3. Terminar fase
-      console.log(`🤖 ${player.name} terminou negociação`);
-      
-      // Chamar o término do turno
-      if (this.gameLogic?.turnLogic?.handleEndTurn) {
-        this.gameLogic.turnLogic.handleEndTurn();
-      } else if (window.gameLogic?.turnLogic?.handleEndTurn) {
-        window.gameLogic.turnLogic.handleEndTurn();
-      }
-      
+        // 1. PROCESSAR PROPOSTAS PENDENTES usando método direto
+        if (ai.processPendingNegotiations) {
+            console.log(`🤖 Processando propostas pendentes para ${player.name}...`);
+            await ai.processPendingNegotiations(gameState);
+            await this.delay(1000);
+        } else {
+            console.log(`⚠️ IA ${player.name} não tem método processPendingNegotiations`);
+        }
+        
+        // 2. DEPOIS: Enviar proposta se possível
+        if (gameState.actionsLeft > 0 && player.resources.ouro >= 1) {
+            console.log(`🤖 ${player.name} pode enviar proposta`);
+            await this.sendAINegotiationProposal(ai);
+        }
+        
+        // 3. Terminar fase
+        console.log(`🤖 ${player.name} terminou negociação`);
+        
+        // Chamar o término do turno
+        if (window.gameLogic?.turnLogic?.handleEndTurn) {
+            window.gameLogic.turnLogic.handleEndTurn();
+        }
+        
     } catch (error) {
-      console.error(`🤖 Erro na negociação da IA ${player.name}:`, error);
-      
-      // Em caso de erro, forçar término do turno
-      if (this.gameLogic?.turnLogic?.handleEndTurn) {
-        this.gameLogic.turnLogic.handleEndTurn();
-      } else if (window.gameLogic?.turnLogic?.handleEndTurn) {
-        window.gameLogic.turnLogic.handleEndTurn();
-      }
+        console.error(`🤖 Erro na negociação da IA ${player.name}:`, error);
+        
+        // Em caso de erro, forçar término do turno
+        if (window.gameLogic?.turnLogic?.handleEndTurn) {
+            window.gameLogic.turnLogic.handleEndTurn();
+        }
     }
-  }
+}
   
   // ==================== NEGOCIAÇÃO ====================
 
@@ -295,16 +229,39 @@ export class AIManager {
     console.log(`🤖 ${currentPlayer.name} enviando proposta para ${target.name}`);
     
     // Configurar proposta usando o AIBrain
-    const proposal = ai.negotiationService?._createProposal(currentPlayer, target, gameState);
+    const proposal = ai.createNegotiationProposal(currentPlayer, target, gameState);
     
     if (!proposal) {
       console.log(`🤖 ${currentPlayer.name} não conseguiu criar proposta`);
       return;
     }
 
-    // Usar o serviço de negociação para enviar a proposta
-    if (ai.negotiationService) {
-      await ai.negotiationService._sendProposal(proposal, target.id, gameState);
+    // Configurar estado da negociação
+    resetNegotiationState();
+    setNegotiationTarget(target.id);
+    
+    // Configurar oferta e solicitação
+    Object.keys(proposal.offer).forEach(resource => {
+      if (proposal.offer[resource] > 0) {
+        updateNegotiationResource('offer', resource, proposal.offer[resource]);
+      }
+    });
+    
+    Object.keys(proposal.request).forEach(resource => {
+      if (proposal.request[resource] > 0) {
+        updateNegotiationResource('request', resource, proposal.request[resource]);
+      }
+    });
+
+    // Validar e enviar
+    if (validateNegotiationState()) {
+      if (window.gameLogic?.handleSendNegotiation) {
+        await window.gameLogic.handleSendNegotiation();
+      }
+    } else {
+      console.log(`🤖 Proposta inválida de ${currentPlayer.name}`);
+      const errors = getNegotiationValidationErrors();
+      console.log('Erros:', errors);
     }
   }
 
@@ -312,8 +269,7 @@ export class AIManager {
     // Encontrar jogadores com recursos para negociar
     const otherPlayers = gameState.players.filter(p => 
       p.id !== currentPlayer.id && 
-      p.resources.ouro >= 1 && // Precisa ter ouro para negociar
-      !p.eliminated
+      p.resources.ouro >= 1 // Precisa ter ouro para negociar
     );
     
     if (otherPlayers.length === 0) return null;
@@ -321,6 +277,104 @@ export class AIManager {
     // Priorizar jogadores com menos PV (mais prováveis de aceitar)
     return otherPlayers.sort((a, b) => a.victoryPoints - b.victoryPoints)[0];
   }
+
+  // Adicionar após o método findNegotiationTarget
+
+async handleActionsPhaseAI(ai) {
+  const player = getCurrentPlayer();
+  console.log(`🤖 ${player.name} executando ações (${gameState.actionsLeft} restantes)`);
+
+  // Executar ações enquanto houver ações disponíveis
+  while (gameState.actionsLeft > 0) {
+    try {
+      // Pequeno delay entre ações
+      await this.delay(800);
+      
+      // ADICIONAR: Verificar se há disputas antes de executar ação padrão
+      const shouldDispute = this.shouldExecuteDispute(ai, gameState);
+      
+      if (shouldDispute) {
+        console.log(`🤖 ${player.name} decidiu disputar território`);
+        await this.executeDisputeAI(ai);
+      } else {
+        // Executar uma ação usando o AIBrain
+        await ai.executeActionPhase(gameState, window.uiManager);
+      }
+      
+      // Atualizar UI
+      if (window.uiManager) {
+        window.uiManager.updateUI();
+        if (window.uiManager.gameManager) {
+          window.uiManager.gameManager.updateFooter();
+        }
+      }
+      
+    } catch (error) {
+      console.error(`🤖 Erro na ação da IA:`, error);
+      break;
+    }
+  }
+
+  // Quando terminar ações, avançar para negociação
+  console.log(`🤖 ${player.name} terminou ações`);
+  await this.delay(1000);
+  
+  // Avançar para fase de negociação
+  this.setupNegotiationPhase();
+}
+
+// Novo método para avaliar disputa
+shouldExecuteDispute(ai, gameState) {
+  const player = getCurrentPlayer();
+  
+  // Verificar se a IA pode disputar
+  if (player.victoryPoints < 3 || 
+      player.resources.ouro < 2 || 
+      gameState.actionsLeft <= 0) {
+    return false;
+  }
+  
+  // Usar a lógica do AIBrain para avaliar disputas
+  if (ai.findDisputeOpportunities) {
+    const opportunities = ai.findDisputeOpportunities(player, gameState);
+    if (opportunities.length > 0) {
+      const bestOpportunity = opportunities[0];
+      
+      // Verificar se atende ao threshold baseado na dificuldade
+      const threshold = ai.getDisputeThreshold ? ai.getDisputeThreshold() : 40;
+      return bestOpportunity.score >= threshold;
+    }
+  }
+  
+  return false;
+}
+
+// Método para executar disputa
+async executeDisputeAI(ai) {
+  const player = getCurrentPlayer();
+  
+  try {
+    // Encontrar melhor oportunidade de disputa
+    const opportunities = ai.findDisputeOpportunities(player, gameState);
+    if (opportunities.length === 0) return;
+    
+    const bestOpportunity = opportunities[0];
+    
+    console.log(`🤖 ${player.name} disputando região ${bestOpportunity.regionId} de ${gameState.players[bestOpportunity.defenderId].name}`);
+    
+    // Configurar região selecionada
+    gameState.selectedRegionId = bestOpportunity.regionId;
+    await this.delay(500);
+    
+    // Executar disputa
+    if (window.gameLogic?.handleDispute) {
+      await window.gameLogic.handleDispute();
+    }
+    
+  } catch (error) {
+    console.error(`🤖 Erro ao executar disputa:`, error);
+  }
+}
   
   // ==================== CONTROLE DE SAÚDE ====================
 
@@ -367,7 +421,12 @@ export class AIManager {
     }, 800);
     
     // Atualizar UI
-    this._updateUI();
+    if (window.uiManager) {
+      window.uiManager.updateUI();
+      if (window.uiManager.gameManager) {
+        window.uiManager.gameManager.updateFooter();
+      }
+    }
     
     console.log(`🤖 ${currentPlayer.name} entrou na fase de negociação`);
   }
@@ -405,9 +464,7 @@ export class AIManager {
     console.log('🤖 Completando turno da IA');
     await this.delay(500);
     
-    if (this.gameLogic?.handleEndTurn) {
-      await this.gameLogic.handleEndTurn();
-    } else if (window.gameLogic?.handleEndTurn) {
+    if (window.gameLogic?.handleEndTurn) {
       await window.gameLogic.handleEndTurn();
     }
   }
@@ -428,16 +485,14 @@ export class AIManager {
     
     // Aplicar renda para o novo jogador
     const newPlayer = getCurrentPlayer();
-    if (newPlayer) {
-      if (this.gameLogic?.applyIncomeForPlayer) {
-        this.gameLogic.applyIncomeForPlayer(newPlayer);
-      } else if (window.gameLogic?.applyIncomeForPlayer) {
-        window.gameLogic.applyIncomeForPlayer(newPlayer);
-      }
+    if (newPlayer && window.gameLogic?.applyIncomeForPlayer) {
+      window.gameLogic.applyIncomeForPlayer(newPlayer);
     }
     
     // Atualizar UI
-    this._updateUI();
+    if (window.uiManager) {
+      window.uiManager.updateUI();
+    }
     
     this.aiTurnInProgress = false;
   }
@@ -463,15 +518,6 @@ export class AIManager {
     return new Promise(resolve => setTimeout(resolve, ms));
   }
 
-  _updateUI() {
-    if (window.uiManager) {
-      window.uiManager.updateUI();
-      if (window.uiManager.gameManager) {
-        window.uiManager.gameManager.updateFooter();
-      }
-    }
-  }
-
   // ==================== DEBUG ====================
 
   getDebugInfo() {
@@ -488,8 +534,9 @@ export class AIManager {
         difficulty: ai.difficulty,
         phase: ai.phase
       } : null,
-      feedbackHistory: this.feedbackHistory.length,
-      totalAIInstances: this.aiInstances.size
+      feedbackHistory: this.feedbackHistory.length
     };
   }
 }
+
+export { AIManager };
