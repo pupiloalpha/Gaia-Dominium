@@ -143,16 +143,25 @@ async _runAILoop(ai) {
                 break;
             case 'acoes':
                 await this._executeActions(ai);
-                // Avançar para negociação
-                if (this.main.negotiationLogic) {
-                    this.main.negotiationLogic.setupPhase();
+                // Avançar para negociação APENAS SE AINDA FOR TURNO DA IA
+                if (getCurrentPlayer().id === currentPlayer.id) {
+                    if (this.main.negotiationLogic) {
+                        this.main.negotiationLogic.setupPhase();
+                    }
+                    await this._delay(1000);
+                    // Chamar negociação imediatamente
+                    await this._executeNegotiationPhaseForAI();
+                } else {
+                    console.log(`🤖 Não é mais turno da IA ${currentPlayer.name}, parando execução`);
                 }
-                await this._delay(1000);
-                // Chamar negociação imediatamente
-                await this._executeNegotiationPhaseForAI();
                 break;
             case 'negociacao':
-                await this._executeNegotiationPhaseForAI();
+                // VERIFICAR SE AINDA É TURNO DA IA
+                if (getCurrentPlayer().id === currentPlayer.id) {
+                    await this._executeNegotiationPhaseForAI();
+                } else {
+                    console.log(`🤖 Não é mais turno da IA ${currentPlayer.name}, parando execução`);
+                }
                 break;
         }
         
@@ -164,7 +173,7 @@ async _runAILoop(ai) {
         this.forceAIEndTurn();
     }
 }
-
+  
 async _executeActions(ai) {
   const maxIterations = 20; // Limite máximo para evitar loop infinito
   let iterations = 0;
