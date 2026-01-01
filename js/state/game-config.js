@@ -135,7 +135,7 @@ const EXPLORATION_BONUS = {
 };
 
 const EXPLORATION_SPECIAL_BONUS = {
-  1: { description: "+1 recurso aleatório ao recolher" },
+  1: { description: "+1 recurso aleatório ao coletar" },
   2: { 
     description: "20% chance de +1 Ouro na renda",
     buildDiscount: { pedra: 1 }
@@ -229,7 +229,7 @@ const GAME_EVENTS = [
     name: 'Inverno Rigoroso',
     icon: '❄️',
     description: 'O frio intenso torna a coleta mais valiosa.',
-    effect: '+1 Madeira adicional ao Recolher',
+    effect: '+1 Madeira adicional ao Coletar',
     duration: 2,
     apply: (state) => {
       state.eventModifiers.coletaBonus = { madeira: 1 };
@@ -307,7 +307,7 @@ const GAME_EVENTS = [
     name: 'Festival da Colheita',
     icon: '🎉',
     description: 'Celebrações trazem abundância!',
-    effect: 'Recolher dá +2 recursos aleatórios bônus',
+    effect: 'Coletar dá +2 recursos aleatórios bônus',
     duration: 2,
     apply: (state) => {
       state.eventModifiers.festivalBonus = true;
