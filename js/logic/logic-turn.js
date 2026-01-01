@@ -15,6 +15,7 @@ export class TurnLogic {
     this.main = gameLogic;
     this.gameEnded = false;
     this.incomeApplied = false;
+    this.turnTimeout = null;
   }
 
   // ==================== CONTROLE DE TURNOS ====================
@@ -35,34 +36,25 @@ export class TurnLogic {
     }
     
     const currentPhase = gameState.currentPhase;
-    console.log(`⏹️ Tentativa de finalizar turno na fase: ${currentPhase}`);
-    
-    // Verificar pendências na negociação (apenas humanos)
-    if (!(currentPlayer.type === 'ai' || currentPlayer.isAI)) {
-      const pendingNegotiations = getPendingNegotiationsForPlayer(currentPlayer.id);
-      
-      if (pendingNegotiations.length > 0) {
-        const shouldRespond = await this.main.showConfirm(
-          '📨 Propostas Pendentes',
-          `Você tem ${pendingNegotiations.length} proposta(s) de negociação pendente(s).\n\nDeseja respondê-las agora?`
-        );
-        
-        if (shouldRespond) {
-          if (window.uiManager?.negotiation?.showPendingNegotiationsModal) {
-            window.uiManager.negotiation.showPendingNegotiationsModal();
-          }
-          return; // Aguardar resposta
-        }
-      }
-    }
+    console.log(`⏹️ TurnLogic: Finalizando turno na fase: ${currentPhase}`);
     
     // Processar baseado na fase atual
-    switch(currentPhase) {
+    const result = await this._processPhaseCompletion(currentPhase, currentPlayer);
+    
+    if (result === 'continue') {
+      // Avançar para próxima fase
+      this._advanceToNextPhase(currentPhase);
+    } else if (result === 'complete') {
+      // Finalizar turno completamente
+      this._finalizePlayerTurn(currentPlayer);
+    }
+  }
+
+  async _processPhaseCompletion(phase, player) {
+    switch(phase) {
       case 'renda':
-        // Avançar para fase de ações
-        this.main.coordinator?.setCurrentPhase('acoes');
-        this.main.showFeedback('Fase de Ações iniciada!', 'info');
-        break;
+        // Sempre avançar da renda para ações
+        return 'continue';
         
       case 'acoes':
         // Verificar se ainda há ações disponíveis
@@ -71,29 +63,67 @@ export class TurnLogic {
             'Avançar para Negociação',
             `Você ainda tem ${gameState.actionsLeft} ação(ões) disponível(is).\n\nDeseja avançar para a fase de negociação mesmo assim?`
           );
-          
-          if (!confirm) return;
+          return confirm ? 'continue' : 'cancel';
         }
-        
-        // Avançar para fase de negociação
-        this.main.coordinator?.setCurrentPhase('negociacao');
-        this.main.showFeedback('Fase de Negociação iniciada!', 'info');
-        break;
+        return 'continue';
         
       case 'negociacao':
-        // Finalizar turno
-        this._finalizeTurn(currentPlayer);
-        break;
+        // Verificar propostas pendentes
+        const pendingNegotiations = getPendingNegotiationsForPlayer(player.id);
+        
+        if (pendingNegotiations.length > 0 && !(player.type === 'ai' || player.isAI)) {
+          const shouldRespond = await this.main.showConfirm(
+            '📨 Propostas Pendentes',
+            `Você tem ${pendingNegotiations.length} proposta(s) de negociação pendente(s).\n\nDeseja respondê-las agora?`
+          );
+          
+          if (shouldRespond) {
+            if (window.uiManager?.negotiation?.showPendingNegotiationsModal) {
+              window.uiManager.negotiation.showPendingNegotiationsModal();
+            }
+            return 'cancel';
+          }
+        }
+        return 'complete';
         
       default:
-        console.warn(`Fase desconhecida: ${currentPhase}, forçando finalização`);
-        this._finalizeTurn(currentPlayer);
+        console.warn(`Fase desconhecida: ${phase}, forçando finalização`);
+        return 'complete';
     }
+  }
+
+  _advanceToNextPhase(currentPhase) {
+    const nextPhase = this._getNextPhase(currentPhase);
+    
+    if (nextPhase && this.main.coordinator) {
+      this.main.coordinator.setCurrentPhase(nextPhase);
+      this.main.showFeedback(`Fase de ${this._getPhaseDisplayName(nextPhase)} iniciada!`, 'info');
+    }
+  }
+
+  _getNextPhase(currentPhase) {
+    const phases = ['renda', 'acoes', 'negociacao'];
+    const currentIndex = phases.indexOf(currentPhase);
+    
+    if (currentIndex === -1) return 'renda';
+    
+    return phases[(currentIndex + 1) % phases.length];
+  }
+
+  _getPhaseDisplayName(phase) {
+    const names = {
+      'renda': 'Renda',
+      'acoes': 'Ações',
+      'negociacao': 'Negociação'
+    };
+    return names[phase] || phase;
   }
 
   // ==================== FINALIZAÇÃO DE TURNO ====================
 
-  _finalizeTurn(currentPlayer) {
+  _finalizePlayerTurn(player) {
+    console.log(`⏹️ TurnLogic: Finalizando turno de ${player.name}`);
+    
     // Verificar vitória antes de finalizar
     this.checkVictory();
     
@@ -101,26 +131,30 @@ export class TurnLogic {
       return;
     }
     
-    console.log(`⏹️ Finalizando turno de ${currentPlayer.name}`);
-    
     addActivityLog({
       type: 'turn',
       playerName: 'SISTEMA',
       action: 'Turno finalizado',
-      details: currentPlayer.name,
+      details: player.name,
       turn: gameState.turn
     });
     
-    // Resetar bônus de turno (facções)
+    // Resetar bônus de turno
     if (this.main.factionLogic) {
-      this.main.factionLogic.resetTurnBonuses(currentPlayer);
+      this.main.factionLogic.resetTurnBonuses(player);
     }
 
     // Avançar para próximo jogador
-    this._advanceToNextPlayer(currentPlayer);
+    this._advanceToNextPlayer(player);
   }
 
   _advanceToNextPlayer(currentPlayer) {
+    // Limpar timeout se existir
+    if (this.turnTimeout) {
+      clearTimeout(this.turnTimeout);
+      this.turnTimeout = null;
+    }
+    
     // Obter próximo jogador ativo
     const nextPlayerIndex = getNextActivePlayer?.(gameState.currentPlayerIndex) || 
       (gameState.currentPlayerIndex + 1) % gameState.players.length;
@@ -153,13 +187,10 @@ export class TurnLogic {
     // Se o jogador está eliminado, pular turno novamente
     if (newPlayer.eliminated) {
       this.main.showFeedback(`${newPlayer.name} está eliminado. Pulando turno...`, 'info');
-      setTimeout(() => this._advanceToNextPlayer(newPlayer), 1000);
+      this.turnTimeout = setTimeout(() => this._advanceToNextPlayer(newPlayer), 1000);
       return;
     }
     
-    // Aplicar renda ao novo jogador
-    this.applyIncome(newPlayer);
-
     addActivityLog({
       type: 'turn',
       playerName: 'SISTEMA',
@@ -176,22 +207,8 @@ export class TurnLogic {
     
     this.main.showFeedback(`Turno de ${newPlayer.name}`, 'info');
 
-    // GATILHO PARA IA
-    if (!this.gameEnded) {
-      setTimeout(() => {
-        const nextPlayer = getCurrentPlayer();
-        
-        if (nextPlayer && !nextPlayer.eliminated && (nextPlayer.type === 'ai' || nextPlayer.isAI)) {
-          console.log(`🤖 Iniciando turno da IA: ${nextPlayer.name}`);
-          
-          setTimeout(() => {
-            if (this.main.aiCoordinator) {
-              this.main.aiCoordinator.checkAndExecuteAITurn();
-            }
-          }, 1500);
-        }
-      }, 1000);
-    }
+    // Iniciar turno da IA se necessário
+    this._startAITurnIfNeeded(newPlayer);
     
     saveGame();
   }
@@ -200,16 +217,28 @@ export class TurnLogic {
     // Resetar flag de renda aplicada
     this.incomeApplied = false;
     
-    // Resetar fase para renda
-    this.main.coordinator?.setCurrentPhase('renda');
-    this.main.coordinator?.clearRegionSelection();
+    // Resetar fase para renda via coordinator
+    if (this.main.coordinator) {
+      this.main.coordinator.setCurrentPhase('renda');
+      this.main.coordinator.clearRegionSelection();
+    }
   }
 
-  _handleGlobalEvents() {
-    // Atualizar eventos globais
-    if (this.main.eventManager) {
-      this.main.eventManager.updateEventTurn(gameState);
-    }
+  _startAITurnIfNeeded(player) {
+    if (this.gameEnded) return;
+    
+    // Pequeno delay para garantir que a UI esteja atualizada
+    setTimeout(() => {
+      if (player && !player.eliminated && (player.type === 'ai' || player.isAI)) {
+        console.log(`🤖 TurnLogic: Iniciando turno da IA: ${player.name}`);
+        
+        this.turnTimeout = setTimeout(() => {
+          if (this.main.aiCoordinator) {
+            this.main.aiCoordinator.checkAndExecuteAITurn();
+          }
+        }, 1500);
+      }
+    }, 1000);
   }
 
   // ==================== RENDA ====================
@@ -260,8 +289,10 @@ export class TurnLogic {
         } else {
           // Fallback: avançar para fase de ações após 2 segundos
           setTimeout(() => {
-            this.main.coordinator?.setCurrentPhase('acoes');
-            this.main.showFeedback('Renda aplicada! Fase de Ações iniciada.', 'info');
+            if (this.main.coordinator) {
+              this.main.coordinator.setCurrentPhase('acoes');
+              this.main.showFeedback('Renda aplicada! Fase de Ações iniciada.', 'info');
+            }
           }, 2000);
         }
       }, 500);
@@ -271,7 +302,9 @@ export class TurnLogic {
       
       // Avançar para fase de ações após pequeno delay
       setTimeout(() => {
-        this.main.coordinator?.setCurrentPhase('acoes');
+        if (this.main.coordinator) {
+          this.main.coordinator.setCurrentPhase('acoes');
+        }
       }, 1000);
     }
   }
@@ -350,6 +383,12 @@ export class TurnLogic {
   _declareVictory(winner) {
     this.gameEnded = true;
     
+    // Limpar timeout
+    if (this.turnTimeout) {
+      clearTimeout(this.turnTimeout);
+      this.turnTimeout = null;
+    }
+    
     const victoryMessage = `${winner.name} venceu o jogo com ${winner.victoryPoints} PV!`;
     this.main.showFeedback(victoryMessage, 'success');
     
@@ -369,6 +408,15 @@ export class TurnLogic {
     
     this._disableGameActions();
     saveGame();
+  }
+
+  // ==================== EVENTOS GLOBAIS ====================
+
+  _handleGlobalEvents() {
+    // Atualizar eventos globais
+    if (this.main.eventManager) {
+      this.main.eventManager.updateEventTurn(gameState);
+    }
   }
 
   // ==================== UTILITÁRIOS ====================
@@ -410,7 +458,8 @@ export class TurnLogic {
       currentTurn: gameState.turn,
       currentPlayer: getCurrentPlayer()?.name,
       currentPhase: gameState.currentPhase,
-      activePlayers: getActivePlayers?.()?.length || gameState.players.filter(p => !p.eliminated).length
+      activePlayers: getActivePlayers?.()?.length || gameState.players.filter(p => !p.eliminated).length,
+      turnTimeout: !!this.turnTimeout
     };
   }
 }

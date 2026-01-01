@@ -14,11 +14,37 @@ export class PhaseManager {
     this.phaseHistory = [];
     this.phaseTimers = new Map();
     this.actionsLeft = GAME_CONFIG.ACTIONS_PER_TURN;
-    this.phaseCallbacks = {
+    
+    // Configurar handlers de fase
+    this.phaseHandlers = {
       [TURN_PHASES.RENDA]: this._handleIncomePhase.bind(this),
       [TURN_PHASES.ACOES]: this._handleActionsPhase.bind(this),
       [TURN_PHASES.NEGOCIACAO]: this._handleNegotiationPhase.bind(this)
     };
+    
+    // Configurar validadores de transição
+    this.validTransitions = {
+      [TURN_PHASES.RENDA]: [TURN_PHASES.ACOES],
+      [TURN_PHASES.ACOES]: [TURN_PHASES.NEGOCIACAO],
+      [TURN_PHASES.NEGOCIACAO]: [TURN_PHASES.RENDA]
+    };
+    
+    // Inicializar estado
+    this._syncWithGameState();
+  }
+
+  // ==================== SINCRONIZAÇÃO ====================
+
+  _syncWithGameState() {
+    // Garantir que PhaseManager e gameState estejam sincronizados
+    if (gameState.currentPhase && gameState.currentPhase !== this.currentPhase) {
+      console.log(`🔄 Sincronizando fase: ${this.currentPhase} -> ${gameState.currentPhase}`);
+      this.currentPhase = gameState.currentPhase;
+    } else {
+      gameState.currentPhase = this.currentPhase;
+    }
+    
+    gameState.actionsLeft = this.actionsLeft;
   }
 
   // ==================== CONTROLE DE FASES ====================
@@ -34,27 +60,46 @@ export class PhaseManager {
       return phase;
     }
 
-    if (!force && !this.validatePhaseTransition(oldPhase, phase)) {
+    if (!force && !this._validatePhaseTransition(oldPhase, phase)) {
       console.warn(`Transição de fase inválida: ${oldPhase} -> ${phase}`);
       return this.currentPhase;
     }
 
+    // Atualizar estado interno
     this.currentPhase = phase;
-    gameState.currentPhase = phase;
-    setGameStatePhase(phase);
     
+    // Sincronizar com gameState
+    this._syncWithGameState();
+    
+    // Registrar mudança
     this._recordPhaseChange(oldPhase, phase);
+    
+    // Executar lógica da nova fase
     this._executePhaseLogic(phase);
-    this._logPhaseChange(phase);
     
-    // Disparar evento global de mudança de fase
-    window.dispatchEvent(new CustomEvent('phaseChanged', {
-      detail: { oldPhase, newPhase: phase, player: gameState.players[gameState.currentPlayerIndex] }
-    }));
+    // Disparar evento global
+    this._dispatchPhaseChangeEvent(oldPhase, phase);
     
-    console.log(`🔄 Fase alterada: ${oldPhase} → ${phase}`);
+    console.log(`🔄 PhaseManager: Fase alterada ${oldPhase} → ${phase}`);
     return phase;
   }
+
+  _validatePhaseTransition(fromPhase, toPhase) {
+    return this.validTransitions[fromPhase]?.includes(toPhase) || false;
+  }
+
+  _dispatchPhaseChangeEvent(oldPhase, newPhase) {
+    window.dispatchEvent(new CustomEvent('phaseChanged', {
+      detail: { 
+        oldPhase, 
+        newPhase, 
+        player: gameState.players[gameState.currentPlayerIndex],
+        actionsLeft: this.actionsLeft
+      }
+    }));
+  }
+
+  // ==================== AVANÇO DE FASES ====================
 
   advancePhase() {
     const phases = Object.values(TURN_PHASES);
@@ -69,24 +114,49 @@ export class PhaseManager {
     return this.setCurrentPhase(phases[nextIndex]);
   }
 
-  // ==================== VALIDAÇÃO ====================
+  // ==================== LÓGICA DE FASES ====================
 
-  validatePhaseTransition(fromPhase, toPhase) {
-    const validTransitions = {
-      [TURN_PHASES.RENDA]: [TURN_PHASES.ACOES],
-      [TURN_PHASES.ACOES]: [TURN_PHASES.NEGOCIACAO],
-      [TURN_PHASES.NEGOCIACAO]: [TURN_PHASES.RENDA]
-    };
-    return validTransitions[fromPhase]?.includes(toPhase) || false;
+  _executePhaseLogic(phase) {
+    const handler = this.phaseHandlers[phase];
+    if (handler) {
+      try {
+        handler();
+      } catch (error) {
+        console.error(`Erro no handler da fase ${phase}:`, error);
+      }
+    }
+    
+    // Registrar no log
+    this._logPhaseChange(phase);
   }
 
-  validateActionForPhase(actionType) {
-    const phaseActions = {
-      [TURN_PHASES.RENDA]: [],
-      [TURN_PHASES.ACOES]: ['explorar', 'recolher', 'construir', 'disputar'],
-      [TURN_PHASES.NEGOCIACAO]: ['negociar']
-    };
-    return phaseActions[this.currentPhase]?.includes(actionType) || false;
+  _handleIncomePhase() {
+    console.log(`💰 PhaseManager: Fase de Renda iniciada`);
+    this.resetActions();
+    
+    // Aplicar renda ao jogador atual
+    const currentPlayer = gameState.players[gameState.currentPlayerIndex];
+    if (currentPlayer && !currentPlayer.eliminated && this.main?.turnLogic) {
+      this.main.turnLogic.applyIncome(currentPlayer);
+    }
+  }
+
+  _handleActionsPhase() {
+    console.log(`⚡ PhaseManager: Fase de Ações iniciada`);
+    this.resetActions();
+  }
+
+  _handleNegotiationPhase() {
+    console.log(`🤝 PhaseManager: Fase de Negociação iniciada`);
+    this.actionsLeft = 1; // Apenas uma ação de negociação por turno
+    this._syncWithGameState();
+    
+    // Verificar propostas pendentes
+    setTimeout(() => {
+      if (window.uiManager?.negotiation?.checkPendingNegotiationsForCurrentPlayer) {
+        window.uiManager.negotiation.checkPendingNegotiationsForCurrentPlayer();
+      }
+    }, 500);
   }
 
   // ==================== GERENCIAMENTO DE AÇÕES ====================
@@ -96,98 +166,49 @@ export class PhaseManager {
   }
 
   consumeAction() {
-    if (this.actionsLeft <= 0) return false;
-    this.actionsLeft--;
-    
-    // Atualizar gameState
-    if (gameState) {
-      gameState.actionsLeft = this.actionsLeft;
+    if (this.actionsLeft <= 0) {
+      console.warn('Tentativa de consumir ação quando não há ações disponíveis');
+      return false;
     }
     
+    this.actionsLeft--;
+    this._syncWithGameState();
+    
+    console.log(`📝 Ação consumida. Restam: ${this.actionsLeft}`);
     return this.actionsLeft;
   }
 
   resetActions() {
-    const oldCount = this.actionsLeft;
     this.actionsLeft = GAME_CONFIG.ACTIONS_PER_TURN;
-    
-    // Atualizar gameState
-    if (gameState) {
-      gameState.actionsLeft = this.actionsLeft;
-    }
-    
-    if (oldCount !== this.actionsLeft) {
-      console.log(`🔄 Ações resetadas: ${oldCount} → ${this.actionsLeft}`);
-    }
-    
-    return this.actionsLeft;
+    this._syncWithGameState();
+    console.log(`🔄 Ações resetadas para: ${this.actionsLeft}`);
   }
 
-  // ==================== LÓGICA DE FASE ====================
+  // ==================== VALIDAÇÃO ====================
 
-  _executePhaseLogic(phase) {
-    const handler = this.phaseCallbacks[phase];
-    if (handler) {
-      handler();
-    } else {
-      console.warn(`⚠️ Nenhum handler para fase: ${phase}`);
-    }
+  validateActionForPhase(actionType) {
+    const phaseActions = {
+      [TURN_PHASES.RENDA]: [],
+      [TURN_PHASES.ACOES]: ['explorar', 'recolher', 'construir', 'disputar'],
+      [TURN_PHASES.NEGOCIACAO]: ['negociar']
+    };
+    
+    return phaseActions[this.currentPhase]?.includes(actionType) || false;
   }
 
-  _handleIncomePhase() {
-    console.log(`💰 Iniciando fase de Renda para ${gameState.players[gameState.currentPlayerIndex]?.name}`);
-    this.resetActions();
-    
-    // Aplicar renda imediatamente
-    if (this.main && this.main.turnLogic) {
-      const currentPlayer = gameState.players[gameState.currentPlayerIndex];
-      if (currentPlayer && !currentPlayer.eliminated) {
-        this.main.turnLogic.applyIncome(currentPlayer);
-      }
+  canPerformAction(actionType) {
+    if (this.actionsLeft <= 0) {
+      return { valid: false, reason: 'Sem ações restantes' };
     }
     
-    // Para humanos, mostrar modal de renda
-    if (gameState.currentPlayerIndex !== undefined) {
-      const currentPlayer = gameState.players[gameState.currentPlayerIndex];
-      if (currentPlayer && !currentPlayer.eliminated && 
-          !(currentPlayer.type === 'ai' || currentPlayer.isAI)) {
-        
-        // Pequeno delay para garantir que a UI esteja atualizada
-        setTimeout(() => {
-          if (window.uiManager?.modals?.showIncomeModal) {
-            // O modal de renda será mostrado pelo TurnLogic
-            console.log(`💰 Mostrando modal de renda para ${currentPlayer.name}`);
-          }
-        }, 300);
-      }
-    }
-  }
-
-  _handleActionsPhase() {
-    console.log(`⚡ Iniciando fase de Ações para ${gameState.players[gameState.currentPlayerIndex]?.name}`);
-    this.resetActions();
-  }
-
-  _handleNegotiationPhase() {
-    console.log(`🤝 Iniciando fase de Negociação para ${gameState.players[gameState.currentPlayerIndex]?.name}`);
-    this.actionsLeft = 1; // Apenas uma ação de negociação por turno
-    
-    // Atualizar gameState
-    if (gameState) {
-      gameState.actionsLeft = this.actionsLeft;
+    if (!this.validateActionForPhase(actionType)) {
+      return { 
+        valid: false, 
+        reason: `Ação não permitida na fase ${this.getPhaseDisplayName()}` 
+      };
     }
     
-    // Notificar sistema de negociação
-    if (this.main && this.main.negotiationLogic) {
-      this.main.negotiationLogic.setupPhase();
-    }
-    
-    // Verificar propostas pendentes
-    setTimeout(() => {
-      if (window.uiManager?.negotiation?.checkPendingNegotiationsForCurrentPlayer) {
-        window.uiManager.negotiation.checkPendingNegotiationsForCurrentPlayer();
-      }
-    }, 500);
+    return { valid: true, reason: '' };
   }
 
   // ==================== REGISTRO E LOG ====================
@@ -198,7 +219,8 @@ export class PhaseManager {
       turn: gameState?.turn || 0,
       oldPhase,
       newPhase,
-      player: gameState?.players[gameState?.currentPlayerIndex]?.name || 'Desconhecido'
+      player: gameState?.players[gameState?.currentPlayerIndex]?.name || 'Desconhecido',
+      actionsLeft: this.actionsLeft
     };
 
     this.phaseHistory.unshift(phaseEntry);
@@ -252,7 +274,10 @@ export class PhaseManager {
       currentPhase: {
         name: this.currentPhase,
         displayName: this.getPhaseDisplayName(),
-        actionsLeft: this.actionsLeft
+        actionsLeft: this.actionsLeft,
+        duration: this.phaseTimers.has(this.currentPhase) 
+          ? Date.now() - this.phaseTimers.get(this.currentPhase)
+          : 0
       }
     };
   }
@@ -268,7 +293,9 @@ export class PhaseManager {
       gameStateActionsLeft: gameState?.actionsLeft,
       historyLength: this.phaseHistory.length,
       lastTransition: this.phaseHistory[0] || null,
-      currentPlayer: gameState?.players[gameState?.currentPlayerIndex]?.name
+      currentPlayer: gameState?.players[gameState?.currentPlayerIndex]?.name,
+      isSynchronized: this.currentPhase === gameState?.currentPhase && 
+                     this.actionsLeft === gameState?.actionsLeft
     };
   }
 }
