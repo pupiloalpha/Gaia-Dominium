@@ -13,7 +13,7 @@ const GAME_CONFIG = {
     explorar: { cost:{madeira:2, agua:1}, pv:1 },
     construir: { cost:{madeira:3, pedra:2, ouro:1}, pv:2 },
     disputar: { cost:{madeira:2, pedra:2, ouro:3, agua:1}, pv:3 },
-    recolher: { cost:{madeira:1}, pv:1 },
+    coletar: { cost:{madeira:1}, pv:1 },
     negociar: { cost:{ouro:1}, pv:1 }
   },
   TURNS_UNTIL_NEXT_EVENT: 4,
@@ -447,7 +447,7 @@ const ACHIEVEMENTS_CONFIG = {
   COLLECTOR: {
     id: 'colecionador',
     name: 'Colecionador',
-    description: 'Recolha recursos de 8 regiões diferentes',
+    description: 'Colete recursos de 8 regiões diferentes',
     icon: '🌾',
     requirement: 8,
     type: 'collected',
@@ -622,7 +622,7 @@ const UI_CONSTANTS = {
   
   ACTION_COSTS: {
     'explorar': { madeira: 2, agua: 1 },
-    'recolher': { madeira: 1 },
+    'coletar': { madeira: 1 },
     'construir': { madeira: 3, pedra: 2, ouro: 1 },
     'negociar': { ouro: 1 }
   },
