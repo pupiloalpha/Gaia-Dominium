@@ -19,7 +19,7 @@ class GameLogic {
 constructor() {
   console.log("🎮 GameLogic inicializando...");
   
-  // Inicializar serviços principais (FASE 2)
+  // Inicializar serviços principais
   this.initializer = new GameInitializer();
   this.coordinator = new GameCoordinator(this);
   this.validator = new ValidationService(this);
@@ -29,15 +29,18 @@ constructor() {
   this.actionsLogic = new ActionLogic(this);
   this.negotiationLogic = new NegotiationLogic(this);
   
-  // Inicializar serviços do TurnLogic (FASE 4)
+  // Inicializar serviços do TurnLogic
   this.eventManager = new EventManager(this);
   this.incomeCalculator = new IncomeCalculator(this);
-  this.phaseManager = new PhaseManager(this);
   
   // Inicializar TurnLogic com serviços injetados
   this.turnLogic = new TurnLogic(this);
   this.turnLogic.eventManager = this.eventManager;
   this.turnLogic.incomeCalculator = this.incomeCalculator;
+  this.turnLogic.phaseManager = this.phaseManager;
+
+  // Obter PhaseManager do coordinator
+  this.phaseManager = this.coordinator.phaseManager;
   this.turnLogic.phaseManager = this.phaseManager;
   
   // Inicializar demais módulos
@@ -66,17 +69,10 @@ constructor() {
     // Iniciar monitor de IA
     this.aiCoordinator.startHealthMonitor();
     
-    // Aplicar renda inicial ao jogador atual
-    const currentPlayer = getCurrentPlayer();
-    this.turnLogic.applyIncome(currentPlayer);
+    // Aplicar renda inicial ao jogador atual via PhaseManager
+    // O PhaseManager já aplicará a renda quando a fase for processada
     
-    // Configurar timeout de segurança
-    setTimeout(() => {
-      if (gameState.currentPhase === 'renda') {
-        this.coordinator.setCurrentPhase('acoes');
-        this._updateUI();
-      }
-    }, 5000);
+    // Não é necessário timeout de segurança - o fluxo é gerenciado pelo PhaseManager
     
     return true;
   }
@@ -200,6 +196,21 @@ constructor() {
     this.aiCoordinator.forceAIEndTurn(); 
   }
 
+  // ==================== GETTERS IMPORTANTES ====================
+
+getRemainingActions() {
+  return this.coordinator?.getRemainingActions() || 0;
+}
+
+getCurrentPhase() {
+  return this.coordinator?.getCurrentPhase() || 'renda';
+}
+
+isCurrentPlayerAI() {
+  const player = this.getCurrentPlayer();
+  return player && (player.type === 'ai' || player.isAI);
+}
+
   // ==================== VALIDAÇÕES (FACHADA) ====================
 
   canAffordAction(actionType) {
@@ -227,21 +238,6 @@ constructor() {
     
     return true;
   }
-
-  // ==================== GETTERS IMPORTANTES ====================
-
-getRemainingActions() {
-  return this.coordinator?.getRemainingActions() || 0;
-}
-
-getCurrentPhase() {
-  return this.coordinator?.getCurrentPhase() || 'renda';
-}
-
-isCurrentPlayerAI() {
-  const player = this.getCurrentPlayer();
-  return player && (player.type === 'ai' || player.isAI);
-}
   
   // ==================== UTILITÁRIOS (FACHADA) ====================
 
