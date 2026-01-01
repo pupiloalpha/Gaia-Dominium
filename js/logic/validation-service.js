@@ -47,7 +47,9 @@ export class ValidationService {
       return { valid: false, reason: 'Jogador eliminado não pode realizar esta ação' };
     }
     
-    if (gameState.actionsLeft <= 0) {
+    // Usar PhaseManager para verificar ações restantes
+    const actionsLeft = this.main.phaseManager?.getRemainingActions() || gameState.actionsLeft;
+    if (actionsLeft <= 0) {
       return { valid: false, reason: 'Sem ações restantes neste turno' };
     }
     
@@ -55,18 +57,27 @@ export class ValidationService {
   }
 
   _validatePhase(actionType) {
-    const currentPhase = gameState.currentPhase;
-    const phaseActions = {
-      [TURN_PHASES.RENDA]: [],
-      [TURN_PHASES.ACOES]: ['explorar', 'recolher', 'construir', 'disputar'],
-      [TURN_PHASES.NEGOCIACAO]: ['negociar']
-    };
-    
-    if (!phaseActions[currentPhase]?.includes(actionType)) {
-      return { 
-        valid: false, 
-        reason: `Ação "${actionType}" não permitida na fase "${currentPhase}"` 
+    // Usar PhaseManager para validação de fase
+    if (this.main.phaseManager) {
+      const phaseValidation = this.main.phaseManager.canPerformAction(actionType);
+      if (!phaseValidation.valid) {
+        return phaseValidation;
+      }
+    } else {
+      // Fallback para validação antiga
+      const currentPhase = gameState.currentPhase;
+      const phaseActions = {
+        'renda': [],
+        'acoes': ['explorar', 'recolher', 'construir', 'disputar'],
+        'negociacao': ['negociar']
       };
+      
+      if (!phaseActions[currentPhase]?.includes(actionType)) {
+        return { 
+          valid: false, 
+          reason: `Ação "${actionType}" não permitida na fase "${currentPhase}"` 
+        };
+      }
     }
     
     return { valid: true, reason: '' };
