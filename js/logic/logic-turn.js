@@ -1,408 +1,480 @@
-// logic-turn.js - Gerenciador de Turnos Simplificado (Refatorado)
+// logic-turn.js - Gerenciador de Turnos e Fases
 import { 
   gameState, 
+  achievementsState, 
   addActivityLog, 
-  getCurrentPlayer,
-  getPendingNegotiationsForPlayer,
-  saveGame,
-  getActivePlayers,
-  getNextActivePlayer
+  getCurrentPlayer, 
+  saveGame, 
+  getPendingNegotiationsForPlayer
 } from '../state/game-state.js';
-import { GAME_CONFIG } from '../state/game-config.js';
+import { GAME_CONFIG, BIOME_INCOME, GAME_EVENTS, STRUCTURE_INCOME } from '../state/game-config.js';
 
 export class TurnLogic {
   constructor(gameLogic) {
     this.main = gameLogic;
+    this.incomeModalAttempts = 0;
     this.gameEnded = false;
-    this.incomeApplied = false;
-    this.turnTimeout = null;
   }
 
-  // ==================== CONTROLE DE TURNOS ====================
-
-  async handleEndTurn() {
+  advancePhase() {
     if (this.gameEnded) {
       this.main.showFeedback('O jogo já terminou!', 'warning');
-      return;
+      return gameState.currentPhase;
     }
     
-    const currentPlayer = getCurrentPlayer();
-
-    // Verificar se jogador está eliminado
-    if (currentPlayer.eliminated) {
-      console.log(`🔄 ${currentPlayer.name} está eliminado, pulando turno.`);
-      this._advanceToNextPlayer(currentPlayer);
-      return;
-    }
-    
-    const currentPhase = gameState.currentPhase;
-    console.log(`⏹️ TurnLogic: Finalizando turno na fase: ${currentPhase}`);
-    
-    // Processar baseado na fase atual
-    const result = await this._processPhaseCompletion(currentPhase, currentPlayer);
-    
-    if (result === 'continue') {
-      // Avançar para próxima fase
-      this._advanceToNextPhase(currentPhase);
-    } else if (result === 'complete') {
-      // Finalizar turno completamente
-      this._finalizePlayerTurn(currentPlayer);
-    }
-  }
-
-  async _processPhaseCompletion(phase, player) {
-    switch(phase) {
-      case 'renda':
-        // Sempre avançar da renda para ações
-        return 'continue';
-        
-      case 'acoes':
-        // Verificar se ainda há ações disponíveis
-        if (gameState.actionsLeft > 0) {
-          const confirm = await this.main.showConfirm(
-            'Avançar para Negociação',
-            `Você ainda tem ${gameState.actionsLeft} ação(ões) disponível(is).\n\nDeseja avançar para a fase de negociação mesmo assim?`
-          );
-          return confirm ? 'continue' : 'cancel';
-        }
-        return 'continue';
-        
-      case 'negociacao':
-        // Verificar propostas pendentes
-        const pendingNegotiations = getPendingNegotiationsForPlayer(player.id);
-        
-        if (pendingNegotiations.length > 0 && !(player.type === 'ai' || player.isAI)) {
-          const shouldRespond = await this.main.showConfirm(
-            '📨 Propostas Pendentes',
-            `Você tem ${pendingNegotiations.length} proposta(s) de negociação pendente(s).\n\nDeseja respondê-las agora?`
-          );
-          
-          if (shouldRespond) {
-            if (window.uiManager?.negotiation?.showPendingNegotiationsModal) {
-              window.uiManager.negotiation.showPendingNegotiationsModal();
-            }
-            return 'cancel';
-          }
-        }
-        return 'complete';
-        
-      default:
-        console.warn(`Fase desconhecida: ${phase}, forçando finalização`);
-        return 'complete';
-    }
-  }
-
-  _advanceToNextPhase(currentPhase) {
-    const nextPhase = this._getNextPhase(currentPhase);
-    
-    if (nextPhase && this.main.coordinator) {
-      this.main.coordinator.setCurrentPhase(nextPhase);
-      this.main.showFeedback(`Fase de ${this._getPhaseDisplayName(nextPhase)} iniciada!`, 'info');
-    }
-  }
-
-  _getNextPhase(currentPhase) {
     const phases = ['renda', 'acoes', 'negociacao'];
-    const currentIndex = phases.indexOf(currentPhase);
+    const nextIdx = (phases.indexOf(gameState.currentPhase) + 1) % phases.length;
+    gameState.currentPhase = phases[nextIdx];
     
-    if (currentIndex === -1) return 'renda';
-    
-    return phases[(currentIndex + 1) % phases.length];
-  }
-
-  _getPhaseDisplayName(phase) {
-    const names = {
-      'renda': 'Renda',
-      'acoes': 'Ações',
-      'negociacao': 'Negociação'
-    };
-    return names[phase] || phase;
-  }
-
-  // ==================== FINALIZAÇÃO DE TURNO ====================
-
-  _finalizePlayerTurn(player) {
-    console.log(`⏹️ TurnLogic: Finalizando turno de ${player.name}`);
-    
-    // Verificar vitória antes de finalizar
-    this.checkVictory();
-    
-    if (this.gameEnded) {
-      return;
-    }
-    
-    addActivityLog({
-      type: 'turn',
-      playerName: 'SISTEMA',
-      action: 'Turno finalizado',
-      details: player.name,
-      turn: gameState.turn
+    addActivityLog({ 
+      type: 'system', 
+      playerName: 'SISTEMA', 
+      action: 'Fase alterada', 
+      details: gameState.currentPhase, 
+      turn: gameState.turn 
     });
     
-    // Resetar bônus de turno
-    if (this.main.factionLogic) {
-      this.main.factionLogic.resetTurnBonuses(player);
-    }
-
-    // Avançar para próximo jogador
-    this._advanceToNextPlayer(player);
-  }
-
-  _advanceToNextPlayer(currentPlayer) {
-    // Limpar timeout se existir
-    if (this.turnTimeout) {
-      clearTimeout(this.turnTimeout);
-      this.turnTimeout = null;
-    }
-    
-    // Obter próximo jogador ativo
-    const nextPlayerIndex = getNextActivePlayer?.(gameState.currentPlayerIndex) || 
-      (gameState.currentPlayerIndex + 1) % gameState.players.length;
-    
-    // Verificar vitória por eliminação
-    if (nextPlayerIndex === gameState.currentPlayerIndex) {
-      const activePlayers = getActivePlayers?.() || gameState.players.filter(p => !p.eliminated);
-      
-      if (activePlayers.length === 1) {
-        const winner = activePlayers[0];
-        this._declareVictory(winner);
-        return;
+    if (window.uiManager) { 
+      window.uiManager.updateUI(); 
+      if (window.uiManager.gameManager) {
+            window.uiManager.gameManager.updateFooter();
       }
     }
-
-    // Atualizar jogador atual
-    gameState.currentPlayerIndex = nextPlayerIndex;
     
-    // Incrementar turno se voltou ao jogador 0
-    if (gameState.currentPlayerIndex === 0) {
-      gameState.turn += 1;
-      this._handleGlobalEvents();
+    return gameState.currentPhase;
+  }
+
+
+  // Método auxiliar para verificar se jogador pode realizar ações
+_canPlayerTakeActions(player) {
+  if (!player || player.eliminated) return false;
+  
+  // Verificar se tem recursos para alguma ação
+  const hasBasicResources = 
+    player.resources.madeira >= 1 || 
+    player.resources.pedra >= 1 || 
+    player.resources.ouro >= 1 ||
+    player.victoryPoints >= 2;
+  
+  // Verificar se controla regiões exploráveis
+  const hasExplorableRegions = player.regions.some(regionId => {
+    const region = gameState.regions[regionId];
+    return region && region.explorationLevel < 3;
+  });
+  
+  return hasBasicResources || hasExplorableRegions;
+}
+  
+  async handleEndTurn() {
+  if (this.gameEnded) {
+    this.main.showFeedback('O jogo já terminou!', 'warning');
+    return;
+  }
+  
+  const currentPlayer = getCurrentPlayer();
+
+  // VERIFICAÇÃO: Se jogador está eliminado ou não pode fazer ações, forçar término
+  if (currentPlayer.eliminated || !this._canPlayerTakeActions(currentPlayer)) {
+    console.log(`🔄 ${currentPlayer.name} não pode realizar ações, forçando término do turno`);
+    this._finalizeTurn(currentPlayer);
+    return;
+  }
+  
+  // Lógica para IA é interceptada no AI Coordinator
+  // MAS se chegarmos aqui, deixamos o fluxo normal continuar
+  // O AI Coordinator já deve ter tratado a IA antes
+  
+  // Fase de Ações → Ir para Negociação
+  if (gameState.currentPhase === 'acoes') {
+    this.main.negotiationLogic.setupPhase();
+    return;
+  }
+
+  // Fase de Negociação
+  if (gameState.currentPhase === 'negociacao') {
+    // VERIFICAÇÃO DE PROPOSTAS PENDENTES (APENAS PARA HUMANOS)
+    // IA não precisa desta verificação
+    if (!(currentPlayer.type === 'ai' || currentPlayer.isAI)) {
+      const pendingNegotiations = getPendingNegotiationsForPlayer(currentPlayer.id);
+      
+      if (pendingNegotiations.length > 0) {
+        const shouldRespond = await this.main.showConfirm(
+          '📨 Propostas Pendentes',
+          `Você tem ${pendingNegotiations.length} proposta(s) de negociação pendente(s).\n\nDeseja respondê-las agora antes de terminar seu turno?`
+        );
+        
+        if (shouldRespond) {
+          if (window.uiManager && window.uiManager.negotiation && window.uiManager.negotiation.showPendingNegotiationsModal) {
+            window.uiManager.negotiation.showPendingNegotiationsModal();
+          }
+          return; // Não finalizar o turno
+        }
+      }
     }
+    
+    // Para IA ou humano sem propostas pendentes → Finalizar turno
+    this._finalizeTurn(currentPlayer);
+  } else if (gameState.currentPhase === 'renda') {
+    // Fallback se travar na renda
+    this.main.showFeedback('Finalizando renda...', 'info');
+    gameState.currentPhase = 'acoes';
+    if (window.uiManager) window.uiManager.updateUI();
+  }
+}
 
-    // Resetar estado para novo jogador
-    this._resetPlayerTurn();
+  // logic-turn.js - MODIFICAÇÕES PARA ELIMINAÇÃO
+
+// Substituir a função _finalizeTurn:
+_finalizeTurn(currentPlayer) {
+  // Verificar vitória antes de finalizar
+  this.checkVictory();
+  
+  if (this.gameEnded) {
+    return;
+  }
+  
+  addActivityLog({ 
+    type: 'turn', 
+    playerName: 'SISTEMA', 
+    action: 'Turno finalizado', 
+    details: currentPlayer.name, 
+    turn: gameState.turn 
+  });
+  
+  // Resetar bônus de turno (facções)
+  if (this.main.factionLogic) {
+    this.main.factionLogic.resetTurnBonuses(currentPlayer);
+  }
+
+  // USAR FUNÇÃO getNextActivePlayer para pular jogadores eliminados
+  gameState.currentPlayerIndex = window.gameState?.getNextActivePlayer?.(gameState.currentPlayerIndex) || 
+    (gameState.currentPlayerIndex + 1) % gameState.players.length;
+  
+  // Se voltou ao mesmo jogador, significa que só há um jogador ativo
+  if (gameState.currentPlayerIndex === gameState.currentPlayerIndex) {
+    // Isso significa que há apenas um jogador ativo - vitória por eliminação
+    const activePlayers = window.gameState?.getActivePlayers?.() || gameState.players.filter(p => !p.eliminated);
     
-    const newPlayer = getCurrentPlayer();
-    
-    // Se o jogador está eliminado, pular turno novamente
-    if (newPlayer.eliminated) {
-      this.main.showFeedback(`${newPlayer.name} está eliminado. Pulando turno...`, 'info');
-      this.turnTimeout = setTimeout(() => this._advanceToNextPlayer(newPlayer), 1000);
+    if (activePlayers.length === 1) {
+      const winner = activePlayers[0];
+      this._declareVictory(winner);
       return;
     }
-    
-    addActivityLog({
-      type: 'turn',
-      playerName: 'SISTEMA',
-      action: 'Turno iniciado',
-      details: newPlayer.name,
-      turn: gameState.turn
-    });
-    
-    // Verificar vitória novamente
-    this.checkVictory();
-    
-    // Notificar UI
-    this._updateGameUI();
-    
-    this.main.showFeedback(`Turno de ${newPlayer.name}`, 'info');
-
-    // Iniciar turno da IA se necessário
-    this._startAITurnIfNeeded(newPlayer);
-    
-    saveGame();
   }
 
-  _resetPlayerTurn() {
-    // Resetar flag de renda aplicada
-    this.incomeApplied = false;
+  if (gameState.currentPlayerIndex === 0) {
+    gameState.turn += 1;
+    this._handleEvents();
+  }
+
+  // Resetar estado para novo jogador
+  gameState.actionsLeft = GAME_CONFIG.ACTIONS_PER_TURN;
+  gameState.selectedRegionId = null;
+  gameState.currentPhase = 'renda';
+  gameState.selectedPlayerForSidebar = gameState.currentPlayerIndex;
+
+  const newPlayer = getCurrentPlayer();
+  
+  // Se o jogador está eliminado, não aplicar renda
+  if (newPlayer.eliminated) {
+    // Pular direto para ações? Ou mostrar mensagem?
+    this.main.showFeedback(`${newPlayer.name} está eliminado. Pulando turno...`, 'info');
     
-    // Resetar fase para renda via coordinator
-    if (this.main.coordinator) {
-      this.main.coordinator.setCurrentPhase('renda');
-      this.main.coordinator.clearRegionSelection();
+    // Avançar novamente
+    setTimeout(() => {
+      this._finalizeTurn(newPlayer);
+    }, 1000);
+    return;
+  }
+  
+  // Aplicar renda ao novo jogador (se não estiver eliminado)
+  this.applyIncome(newPlayer);
+
+  addActivityLog({ 
+    type: 'turn', 
+    playerName: 'SISTEMA', 
+    action: 'Turno iniciado', 
+    details: newPlayer.name, 
+    turn: gameState.turn 
+  });
+  
+  // Verificar vitória novamente
+  this.checkVictory();
+  
+  // Atualizar UI
+  if (window.uiManager) {
+    window.uiManager.updateUI();
+    if (window.uiManager.gameManager) {
+      window.uiManager.gameManager.updateFooter();
     }
   }
+  
+  this.main.showFeedback(`Turno de ${newPlayer.name}`, 'info');
 
-  _startAITurnIfNeeded(player) {
-    if (this.gameEnded) return;
-    
-    // Pequeno delay para garantir que a UI esteja atualizada
+  // GATILHO CRÍTICO PARA IA
+  if (!this.gameEnded) {
     setTimeout(() => {
-      if (player && !player.eliminated && (player.type === 'ai' || player.isAI)) {
-        console.log(`🤖 TurnLogic: Iniciando turno da IA: ${player.name}`);
+      const nextPlayer = getCurrentPlayer();
+      
+      // Se o próximo jogador for IA, iniciar seu turno (se não estiver eliminado)
+      if (nextPlayer && !nextPlayer.eliminated && (nextPlayer.type === 'ai' || nextPlayer.isAI)) {
+        console.log(`🤖 Iniciando turno da IA: ${nextPlayer.name}`);
         
-        this.turnTimeout = setTimeout(() => {
+        // Pequeno delay para UI atualizar
+        setTimeout(() => {
           if (this.main.aiCoordinator) {
             this.main.aiCoordinator.checkAndExecuteAITurn();
+          } else if (window.aiCoordinator) {
+            window.aiCoordinator.checkAndExecuteAITurn();
           }
         }, 1500);
       }
     }, 1000);
   }
-
-  // ==================== RENDA ====================
-
+  
+  saveGame();
+}
+  
   applyIncome(player) {
-    if (this.gameEnded || this.incomeApplied) return;
+    if (this.gameEnded) return;
     
-    // Marcar que a renda foi aplicada
-    this.incomeApplied = true;
+    const bonuses = { madeira: 0, pedra: 0, ouro: 0, agua: 0, pv: 0 };
     
-    let bonuses = { madeira: 0, pedra: 0, ouro: 0, agua: 0, pv: 0 };
-    
-    // Usar o IncomeCalculator se disponível
-    if (this.main.incomeCalculator) {
-      bonuses = this.main.incomeCalculator.calculatePlayerIncome(player, gameState);
-    } else {
-      // Fallback para cálculo básico
-      bonuses = this._calculateBasicIncome(player);
-    }
-    
-    // Aplicar bônus
-    this._applyIncomeBonuses(player, bonuses);
-    
-    // Verificar vitória IMEDIATAMENTE
-    if (player.victoryPoints >= GAME_CONFIG.VICTORY_POINTS) {
-      console.log(`🎯 Vitória na renda: ${player.name} atingiu ${player.victoryPoints} PV`);
-      this._declareVictory(player);
-      return;
-    }
+    player.regions.forEach(rid => {
+      const region = gameState.regions[rid];
+      if(!region) return;
 
-    // Log da renda
-    addActivityLog({
-      type: 'income',
-      playerName: player.name,
-      action: 'recebeu renda',
-      details: `+${bonuses.pv} PV, Recursos: ${JSON.stringify(bonuses)}`,
-      turn: gameState.turn
+      // Base
+      let prod = this._calculateBiomeProduction(region);
+      
+      // Estruturas
+      region.structures.forEach(st => {
+        const inc = STRUCTURE_INCOME[st] || {};
+        Object.keys(inc).forEach(k => prod[k] = (prod[k] || 0) + inc[k]);
+        if (st === 'Torre de Vigia' || st === 'Santuário') bonuses.pv++;
+      });
+
+      // Somar
+      Object.keys(prod).forEach(k => bonuses[k] += prod[k]);
     });
 
-    // Modal de renda para humanos
-    if (player.id === gameState.currentPlayerIndex && 
-        this.main.coordinator?.getCurrentPhase() === 'renda' &&
-        !(player.type === 'ai' || player.isAI)) {
+    // Calcular bônus de facção
+    if (this.main.factionLogic) {
+      const factionBonuses = this.main.factionLogic.applyFactionBonuses(player);
       
-      setTimeout(() => {
-        if (window.uiManager?.modals?.showIncomeModal) {
-          window.uiManager.modals.showIncomeModal(player, bonuses);
-        } else {
-          // Fallback: avançar para fase de ações após 2 segundos
-          setTimeout(() => {
-            if (this.main.coordinator) {
-              this.main.coordinator.setCurrentPhase('acoes');
-              this.main.showFeedback('Renda aplicada! Fase de Ações iniciada.', 'info');
-            }
-          }, 2000);
-        }
-      }, 500);
-    } else if (player.type === 'ai' || player.isAI) {
-      // IA: log apenas
-      console.log(`🤖 ${player.name} recebeu renda: ${JSON.stringify(bonuses)}`);
-      
-      // Avançar para fase de ações após pequeno delay
-      setTimeout(() => {
-        if (this.main.coordinator) {
-          this.main.coordinator.setCurrentPhase('acoes');
-        }
-      }, 1000);
-    }
-  }
-
-  _calculateBasicIncome(player) {
-    const bonuses = { madeira: 2, pedra: 1, ouro: 1, agua: 2, pv: 1 };
-    
-    // Adicionar bônus por região
-    player.regions.forEach(regionId => {
-      const region = gameState.regions[regionId];
-      if (!region) return;
-      
-      switch(region.biome) {
-        case 'Floresta Tropical':
-        case 'Floresta Temperada':
-          bonuses.madeira += 1;
-          break;
-        case 'Savana':
-          bonuses.ouro += 1;
-          break;
-        case 'Pântano':
-          bonuses.agua += 2;
-          bonuses.pedra += 1;
-          break;
+      if (factionBonuses && factionBonuses.production) {
+        Object.entries(factionBonuses.production).forEach(([res, amount]) => {
+          if (amount < 1 && amount > 0) { 
+            bonuses[res] = Math.floor((bonuses[res] || 0) * (1 + amount));
+          } else {
+            bonuses[res] = (bonuses[res] || 0) + Math.floor(amount);
+          }
+        });
       }
-    });
-    
-    return bonuses;
-  }
+    }
 
-  _applyIncomeBonuses(player, bonuses) {
+    // Aplicar
     Object.keys(bonuses).forEach(k => {
-      if (k === 'pv') {
+      if(k === 'pv') {
         player.victoryPoints += bonuses[k];
+        // Verificar vitória IMEDIATAMENTE
+        if (player.victoryPoints >= GAME_CONFIG.VICTORY_POINTS) {
+          console.log(`🎯 Vitória na renda: ${player.name} atingiu ${player.victoryPoints} PV`);
+          this._declareVictory(player);
+          this._stopGameAfterVictory();
+          return;
+        }
       } else {
         player.resources[k] = (player.resources[k] || 0) + bonuses[k];
       }
     });
+
+    // Se o jogo terminou durante a renda, cancelar
+    if (this.gameEnded) {
+      console.log('⏹️ Jogo terminado durante renda - cancelando avanço de fase');
+      return;
+    }
+
+    // Modal UI ou Auto-Skip para IA
+    if (player.id === gameState.currentPlayerIndex && gameState.currentPhase === 'renda') {
+      if (player.type === 'ai' || player.isAI) {
+        // IA pula modal
+        gameState.currentPhase = 'acoes';
+        gameState.actionsLeft = GAME_CONFIG.ACTIONS_PER_TURN;
+        if (!this.gameEnded) {
+          setTimeout(() => {
+            if (this.main.aiCoordinator) {
+              this.main.aiCoordinator.checkAndExecuteAITurn();
+            }
+          }, 1000);
+        }
+      } else {
+        setTimeout(() => {
+          if(window.uiManager && window.uiManager.modals && window.uiManager.modals.showIncomeModal) {
+            window.uiManager.modals.showIncomeModal(player, bonuses);
+          }
+          else {
+            // Fallback
+            gameState.currentPhase = 'acoes';
+            if(window.uiManager) window.uiManager.updateUI();
+          }
+        }, 500);
+      }
+    }
   }
 
-  // ==================== VITÓRIA ====================
+  _calculateBiomeProduction(region) {
+    let prod = { madeira:0, pedra:0, ouro:0, agua:0 };
+    
+    if(region.biome === 'Floresta Tropical') { 
+      prod.madeira=1; 
+      prod.agua=1; 
+    }
+    else if(region.biome === 'Floresta Temperada') { 
+      prod.madeira=1; 
+    }
+    else if(region.biome === 'Savana') { 
+      prod.ouro=1; 
+    }
+    else if(region.biome === 'Pântano') { 
+      prod.agua=2; 
+      prod.pedra=1; 
+    }
+    
+    // Multiplicador Exploração
+    let mult = region.explorationLevel === 1 ? 1.25 : (region.explorationLevel >= 2 ? 1.5 : 1);
+    Object.keys(prod).forEach(k => prod[k] = Math.floor(prod[k] * mult));
+    return prod;
+  }
 
-  checkVictory() {
+  _handleEvents() {
     if (this.gameEnded) return;
     
-    // Verificar vitória por pontos
-    const winner = gameState.players.find(p => p.victoryPoints >= GAME_CONFIG.VICTORY_POINTS);
-    if (winner) {
-      console.log(`🎉 Vitória detectada: ${winner.name} com ${winner.victoryPoints} PV`);
-      this._declareVictory(winner);
-      return;
-    }
-    
-    // Verificar vitória por eliminação
-    const activePlayers = getActivePlayers?.() || gameState.players.filter(p => !p.eliminated);
-    
-    if (activePlayers.length === 1) {
-      const eliminationWinner = activePlayers[0];
-      console.log(`🎉 Vitória por eliminação: ${eliminationWinner.name} é o único jogador ativo`);
-      this._declareVictory(eliminationWinner);
-      return;
-    }
-    
-    if (activePlayers.length === 0) {
-      console.log('💀 Todos os jogadores foram eliminados!');
-      this.gameEnded = true;
-      
-      if (window.uiManager?.modals?.showNoWinnerModal) {
-        window.uiManager.modals.showNoWinnerModal();
+    // Reduz duração evento atual
+    if (gameState.currentEvent) {
+      gameState.eventTurnsLeft--;
+      if (gameState.eventTurnsLeft <= 0) {
+        if(gameState.currentEvent.remove) gameState.currentEvent.remove(gameState);
+        gameState.currentEvent = null;
+        gameState.eventModifiers = {};
+        this.main.showFeedback('Evento global terminou.', 'info');
       }
-      
-      this._disableGameActions();
+    }
+    // Novo evento
+    if (!gameState.currentEvent) {
+      gameState.turnsUntilNextEvent--;
+      if (gameState.turnsUntilNextEvent <= 0) {
+        this.triggerRandomEvent();
+        gameState.turnsUntilNextEvent = 4;
+      }
     }
   }
 
-  _declareVictory(winner) {
+  triggerRandomEvent() {
+    if (this.gameEnded) return;
+    
+    if (!GAME_EVENTS || !GAME_EVENTS.length) return;
+    const ev = GAME_EVENTS[Math.floor(Math.random() * GAME_EVENTS.length)];
+    
+    if (ev.duration > 1) {
+      gameState.currentEvent = ev;
+      gameState.eventTurnsLeft = ev.duration;
+      gameState.eventModifiers = {};
+    }
+    if(ev.apply) ev.apply(gameState);
+    
+    addActivityLog({ 
+      type: 'event', 
+      playerName: 'GAIA', 
+      action: 'evento', 
+      details: ev.name, 
+      turn: gameState.turn 
+    });
+    this.main.showFeedback(`Evento: ${ev.name}`, 'info');
+  }
+
+  checkVictory() {
+  if (this.gameEnded) return;
+  
+  // Verificar vitória por pontos
+  const winner = gameState.players.find(p => p.victoryPoints >= GAME_CONFIG.VICTORY_POINTS);
+  if (winner) {
+    console.log(`🎉 Vitória detectada: ${winner.name} com ${winner.victoryPoints} PV`);
+    this._declareVictory(winner);
+    this._stopGameAfterVictory();
+    return;
+  }
+  
+  // Verificar vitória por eliminação
+  const activePlayers = window.gameState?.getActivePlayers?.() || 
+    gameState.players.filter(p => !p.eliminated);
+  
+  if (activePlayers.length === 1) {
+    const eliminationWinner = activePlayers[0];
+    console.log(`🎉 Vitória por eliminação: ${eliminationWinner.name} é o único jogador ativo`);
+    this._declareVictory(eliminationWinner);
+    this._stopGameAfterVictory();
+    return;
+  }
+  
+  if (activePlayers.length === 0) {
+    // Todos os jogadores eliminados
+    console.log('💀 Todos os jogadores foram eliminados!');
     this.gameEnded = true;
     
-    // Limpar timeout
-    if (this.turnTimeout) {
-      clearTimeout(this.turnTimeout);
-      this.turnTimeout = null;
+    // Mostrar modal de fim de jogo sem vencedor
+    if (window.uiManager?.modals?.showNoWinnerModal) {
+      window.uiManager.modals.showNoWinnerModal();
+    } else {
+      this.main.showFeedback('Todos os jogadores foram eliminados! Jogo terminou sem vencedor.', 'warning');
     }
+    
+    this._disableGameActions();
+    return;
+  }
+}
+
+_getNextActivePlayer(startIndex) {
+    const players = gameState.players;
+    let nextIndex = (startIndex + 1) % players.length;
+    let attempts = 0;
+    
+    // Procurar próximo jogador não eliminado
+    while (attempts < players.length) {
+        if (!players[nextIndex].eliminated) {
+            return nextIndex;
+        }
+        nextIndex = (nextIndex + 1) % players.length;
+        attempts++;
+    }
+    
+    // Se todos eliminados, retornar -1
+    return -1;
+}
+  
+  _declareVictory(winner) {
+    this.gameEnded = true;
     
     const victoryMessage = `${winner.name} venceu o jogo com ${winner.victoryPoints} PV!`;
     this.main.showFeedback(victoryMessage, 'success');
     
-    addActivityLog({
-      type: 'victory',
-      playerName: winner.name,
-      action: '🏆 VENCEU O JOGO 🏆',
-      details: victoryMessage,
-      turn: gameState.turn
+    addActivityLog({ 
+      type: 'victory', 
+      playerName: winner.name, 
+      action: '🏆 VENCEU O JOGO 🏆', 
+      details: victoryMessage, 
+      turn: gameState.turn 
     });
     
+    if (achievementsState && achievementsState.wins !== undefined) {
+      achievementsState.wins++;
+    }
+    
     setTimeout(() => {
-      if (window.uiManager?.modals?.openVictoryModal) {
+      if (window.uiManager && window.uiManager.modals && window.uiManager.modals.openVictoryModal) {
         window.uiManager.modals.openVictoryModal(winner);
+      } else {
+        this.main.showFeedback(victoryMessage, 'success');
       }
     }, 1000);
     
@@ -410,26 +482,18 @@ export class TurnLogic {
     saveGame();
   }
 
-  // ==================== EVENTOS GLOBAIS ====================
-
-  _handleGlobalEvents() {
-    // Atualizar eventos globais
-    if (this.main.eventManager) {
-      this.main.eventManager.updateEventTurn(gameState);
-    }
-  }
-
-  // ==================== UTILITÁRIOS ====================
-
-  _updateGameUI() {
+  _stopGameAfterVictory() {
+    gameState.gameStarted = false;
+    this.gameEnded = true;
+    
     if (window.uiManager) {
       window.uiManager.updateUI();
       if (window.uiManager.gameManager) {
-        setTimeout(() => window.uiManager.gameManager.updateFooter(), 100);
+            window.uiManager.gameManager.updateFooter();
       }
     }
   }
-
+  
   _disableGameActions() {
     if (window.uiManager) {
       const actionButtons = [
@@ -445,21 +509,13 @@ export class TurnLogic {
         }
       });
       
-      this._updateGameUI();
+      const phaseIndicator = document.getElementById('phaseIndicator');
+      if (phaseIndicator) {
+        phaseIndicator.textContent = '🎉 JOGO TERMINADO! 🎉';
+        phaseIndicator.classList.add('text-yellow-400', 'font-bold');
+      }
+      
+      window.uiManager.updateUI();
     }
-  }
-
-  // ==================== DEBUG ====================
-
-  getDebugInfo() {
-    return {
-      gameEnded: this.gameEnded,
-      incomeApplied: this.incomeApplied,
-      currentTurn: gameState.turn,
-      currentPlayer: getCurrentPlayer()?.name,
-      currentPhase: gameState.currentPhase,
-      activePlayers: getActivePlayers?.()?.length || gameState.players.filter(p => !p.eliminated).length,
-      turnTimeout: !!this.turnTimeout
-    };
   }
 }
