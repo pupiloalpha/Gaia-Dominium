@@ -24,7 +24,7 @@ export class ActionLogic {
   consumeAction() {
     gameState.actionsLeft--;
     if (window.uiManager && window.uiManager.gameManager) {
-         setTimeout(() => window.uiManager.gameManager.updateFooter(), 10);
+      setTimeout(() => window.uiManager.gameManager.updateFooter(), 10);
     }
     
     return true;
@@ -68,23 +68,21 @@ export class ActionLogic {
     }
   }
   
-  // Método para lidar com região inimiga (separado da disputa)
-  _handleEnemyRegion(region, player) {
-    // Este método não executa a disputa, apenas configura o estado
-    // A disputa será tratada pelo modal de disputa
-    gameState.selectedRegionId = region.id;
+  // Novo método para dominar região
+  async handleDominate() {
+    if (this.main.preventActionIfModalOpen()) return;
     
-    // Mostrar feedback informativo
-    const enemy = getPlayerById(region.controller);
-    this.main.showFeedback(
-      `Região controlada por ${enemy.name}. Use o botão "Disputar" para tentar conquistá-la.`,
-      'info'
-    );
-    
-    // Atualizar UI para mostrar botão de disputa
-    if (window.uiManager && window.uiManager.gameManager) {
-      window.uiManager.gameManager.updateFooter();
+    // Usar validação centralizada
+    const validation = this.main.getActionValidation('dominate');
+    if (!validation.valid) {
+      this.main.showFeedback(validation.reason, 'error');
+      return;
     }
+    
+    const region = gameState.regions[gameState.selectedRegionId];
+    const player = getCurrentPlayer();
+    
+    await this._assumeControl(region, player);
   }
 
   async _assumeControl(region, player) {
@@ -103,7 +101,7 @@ export class ActionLogic {
       return;
     }
     
-    const canPay = Object.entries(region.resources).every(([k,v]) => player.resources[k] >= v);
+    const canPay = Object.entries(region.resources).every(([k, v]) => (player.resources[k] || 0) >= v);
     if (!canPay) {
       this.main.showFeedback(`Recursos insuficientes.`, 'error');
       return;
@@ -113,7 +111,9 @@ export class ActionLogic {
     if (!confirm || !this.consumeAction()) return;
     
     player.victoryPoints -= pvCost;
-    Object.entries(region.resources).forEach(([k,v]) => player.resources[k] -= v);
+    Object.entries(region.resources).forEach(([k, v]) => {
+      player.resources[k] = Math.max(0, (player.resources[k] || 0) - v);
+    });
     
     region.controller = player.id;
     player.regions.push(region.id);
@@ -142,7 +142,7 @@ export class ActionLogic {
       return;
     }
     
-    const canPay = Object.entries(region.resources).every(([k,v]) => player.resources[k] >= v);
+    const canPay = Object.entries(region.resources).every(([k, v]) => (player.resources[k] || 0) >= v);
     if (!canPay) {
       this.main.showFeedback('Recursos insuficientes para ressuscitar.', 'error');
       return;
@@ -161,7 +161,9 @@ export class ActionLogic {
     if (resurrected) {
       // Pagar custos (a função resurrectPlayer já faz isso, mas mantemos por segurança)
       player.victoryPoints -= resurrectionCostPV;
-      Object.entries(region.resources).forEach(([k,v]) => player.resources[k] -= v);
+      Object.entries(region.resources).forEach(([k, v]) => {
+        player.resources[k] = Math.max(0, (player.resources[k] || 0) - v);
+      });
       
       this.main.showFeedback(`${player.name} ressuscitou dominando ${region.name}!`, 'success');
       addActivityLog({ 
@@ -198,7 +200,7 @@ export class ActionLogic {
     if (!this.consumeAction()) return;
     
     // 3. Pagar o custo descontado
-    Object.entries(cost).forEach(([k,v]) => player.resources[k] -= v);
+    Object.entries(cost).forEach(([k, v]) => player.resources[k] -= v);
     
     region.explorationLevel = Math.min(3, region.explorationLevel + 1);
     player.victoryPoints += 1;
@@ -207,37 +209,44 @@ export class ActionLogic {
     // 4. Lógica de Bônus de Facção (Ex: Chance extra de ouro ou madeira em floresta)
     let bonusMsg = '';
     if (this.main.factionLogic) {
-        const factionBonus = this.main.factionLogic.applyExploreBonus(player, region);
-        if (factionBonus) {
-            Object.entries(factionBonus).forEach(([k, v]) => {
-                player.resources[k] = (player.resources[k] || 0) + v;
-                bonusMsg += ` (+${v} ${k} Facção)`;
-            });
-        }
+      const factionBonus = this.main.factionLogic.applyExploreBonus(player, region);
+      if (factionBonus) {
+        Object.entries(factionBonus).forEach(([k, v]) => {
+          player.resources[k] = (player.resources[k] || 0) + v;
+          bonusMsg += ` (+${v} ${k} Facção)`;
+        });
+      }
     }
 
     const rareFind = Math.random() < 0.10;
     if (rareFind) { 
-        player.resources.ouro += 1; 
-        this.main.showFeedback(`Descoberta Rara! +1 Ouro${bonusMsg}`, 'success'); 
+      player.resources.ouro += 1; 
+      this.main.showFeedback(`Descoberta Rara! +1 Ouro${bonusMsg}`, 'success'); 
     } else { 
-        this.main.showFeedback(`${region.name} explorada. Nível: ${region.explorationLevel}⭐${bonusMsg}`, 'success'); 
+      this.main.showFeedback(`${region.name} explorada. Nível: ${region.explorationLevel}⭐${bonusMsg}`, 'success'); 
     }
     
     addActivityLog({ 
-        type: 'explore', 
-        playerName: player.name, 
-        action: rareFind ? 'explorou (Raro!)' : 'explorou', 
-        details: `${region.name}${bonusMsg}`, 
-        turn: gameState.turn 
+      type: 'explore', 
+      playerName: player.name, 
+      action: rareFind ? 'explorou (Raro!)' : 'explorou', 
+      details: `${region.name}${bonusMsg}`, 
+      turn: gameState.turn 
     });
     
     this._finalizeAction();
   }
 
+  // Método handleCollect refatorado
   handleCollect() {
     if (this.main.preventActionIfModalOpen()) return;
-    if (!this.validateAction('recolher')) return;
+    
+    // Usar validação centralizada com nome correto
+    const validation = this.main.getActionValidation('collect');
+    if (!validation.valid) {
+      this.main.showFeedback(validation.reason, 'error');
+      return;
+    }
 
     if (gameState.selectedRegionId === null) { 
       this.main.showFeedback('Selecione uma região.', 'error'); 
@@ -259,15 +268,15 @@ export class ActionLogic {
     if (!this.consumeAction()) return;
 
     const cost = GAME_CONFIG.ACTION_DETAILS.recolher.cost;
-    Object.entries(cost).forEach(([k,v]) => player.resources[k] -= v);
+    Object.entries(cost).forEach(([k, v]) => player.resources[k] -= v);
 
     // Lógica Base de Coleta
     let harvestPercent = region.explorationLevel === 3 ? 0.75 : 0.5;
     
     // Bônus Padrão (Eventos e Nível)
     if (region.explorationLevel >= 1) {
-       const types = Object.keys(region.resources).filter(k => region.resources[k] > 0);
-       if (types.length) player.resources[types[Math.floor(Math.random() * types.length)]] += 1;
+      const types = Object.keys(region.resources).filter(k => region.resources[k] > 0);
+      if (types.length) player.resources[types[Math.floor(Math.random() * types.length)]] += 1;
     }
 
     // Coleta dos recursos da região
@@ -280,30 +289,37 @@ export class ActionLogic {
     // 1. Aplicar Bônus de Facção (Ex: Navegadores em Pântano)
     let factionMsg = '';
     if (this.main.factionLogic) {
-        const factionLoot = this.main.factionLogic.applyCollectBonus(player, region);
-        if (factionLoot) {
-            Object.entries(factionLoot).forEach(([k, v]) => {
-                player.resources[k] = (player.resources[k] || 0) + v;
-                factionMsg += ` +${v} ${k} (Facção)`;
-            });
-        }
+      const factionLoot = this.main.factionLogic.applyCollectBonus(player, region);
+      if (factionLoot) {
+        Object.entries(factionLoot).forEach(([k, v]) => {
+          player.resources[k] = (player.resources[k] || 0) + v;
+          factionMsg += ` +${v} ${k} (Facção)`;
+        });
+      }
     }
 
     player.victoryPoints += 1;
     this.main.showFeedback(`Recolhido. +1 PV${factionMsg}`, 'success');
     addActivityLog({ 
-        type: 'collect', 
-        playerName: player.name, 
-        action: 'recolheu recursos', 
-        details: `${region.name}${factionMsg}`, 
-        turn: gameState.turn 
+      type: 'collect', 
+      playerName: player.name, 
+      action: 'recolheu recursos', 
+      details: `${region.name}${factionMsg}`, 
+      turn: gameState.turn 
     });
     
     this._finalizeAction();
   }
 
+  // Método handleBuild refatorado
   handleBuild(structureType = 'Abrigo') {
-    if (!this.validateAction('construir')) return;
+    // Usar validação centralizada com contexto
+    const validation = this.main.getActionValidation('build', null, { structureType });
+    if (!validation.valid) {
+      this.main.showFeedback(validation.reason, 'error');
+      return;
+    }
+    
     if (gameState.selectedRegionId === null) { 
       this.main.showFeedback('Selecione uma região.', 'error'); 
       return; 
@@ -324,11 +340,11 @@ export class ActionLogic {
     // 1. Calcular Custo com Desconto de Facção (Ex: Construtores da Montanha)
     let cost = { ...STRUCTURE_COSTS[structureType] }; // Cópia segura
     if (this.main.factionLogic) {
-        cost = this.main.factionLogic.modifyBuildCost(player, cost);
+      cost = this.main.factionLogic.modifyBuildCost(player, cost);
     }
     
     // 2. Verificar pagamento com custo descontado
-    const canPay = Object.entries(cost).every(([k,v]) => (player.resources[k] || 0) >= v);
+    const canPay = Object.entries(cost).every(([k, v]) => (player.resources[k] || 0) >= v);
     
     if (!canPay) { 
       this.main.showFeedback('Recursos insuficientes.', 'error'); 
@@ -337,13 +353,13 @@ export class ActionLogic {
     if (!this.consumeAction()) return;
     
     // 3. Pagar
-    Object.entries(cost).forEach(([k,v]) => player.resources[k] -= v);
+    Object.entries(cost).forEach(([k, v]) => player.resources[k] -= v);
     region.structures.push(structureType);
     
     // 4. Calcular PV (Base + Eventos + Facção)
     let pvBonus = 0;
     if (this.main.factionLogic) {
-        pvBonus = this.main.factionLogic.applyBuildBonus(player, structureType).pv || 0;
+      pvBonus = this.main.factionLogic.applyBuildBonus(player, structureType).pv || 0;
     }
 
     const pvGain = (STRUCTURE_EFFECTS[structureType]?.pv || 0) + 
@@ -371,7 +387,7 @@ export class ActionLogic {
     if (window.uiManager) {
       window.uiManager.updateUI();
       if (window.uiManager.gameManager) {
-          setTimeout(() => window.uiManager.gameManager.updateFooter(), 100);
+        setTimeout(() => window.uiManager.gameManager.updateFooter(), 100);
       }    
     }
   }
