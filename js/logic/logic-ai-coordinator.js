@@ -11,6 +11,7 @@ import {
 export class AICoordinator {
   constructor(gameLogic) {
     this.main = gameLogic;
+    this.turnPhaseManager = gameLogic.turnManager;
     this.inProgress = false;
     this.healthMonitor = null;
     this.feedbackHistory = [];
@@ -104,21 +105,19 @@ export class AICoordinator {
     }
   }
 
-  async _handleIncomePhaseAI(player) {
-    console.log(`🤖 ${player.name} na fase de renda`);
-    this.logAIAction(player.id, 'Processando fase de renda');
-    
-    // A renda já foi aplicada pelo TurnLogic
-    // Pequeno delay para simular processamento
-    await this._delay(1500);
-    
-    // Avançar para fase de ações
-    this.main.coordinator?.setCurrentPhase('acoes');
-    this.logAIAction(player.id, 'Avançou para fase de ações');
-    
-    // Feedback visual
-    this.main.showFeedback(`${player.name} (IA) processou renda e avançou para ações`, 'info');
-  }
+async _handleIncomePhaseAI(player) {
+  console.log(`🤖 ${player.name} na fase de renda`);
+  this.logAIAction(player.id, 'Processando fase de renda');
+  
+  // Pequeno delay para simular processamento
+  await this._delay(1500);
+  
+  // Avançar para fase de ações via turnManager
+  this.main.turnManager?.advancePhase();
+  this.logAIAction(player.id, 'Avançou para fase de ações');
+  
+  this.main.showFeedback(`${player.name} (IA) processou renda e avançou para ações`, 'info');
+}
 
   async _handleActionsPhaseAI(player, ai) {
     console.log(`🤖 ${player.name} executando ações`);
