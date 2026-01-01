@@ -1,10 +1,11 @@
-// ui-game.js - Interface do Jogo (Corrigido)
+// ui-game.js - Interface do Jogo (Refatorado)
 import {
     gameState,
+    achievementsState,
     getCurrentPlayer,
     activityLogHistory
 } from '../state/game-state.js';
-import { GAME_CONFIG, RESOURCE_ICONS, UI_CONSTANTS } from '../state/game-config.js';
+import { GAME_CONFIG, RESOURCE_ICONS, ACHIEVEMENTS_CONFIG, UI_CONSTANTS } from '../state/game-config.js';
 import { Utils } from '../utils/utils.js';
 import { RegionRenderer } from './ui-region-renderer.js';
 import { SidebarManager } from './ui-sidebar-manager.js';
@@ -16,12 +17,7 @@ const { LOG_ICONS, PHASE_NAMES, ACTION_COSTS } = UI_CONSTANTS;
 export class UIGameManager {
     constructor(uiManager) {
         this.uiManager = uiManager;
-        this.boardContainer = null;
         this.cacheElements();
-        this.initializeComponents();
-    }
-
-    initializeComponents() {
         this.regionRenderer = new RegionRenderer(this);
         this.sidebarManager = new SidebarManager(this);
         this.footerManager = new FooterManager(this);
@@ -38,17 +34,8 @@ export class UIGameManager {
         this.gameMap = document.getElementById('gameMap');
         this.gameFooter = document.getElementById('gameFooter');
         
-        // Container do tabuleiro - CRÍTICO
+        // Container do tabuleiro - ESSENCIAL
         this.boardContainer = document.getElementById('boardContainer');
-        
-        // Se não existir, criar dinamicamente
-        if (!this.boardContainer && this.gameMap) {
-            console.log("⚠️ boardContainer não encontrado, criando dinamicamente...");
-            this.boardContainer = document.createElement('div');
-            this.boardContainer.id = 'boardContainer';
-            this.boardContainer.className = 'board-container';
-            this.gameMap.appendChild(this.boardContainer);
-        }
         
         // Elementos da interface do jogo
         this.playerHeaderList = document.getElementById('playerHeaderList');
@@ -69,7 +56,6 @@ export class UIGameManager {
         
         console.log("✅ Elementos do jogo cacheados:", {
             boardContainer: !!this.boardContainer,
-            gameMap: !!this.gameMap,
             playerHeaderList: !!this.playerHeaderList
         });
     }
@@ -77,7 +63,6 @@ export class UIGameManager {
     init() {
         this.setupEventListeners();
         this.setupTransparencyControls();
-        this.ensureBoardContainer();
     }
 
     // ==================== RENDERIZAÇÃO DO JOGO ====================
@@ -85,25 +70,25 @@ export class UIGameManager {
     updateUI() {
         this.renderHeaderPlayers();
         this.renderBoard();
-        if (this.sidebarManager) {
-            this.sidebarManager.renderSidebar(gameState.selectedPlayerForSidebar);
-        }
-        if (this.footerManager) {
-            this.footerManager.updateFooter();
-        }
+        this.sidebarManager.renderSidebar(gameState.selectedPlayerForSidebar);
+        this.footerManager.updateFooter();
         this.updateTurnInfo();
         this.renderActivityLog();
     }
     
-    ensureBoardContainer() {
-        if (!this.boardContainer && this.gameMap) {
-            this.boardContainer = document.createElement('div');
-            this.boardContainer.id = 'boardContainer';
-            this.boardContainer.className = 'board-container';
-            this.gameMap.appendChild(this.boardContainer);
-            console.log("✅ boardContainer criado dinamicamente");
-        }
+// Método para garantir compatibilidade:
+updateFooter() {
+    if (this.footerManager) {
+        this.footerManager.updateFooter();
     }
+}
+
+// Método para garantir compatibilidade:
+renderSidebar(playerIndex = gameState.selectedPlayerForSidebar) {
+    if (this.sidebarManager) {
+        this.sidebarManager.renderSidebar(playerIndex);
+    }
+}
     
     renderHeaderPlayers() {
         if (!this.playerHeaderList) return;
@@ -152,46 +137,20 @@ export class UIGameManager {
 
     renderBoard() {
         if (!this.boardContainer) {
-            console.error("❌ boardContainer não disponível. Tentando recriar...");
-            this.ensureBoardContainer();
+            console.error("❌ boardContainer não disponível. Tentando recachear...");
+            this.boardContainer = document.getElementById('boardContainer');
             
             if (!this.boardContainer) {
-                console.error("❌ Não foi possível criar boardContainer!");
+                console.error("❌ boardContainer ainda não encontrado após recache!");
                 return;
             }
         }
         
-        // Limpar tabuleiro
         this.boardContainer.innerHTML = '';
-        
-        // Verificar se há regiões para renderizar
-        if (!gameState.regions || gameState.regions.length === 0) {
-            console.error("❌ Não há regiões no gameState para renderizar!");
-            return;
-        }
-        
-        // Criar grade do tabuleiro
-        const gridSize = GAME_CONFIG.GRID_SIZE || 8;
-        this.boardContainer.style.display = 'grid';
-        this.boardContainer.style.gridTemplateColumns = `repeat(${gridSize}, minmax(0, 1fr))`;
-        this.boardContainer.style.gap = '2px';
-        this.boardContainer.style.padding = '8px';
-        
-        console.log(`🎮 Renderizando ${gameState.regions.length} regiões em grade ${gridSize}x${gridSize}`);
-        
-        // Renderizar cada região
         gameState.regions.forEach((region, index) => {
-            try {
-                const cell = this.regionRenderer.createRegionCell(region, index);
-                if (cell) {
-                    this.boardContainer.appendChild(cell);
-                }
-            } catch (error) {
-                console.error(`❌ Erro ao renderizar região ${index}:`, error);
-            }
+            const cell = this.regionRenderer.createRegionCell(region, index);
+            this.boardContainer.appendChild(cell);
         });
-        
-        console.log(`✅ Tabuleiro renderizado com ${this.boardContainer.children.length} células`);
     }
 
     updateTurnInfo() {
@@ -217,18 +176,11 @@ export class UIGameManager {
         const region = gameState.regions[gameState.selectedRegionId];
         const player = getCurrentPlayer();
         
-        if (!region || !player) {
-            this.uiManager.modals.showFeedback('Região ou jogador inválido.', 'error');
-            return;
-        }
-        
         // Verificar se jogador está eliminado
         if (player.eliminated) {
             // Jogador eliminado só pode dominar regiões neutras
             if (region.controller === null) {
-                if (window.gameLogic?.handleExplore) {
-                    window.gameLogic.handleExplore();
-                }
+                window.gameLogic.handleExplore(); // Isso chamará a ressurreição
             } else {
                 this.uiManager.modals.showFeedback('Jogador eliminado só pode dominar regiões neutras.', 'error');
             }
@@ -236,15 +188,11 @@ export class UIGameManager {
         }
         
         if (region.controller === null) {
-            // Região neutra - dominar diretamente
-            if (window.gameLogic?.handleExplore) {
-                window.gameLogic.handleExplore();
-            }
+            // Região neutra - dominar diretamente (SEM MODAL)
+            window.gameLogic.handleExplore();
         } else if (region.controller === player.id) {
             // Região própria - explorar diretamente
-            if (window.gameLogic?.handleExplore) {
-                window.gameLogic.handleExplore();
-            }
+            window.gameLogic.handleExplore();
         } else {
             // Região inimiga - abrir modal de disputa
             this.uiManager.disputeUI.openDisputeModal(region.id);
@@ -254,7 +202,7 @@ export class UIGameManager {
     // ==================== LOG DE ATIVIDADES ====================
 
     renderActivityLog(filter = 'all') {
-        const logs = activityLogHistory || [];
+        const logs = activityLogHistory;
         
         if (this.logEntriesSidebar) {
             this.logEntriesSidebar.innerHTML = '';
@@ -302,10 +250,6 @@ export class UIGameManager {
     // ==================== TOOLTIP ====================
 
     showRegionTooltip(region, targetEl) {
-        if (!this.regionTooltip || !this.tooltipTitle || !this.tooltipBody) {
-            return;
-        }
-        
         const owner = region.controller !== null 
             ? `${gameState.players[region.controller].icon} ${gameState.players[region.controller].name}`
             : 'Neutro';
@@ -354,44 +298,49 @@ export class UIGameManager {
     }
 
     positionTooltip(targetEl) {
-        if (!this.regionTooltip) return;
-        
         const rect = targetEl.getBoundingClientRect();
         const tooltipRect = this.regionTooltip.getBoundingClientRect();
         
+        // Posição centralizada acima da célula por padrão
         let top = rect.top - tooltipRect.height - 10;
         let left = rect.left + (rect.width / 2) - (tooltipRect.width / 2);
         
+        // Ajuste para garantir que a tooltip não saia da tela
         const viewportWidth = window.innerWidth;
         const viewportHeight = window.innerHeight;
         const scrollX = window.scrollX || window.pageXOffset;
         const scrollY = window.scrollY || window.pageYOffset;
         
+        // Ajuste horizontal
         if (left < 10) {
             left = 10;
         } else if (left + tooltipRect.width > viewportWidth - 10) {
             left = viewportWidth - tooltipRect.width - 10;
         }
         
+        // Ajuste vertical - se não couber acima, coloca abaixo
         if (top < 10) {
             top = rect.bottom + 10;
+            // Se também não couber abaixo, ajusta para dentro da tela
             if (top + tooltipRect.height > viewportHeight - 10) {
                 top = viewportHeight - tooltipRect.height - 10;
             }
         } else if (top + tooltipRect.height > viewportHeight - 10) {
+            // Se não couber acima, coloca abaixo
             top = rect.bottom + 10;
         }
         
+        // Aplica a posição com scroll
         this.regionTooltip.style.top = (top + scrollY) + 'px';
         this.regionTooltip.style.left = (left + scrollX) + 'px';
+        
+        // Garante que a tooltip esteja visível
         this.regionTooltip.style.zIndex = '1000';
     }
 
     hideRegionTooltip() {
-        if (this.regionTooltip) {
-            this.regionTooltip.classList.add('hidden');
-            this.regionTooltip.classList.remove('visible');
-        }
+        this.regionTooltip.classList.add('hidden');
+        this.regionTooltip.classList.remove('visible');
     }
 
     // ==================== UTILITÁRIOS ====================
@@ -423,6 +372,7 @@ export class UIGameManager {
             transparencySlider.addEventListener('change', (e) => {
                 const value = parseInt(e.target.value);
                 localStorage.setItem('gaia-cell-transparency', value);
+
                 this.uiManager.modals.showFeedback(`Transparência ajustada para ${value}%`, 'info');
             });
             
@@ -477,20 +427,20 @@ export class UIGameManager {
 
     // ==================== EVENT LISTENERS ====================
 
-    setupEventListeners() {
-        // Delegar para o footerManager
-        if (this.footerManager) {
-            this.footerManager.actionExploreBtn?.addEventListener('click', () => this.handleExploreWithContext());
-            this.footerManager.actionCollectBtn?.addEventListener('click', () => window.gameLogic?.handleCollect?.());
-            this.footerManager.endTurnBtn?.addEventListener('click', () => window.gameLogic?.handleEndTurn?.());
-            this.footerManager.actionNegotiateBtn?.addEventListener('click', () => this.uiManager.negotiation?.openNegotiationModal?.());
-            this.footerManager.actionBuildBtn?.addEventListener('click', () => this.uiManager.modals?.openStructureModal?.());
-        }
-        
+setupEventListeners() {
+    // Delegar para o footerManager
+    if (this.footerManager) {
+        this.footerManager.actionExploreBtn?.addEventListener('click', () => this.handleExploreWithContext());
+        this.footerManager.actionCollectBtn?.addEventListener('click', () => window.gameLogic.handleCollect());
+        this.footerManager.endTurnBtn?.addEventListener('click', () => window.gameLogic.handleEndTurn());
+        this.footerManager.actionNegotiateBtn?.addEventListener('click', () => this.uiManager.negotiation.openNegotiationModal());
+        this.footerManager.actionBuildBtn?.addEventListener('click', () => this.uiManager.modals.openStructureModal());
+    }
+    
         // Navegação
-        document.getElementById('manualIcon')?.addEventListener('click', () => this.uiManager.modals?.openManual?.());
-        document.getElementById('manualIconNavbar')?.addEventListener('click', () => this.uiManager.modals?.openManual?.());
-        document.getElementById('achievementsNavBtn')?.addEventListener('click', () => this.uiManager.modals?.renderAchievementsModal?.());
+        document.getElementById('manualIcon')?.addEventListener('click', () => this.uiManager.modals.openManual());
+        document.getElementById('manualIconNavbar')?.addEventListener('click', () => this.uiManager.modals.openManual());
+        document.getElementById('achievementsNavBtn')?.addEventListener('click', () => this.uiManager.modals.renderAchievementsModal());
 
         // Activity Log filters
         this.logFilterAllSidebar?.addEventListener('click', () => this.renderActivityLog('all'));
@@ -504,7 +454,7 @@ export class UIGameManager {
                 if (button) {
                     const idx = Number(button.dataset.index);
                     gameState.selectedPlayerForSidebar = idx;
-                    this.sidebarManager?.renderSidebar?.(idx);
+                    this.sidebarManager.renderSidebar(idx);
                 }
             });
         }
@@ -521,14 +471,14 @@ export class UIGameManager {
                 !isStructureOption && gameState.selectedRegionId !== null) {
                 
                 this.clearRegionSelection();
-                this.footerManager?.updateFooter?.();
-                this.sidebarManager?.renderSidebar?.(gameState.selectedPlayerForSidebar);
+                this.footerManager.updateFooter();
+                this.sidebarManager.renderSidebar(gameState.selectedPlayerForSidebar);
             }
         });
 
         // Tecla ESC para cancelar edição
         document.addEventListener('keydown', (e) => {
-            if (e.key === 'Escape' && this.uiManager.playersManager?.editingIndex !== null) {
+            if (e.key === 'Escape' && this.uiManager.playersManager.editingIndex !== null) {
                 e.preventDefault();
                 this.uiManager.playersManager.cancelEdit();
             }
@@ -539,26 +489,11 @@ export class UIGameManager {
             if (e.ctrlKey && e.shiftKey && e.key === 'I') {
                 e.preventDefault();
                 const panel = document.getElementById('aiDebugPanel');
-                if (panel) {
-                    panel.classList.toggle('hidden');
-                    if (!panel.classList.contains('hidden') && window.aiDebugUpdate) {
-                        window.aiDebugUpdate();
-                    }
+                panel.classList.toggle('hidden');
+                if (!panel.classList.contains('hidden') && window.aiDebugUpdate) {
+                    window.aiDebugUpdate();
                 }
             }
         });
-    }
-    
-    // Métodos de compatibilidade
-    updateFooter() {
-        if (this.footerManager) {
-            this.footerManager.updateFooter();
-        }
-    }
-    
-    renderSidebar(playerIndex = gameState.selectedPlayerForSidebar) {
-        if (this.sidebarManager) {
-            this.sidebarManager.renderSidebar(playerIndex);
-        }
     }
 }
