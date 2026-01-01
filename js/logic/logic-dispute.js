@@ -1,16 +1,18 @@
-// logic-dispute.js - Sistema de Disputa Territorial
+// logic-dispute.js - Sistema de Disputa Territorial (REFATORADO)
 import { 
   gameState, 
   achievementsState, 
   addActivityLog, 
   getCurrentPlayer, 
-  getPlayerById 
+  getPlayerById,
+  ELIMINATION_CONFIG
 } from '../state/game-state.js';
 import { GAME_CONFIG, STRUCTURE_EFFECTS } from '../state/game-config.js';
 
 export class DisputeLogic {
   constructor(gameLogic) {
     this.main = gameLogic;
+    this.lastCalculatedCosts = null; // Cache para custos calculados
   }
 
   // Validação da ação de disputa
@@ -64,9 +66,9 @@ export class DisputeLogic {
       agua: 1
     };
 
-    // Modificadores baseados na região - USAR Math.floor para valores inteiros
+    // Modificadores baseados na região
     let modifiers = {
-      exploration: Math.floor(region.explorationLevel * 0.5), // Arredondar para baixo
+      exploration: Math.floor(region.explorationLevel * 0.5),
       structures: 0,
       defenderAdvantage: 0
     };
@@ -80,13 +82,13 @@ export class DisputeLogic {
       }
     });
 
-    // Diferença de PV entre jogadores - USAR Math.floor
+    // Diferença de PV entre jogadores
     const pvDifference = defender.victoryPoints - player.victoryPoints;
     if (pvDifference > 0) {
       modifiers.defenderAdvantage = Math.floor(pvDifference * 0.1);
     }
 
-    // Custo final - USAR Math.max para garantir inteiros
+    // Custo final
     const finalCost = {
       pv: Math.max(1, Math.floor(baseCost.pv + modifiers.exploration + modifiers.structures + modifiers.defenderAdvantage)),
       madeira: baseCost.madeira,
@@ -112,7 +114,9 @@ export class DisputeLogic {
       baseCost,
       modifiers,
       finalCost,
-      successChance: this.calculateSuccessChance(player, defender, region, finalCost)
+      successChance: this.calculateSuccessChance(player, defender, region, finalCost),
+      regionId: region.id,
+      attackerId: player.id
     };
   }
 
@@ -167,7 +171,7 @@ export class DisputeLogic {
 
   // Verificar se pode pagar a disputa
   canAffordDispute(player) {
-    // Verificação básica - custos serão calculados precisamente depois
+    // Verificação básica
     return player.victoryPoints >= 3 && 
            player.resources.ouro >= 2 &&
            player.resources.madeira >= 1 &&
@@ -175,85 +179,126 @@ export class DisputeLogic {
   }
 
   // Executar disputa para receber região e jogador
-async handleDispute(region, attacker) {
-  // VALIDAÇÃO EXTRA: Verificar se jogador ainda tem ações
-  if (gameState.actionsLeft <= 0) {
-    this.main.showFeedback('Sem ações restantes neste turno.', 'warning');
-    return;
-  }
-  
-  // VALIDAÇÃO EXTRA: Verificar se jogador não foi eliminado
-  if (attacker.eliminated) {
-    this.main.showFeedback('Jogador eliminado não pode disputar.', 'error');
-    return;
-  }
-  
-  const defender = getPlayerById(region.controller);
-  
-  // Calcular custos e chance de sucesso
-  const disputeData = this.calculateDisputeCosts(attacker, region);
-  
-  // VERIFICAÇÃO FINAL DE RECURSOS (redundante para segurança)
-  if (attacker.victoryPoints < disputeData.finalCost.pv) {
-    this.main.showFeedback(`PV insuficientes para iniciar a disputa (necessário: ${disputeData.finalCost.pv}).`, 'error');
-    return;
-  }
-  
-  const canPay = Object.entries(disputeData.finalCost).every(([resource, amount]) => {
-    if (resource === 'pv') return true; // PV já verificado acima
-    return (attacker.resources[resource] || 0) >= amount;
-  });
-  
-  if (!canPay) {
-    this.main.showFeedback('Recursos insuficientes para iniciar a disputa.', 'error');
-    return;
-  }
- 
-  // Consumir ação (já foi consumida ao abrir o modal? Verificar ui-dispute.js)
-  // IMPORTANTE: A ação deve ser consumida apenas se a disputa prosseguir
-  // Se chegou até aqui, o jogador confirmou no modal, então consumir ação
-  if (!this.consumeAction()) return;
-  
-  // Pagar custos
-  attacker.victoryPoints -= disputeData.finalCost.pv;
-  Object.entries(disputeData.finalCost).forEach(([resource, amount]) => {
-    if (resource !== 'pv' && amount > 0) {
-      attacker.resources[resource] = Math.max(0, (attacker.resources[resource] || 0) - amount);
+  async handleDispute(region, attacker, skipValidation = false) {
+    // Se skipValidation for true, pular validações (útil quando chamado da UI)
+    if (!skipValidation) {
+      const currentPhase = gameState.currentPhase;
+      if (currentPhase !== 'acoes') {
+        this.main.showFeedback('Disputas só podem ser realizadas na fase de ações.', 'warning');
+        return;
+      }
+
+      if (gameState.actionsLeft <= 0) {
+        this.main.showFeedback('Sem ações restantes neste turno.', 'warning');
+        return;
+      }
+
+      if (attacker.eliminated) {
+        this.main.showFeedback('Jogador eliminado não pode disputar.', 'error');
+        return;
+      }
     }
-  });
-
-  // Determinar resultado
-  const success = Math.random() * 100 < disputeData.successChance;
-  
-  if (success) {
-    await this._handleSuccessfulDispute(attacker, defender, region, disputeData);
-  } else {
-    await this._handleFailedDispute(attacker, defender, region, disputeData);
-  }
     
-  // Atualizar visual da região IMEDIATAMENTE
-  this._updateRegionVisual(region.id);
-  
-  // Verificar vitória
-  this._finalizeDispute();
+    const defender = getPlayerById(region.controller);
+    
+    // Calcular custos (usar cache se disponível)
+    let disputeData;
+    if (this.lastCalculatedCosts && 
+        this.lastCalculatedCosts.regionId === region.id &&
+        this.lastCalculatedCosts.attackerId === attacker.id) {
+      disputeData = this.lastCalculatedCosts.data;
+    } else {
+      disputeData = this.calculateDisputeCosts(attacker, region);
+      // Armazenar em cache
+      this.lastCalculatedCosts = {
+        regionId: region.id,
+        attackerId: attacker.id,
+        data: disputeData
+      };
+    }
+    
+    // VERIFICAÇÃO FINAL DE RECURSOS
+    const finalCost = disputeData.finalCost;
+    const canPay = Object.entries(finalCost).every(([resource, amount]) => {
+      if (resource === 'pv') {
+        return attacker.victoryPoints >= amount;
+      }
+      return (attacker.resources[resource] || 0) >= amount;
+    });
+    
+    if (!canPay) {
+      this.main.showFeedback('Recursos insuficientes para iniciar a disputa.', 'error');
+      this.lastCalculatedCosts = null; // Limpar cache
+      return;
+    }
+    
+    // Consumir ação
+    if (!this.consumeAction()) {
+      this.lastCalculatedCosts = null;
+      return;
+    }
+    
+    // Pagar custos
+    attacker.victoryPoints -= finalCost.pv;
+    Object.entries(finalCost).forEach(([resource, amount]) => {
+      if (resource !== 'pv' && amount > 0) {
+        attacker.resources[resource] = Math.max(0, (attacker.resources[resource] || 0) - amount);
+      }
+    });
 
-  // Verificar vitória
-  this.main.turnLogic.checkVictory();
-}
+    // Determinar resultado
+    const success = Math.random() * 100 < disputeData.successChance;
+    
+    if (success) {
+      await this._handleSuccessfulDispute(attacker, defender, region, disputeData);
+    } else {
+      await this._handleFailedDispute(attacker, defender, region, disputeData);
+    }
+    
+    // Limpar cache
+    this.lastCalculatedCosts = null;
+    
+    // Atualizar visual da região
+    this._updateRegionVisual(region.id);
+    
+    // Verificar vitória
+    this.main.turnLogic.checkVictory();
+    
+    return success;
+  }
   
-// Método auxiliar (antes de _handleSuccessfulDispute):
-consumeAction() {
+  // Método auxiliar
+  consumeAction() {
     if (gameState.actionsLeft <= 0) {
-        return false;
+      return false;
     }
     gameState.actionsLeft--;
     
     if (window.uiManager && window.uiManager.gameManager) {
-        setTimeout(() => window.uiManager.gameManager.updateFooter(), 10);
+      setTimeout(() => window.uiManager.gameManager.updateFooter(), 10);
     }
     
     return true;
-}
+  }
+  
+  // Método para obter dados de disputa sem executar
+  getDisputeData(regionId, attackerId) {
+    const region = gameState.regions[regionId];
+    const attacker = getPlayerById(attackerId);
+    
+    if (!region || !attacker) return null;
+    
+    const disputeData = this.calculateDisputeCosts(attacker, region);
+    
+    // Armazenar em cache
+    this.lastCalculatedCosts = {
+      regionId: region.id,
+      attackerId: attacker.id,
+      data: disputeData
+    };
+    
+    return disputeData;
+  }
   
   // Processar disputa bem-sucedida
   async _handleSuccessfulDispute(attacker, defender, region, disputeData) {
@@ -296,24 +341,24 @@ consumeAction() {
     }
   }
 
-_updateRegionVisual(regionId) {
-  const cell = document.querySelector(`.board-cell[data-region-id="${regionId}"]`);
-  if (cell && window.uiManager && window.uiManager.gameManager) {
-    // Remover e recriar a célula
-    const region = gameState.regions[regionId];
-    const newCell = window.uiManager.gameManager.createRegionCell(region, regionId);
-    
-    // Substituir a célula antiga
-    const parent = cell.parentNode;
-    parent.replaceChild(newCell, cell);
-    
-    // Adicionar animação de atualização
-    newCell.classList.add('region-updated');
-    setTimeout(() => {
-      newCell.classList.remove('region-updated');
-    }, 1000);
+  _updateRegionVisual(regionId) {
+    const cell = document.querySelector(`.board-cell[data-region-id="${regionId}"]`);
+    if (cell && window.uiManager && window.uiManager.gameManager) {
+      // Remover e recriar a célula
+      const region = gameState.regions[regionId];
+      const newCell = window.uiManager.gameManager.createRegionCell(region, regionId);
+      
+      // Substituir a célula antiga
+      const parent = cell.parentNode;
+      parent.replaceChild(newCell, cell);
+      
+      // Adicionar animação de atualização
+      newCell.classList.add('region-updated');
+      setTimeout(() => {
+        newCell.classList.remove('region-updated');
+      }, 1000);
+    }
   }
-}
 
   // Processar disputa falhada
   async _handleFailedDispute(attacker, defender, region, disputeData) {
@@ -339,52 +384,52 @@ _updateRegionVisual(regionId) {
   }
 
   // Eliminar jogador sem regiões dominadas
-_handlePlayerElimination(player) {
+  _handlePlayerElimination(player) {
     // Usar a função do game-state para eliminar
     const eliminated = window.gameState?.eliminatePlayer?.(player.id);
     
     if (eliminated) {
-        // A função eliminatePlayer já aplica penalidades e atualiza o estado
-        // Agora vamos registrar no log
-        addActivityLog({
-            type: 'elimination',
-            playerName: 'SISTEMA',
-            action: 'eliminou',
-            details: `${player.name} (perdeu todas as regiões)`,
-            turn: gameState.turn,
-            isEvent: true
-        });
-        
-        // Verificar vitória por eliminação
-        const victoryCheck = window.gameState?.checkEliminationVictory?.();
-        
-        if (victoryCheck) {
-            if (victoryCheck.type === 'elimination_victory') {
-                // Declarar vitória do jogador restante
-                this.main.turnLogic._declareVictory(victoryCheck.winner);
-            } else if (victoryCheck.type === 'no_winner') {
-                // Todos eliminados - mostrar modal especial
-                this.main.showFeedback(victoryCheck.message, 'warning');
-                
-                if (window.uiManager?.modals?.showNoWinnerModal) {
-                    window.uiManager.modals.showNoWinnerModal();
-                }
-            }
+      // A função eliminatePlayer já aplica penalidades e atualiza o estado
+      // Agora vamos registrar no log
+      addActivityLog({
+        type: 'elimination',
+        playerName: 'SISTEMA',
+        action: 'eliminou',
+        details: `${player.name} (perdeu todas as regiões)`,
+        turn: gameState.turn,
+        isEvent: true
+      });
+      
+      // Verificar vitória por eliminação
+      const victoryCheck = window.gameState?.checkEliminationVictory?.();
+      
+      if (victoryCheck) {
+        if (victoryCheck.type === 'elimination_victory') {
+          // Declarar vitória do jogador restante
+          this.main.turnLogic._declareVictory(victoryCheck.winner);
+        } else if (victoryCheck.type === 'no_winner') {
+          // Todos eliminados - mostrar modal especial
+          this.main.showFeedback(victoryCheck.message, 'warning');
+          
+          if (window.uiManager?.modals?.showNoWinnerModal) {
+            window.uiManager.modals.showNoWinnerModal();
+          }
         }
+      }
     }
     
     // Mostrar feedback
     const penalty = Math.max(
-        ELIMINATION_CONFIG.MIN_PENALTY_PV,
-        Math.min(
-            ELIMINATION_CONFIG.MAX_PENALTY_PV,
-            Math.floor(player.victoryPoints * ELIMINATION_CONFIG.PENALTY_PV_PERCENTAGE)
-        )
+      ELIMINATION_CONFIG.MIN_PENALTY_PV,
+      Math.min(
+        ELIMINATION_CONFIG.MAX_PENALTY_PV,
+        Math.floor(player.victoryPoints * ELIMINATION_CONFIG.PENALTY_PV_PERCENTAGE)
+      )
     );
     
     this.main.showFeedback(
-        `💀 ${player.name} foi eliminado! -${penalty} PV de penalidade.`,
-        'warning'
+      `💀 ${player.name} foi eliminado! -${penalty} PV de penalidade.`,
+      'warning'
     );
   }
 }
