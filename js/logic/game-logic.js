@@ -28,19 +28,30 @@ class GameLogic {
   // ==================== NOVOS MÉTODOS DE VALIDAÇÃO ====================
 
   // Validação centralizada de ações
-  getActionValidation(actionType, playerId = null) {
+getActionValidation(actionType, playerId = null, context = {}) {
     const player = playerId ? getPlayerById(playerId) : getCurrentPlayer();
     if (!player) return { valid: false, reason: 'Jogador não encontrado' };
     
     const isEliminated = player.eliminated;
     const currentPhase = gameState.currentPhase;
     const hasActions = gameState.actionsLeft > 0;
-    const region = gameState.selectedRegionId ? 
-        gameState.regions[gameState.selectedRegionId] : null;
+    const regionId = context.regionId || gameState.selectedRegionId;
+    const region = regionId !== null ? gameState.regions[regionId] : null;
+    
+    // Mapeamento de tipos de ação
+    const actionMap = {
+        'explore': 'explorar',
+        'collect': 'recolher', 
+        'build': 'construir',
+        'negotiate': 'negociar'
+    };
+    
+    // Traduzir se necessário
+    const normalizedAction = actionMap[actionType] || actionType;
     
     // Validações baseadas no tipo de ação
-    switch(actionType) {
-        case 'explore':
+    switch(normalizedAction) {
+        case 'explorar':
             if (!hasActions) return { valid: false, reason: 'Sem ações restantes' };
             if (currentPhase !== 'acoes') return { valid: false, reason: 'Ação permitida apenas na fase de Ações' };
             if (!region) return { valid: false, reason: 'Selecione uma região primeiro' };
@@ -55,9 +66,9 @@ class GameLogic {
                 if (player.victoryPoints < pvCost) {
                     return { valid: false, reason: `Necessário ${pvCost} PV para ressuscitar` };
                 }
-                const canPay = Object.entries(region.resources).every(([k,v]) => player.resources[k] >= v);
+                const canPay = Object.entries(region.resources).every(([k,v]) => (player.resources[k] || 0) >= v);
                 if (!canPay) return { valid: false, reason: 'Recursos insuficientes para ressuscitar' };
-                return { valid: true, type: 'resurrect' };
+                return { valid: true, type: 'resurrect', action: 'explorar' };
             }
             
             // Jogador ativo
@@ -66,16 +77,16 @@ class GameLogic {
                 if (player.victoryPoints < 2) {
                     return { valid: false, reason: 'Necessário 2 PV para dominar' };
                 }
-                const canPay = Object.entries(region.resources).every(([k,v]) => player.resources[k] >= v);
+                const canPay = Object.entries(region.resources).every(([k,v]) => (player.resources[k] || 0) >= v);
                 if (!canPay) return { valid: false, reason: 'Recursos insuficientes para dominar' };
-                return { valid: true, type: 'dominate' };
+                return { valid: true, type: 'dominate', action: 'explorar' };
             } else if (region.controller === player.id) {
                 // Explorar região própria
                 const cost = GAME_CONFIG.ACTION_DETAILS.explorar.cost;
                 const modifiedCost = this.factionLogic?.modifyExploreCost(player, cost) || cost;
-                const canPay = Object.entries(modifiedCost).every(([k,v]) => player.resources[k] >= v);
+                const canPay = Object.entries(modifiedCost).every(([k,v]) => (player.resources[k] || 0) >= v);
                 if (!canPay) return { valid: false, reason: 'Recursos insuficientes para explorar' };
-                return { valid: true, type: 'explore' };
+                return { valid: true, type: 'explore', action: 'explorar' };
             } else {
                 // Disputar região inimiga
                 if (!this.disputeLogic) {
@@ -88,41 +99,53 @@ class GameLogic {
                     return (player.resources[resource] || 0) >= amount;
                 });
                 if (!canPay) return { valid: false, reason: 'Recursos insuficientes para disputar' };
-                return { valid: true, type: 'dispute', data: disputeData };
+                return { valid: true, type: 'dispute', action: 'explorar', data: disputeData };
             }
             
-        case 'collect':
+        case 'recolher':
             if (!hasActions) return { valid: false, reason: 'Sem ações restantes' };
             if (currentPhase !== 'acoes') return { valid: false, reason: 'Ação permitida apenas na fase de Ações' };
             if (!region) return { valid: false, reason: 'Selecione uma região primeiro' };
             if (isEliminated) return { valid: false, reason: 'Jogador eliminado não pode coletar' };
             if (region.controller !== player.id) return { valid: false, reason: 'Você não controla esta região' };
             if (region.explorationLevel === 0) return { valid: false, reason: 'Região precisa ser explorada primeiro' };
-            const collectCost = GAME_CONFIG.ACTION_DETAILS.recolher.cost;
-            const canPayCollect = Object.entries(collectCost).every(([k,v]) => player.resources[k] >= v);
-            if (!canPayCollect) return { valid: false, reason: 'Recursos insuficientes para coletar' };
-            return { valid: true };
             
-        case 'build':
+            // Verificar custo de coleta
+            const collectCost = GAME_CONFIG.ACTION_DETAILS.recolher.cost;
+            const canPayCollect = Object.entries(collectCost).every(([k,v]) => (player.resources[k] || 0) >= v);
+            if (!canPayCollect) return { valid: false, reason: 'Recursos insuficientes para coletar' };
+            
+            return { valid: true, type: 'collect', action: 'recolher' };
+            
+        case 'construir':
             if (!hasActions) return { valid: false, reason: 'Sem ações restantes' };
             if (currentPhase !== 'acoes') return { valid: false, reason: 'Ação permitida apenas na fase de Ações' };
             if (!region) return { valid: false, reason: 'Selecione uma região primeiro' };
             if (isEliminated) return { valid: false, reason: 'Jogador eliminado não pode construir' };
             if (region.controller !== player.id) return { valid: false, reason: 'Você não controla esta região' };
-            return { valid: true };
             
-        case 'negotiate':
+            // Se tiver estrutura específica no contexto, validar custo
+            if (context.structureType) {
+                const structureCost = STRUCTURE_COSTS[context.structureType];
+                const canPayBuild = Object.entries(structureCost).every(([k,v]) => (player.resources[k] || 0) >= v);
+                if (!canPayBuild) return { valid: false, reason: 'Recursos insuficientes para construir' };
+            }
+            
+            return { valid: true, type: 'build', action: 'construir' };
+            
+        case 'negociar':
             if (!hasActions) return { valid: false, reason: 'Sem ações restantes' };
             if (currentPhase !== 'negociacao') return { valid: false, reason: 'Negociação permitida apenas na fase de Negociação' };
             if (isEliminated) return { valid: false, reason: 'Jogador eliminado não pode negociar' };
             const negCost = this.factionLogic?.modifyNegotiationCost(player) || 1;
             if (player.resources.ouro < negCost) return { valid: false, reason: `Necessário ${negCost} Ouro para negociar` };
-            return { valid: true };
+            return { valid: true, type: 'negotiate', action: 'negociar' };
             
         default:
-            return { valid: false, reason: 'Ação não reconhecida' };
+            console.error(`❌ Ação não reconhecida: ${actionType} (normalizada: ${normalizedAction})`);
+            return { valid: false, reason: `Ação '${actionType}' não reconhecida pelo sistema` };
     }
-  }
+}
 
   // ==================== INICIALIZAÇÃO DO JOGO ====================
 
