@@ -358,7 +358,7 @@ class GameLogic {
   handleCollect() { this.actionsLogic.handleCollect(); }
   handleBuild(type) { this.actionsLogic.handleBuild(type); }
 
-  // MÉTODO DE DISPUTA REFATORADO - CORREÇÃO CRÍTICA
+  // MÉTODO DE DISPUTA REFATORADO
   async handleDispute(region, attacker, skipValidation = false) {
     console.log('🎮 GameLogic.handleDispute chamado', { 
       regionId: region?.id, 
@@ -396,6 +396,14 @@ class GameLogic {
       console.log('🎮 Chamando DisputeLogic.handleDispute...');
       const result = await this.disputeLogic.handleDispute(region, attacker, skipValidation);
       console.log('🎮 Disputa executada com sucesso:', result);
+      
+      // ATUALIZAR FOOTER APÓS DISPUTA
+      setTimeout(() => {
+        if (window.uiManager && window.uiManager.gameManager && window.uiManager.gameManager.footerManager) {
+          window.uiManager.gameManager.footerManager.updateFooter();
+        }
+      }, 100);
+      
       return result;
     } catch (error) {
       console.error('❌ Erro em GameLogic.handleDispute:', error);
