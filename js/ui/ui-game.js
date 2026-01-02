@@ -76,19 +76,19 @@ export class UIGameManager {
         this.renderActivityLog();
     }
     
-// Método para garantir compatibilidade:
-updateFooter() {
-    if (this.footerManager) {
-        this.footerManager.updateFooter();
+    // Método para garantir compatibilidade:
+    updateFooter() {
+        if (this.footerManager) {
+            this.footerManager.updateFooter();
+        }
     }
-}
 
-// Método para garantir compatibilidade:
-renderSidebar(playerIndex = gameState.selectedPlayerForSidebar) {
-    if (this.sidebarManager) {
-        this.sidebarManager.renderSidebar(playerIndex);
+    // Método para garantir compatibilidade:
+    renderSidebar(playerIndex = gameState.selectedPlayerForSidebar) {
+        if (this.sidebarManager) {
+            this.sidebarManager.renderSidebar(playerIndex);
+        }
     }
-}
     
     renderHeaderPlayers() {
         if (!this.playerHeaderList) return;
@@ -167,6 +167,7 @@ renderSidebar(playerIndex = gameState.selectedPlayerForSidebar) {
         });
     }
     
+    // MÉTODO REFATORADO PARA LIDAR COM EXPLORAÇÃO/DISPUTA
     handleExploreWithContext() {
         if (gameState.selectedRegionId === null) {
             this.uiManager.modals.showFeedback('Selecione uma região primeiro.', 'error');
@@ -176,10 +177,23 @@ renderSidebar(playerIndex = gameState.selectedPlayerForSidebar) {
         const region = gameState.regions[gameState.selectedRegionId];
         const player = getCurrentPlayer();
         
+        if (!region || !player) {
+            this.uiManager.modals.showFeedback('Dados inválidos.', 'error');
+            return;
+        }
+        
+        console.log('🎮 handleExploreWithContext:', {
+            region: region.name,
+            player: player.name,
+            controller: region.controller,
+            playerId: player.id
+        });
+        
         // Verificar se jogador está eliminado
         if (player.eliminated) {
             // Jogador eliminado só pode dominar regiões neutras
             if (region.controller === null) {
+                console.log('💀 Jogador eliminado tentando ressuscitar');
                 window.gameLogic.handleExplore(); // Isso chamará a ressurreição
             } else {
                 this.uiManager.modals.showFeedback('Jogador eliminado só pode dominar regiões neutras.', 'error');
@@ -189,13 +203,26 @@ renderSidebar(playerIndex = gameState.selectedPlayerForSidebar) {
         
         if (region.controller === null) {
             // Região neutra - dominar diretamente (SEM MODAL)
+            console.log('🏳️ Região neutra - dominando');
             window.gameLogic.handleExplore();
         } else if (region.controller === player.id) {
             // Região própria - explorar diretamente
+            console.log('🏠 Região própria - explorando');
             window.gameLogic.handleExplore();
         } else {
             // Região inimiga - abrir modal de disputa
-            this.uiManager.disputeUI.openDisputeModal(region.id);
+            console.log('⚔️ Região inimiga - abrindo modal de disputa');
+            
+            // Verificar se o disputeUI está disponível
+            if (this.uiManager.disputeUI && this.uiManager.disputeUI.openDisputeModal) {
+                this.uiManager.disputeUI.openDisputeModal(region.id);
+            } else if (window.disputeUI && window.disputeUI.openDisputeModal) {
+                // Fallback para acesso global
+                window.disputeUI.openDisputeModal(region.id);
+            } else {
+                console.error('❌ DisputeUI não disponível');
+                this.uiManager.modals.showFeedback('Sistema de disputa não disponível.', 'error');
+            }
         }
     }
     
@@ -427,15 +454,59 @@ renderSidebar(playerIndex = gameState.selectedPlayerForSidebar) {
 
     // ==================== EVENT LISTENERS ====================
 
-setupEventListeners() {
-    // Delegar para o footerManager
-    if (this.footerManager) {
-        this.footerManager.actionExploreBtn?.addEventListener('click', () => this.handleExploreWithContext());
-        this.footerManager.actionCollectBtn?.addEventListener('click', () => window.gameLogic.handleCollect());
-        this.footerManager.endTurnBtn?.addEventListener('click', () => window.gameLogic.handleEndTurn());
-        this.footerManager.actionNegotiateBtn?.addEventListener('click', () => this.uiManager.negotiation.openNegotiationModal());
-        this.footerManager.actionBuildBtn?.addEventListener('click', () => this.uiManager.modals.openStructureModal());
-    }
+    setupEventListeners() {
+        console.log('🎮 Configurando event listeners do jogo...');
+        
+        // Delegar para o footerManager
+        if (this.footerManager) {
+            // Botão Explorar/Disputar
+            if (this.footerManager.actionExploreBtn) {
+                this.footerManager.actionExploreBtn.addEventListener('click', () => {
+                    console.log('🎮 Botão Explorar/Disputar clicado');
+                    this.handleExploreWithContext();
+                });
+            }
+            
+            // Botão Coletar
+            if (this.footerManager.actionCollectBtn) {
+                this.footerManager.actionCollectBtn.addEventListener('click', () => {
+                    console.log('🎮 Botão Coletar clicado');
+                    if (window.gameLogic && window.gameLogic.handleCollect) {
+                        window.gameLogic.handleCollect();
+                    }
+                });
+            }
+            
+            // Botão Terminar Turno
+            if (this.footerManager.endTurnBtn) {
+                this.footerManager.endTurnBtn.addEventListener('click', () => {
+                    console.log('🎮 Botão Terminar Turno clicado');
+                    if (window.gameLogic && window.gameLogic.handleEndTurn) {
+                        window.gameLogic.handleEndTurn();
+                    }
+                });
+            }
+            
+            // Botão Negociar
+            if (this.footerManager.actionNegotiateBtn) {
+                this.footerManager.actionNegotiateBtn.addEventListener('click', () => {
+                    console.log('🎮 Botão Negociar clicado');
+                    if (this.uiManager.negotiation && this.uiManager.negotiation.openNegotiationModal) {
+                        this.uiManager.negotiation.openNegotiationModal();
+                    }
+                });
+            }
+            
+            // Botão Construir
+            if (this.footerManager.actionBuildBtn) {
+                this.footerManager.actionBuildBtn.addEventListener('click', () => {
+                    console.log('🎮 Botão Construir clicado');
+                    if (this.uiManager.modals && this.uiManager.modals.openStructureModal) {
+                        this.uiManager.modals.openStructureModal();
+                    }
+                });
+            }
+        }
     
         // Navegação
         document.getElementById('manualIcon')?.addEventListener('click', () => this.uiManager.modals.openManual());

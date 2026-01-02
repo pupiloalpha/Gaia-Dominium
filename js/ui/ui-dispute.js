@@ -1,4 +1,4 @@
-// ui-dispute.js - Interface para Disputas Territoriais (REFATORADO)
+// ui-dispute.js - Interface para Disputas Territoriais (REFATORADO COM CORREÇÕES)
 import { gameState, getCurrentPlayer, getPlayerById } from '../state/game-state.js';
 import { RESOURCE_ICONS } from '../state/game-config.js';
 
@@ -7,6 +7,17 @@ export class DisputeUI {
     this.uiManager = uiManager;
     this.cacheElements();
     this.currentDisputeData = null;
+    
+    // Expor métodos globalmente para acesso direto
+    this._exposeToGlobal();
+  }
+
+  // Expor métodos para acesso global
+  _exposeToGlobal() {
+    if (typeof window !== 'undefined') {
+      window.openDisputeModal = this.openDisputeModal.bind(this);
+      window.disputeUI = this;
+    }
   }
 
   cacheElements() {
@@ -128,12 +139,15 @@ export class DisputeUI {
 
   // Método para abrir modal de disputa (com dados pré-calculados opcionais)
   openDisputeModal(regionId, preCalculatedData = null) {
+    console.log('📋 Abrindo modal de disputa para região:', regionId);
+    
     const region = gameState.regions[regionId];
     const defender = getPlayerById(region.controller);
     const attacker = getCurrentPlayer();
 
     if (!region || !defender || !attacker) {
-      console.error('❌ Dados de disputa inválidos');
+      console.error('❌ Dados de disputa inválidos:', { region, defender, attacker });
+      this.uiManager.modals.showFeedback('Dados de disputa inválidos.', 'error');
       return;
     }
 
@@ -141,22 +155,28 @@ export class DisputeUI {
     let disputeData;
     if (preCalculatedData) {
       disputeData = preCalculatedData;
+      console.log('📋 Usando dados pré-calculados');
     } else {
       try {
-        disputeData = window.gameLogic.disputeLogic?.calculateDisputeCosts(attacker, region);
+        // Tentar obter dados do disputeLogic
+        const gameLogic = window.gameLogic;
+        if (gameLogic && gameLogic.disputeLogic) {
+          disputeData = gameLogic.disputeLogic.getDisputeData(regionId, attacker.id);
+        } else {
+          // Fallback: cálculo direto
+          console.warn('⚠️ disputeLogic não disponível, usando cálculo direto');
+          disputeData = this._calculateDisputeDataDirectly(region, attacker, defender);
+        }
       } catch (error) {
         console.warn('⚠️ Erro ao calcular custos de disputa:', error);
-        disputeData = {
-          finalCost: {
-            pv: 3,
-            madeira: 2,
-            pedra: 2,
-            ouro: 3,
-            agua: 1
-          },
-          successChance: 50
-        };
+        disputeData = this._getDefaultDisputeData(region, attacker, defender);
       }
+    }
+
+    if (!disputeData) {
+      console.error('❌ Não foi possível obter dados da disputa');
+      this.uiManager.modals.showFeedback('Erro ao calcular custos da disputa.', 'error');
+      return;
     }
 
     document.getElementById('disputeRegionName').textContent = 
@@ -291,6 +311,42 @@ export class DisputeUI {
     }, 100);
   }
 
+  // Métodos auxiliares para cálculo de dados
+  _calculateDisputeDataDirectly(region, attacker, defender) {
+    // Cálculo simplificado para fallback
+    const baseCost = {
+      pv: 3,
+      madeira: 2,
+      pedra: 2,
+      ouro: 3,
+      agua: 1
+    };
+    
+    const pvDiff = attacker.victoryPoints - defender.victoryPoints;
+    let chance = 50;
+    
+    if (pvDiff > 0) chance += Math.min(20, pvDiff * 2);
+    if (pvDiff < 0) chance += Math.max(-30, pvDiff * 1.5);
+    
+    return {
+      finalCost: baseCost,
+      successChance: Math.max(10, Math.min(90, chance))
+    };
+  }
+  
+  _getDefaultDisputeData(region, attacker, defender) {
+    return {
+      finalCost: {
+        pv: 3,
+        madeira: 2,
+        pedra: 2,
+        ouro: 3,
+        agua: 1
+      },
+      successChance: 50
+    };
+  }
+
   // Fechar modais
   closeDisputeModal() {
     this.disputeModal.classList.add('hidden');
@@ -303,48 +359,86 @@ export class DisputeUI {
     this.uiManager.setModalMode(false);
   }
 
-  // Confirmar disputa
+  // Confirmar disputa - MÉTODO REFATORADO
   async confirmDispute() {
-    if (!this.currentDisputeData) return;
+    if (!this.currentDisputeData) {
+      console.error('❌ Nenhum dado de disputa disponível');
+      this.uiManager.modals.showFeedback('Dados da disputa não encontrados.', 'error');
+      return;
+    }
 
-    const { region, attacker } = this.currentDisputeData;
+    const { region, attacker, defender } = this.currentDisputeData;
+    
+    console.log('✅ Confirmando disputa:', {
+      region: region.name,
+      attacker: attacker.name,
+      defender: defender.name
+    });
     
     // Fechar modal de confirmação
     this.closeDisputeModal();
     
     // Pequeno delay para UI
     setTimeout(async () => {
-      // Executar a disputa através da fachada
-      if (window.gameLogic && typeof window.gameLogic.handleDispute === 'function') {
-        try {
-          // Passar skipValidation como true pois já validamos no modal
-          const success = await window.gameLogic.handleDispute(region, attacker, true);
-          
-          // Mostrar resultado
-          if (success !== undefined) {
-            this.showDisputeResult(success, region, attacker, this.currentDisputeData.defender);
-          }
-        } catch (error) {
-          console.error('❌ Erro ao executar disputa:', error);
-          this.uiManager.modals.showFeedback('Erro ao processar disputa.', 'error');
+      try {
+        // Executar a disputa através da fachada
+        const gameLogic = window.gameLogic;
+        
+        if (!gameLogic) {
+          throw new Error('GameLogic não disponível');
         }
-      } else {
-        console.error('❌ Sistema de disputa não disponível');
-        this.uiManager.modals.showFeedback('Erro: sistema de disputa não disponível', 'error');
+        
+        if (typeof gameLogic.handleDispute !== 'function') {
+          throw new Error('Método handleDispute não disponível');
+        }
+        
+        console.log('🎮 Chamando GameLogic.handleDispute...');
+        
+        // Passar skipValidation como true pois já validamos no modal
+        const success = await gameLogic.handleDispute(region, attacker, true);
+        
+        // Mostrar resultado
+        if (success !== undefined && success !== null) {
+          console.log('🎮 Disputa executada com sucesso, mostrando resultado...');
+          this.showDisputeResult(success, region, attacker, defender);
+        } else {
+          console.warn('⚠️ Disputa retornou resultado indefinido');
+        }
+      } catch (error) {
+        console.error('❌ Erro ao executar disputa:', error);
+        
+        // Mensagem de erro específica
+        let errorMessage = 'Erro ao processar disputa.';
+        if (error.message) {
+          errorMessage = error.message;
+        } else if (error.includes) {
+          errorMessage = error;
+        }
+        
+        this.uiManager.modals.showFeedback(errorMessage, 'error');
+        
+        // Tentar recriar o modal com dados atualizados
+        setTimeout(() => {
+          this.openDisputeModal(region.id);
+        }, 1000);
       }
     }, 300);
   }
 
   // Método para mostrar resultado da disputa
   showDisputeResult(success, region, attacker, defender, rewards = {}) {
+    console.log('🏆 Mostrando resultado da disputa:', {
+      success,
+      region: region.name,
+      attacker: attacker.name,
+      defender: defender.name
+    });
+    
     // Chamar o modal de resultado existente
     this.openDisputeResultModal(success, region, attacker, defender, rewards);
     
     // Atualizar visual da região
     this._updateRegionVisual(region.id);
-    
-    // Feedback no console
-    console.log(`🎮 Disputa: ${success ? '✅ VITÓRIA' : '❌ DERROTA'} - ${attacker.name} vs ${defender.name} em ${region.name}`);
   }
 
   // ADICIONAR método auxiliar:
@@ -491,7 +585,10 @@ export class DisputeUI {
   
   // Método para atualização dinâmica de custos
   updateDisputeCosts(regionId, attackerId) {
-    if (!window.gameLogic?.disputeLogic) return null;
+    if (!window.gameLogic?.disputeLogic) {
+      console.warn('⚠️ disputeLogic não disponível para atualização de custos');
+      return null;
+    }
     
     const disputeData = window.gameLogic.disputeLogic.getDisputeData(regionId, attackerId);
     if (!disputeData) return null;
