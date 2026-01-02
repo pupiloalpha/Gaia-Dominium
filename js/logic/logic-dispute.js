@@ -309,8 +309,8 @@ export class DisputeLogic {
     this.lastCalculatedCosts = null;
     this.cacheTimestamp = null;
     
-    // Atualizar visual da região
-    this._updateRegionVisual(region.id);
+    // Atualizar visual da região usando método centralizado
+    this._updateRegionCell(region.id);
     
     // Verificar vitória
     this.main.turnLogic.checkVictory();
@@ -411,25 +411,38 @@ export class DisputeLogic {
     }
   }
 
-  _updateRegionVisual(regionId) {
-    console.log('🔄 Atualizando visual da região:', regionId);
+  // NOVO MÉTODO: Atualizar célula de região usando método centralizado
+  _updateRegionCell(regionId) {
+    console.log('🔄 Atualizando visual da região via método centralizado:', regionId);
     
-    const cell = document.querySelector(`.board-cell[data-region-id="${regionId}"]`);
-    if (cell && window.uiManager && window.uiManager.gameManager) {
-      // Remover e recriar a célula
-      const region = gameState.regions[regionId];
-      const newCell = window.uiManager.gameManager.createRegionCell(region, regionId);
-      
-      // Substituir a célula antiga
-      const parent = cell.parentNode;
-      parent.replaceChild(newCell, cell);
-      
-      // Adicionar animação de atualização
-      newCell.classList.add('region-updated');
-      setTimeout(() => {
-        newCell.classList.remove('region-updated');
-      }, 1000);
+    // Usar método centralizado do UIGameManager se disponível
+    if (window.updateRegionCell && typeof window.updateRegionCell === 'function') {
+      return window.updateRegionCell(regionId);
     }
+    
+    // Fallback: usar UI Manager se disponível
+    if (window.uiManager && window.uiManager.gameManager && window.uiManager.gameManager.updateRegionCell) {
+      return window.uiManager.gameManager.updateRegionCell(regionId);
+    }
+    
+    // Fallback extremo: tentar atualizar diretamente
+    console.warn('⚠️ Método centralizado não disponível, usando fallback direto');
+    try {
+      const region = gameState.regions[regionId];
+      if (!region) return false;
+      
+      const cell = document.querySelector(`.board-cell[data-region-id="${regionId}"]`);
+      if (cell && window.uiManager && window.uiManager.gameManager && window.uiManager.gameManager.regionRenderer) {
+        const newCell = window.uiManager.gameManager.regionRenderer.createRegionCell(region, regionId);
+        const parent = cell.parentNode;
+        parent.replaceChild(newCell, cell);
+        return true;
+      }
+    } catch (error) {
+      console.error('❌ Erro no fallback de atualização de região:', error);
+    }
+    
+    return false;
   }
 
   // Processar disputa falhada
