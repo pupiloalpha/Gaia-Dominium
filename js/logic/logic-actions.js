@@ -237,7 +237,7 @@ export class ActionLogic {
     this._finalizeAction();
   }
 
-  // Método handleCollect refatorado
+  // Método handleCollect refatorado - CORREÇÃO APLICADA
   handleCollect() {
     if (this.main.preventActionIfModalOpen()) return;
     
@@ -267,7 +267,8 @@ export class ActionLogic {
     
     if (!this.consumeAction()) return;
 
-    const cost = GAME_CONFIG.ACTION_DETAILS.recolher.cost;
+    // CORREÇÃO CRÍTICA: Usar 'coletar' em vez de 'recolher'
+    const cost = GAME_CONFIG.ACTION_DETAILS.coletar.cost;
     Object.entries(cost).forEach(([k, v]) => player.resources[k] -= v);
 
     // Lógica Base de Coleta
@@ -299,11 +300,11 @@ export class ActionLogic {
     }
 
     player.victoryPoints += 1;
-    this.main.showFeedback(`Recolhido. +1 PV${factionMsg}`, 'success');
+    this.main.showFeedback(`Recursos coletados! +1 PV${factionMsg}`, 'success');
     addActivityLog({ 
       type: 'collect', 
       playerName: player.name, 
-      action: 'recolheu recursos', 
+      action: 'coletou recursos', 
       details: `${region.name}${factionMsg}`, 
       turn: gameState.turn 
     });

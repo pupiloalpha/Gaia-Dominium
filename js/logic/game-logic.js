@@ -38,14 +38,14 @@ class GameLogic {
     const regionId = context.regionId || gameState.selectedRegionId;
     const region = regionId !== null ? gameState.regions[regionId] : null;
     
-    // Mapeamento de tipos de ação - AGORA USANDO APENAS PORTUGUÊS
+    // Mapeamento de tipos de ação - CORRIGIDO: 'collect' → 'coletar'
     const actionMap = {
       'explore': 'explorar',
-      'collect': 'coletar',  // Alterado de 'recolher' para 'coletar'
+      'collect': 'coletar',  // CORREÇÃO: 'coletar' (era 'recolher')
       'build': 'construir',
       'negotiate': 'negociar',
-      'dispute': 'disputar',  // Adicionado
-      'dominate': 'dominar'   // Adicionado
+      'dispute': 'disputar',
+      'dominate': 'dominar'
     };
     
     // Normalizar ação
@@ -56,7 +56,7 @@ class GameLogic {
       case 'explorar':
         return this._validateExploreAction(player, region, isEliminated, hasActions, currentPhase);
         
-      case 'coletar':
+      case 'coletar':  // CORREÇÃO: Usar 'coletar' consistentemente
         return this._validateCollectAction(player, region, isEliminated, hasActions, currentPhase);
         
       case 'construir':
@@ -149,8 +149,8 @@ class GameLogic {
     if (region.controller !== player.id) return { valid: false, reason: 'Você não controla esta região' };
     if (region.explorationLevel === 0) return { valid: false, reason: 'Região precisa ser explorada primeiro' };
     
-    // Verificar custo de coleta
-    const collectCost = GAME_CONFIG.ACTION_DETAILS.recolher.cost;
+    // CORREÇÃO CRÍTICA: Usar 'coletar' em vez de 'recolher'
+    const collectCost = GAME_CONFIG.ACTION_DETAILS.coletar.cost;
     const canPayCollect = Object.entries(collectCost).every(([k, v]) => (player.resources[k] || 0) >= v);
     if (!canPayCollect) return { valid: false, reason: 'Recursos insuficientes para coletar' };
     
