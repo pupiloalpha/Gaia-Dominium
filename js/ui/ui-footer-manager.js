@@ -144,7 +144,7 @@ export class FooterManager {
       
       // Usar validação centralizada para todos os botões
       this._updateExploreButton(region, player, isActionPhase, baseEnabled);
-      this._updateCollectButton(region, player, isActionPhase, baseEnabled);
+      this._updateCollectButton(region, player, isActionPhase, baseEnabled); // CORREÇÃO APLICADA
       this._updateBuildButton(region, player, isActionPhase, baseEnabled);
     }
     
@@ -217,8 +217,10 @@ export class FooterManager {
   _updateCollectButton(region, player, isActionPhase, baseEnabled) {
     if (!this.actionCollectBtn) return;
     
+    // Usar validação centralizada do GameLogic - CORREÇÃO APLICADA
     const validation = window.gameLogic?.getActionValidation?.('collect');
     const isOwnRegion = region.controller === player.id;
+    const hasExploration = region.explorationLevel > 0;
     
     if (!isActionPhase) {
       this.actionCollectBtn.disabled = true;
@@ -226,16 +228,32 @@ export class FooterManager {
       return;
     }
     
-    this.actionCollectBtn.disabled = !baseEnabled || !isOwnRegion || !validation?.valid;
-    this.actionCollectBtn.title = validation?.reason || 'Coletar recursos da região';
+    // Verificar se jogador pode coletar (tem madeira para custo)
+    const canAfford = player.resources.madeira >= 1;
+    
+    // Determinar estado do botão
+    this.actionCollectBtn.disabled = !baseEnabled || !isOwnRegion || !hasExploration || !canAfford || !validation?.valid;
+    
+    // Configurar tooltip informativo
+    if (!isOwnRegion) {
+      this.actionCollectBtn.title = 'Você não controla esta região';
+    } else if (!hasExploration) {
+      this.actionCollectBtn.title = 'Explore a região primeiro (nível > 0)';
+    } else if (!canAfford) {
+      this.actionCollectBtn.title = 'Necessário 1 🪵 Madeira para coletar';
+    } else if (!validation?.valid) {
+      this.actionCollectBtn.title = validation?.reason || 'Não é possível coletar';
+    } else {
+      this.actionCollectBtn.title = `Coletar recursos (custo: 1 🪵 Madeira)\nNível de exploração: ${region.explorationLevel}⭐`;
+    }
     
     // Ajustar aparência do botão
     if (this.actionCollectBtn.disabled) {
-      this.actionCollectBtn.classList.remove('bg-blue-600');
-      this.actionCollectBtn.classList.add('bg-gray-600', 'opacity-50');
+      this.actionCollectBtn.classList.remove('bg-blue-600', 'hover:bg-blue-700');
+      this.actionCollectBtn.classList.add('bg-gray-600', 'opacity-50', 'cursor-not-allowed');
     } else {
-      this.actionCollectBtn.classList.remove('bg-gray-600', 'opacity-50');
-      this.actionCollectBtn.classList.add('bg-blue-600');
+      this.actionCollectBtn.classList.remove('bg-gray-600', 'opacity-50', 'cursor-not-allowed');
+      this.actionCollectBtn.classList.add('bg-blue-600', 'hover:bg-blue-700');
     }
   }
 
@@ -256,11 +274,11 @@ export class FooterManager {
     
     // Ajustar aparência do botão
     if (this.actionBuildBtn.disabled) {
-      this.actionBuildBtn.classList.remove('bg-orange-600');
-      this.actionBuildBtn.classList.add('bg-gray-600', 'opacity-50');
+      this.actionBuildBtn.classList.remove('bg-orange-600', 'hover:bg-orange-700');
+      this.actionBuildBtn.classList.add('bg-gray-600', 'opacity-50', 'cursor-not-allowed');
     } else {
-      this.actionBuildBtn.classList.remove('bg-gray-600', 'opacity-50');
-      this.actionBuildBtn.classList.add('bg-orange-600');
+      this.actionBuildBtn.classList.remove('bg-gray-600', 'opacity-50', 'cursor-not-allowed');
+      this.actionBuildBtn.classList.add('bg-orange-600', 'hover:bg-orange-700');
     }
   }
 
@@ -274,17 +292,17 @@ export class FooterManager {
       
       if (!validation?.valid) {
         this.actionNegotiateBtn.title = validation?.reason || 'Negociação não disponível';
-        this.actionNegotiateBtn.classList.remove('bg-green-600');
-        this.actionNegotiateBtn.classList.add('bg-gray-600', 'opacity-50');
+        this.actionNegotiateBtn.classList.remove('bg-green-600', 'hover:bg-green-700');
+        this.actionNegotiateBtn.classList.add('bg-gray-600', 'opacity-50', 'cursor-not-allowed');
       } else {
-        this.actionNegotiateBtn.title = 'Abrir negociação';
-        this.actionNegotiateBtn.classList.remove('bg-gray-600', 'opacity-50');
-        this.actionNegotiateBtn.classList.add('bg-green-600');
+        this.actionNegotiateBtn.title = 'Abrir negociação (custo: 1 🪙 Ouro)';
+        this.actionNegotiateBtn.classList.remove('bg-gray-600', 'opacity-50', 'cursor-not-allowed');
+        this.actionNegotiateBtn.classList.add('bg-green-600', 'hover:bg-green-700');
       }
     } else {
       this.actionNegotiateBtn.disabled = true;
-      this.actionNegotiateBtn.classList.remove('bg-green-600');
-      this.actionNegotiateBtn.classList.add('bg-gray-600', 'opacity-50');
+      this.actionNegotiateBtn.classList.remove('bg-green-600', 'hover:bg-green-700');
+      this.actionNegotiateBtn.classList.add('bg-gray-600', 'opacity-50', 'cursor-not-allowed');
       this.actionNegotiateBtn.title = 'Disponível apenas na fase de negociação';
     }
   }
@@ -292,6 +310,16 @@ export class FooterManager {
   _updateActionsCounter() {
     if (this.actionsLeftEl) {
       this.actionsLeftEl.textContent = `Ações restantes: ${gameState.actionsLeft}`;
+      
+      // Destaque visual quando ações estão acabando
+      if (gameState.actionsLeft === 1) {
+        this.actionsLeftEl.classList.add('text-yellow-300', 'font-bold', 'animate-pulse');
+      } else if (gameState.actionsLeft === 0) {
+        this.actionsLeftEl.classList.add('text-red-400', 'font-bold');
+        this.actionsLeftEl.classList.remove('text-yellow-300', 'animate-pulse');
+      } else {
+        this.actionsLeftEl.classList.remove('text-yellow-300', 'text-red-400', 'font-bold', 'animate-pulse');
+      }
     }
   }
 
@@ -306,6 +334,7 @@ export class FooterManager {
         this.endTurnBtn.disabled = false;
         this.endTurnBtn.textContent = 'Ir para Negociação';
         this.endTurnBtn.className = 'px-4 py-2 bg-blue-600 hover:bg-blue-700 rounded-md text-white font-semibold transition';
+        this.endTurnBtn.title = 'Avançar para fase de negociação';
         break;
       case 'negociacao':
         this.endTurnBtn.disabled = false;
@@ -323,12 +352,14 @@ export class FooterManager {
       case 'renda':
         this.endTurnBtn.disabled = true;
         this.endTurnBtn.textContent = 'Aguardando...';
-        this.endTurnBtn.className = 'px-4 py-2 bg-gray-600 rounded-md text-white font-semibold';
+        this.endTurnBtn.className = 'px-4 py-2 bg-gray-600 rounded-md text-white font-semibold cursor-not-allowed';
+        this.endTurnBtn.title = 'Aguardando aplicação da renda';
         break;
       default:
         this.endTurnBtn.disabled = false;
         this.endTurnBtn.textContent = 'Terminar Turno';
         this.endTurnBtn.className = 'px-4 py-2 bg-blue-600 hover:bg-blue-700 rounded-md text-white font-semibold transition';
+        this.endTurnBtn.title = 'Finalizar fase atual';
     }
   }
 }
