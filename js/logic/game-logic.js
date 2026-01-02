@@ -23,6 +23,17 @@ class GameLogic {
     
     this.feedbackHistory = [];
     this.disputeUI = null; // Será injetado pela UI
+    
+    // Expor métodos importantes globalmente
+    this._exposeToGlobal();
+  }
+
+  // Expor métodos necessários para a UI
+  _exposeToGlobal() {
+    if (typeof window !== 'undefined') {
+      window.gameLogic = this;
+      window.handleDispute = this.handleDispute.bind(this);
+    }
   }
 
   // ==================== MÉTODOS DE VALIDAÇÃO REFATORADOS ====================
@@ -347,28 +358,50 @@ class GameLogic {
   handleCollect() { this.actionsLogic.handleCollect(); }
   handleBuild(type) { this.actionsLogic.handleBuild(type); }
 
+  // MÉTODO DE DISPUTA REFATORADO - CORREÇÃO CRÍTICA
   async handleDispute(region, attacker, skipValidation = false) {
+    console.log('🎮 GameLogic.handleDispute chamado', { 
+      regionId: region?.id, 
+      attackerId: attacker?.id,
+      skipValidation 
+    });
+    
     if (!this.disputeLogic) {
-      this.showFeedback('Sistema de disputa não inicializado.', 'error');
+      const errorMsg = 'Sistema de disputa não inicializado.';
+      console.error('❌', errorMsg);
+      this.showFeedback(errorMsg, 'error');
       return null;
     }
     
     // Verificar se já temos a região
     if (!region && gameState.selectedRegionId !== null) {
       region = gameState.regions[gameState.selectedRegionId];
+      console.log('🎮 Região obtida do selectedRegionId:', region?.id);
     }
     
     // Obter atacante se não fornecido
     if (!attacker) {
       attacker = getCurrentPlayer();
+      console.log('🎮 Atacante obtido do currentPlayer:', attacker?.id);
     }
     
     if (!region || !attacker) {
-      this.showFeedback('Dados insuficientes para disputa.', 'error');
+      const errorMsg = 'Dados insuficientes para disputa.';
+      console.error('❌', errorMsg, { region, attacker });
+      this.showFeedback(errorMsg, 'error');
       return null;
     }
     
-    return await this.disputeLogic.handleDispute(region, attacker, skipValidation);
+    try {
+      console.log('🎮 Chamando DisputeLogic.handleDispute...');
+      const result = await this.disputeLogic.handleDispute(region, attacker, skipValidation);
+      console.log('🎮 Disputa executada com sucesso:', result);
+      return result;
+    } catch (error) {
+      console.error('❌ Erro em GameLogic.handleDispute:', error);
+      this.showFeedback(`Erro na disputa: ${error.message}`, 'error');
+      return null;
+    }
   }
   
   handleDominate() {
@@ -432,9 +465,20 @@ class GameLogic {
     if (gameState?.gameStarted) saveGame();
   }
 
-  // Injetar referência da UI de disputa
+  // Injetar referência da UI de disputa - MÉTODO CRÍTICO
   setDisputeUI(disputeUI) {
+    console.log('🎮 DisputeUI injetado no GameLogic');
     this.disputeUI = disputeUI;
+    
+    // Expor o disputeUI globalmente para acesso direto
+    if (typeof window !== 'undefined') {
+      window.disputeUI = disputeUI;
+    }
+  }
+  
+  // Método auxiliar para UI acessar o disputeLogic
+  getDisputeLogic() {
+    return this.disputeLogic;
   }
 }
 

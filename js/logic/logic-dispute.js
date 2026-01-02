@@ -1,4 +1,4 @@
-// logic-dispute.js - Sistema de Disputa Territorial (REFATORADO)
+// logic-dispute.js - Sistema de Disputa Territorial (REFATORADO COM CORREÇÕES)
 import { 
   gameState, 
   achievementsState, 
@@ -13,6 +13,7 @@ export class DisputeLogic {
   constructor(gameLogic) {
     this.main = gameLogic;
     this.lastCalculatedCosts = null; // Cache para custos calculados
+    this.cacheTimestamp = null; // Timestamp do cache
   }
 
   // Validação da ação de disputa
@@ -57,7 +58,18 @@ export class DisputeLogic {
 
   // Calcular custos de disputa
   calculateDisputeCosts(player, region) {
+    console.log('⚔️ Calculando custos de disputa para:', {
+      player: player.name,
+      region: region.name,
+      controller: region.controller
+    });
+    
     const defender = getPlayerById(region.controller);
+    if (!defender) {
+      console.error('❌ Defensor não encontrado para região:', region);
+      return null;
+    }
+
     const baseCost = {
       pv: 3, // Custo base em pontos de vitória
       madeira: 2,
@@ -110,13 +122,17 @@ export class DisputeLogic {
     finalCost.ouro = Math.max(1, Math.floor(finalCost.ouro));
     finalCost.agua = Math.max(0, Math.floor(finalCost.agua));
 
+    const successChance = this.calculateSuccessChance(player, defender, region, finalCost);
+
     return {
       baseCost,
       modifiers,
       finalCost,
-      successChance: this.calculateSuccessChance(player, defender, region, finalCost),
+      successChance,
       regionId: region.id,
-      attackerId: player.id
+      attackerId: player.id,
+      defenderId: defender.id,
+      timestamp: Date.now()
     };
   }
 
@@ -169,7 +185,7 @@ export class DisputeLogic {
     return Math.max(10, Math.min(90, baseChance));
   }
 
-  // Verificar se pode pagar a disputa
+  // Verificar se pode pagar a disputa (verificação básica)
   canAffordDispute(player) {
     // Verificação básica
     return player.victoryPoints >= 3 && 
@@ -178,43 +194,72 @@ export class DisputeLogic {
            player.resources.pedra >= 1;
   }
 
-  // Executar disputa para receber região e jogador
+  // Executar disputa para receber região e jogador - MÉTODO PRINCIPAL REFATORADO
   async handleDispute(region, attacker, skipValidation = false) {
+    console.log('⚔️ Iniciando disputa:', {
+      regionId: region.id,
+      regionName: region.name,
+      attackerId: attacker.id,
+      attackerName: attacker.name,
+      skipValidation
+    });
+
     // Se skipValidation for true, pular validações (útil quando chamado da UI)
     if (!skipValidation) {
       const currentPhase = gameState.currentPhase;
       if (currentPhase !== 'acoes') {
-        this.main.showFeedback('Disputas só podem ser realizadas na fase de ações.', 'warning');
-        return;
+        const errorMsg = 'Disputas só podem ser realizadas na fase de ações.';
+        console.error('❌', errorMsg);
+        throw new Error(errorMsg);
       }
 
       if (gameState.actionsLeft <= 0) {
-        this.main.showFeedback('Sem ações restantes neste turno.', 'warning');
-        return;
+        const errorMsg = 'Sem ações restantes neste turno.';
+        console.error('❌', errorMsg);
+        throw new Error(errorMsg);
       }
 
       if (attacker.eliminated) {
-        this.main.showFeedback('Jogador eliminado não pode disputar.', 'error');
-        return;
+        const errorMsg = 'Jogador eliminado não pode disputar.';
+        console.error('❌', errorMsg);
+        throw new Error(errorMsg);
       }
     }
     
     const defender = getPlayerById(region.controller);
+    if (!defender) {
+      const errorMsg = `Defensor da região ${region.name} não encontrado.`;
+      console.error('❌', errorMsg);
+      throw new Error(errorMsg);
+    }
     
-    // Calcular custos (usar cache se disponível)
+    // Calcular custos (usar cache se disponível e recente)
     let disputeData;
+    const CACHE_VALIDITY_MS = 5000; // 5 segundos
+    
     if (this.lastCalculatedCosts && 
         this.lastCalculatedCosts.regionId === region.id &&
-        this.lastCalculatedCosts.attackerId === attacker.id) {
+        this.lastCalculatedCosts.attackerId === attacker.id &&
+        this.cacheTimestamp && 
+        (Date.now() - this.cacheTimestamp) < CACHE_VALIDITY_MS) {
       disputeData = this.lastCalculatedCosts.data;
+      console.log('⚔️ Usando cache de custos (recente)');
     } else {
+      console.log('⚔️ Calculando novos custos (cache expirado ou inexistente)');
       disputeData = this.calculateDisputeCosts(attacker, region);
-      // Armazenar em cache
+      if (!disputeData) {
+        const errorMsg = 'Não foi possível calcular os custos da disputa.';
+        console.error('❌', errorMsg);
+        throw new Error(errorMsg);
+      }
+      
+      // Armazenar em cache com timestamp
       this.lastCalculatedCosts = {
         regionId: region.id,
         attackerId: attacker.id,
         data: disputeData
       };
+      this.cacheTimestamp = Date.now();
     }
     
     // VERIFICAÇÃO FINAL DE RECURSOS
@@ -227,27 +272,32 @@ export class DisputeLogic {
     });
     
     if (!canPay) {
-      this.main.showFeedback('Recursos insuficientes para iniciar a disputa.', 'error');
-      this.lastCalculatedCosts = null; // Limpar cache
-      return;
+      const errorMsg = 'Recursos insuficientes para iniciar a disputa.';
+      console.error('❌', errorMsg, { finalCost, attackerResources: attacker.resources });
+      throw new Error(errorMsg);
     }
     
     // Consumir ação
     if (!this.consumeAction()) {
-      this.lastCalculatedCosts = null;
-      return;
+      const errorMsg = 'Não foi possível consumir ação para disputa.';
+      console.error('❌', errorMsg);
+      throw new Error(errorMsg);
     }
     
     // Pagar custos
+    console.log('⚔️ Pagando custos da disputa:', finalCost);
     attacker.victoryPoints -= finalCost.pv;
     Object.entries(finalCost).forEach(([resource, amount]) => {
       if (resource !== 'pv' && amount > 0) {
-        attacker.resources[resource] = Math.max(0, (attacker.resources[resource] || 0) - amount);
+        const currentAmount = attacker.resources[resource] || 0;
+        attacker.resources[resource] = Math.max(0, currentAmount - amount);
+        console.log(`  - ${resource}: ${currentAmount} -> ${attacker.resources[resource]}`);
       }
     });
 
     // Determinar resultado
     const success = Math.random() * 100 < disputeData.successChance;
+    console.log(`⚔️ Resultado da disputa: ${success ? 'VITÓRIA' : 'DERROTA'} (chance: ${disputeData.successChance}%)`);
     
     if (success) {
       await this._handleSuccessfulDispute(attacker, defender, region, disputeData);
@@ -255,8 +305,9 @@ export class DisputeLogic {
       await this._handleFailedDispute(attacker, defender, region, disputeData);
     }
     
-    // Limpar cache
+    // Limpar cache após execução
     this.lastCalculatedCosts = null;
+    this.cacheTimestamp = null;
     
     // Atualizar visual da região
     this._updateRegionVisual(region.id);
@@ -267,15 +318,22 @@ export class DisputeLogic {
     return success;
   }
   
-  // Método auxiliar
+  // Método auxiliar para consumir ação
   consumeAction() {
     if (gameState.actionsLeft <= 0) {
+      console.error('❌ Sem ações para consumir');
       return false;
     }
+    
     gameState.actionsLeft--;
+    console.log(`⚔️ Ação consumida. Ações restantes: ${gameState.actionsLeft}`);
     
     if (window.uiManager && window.uiManager.gameManager) {
-      setTimeout(() => window.uiManager.gameManager.updateFooter(), 10);
+      setTimeout(() => {
+        if (window.uiManager.gameManager.updateFooter) {
+          window.uiManager.gameManager.updateFooter();
+        }
+      }, 10);
     }
     
     return true;
@@ -283,12 +341,18 @@ export class DisputeLogic {
   
   // Método para obter dados de disputa sem executar
   getDisputeData(regionId, attackerId) {
+    console.log('⚔️ Obtendo dados de disputa para:', { regionId, attackerId });
+    
     const region = gameState.regions[regionId];
     const attacker = getPlayerById(attackerId);
     
-    if (!region || !attacker) return null;
+    if (!region || !attacker) {
+      console.error('❌ Região ou atacante não encontrados');
+      return null;
+    }
     
     const disputeData = this.calculateDisputeCosts(attacker, region);
+    if (!disputeData) return null;
     
     // Armazenar em cache
     this.lastCalculatedCosts = {
@@ -296,12 +360,15 @@ export class DisputeLogic {
       attackerId: attacker.id,
       data: disputeData
     };
+    this.cacheTimestamp = Date.now();
     
     return disputeData;
   }
   
   // Processar disputa bem-sucedida
   async _handleSuccessfulDispute(attacker, defender, region, disputeData) {
+    console.log(`🏆 Disputa bem-sucedida! ${attacker.name} conquistou ${region.name} de ${defender.name}`);
+    
     // Remover região do defensor
     defender.regions = defender.regions.filter(id => id !== region.id);
     
@@ -316,7 +383,9 @@ export class DisputeLogic {
     
     // Manter estruturas? 50% chance de cada estrutura sobreviver
     if (region.structures.length > 0) {
+      const originalStructures = [...region.structures];
       region.structures = region.structures.filter(() => Math.random() > 0.5);
+      console.log(`  - Estruturas: ${originalStructures.length} -> ${region.structures.length} sobreviveram`);
     }
 
     // Bônus de conquista
@@ -337,11 +406,14 @@ export class DisputeLogic {
 
     // Verificar se defensor ficou sem regiões
     if (defender.regions.length === 0) {
+      console.log(`💀 Defensor ${defender.name} ficou sem regiões, eliminando...`);
       this._handlePlayerElimination(defender);
     }
   }
 
   _updateRegionVisual(regionId) {
+    console.log('🔄 Atualizando visual da região:', regionId);
+    
     const cell = document.querySelector(`.board-cell[data-region-id="${regionId}"]`);
     if (cell && window.uiManager && window.uiManager.gameManager) {
       // Remover e recriar a célula
@@ -362,6 +434,8 @@ export class DisputeLogic {
 
   // Processar disputa falhada
   async _handleFailedDispute(attacker, defender, region, disputeData) {
+    console.log(`❌ Disputa falhou! ${attacker.name} não conseguiu conquistar ${region.name}`);
+    
     // Defensor ganha 1 PV por defender com sucesso
     defender.victoryPoints += 1;
     
@@ -385,6 +459,8 @@ export class DisputeLogic {
 
   // Eliminar jogador sem regiões dominadas
   _handlePlayerElimination(player) {
+    console.log(`💀 Eliminando jogador ${player.name} (sem regiões)`);
+    
     // Usar a função do game-state para eliminar
     const eliminated = window.gameState?.eliminatePlayer?.(player.id);
     
