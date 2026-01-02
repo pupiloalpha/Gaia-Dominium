@@ -156,6 +156,14 @@ export class FooterManager {
     
     // Usar validação centralizada do GameLogic
     const validation = window.gameLogic?.getActionValidation?.('explore');
+    console.log('🎯 Validação para explorar/disputar:', {
+      valid: validation?.valid,
+      type: validation?.type,
+      reason: validation?.reason,
+      region: region.name,
+      controller: region.controller,
+      playerId: player.id
+    });
     
     if (!isActionPhase) {
       this.actionExploreBtn.disabled = true;
@@ -166,6 +174,11 @@ export class FooterManager {
     if (!validation || !validation.valid) {
       this.actionExploreBtn.disabled = true;
       this.actionExploreBtn.title = validation?.reason || 'Ação não disponível';
+      
+      // CORREÇÃO: Forçar atualização visual do botão
+      this.actionExploreBtn.classList.remove('bg-green-600', 'bg-yellow-600', 'bg-red-600', 'bg-purple-600');
+      this.actionExploreBtn.classList.add('bg-gray-600', 'opacity-50', 'cursor-not-allowed');
+      this.actionExploreBtn.textContent = 'Explorar';
       return;
     }
     
@@ -206,11 +219,17 @@ export class FooterManager {
         this.actionExploreBtn.classList.remove('bg-green-600', 'bg-yellow-600', 'bg-purple-600');
         this.actionExploreBtn.classList.add('bg-red-600');
         this.actionExploreBtn.title = `Disputar ${region.name} de ${enemyPlayer.name}\n${costInfo}\nChance: ${Math.round(disputeData.successChance)}%`;
+        
+        // CORREÇÃO CRÍTICA: Garantir que o botão fique visível e habilitado
+        this.actionExploreBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+        console.log('✅ Botão de disputa configurado para:', region.name);
         break;
       default:
         this.actionExploreBtn.disabled = true;
         this.actionExploreBtn.textContent = 'Explorar';
         this.actionExploreBtn.title = 'Ação não disponível';
+        this.actionExploreBtn.classList.remove('bg-green-600', 'bg-yellow-600', 'bg-red-600', 'bg-purple-600');
+        this.actionExploreBtn.classList.add('bg-gray-600', 'opacity-50', 'cursor-not-allowed');
     }
   }
 

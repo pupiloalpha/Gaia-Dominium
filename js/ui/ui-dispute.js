@@ -437,28 +437,26 @@ export class DisputeUI {
     // Chamar o modal de resultado existente
     this.openDisputeResultModal(success, region, attacker, defender, rewards);
     
-    // Atualizar visual da região
-    this._updateRegionVisual(region.id);
+    // Atualizar visual da região usando método centralizado
+    this._updateRegionCell(region.id);
   }
 
-  // ADICIONAR método auxiliar:
-  _updateRegionVisual(regionId) {
-    const cell = document.querySelector(`.board-cell[data-region-id="${regionId}"]`);
-    if (cell && window.uiManager && window.uiManager.gameManager) {
-      // Remover e recriar a célula
-      const region = gameState.regions[regionId];
-      const newCell = window.uiManager.gameManager.createRegionCell(region, regionId);
-      
-      // Substituir a célula antiga
-      const parent = cell.parentNode;
-      parent.replaceChild(newCell, cell);
-      
-      // Adicionar animação de atualização
-      newCell.classList.add('region-updated');
-      setTimeout(() => {
-        newCell.classList.remove('region-updated');
-      }, 1000);
+  // NOVO MÉTODO: Atualizar célula de região usando método centralizado
+  _updateRegionCell(regionId) {
+    console.log('🔄 Atualizando visual da região via método centralizado:', regionId);
+    
+    // Usar método centralizado do UIGameManager se disponível
+    if (window.updateRegionCell && typeof window.updateRegionCell === 'function') {
+      return window.updateRegionCell(regionId);
     }
+    
+    // Fallback: usar UI Manager se disponível
+    if (this.uiManager && this.uiManager.gameManager && this.uiManager.gameManager.updateRegionCell) {
+      return this.uiManager.gameManager.updateRegionCell(regionId);
+    }
+    
+    console.warn('⚠️ Não foi possível atualizar a célula: método centralizado não disponível');
+    return false;
   }
   
   // Mostrar resultado da disputa

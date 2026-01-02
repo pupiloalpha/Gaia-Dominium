@@ -21,6 +21,16 @@ export class UIGameManager {
         this.regionRenderer = new RegionRenderer(this);
         this.sidebarManager = new SidebarManager(this);
         this.footerManager = new FooterManager(this);
+        
+        // Expor método globalmente para acesso da IA
+        this._exposeMethods();
+    }
+
+    _exposeMethods() {
+        if (typeof window !== 'undefined') {
+            window.updateRegionCell = this.updateRegionCell.bind(this);
+            window.uiGameManager = this;
+        }
     }
 
     cacheElements() {
@@ -63,6 +73,48 @@ export class UIGameManager {
     init() {
         this.setupEventListeners();
         this.setupTransparencyControls();
+    }
+
+    // ==================== NOVO MÉTODO: Atualizar célula de região ====================
+    
+    updateRegionCell(regionId) {
+        console.log('🔄 Atualizando célula da região:', regionId);
+        
+        const region = gameState.regions[regionId];
+        if (!region) {
+            console.error('❌ Região não encontrada:', regionId);
+            return false;
+        }
+        
+        const cell = document.querySelector(`.board-cell[data-region-id="${regionId}"]`);
+        if (!cell) {
+            console.warn('⚠️ Célula não encontrada no DOM:', regionId);
+            return false;
+        }
+        
+        try {
+            // Criar nova célula usando o RegionRenderer
+            const newCell = this.regionRenderer.createRegionCell(region, regionId);
+            
+            // Substituir a célula antiga
+            const parent = cell.parentNode;
+            if (parent) {
+                parent.replaceChild(newCell, cell);
+                
+                // Adicionar animação de atualização
+                newCell.classList.add('region-updated');
+                setTimeout(() => {
+                    newCell.classList.remove('region-updated');
+                }, 1000);
+                
+                console.log('✅ Célula da região atualizada:', regionId);
+                return true;
+            }
+        } catch (error) {
+            console.error('❌ Erro ao atualizar célula:', error);
+        }
+        
+        return false;
     }
 
     // ==================== RENDERIZAÇÃO DO JOGO ====================
@@ -189,40 +241,36 @@ export class UIGameManager {
             playerId: player.id
         });
         
-        // Verificar se jogador está eliminado
-        if (player.eliminated) {
-            // Jogador eliminado só pode dominar regiões neutras
-            if (region.controller === null) {
-                console.log('💀 Jogador eliminado tentando ressuscitar');
-                window.gameLogic.handleExplore(); // Isso chamará a ressurreição
-            } else {
-                this.uiManager.modals.showFeedback('Jogador eliminado só pode dominar regiões neutras.', 'error');
-            }
+        // Usar validação centralizada
+        const validation = window.gameLogic?.getActionValidation?.('explore');
+        
+        if (!validation || !validation.valid) {
+            this.uiManager.modals.showFeedback(validation?.reason || 'Ação não disponível', 'error');
             return;
         }
         
-        if (region.controller === null) {
-            // Região neutra - dominar diretamente (SEM MODAL)
-            console.log('🏳️ Região neutra - dominando');
-            window.gameLogic.handleExplore();
-        } else if (region.controller === player.id) {
-            // Região própria - explorar diretamente
-            console.log('🏠 Região própria - explorando');
-            window.gameLogic.handleExplore();
-        } else {
-            // Região inimiga - abrir modal de disputa
-            console.log('⚔️ Região inimiga - abrindo modal de disputa');
-            
-            // Verificar se o disputeUI está disponível
-            if (this.uiManager.disputeUI && this.uiManager.disputeUI.openDisputeModal) {
-                this.uiManager.disputeUI.openDisputeModal(region.id);
-            } else if (window.disputeUI && window.disputeUI.openDisputeModal) {
-                // Fallback para acesso global
-                window.disputeUI.openDisputeModal(region.id);
-            } else {
-                console.error('❌ DisputeUI não disponível');
-                this.uiManager.modals.showFeedback('Sistema de disputa não disponível.', 'error');
-            }
+        // Executar baseado no tipo de ação
+        switch(validation.type) {
+            case 'resurrect':
+            case 'dominate':
+            case 'explore':
+                window.gameLogic.handleExplore();
+                break;
+            case 'dispute':
+                // Abrir modal de disputa com dados pré-calculados
+                if (validation.data) {
+                    if (this.uiManager.disputeUI && this.uiManager.disputeUI.openDisputeModal) {
+                        this.uiManager.disputeUI.openDisputeModal(region.id, validation.data);
+                    }
+                } else {
+                    // Fallback: abrir modal sem dados pré-calculados
+                    if (this.uiManager.disputeUI && this.uiManager.disputeUI.openDisputeModal) {
+                        this.uiManager.disputeUI.openDisputeModal(region.id);
+                    }
+                }
+                break;
+            default:
+                this.uiManager.modals.showFeedback('Tipo de ação não reconhecido', 'error');
         }
     }
     
