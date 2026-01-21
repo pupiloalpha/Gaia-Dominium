@@ -152,78 +152,103 @@ export class FooterManager {
     }
 
     _updateExploreButton(region, player, isActionPhase, baseEnabled) {
-        if (!this.actionExploreBtn) return;
-        
-        // Usar validação centralizada do GameLogic
-        const validation = window.gameLogic?.getActionValidation?.('explore');
-        
-        if (!isActionPhase) {
-            this.actionExploreBtn.disabled = true;
-            this.actionExploreBtn.title = 'Ação permitida apenas na fase de Ações (⚡).';
-            return;
-        }
-        
-        if (!validation || !validation.valid) {
-            this.actionExploreBtn.disabled = true;
-            this.actionExploreBtn.title = validation?.reason || 'Ação não disponível';
-            
-            // CORREÇÃO: Forçar atualização visual do botão
-            this.actionExploreBtn.classList.remove('bg-green-600', 'bg-yellow-600', 'bg-red-600', 'bg-purple-600');
-            this.actionExploreBtn.classList.add('bg-gray-600', 'opacity-50', 'cursor-not-allowed');
-            this.actionExploreBtn.textContent = 'Explorar';
-            return;
-        }
-        
-        // Configurar botão baseado no tipo de ação
-        this.actionExploreBtn.disabled = false;
-        
-        switch(validation.type) {
-            case 'resurrect':
-                this.actionExploreBtn.textContent = '💀 Ressuscitar';
-                this.actionExploreBtn.classList.remove('bg-green-600', 'bg-yellow-600', 'bg-red-600');
-                this.actionExploreBtn.classList.add('bg-purple-600');
-                this.actionExploreBtn.title = 'Dominar região neutra para ressuscitar (custo: 2 PV + recursos do bioma)';
-                break;
-            case 'dominate':
-                this.actionExploreBtn.textContent = 'Dominar';
-                this.actionExploreBtn.classList.remove('bg-green-600', 'bg-red-600', 'bg-purple-600');
-                this.actionExploreBtn.classList.add('bg-yellow-600');
-                this.actionExploreBtn.title = 'Dominar região neutra (custo: 2 PV + recursos do bioma)';
-                break;
-            case 'explore':
-                this.actionExploreBtn.textContent = 'Explorar';
-                this.actionExploreBtn.classList.remove('bg-yellow-600', 'bg-red-600', 'bg-purple-600');
-                this.actionExploreBtn.classList.add('bg-green-600');
-                this.actionExploreBtn.title = 'Explorar região própria (custo: recursos)';
-                break;
-            case 'dispute':
-                const enemyPlayer = gameState.players[region.controller];
-                const disputeData = validation.data;
-                let costInfo = `Custo: ${disputeData.finalCost.pv} PV, `;
-                Object.entries(disputeData.finalCost).forEach(([res, amt]) => {
-                    if (res !== 'pv' && amt > 0) {
-                        costInfo += `${amt}${RESOURCE_ICONS[res]} ${res}, `;
-                    }
-                });
-                costInfo = costInfo.slice(0, -2);
-                
-                this.actionExploreBtn.textContent = 'Disputar';
-                this.actionExploreBtn.classList.remove('bg-green-600', 'bg-yellow-600', 'bg-purple-600');
-                this.actionExploreBtn.classList.add('bg-red-600');
-                this.actionExploreBtn.title = `Disputar ${region.name} de ${enemyPlayer.name}\n${costInfo}\nChance: ${Math.round(disputeData.successChance)}%`;
-                
-                // CORREÇÃO CRÍTICA: Garantir que o botão fique visível e habilitado
-                this.actionExploreBtn.classList.remove('opacity-50', 'cursor-not-allowed');
-                console.log('✅ Botão de disputa configurado para:', region.name);
-                break;
-            default:
-                this.actionExploreBtn.disabled = true;
-                this.actionExploreBtn.textContent = 'Explorar';
-                this.actionExploreBtn.title = 'Ação não disponível';
-                this.actionExploreBtn.classList.remove('bg-green-600', 'bg-yellow-600', 'bg-red-600', 'bg-purple-600');
-                this.actionExploreBtn.classList.add('bg-gray-600', 'opacity-50', 'cursor-not-allowed');
-        }
+    if (!this.actionExploreBtn) return;
+    
+    // Resetar aparência primeiro
+    this._resetExploreButtonAppearance();
+    
+    // Verificar se há região selecionada
+    if (!region) {
+        this.actionExploreBtn.disabled = true;
+        this.actionExploreBtn.title = 'Selecione uma região primeiro';
+        return;
     }
+    
+    // Usar validação centralizada do GameLogic
+    const validation = window.gameLogic?.getActionValidation?.('explore');
+    
+    if (!isActionPhase) {
+        this.actionExploreBtn.disabled = true;
+        this.actionExploreBtn.title = 'Ação permitida apenas na fase de Ações (⚡).';
+        return;
+    }
+    
+    // CORREÇÃO CRÍTICA: Verificar validação primeiro
+    if (!validation) {
+        this.actionExploreBtn.disabled = true;
+        this.actionExploreBtn.title = 'Validação não disponível';
+        return;
+    }
+    
+    // CORREÇÃO: Verificar se há ações disponíveis
+    if (gameState.actionsLeft <= 0) {
+        this.actionExploreBtn.disabled = true;
+        this.actionExploreBtn.title = 'Sem ações disponíveis';
+        return;
+    }
+    
+    // Configurar botão baseado no tipo de ação
+    this.actionExploreBtn.disabled = !validation.valid;
+    
+    if (!validation.valid) {
+        this.actionExploreBtn.title = validation.reason || 'Ação não disponível';
+        return;
+    }
+    
+    // CORREÇÃO: Apenas mudar texto e classe se a ação for válida
+    switch(validation.type) {
+        case 'resurrect':
+            this.actionExploreBtn.textContent = '💀 Ressuscitar';
+            this.actionExploreBtn.classList.add('bg-purple-600');
+            this.actionExploreBtn.title = 'Dominar região neutra para ressuscitar (custo: 2 PV + recursos do bioma)';
+            break;
+        case 'dominate':
+            this.actionExploreBtn.textContent = 'Dominar';
+            this.actionExploreBtn.classList.add('bg-yellow-600');
+            this.actionExploreBtn.title = 'Dominar região neutra (custo: 2 PV + recursos do bioma)';
+            break;
+        case 'explore':
+            this.actionExploreBtn.textContent = 'Explorar';
+            this.actionExploreBtn.classList.add('bg-green-600');
+            this.actionExploreBtn.title = 'Explorar região própria (custo: recursos)';
+            break;
+        case 'dispute':
+            const enemyPlayer = gameState.players[region.controller];
+            const disputeData = validation.data;
+            let costInfo = `Custo: ${disputeData.finalCost.pv} PV, `;
+            Object.entries(disputeData.finalCost).forEach(([res, amt]) => {
+                if (res !== 'pv' && amt > 0) {
+                    costInfo += `${amt}${RESOURCE_ICONS[res]} ${res}, `;
+                }
+            });
+            costInfo = costInfo.slice(0, -2);
+            
+            this.actionExploreBtn.textContent = 'Disputar';
+            this.actionExploreBtn.classList.add('bg-red-600');
+            this.actionExploreBtn.title = `Disputar ${region.name} de ${enemyPlayer.name}\n${costInfo}\nChance: ${Math.round(disputeData.successChance)}%`;
+            break;
+        default:
+            this.actionExploreBtn.textContent = 'Explorar';
+            this.actionExploreBtn.classList.add('bg-gray-600');
+            this.actionExploreBtn.title = 'Ação não disponível';
+    }
+    
+    // Remover classes de desabilitado se o botão estiver habilitado
+    if (!this.actionExploreBtn.disabled) {
+        this.actionExploreBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+    }
+}
+
+// Adicionar este método auxiliar na classe FooterManager:
+_resetExploreButtonAppearance() {
+    if (!this.actionExploreBtn) return;
+    
+    // Remover todas as classes de cor anteriores
+    const colorClasses = ['bg-green-600', 'bg-yellow-600', 'bg-red-600', 'bg-purple-600', 'bg-gray-600'];
+    colorClasses.forEach(cls => {
+        this.actionExploreBtn.classList.remove(cls);
+    });
+}
 
     _updateCollectButton(region, player, isActionPhase, baseEnabled) {
         if (!this.actionCollectBtn) return;
