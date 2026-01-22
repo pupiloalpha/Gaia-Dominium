@@ -1,148 +1,59 @@
-// ui-modals.js - Gerenciamento de Modais
+// ui-modals.js - Gerenciamento de Modais (REFATORADO)
 import { gameState, achievementsState, getCurrentPlayer, addActivityLog } from '../state/game-state.js';
 import { 
-  GAME_CONFIG, 
   RESOURCE_ICONS, 
-  BIOME_INCOME,
-  BIOME_INITIAL_RESOURCES,
-  STRUCTURE_INCOME, 
-  STRUCTURE_COSTS,
-  STRUCTURE_EFFECTS,
-  STRUCTURE_LIMITS,
-  EXPLORATION_BONUS,
-  EXPLORATION_SPECIAL_BONUS,
-  TURN_PHASES,
-  ACHIEVEMENTS_CONFIG,
-  GAME_EVENTS,
-  ACHIEVEMENTS,
-  EVENT_CATEGORIES,
-  STRUCTURE_CONFIG
+  STRUCTURE_CONFIG,
+  ACHIEVEMENTS_CONFIG 
 } from '../state/game-config.js';
 import { getAllManualContent } from '../utils/game-manual.js';
 
-class ModalManager {
-  constructor(uiManager) {
-    this.uiManager = uiManager;
-    this.cacheModalElements();
-    this.setupModalListeners();
+// ==================== MODAIS ESPECIALIZADOS ====================
+
+class AlertModal {
+  constructor(modalManager) {
+    this.modalManager = modalManager;
+    this.modal = document.getElementById('alertModal');
+    this.iconEl = document.getElementById('alertIcon');
+    this.titleEl = document.getElementById('alertTitle');
+    this.messageEl = document.getElementById('alertMessage');
+    this.buttonsEl = document.getElementById('alertButtons');
   }
 
-  cacheModalElements() {
-    // Cache de TODOS os elementos modais
-    this.modals = {
-      alert: document.getElementById('alertModal'),
-      manual: document.getElementById('manualModal'),
-      event: document.getElementById('eventModal'),
-      structure: document.getElementById('structureModal'),
-      income: document.getElementById('incomeModal'),
-      victory: document.getElementById('victoryModal'),
-      domination: document.getElementById('dominationModal'),
-      dispute: document.getElementById('disputeModal'),
-      disputeResult: document.getElementById('disputeResultModal'),
-      achievements: null // criado dinamicamente
+  show(title, message, type = 'info') {
+    const icons = {
+      'info': 'ℹ️',
+      'warning': '🟡',
+      'error': '🔴',
+      'success': '🟢'
     };
-
-    // Alert modal elements
-    this.alertIconEl = document.getElementById('alertIcon');
-    this.alertTitleEl = document.getElementById('alertTitle');
-    this.alertMessageEl = document.getElementById('alertMessage');
-    this.alertButtonsEl = document.getElementById('alertButtons');
-
-    // Event modal elements
-    this.eventIconEl = document.getElementById('eventIcon');
-    this.eventTitleEl = document.getElementById('eventTitle');
-    this.eventDescriptionEl = document.getElementById('eventDescription');
-    this.eventEffectEl = document.getElementById('eventEffect');
-    this.eventDurationEl = document.getElementById('eventDuration');
-    this.eventOkBtn = document.getElementById('eventOkBtn');
-
-    // Event banner
-    this.eventBanner = document.getElementById('eventBanner');
-    this.eventBannerIcon = document.getElementById('eventBannerIcon');
-    this.eventBannerTitle = document.getElementById('eventBannerTitle');
-    this.eventBannerTurns = document.getElementById('eventBannerTurns');
-    this.eventBannerEffect = document.getElementById('eventBannerEffect');
-    this.eventBannerClose = document.getElementById('eventBannerClose');
-
-    // Structure modal
-    this.structureModalClose = document.getElementById('structureModalClose');
-    this.structureModalRegion = document.getElementById('structureModalRegion');
-    this.structureOptions = document.getElementById('structureOptions');
-
-    // Income modal elements
-    this.incomeOkBtn = document.getElementById('incomeOkBtn');
-    this.incomePlayerName = document.getElementById('incomePlayerName');
-    this.incomeResources = document.getElementById('incomeResources');
-
-    // Victory modal
-    this.victoryModalTitle = document.getElementById('victoryModalTitle');
-    this.victoryModalMessage = document.getElementById('victoryModalMessage');
-    this.victoryModalClose = document.getElementById('victoryModalClose');
-
-    // Manual tabs
-    this.manualTabs = document.querySelectorAll('.manual-tab');
-    this.manualContents = document.querySelectorAll('.manual-content');
-  }
-
-  setupModalListeners() {
-    // Manual
-    document.getElementById('manualCloseBtn')?.addEventListener('click', () => this.closeManual());
-    // Manual tabs
-    this.manualTabs.forEach(t => t.addEventListener('click', (e) => this.handleManualTabClick(e)));
-
-    // Structure modal
-    this.structureModalClose?.addEventListener('click', () => this.closeStructureModal());
-    this.modals.structure?.addEventListener('click', (e) => {
-      if (e.target === this.modals.structure) {
-        this.closeStructureModal();
-      }
-    });
-
-    // Event modal
-    this.eventOkBtn?.addEventListener('click', () => this.closeEventModal());
-    this.eventBannerClose?.addEventListener('click', () => this.hideEventBanner());
-
-    // Victory modal
-    this.victoryModalClose?.addEventListener('click', () => this.closeVictoryModal());
-
-    // Income modal
-    this.incomeOkBtn?.addEventListener('click', () => this.closeIncomeModal());
-  }
-
-  // ==================== MODAL GENÉRICO ====================
-  showAlert(title, message, type = 'info') {
-    let icon = 'ℹ️';
-    if (type === 'warning') icon = '🟡';
-    if (type === 'error') icon = '🔴';
-    if (type === 'success') icon = '🟢';
     
-    this.alertIconEl.textContent = icon;
-    this.alertTitleEl.textContent = title;
-    this.alertMessageEl.textContent = message;
+    this.iconEl.textContent = icons[type] || 'ℹ️';
+    this.titleEl.textContent = title;
+    this.messageEl.textContent = message;
     
-    this.alertButtonsEl.innerHTML = '';
+    this.buttonsEl.innerHTML = '';
     const ok = document.createElement('button');
     ok.className = 'px-4 py-2 bg-gray-800 border border-white/6 rounded-full text-white';
     ok.textContent = 'OK';
-    ok.addEventListener('click', () => this.hideAlert());
-    this.alertButtonsEl.appendChild(ok);
+    ok.addEventListener('click', () => this.hide());
+    this.buttonsEl.appendChild(ok);
     
-    this.modals.alert.classList.remove('hidden');
-    setTimeout(() => this.modals.alert.classList.add('show'), 10);
+    this.modal.classList.remove('hidden');
+    setTimeout(() => this.modal.classList.add('show'), 10);
   }
 
-  hideAlert() {
-    this.modals.alert.classList.remove('show');
-    setTimeout(() => this.modals.alert.classList.add('hidden'), 180);
+  hide() {
+    this.modal.classList.remove('show');
+    setTimeout(() => this.modal.classList.add('hidden'), 180);
   }
 
-  showConfirm(title, message) {
+  async confirm(title, message) {
     return new Promise(resolve => {
       let resolved = false;
-      this.alertIconEl.textContent = '❓';
-      this.alertTitleEl.textContent = title;
-      this.alertMessageEl.textContent = message;
-      this.alertButtonsEl.innerHTML = '';
+      this.iconEl.textContent = '❓';
+      this.titleEl.textContent = title;
+      this.messageEl.textContent = message;
+      this.buttonsEl.innerHTML = '';
       
       const no = document.createElement('button');
       no.className = 'px-4 py-2 bg-gray-800 border border-white/6 rounded-full text-white mr-2';
@@ -150,7 +61,7 @@ class ModalManager {
       no.addEventListener('click', () => {
         if (resolved) return;
         resolved = true;
-        this.hideAlert();
+        this.hide();
         resolve(false);
       });
 
@@ -160,323 +71,134 @@ class ModalManager {
       yes.addEventListener('click', () => {
         if (resolved) return;
         resolved = true;
-        this.hideAlert();
+        this.hide();
         resolve(true);
       });
 
-      this.alertButtonsEl.appendChild(no);
-      this.alertButtonsEl.appendChild(yes);
-      this.modals.alert.classList.remove('hidden');
-      setTimeout(() => this.modals.alert.classList.add('show'), 10);
+      this.buttonsEl.appendChild(no);
+      this.buttonsEl.appendChild(yes);
+      this.modal.classList.remove('hidden');
+      setTimeout(() => this.modal.classList.add('show'), 10);
     });
-  }
-
-  showFeedback(message, type = 'info') {
-    const t = type === 'error' ? 'Erro' : type === 'success' ? 'Sucesso' : 'Informação';
-    this.showAlert(t, message, type);
-  }
-
-  // ==================== MODAL DE MANUAL ====================
-  openManual() {
-    this.renderManualFromText();
-    this.modals.manual.classList.remove('hidden');
-  }
-
-  closeManual() {
-    this.modals.manual.classList.add('hidden');
-  }
-
-  handleManualTabClick(e) {
-  // Remover classe active de todas as abas
-  this.manualTabs.forEach(t => t.classList.remove('active'));
-  
-  // Adicionar classe active à aba clicada
-  e.currentTarget.classList.add('active');
-  
-  // Mostrar o conteúdo da aba
-  const tabId = e.currentTarget.dataset.tab;
-  this.showManualTab(tabId);
-  
-  // Se for a aba de eventos, garantir que os filtros estão configurados
-  if (tabId === 'tab-eventos') {
-    console.log('🎴 Aba de eventos aberta, configurando filtros...');
-    
-    // Pequeno delay para garantir que o conteúdo está carregado
-    setTimeout(() => {
-      // Forçar reconfiguração dos filtros
-      this.setupEventFilters();
-    }, 200);
   }
 }
 
-  showManualTab(tabId) {
-    this.manualContents.forEach(c => c.classList.add('hidden'));
+class ManualModal {
+  constructor(modalManager) {
+    this.modalManager = modalManager;
+    this.modal = document.getElementById('manualModal');
+    this.tabs = document.querySelectorAll('.manual-tab');
+    this.contents = document.querySelectorAll('.manual-content');
+    this.setupListeners();
+  }
+
+  setupListeners() {
+    document.getElementById('manualCloseBtn')?.addEventListener('click', () => this.close());
+    this.tabs.forEach(t => t.addEventListener('click', (e) => this.handleTabClick(e)));
+  }
+
+  open() {
+    this.renderContent();
+    this.modal.classList.remove('hidden');
+  }
+
+  close() {
+    this.modal.classList.add('hidden');
+  }
+
+  handleTabClick(e) {
+    this.tabs.forEach(t => t.classList.remove('active'));
+    e.currentTarget.classList.add('active');
+    this.showTab(e.currentTarget.dataset.tab);
+  }
+
+  showTab(tabId) {
+    this.contents.forEach(c => c.classList.add('hidden'));
     const el = document.getElementById(tabId);
     if (el) el.classList.remove('hidden');
+    
+    if (tabId === 'tab-eventos') {
+      setTimeout(() => this.modalManager.setupEventFilters(), 200);
+    }
   }
 
-  renderManualFromText() {
-  const manualContent = getAllManualContent();
-  
-  const tabs = [
-    { id: 'tab-o-jogo', key: 'o-jogo' },
-    { id: 'tab-gaia', key: 'gaia' },
-    { id: 'tab-regioes', key: 'regioes' },
-    { id: 'tab-faccoes', key: 'faccoes' },
-    { id: 'tab-fases', key: 'fases' },
-    { id: 'tab-acoes', key: 'acoes' },
-    { id: 'tab-negociacao', key: 'negociacao' },
-    { id: 'tab-estrutura', key: 'estrutura' },
-    { id: 'tab-eventos', key: 'eventos' },
-    { id: 'tab-conquistas', key: 'conquistas' }
-  ];
-  
-  tabs.forEach(tab => {
-    const element = document.getElementById(tab.id);
-    if (element) {
-      element.innerHTML = manualContent[tab.key] || '<p class="text-gray-400">Conteúdo não disponível</p>';
-      
-      // Se for a aba de eventos, configurar os filtros
-      if (tab.id === 'tab-eventos') {
-        // Usar MutationObserver para detectar quando o conteúdo é inserido
-        const observer = new MutationObserver((mutations) => {
-          mutations.forEach((mutation) => {
-            if (mutation.addedNodes.length > 0) {
-              // Verificar se o grid de eventos foi adicionado
-              const eventsGrid = element.querySelector('#eventsGrid');
-              if (eventsGrid) {
-                console.log('🎴 Grid de eventos detectado, configurando filtros...');
-                this.setupEventFilters();
-                observer.disconnect(); // Parar de observar
-              }
-            }
-          });
-        });
-        
-        // Iniciar observação
-        observer.observe(element, { childList: true, subtree: true });
-        
-        // Fallback: configurar após timeout
-        setTimeout(() => {
-          if (element.querySelector('#eventsGrid')) {
-            console.log('🎴 Configurando filtros (fallback)...');
-            this.setupEventFilters();
-          }
-        }, 500);
+  renderContent() {
+    const content = getAllManualContent();
+    const tabs = [
+      { id: 'tab-o-jogo', key: 'o-jogo' },
+      { id: 'tab-gaia', key: 'gaia' },
+      { id: 'tab-regioes', key: 'regioes' },
+      { id: 'tab-faccoes', key: 'faccoes' },
+      { id: 'tab-fases', key: 'fases' },
+      { id: 'tab-acoes', key: 'acoes' },
+      { id: 'tab-negociacao', key: 'negociacao' },
+      { id: 'tab-estrutura', key: 'estrutura' },
+      { id: 'tab-eventos', key: 'eventos' },
+      { id: 'tab-conquistas', key: 'conquistas' }
+    ];
+    
+    tabs.forEach(tab => {
+      const element = document.getElementById(tab.id);
+      if (element) {
+        element.innerHTML = content[tab.key] || '<p class="text-gray-400">Conteúdo não disponível</p>';
       }
-    } else {
-      console.warn(`Elemento ${tab.id} não encontrado no DOM.`);
-    }
-  });
+    });
+  }
 }
 
-  // ==================== FILTROS DE EVENTOS NO MANUAL ====================
+class EventModal {
+  constructor(modalManager) {
+    this.modalManager = modalManager;
+    this.modal = document.getElementById('eventModal');
+    this.banner = document.getElementById('eventBanner');
+    this.setupListeners();
+  }
 
-setupEventFilters() {
-  console.log('🎴 Inicializando filtros de eventos...');
-  
-  const setupFilters = () => {
-    const filterButtons = document.querySelectorAll('.event-filter-btn');
-    const eventCards = document.querySelectorAll('.event-card');
-    
-    if (filterButtons.length === 0 || eventCards.length === 0) {
-      console.log('🔄 Aguardando elementos de filtro...');
-      setTimeout(setupFilters, 100);
-      return;
-    }
-    
-    console.log(`✅ Encontrados: ${filterButtons.length} botões, ${eventCards.length} cards`);
-    
-    // REMOVER TODOS OS EVENT LISTENERS EXISTENTES (abordagem limpa)
-    filterButtons.forEach(btn => {
-      // Criar um novo botão idêntico (isso remove listeners antigos)
-      const newBtn = btn.cloneNode(true);
-      btn.parentNode.replaceChild(newBtn, btn);
-    });
-    
-    // Obter novas referências
-    const refreshedButtons = document.querySelectorAll('.event-filter-btn');
-    
-    // Função para resetar todos os botões ao estado INATIVO
-    const resetAllButtons = () => {
-      refreshedButtons.forEach(btn => {
-        // Remover TODAS as classes de estilo
-        btn.classList.remove(
-          'active', 
-          'bg-blue-600', 'bg-green-600', 'bg-red-600', 'bg-yellow-600',
-          'text-white'
-        );
-        
-        // Adicionar classe base para botões inativos
-        btn.classList.add('bg-gray-800', 'text-gray-300');
-        
-        // Remover estilos inline
-        btn.style.backgroundColor = '';
-        btn.style.color = '';
-        btn.style.transform = '';
-        btn.style.boxShadow = '';
-        btn.style.borderColor = '';
-      });
-    };
-    
-    // Função para aplicar filtro
-    const applyFilter = (filterType) => {
-      console.log(`🔘 Aplicando filtro: ${filterType}`);
-      
-      eventCards.forEach(card => {
-        card.style.transition = 'opacity 0.3s ease';
-        
-        if (filterType === 'all') {
-          card.style.display = 'block';
-          setTimeout(() => {
-            card.style.opacity = '1';
-          }, 10);
-        } else {
-          const hasCategory = card.classList.contains(`category-${filterType}`);
-          if (hasCategory) {
-            card.style.display = 'block';
-            setTimeout(() => {
-              card.style.opacity = '1';
-            }, 10);
-          } else {
-            card.style.opacity = '0';
-            setTimeout(() => {
-              card.style.display = 'none';
-            }, 300);
-          }
-        }
-      });
-    };
-    
-    // Adicionar event listeners aos botões REFRESHED
-    refreshedButtons.forEach(btn => {
-      btn.addEventListener('click', function() {
-        console.log(`🖱️ Botão clicado: ${this.id}`);
-        
-        // 1. Resetar TODOS os botões
-        resetAllButtons();
-        
-        // 2. Marcar ESTE botão como ativo
-        this.classList.remove('bg-gray-800', 'text-gray-300');
-        
-        // Adicionar classes específicas baseadas no ID
-        switch(this.id) {
-          case 'filterAll':
-            this.classList.add('bg-blue-600', 'text-white');
-            break;
-          case 'filterPositive':
-            this.classList.add('bg-green-600', 'text-white');
-            break;
-          case 'filterNegative':
-            this.classList.add('bg-red-600', 'text-white');
-            break;
-          case 'filterMixed':
-            this.classList.add('bg-yellow-600', 'text-white');
-            break;
-        }
-        
-        // Marcar como ativo
-        this.classList.add('active');
-        
-        // 3. Aplicar filtro correspondente
-        const filterType = this.id.replace('filter', '').toLowerCase();
-        applyFilter(filterType);
-        
-        // 4. Efeito visual de clique
-        this.style.transform = 'scale(0.95)';
-        setTimeout(() => {
-          this.style.transform = 'scale(1)';
-        }, 150);
-      });
-    });
-    
-    // Inicializar com filtro "all"
-    const allBtn = document.getElementById('filterAll');
-    if (allBtn) {
-      console.log('🚀 Inicializando com filtro "all"');
-      
-      // Forçar reset primeiro
-      resetAllButtons();
-      
-      // Aplicar estilo ao botão "all"
-      allBtn.classList.remove('bg-gray-800', 'text-gray-300');
-      allBtn.classList.add('bg-blue-600', 'text-white', 'active');
-      
-      // Aplicar filtro
-      applyFilter('all');
-    }
-    
-    console.log('✅ Filtros configurados com sucesso!');
-  };
-  
-  // Executar com um pequeno delay
-  setTimeout(setupFilters, 200);
-}
-  
-  // ==================== MODAL DE EVENTOS ====================
-  openEventModal(event) {
+  setupListeners() {
+    document.getElementById('eventOkBtn')?.addEventListener('click', () => this.close());
+    document.getElementById('eventBannerClose')?.addEventListener('click', () => this.hideBanner());
+  }
+
+  open(event) {
     if (!event) return;
     
-    this.eventIconEl.textContent = event.icon;
-    this.eventTitleEl.textContent = event.name;
-    this.eventDescriptionEl.textContent = event.description;
-    this.eventEffectEl.textContent = `Efeito: ${event.effect}`;
-    this.eventDurationEl.textContent = event.duration > 0 
-      ? `Duração: ${event.duration} turno(s)` 
-      : `Duração: instantâneo`;
+    document.getElementById('eventIcon').textContent = event.icon;
+    document.getElementById('eventTitle').textContent = event.name;
+    document.getElementById('eventDescription').textContent = event.description;
+    document.getElementById('eventEffect').textContent = `Efeito: ${event.effect}`;
+    document.getElementById('eventDuration').textContent = 
+      event.duration > 0 ? `Duração: ${event.duration} turno(s)` : `Duração: instantâneo`;
     
-    this.modals.event.classList.remove('hidden');
+    this.modal.classList.remove('hidden');
   }
 
-  closeEventModal() {
-    this.modals.event.classList.add('hidden');
+  close() {
+    this.modal.classList.add('hidden');
   }
 
-  updateEventBanner() {
+  updateBanner() {
     if (gameState.currentEvent && gameState.eventTurnsLeft > 0) {
-      this.eventBannerIcon.textContent = gameState.currentEvent.icon;
-      this.eventBannerTitle.textContent = gameState.currentEvent.name;
-      this.eventBannerTurns.textContent = 
+      const event = gameState.currentEvent;
+      const category = this.getCategory(event.id);
+      
+      document.getElementById('eventBannerIcon').textContent = event.icon;
+      document.getElementById('eventBannerTitle').textContent = event.name;
+      document.getElementById('eventBannerTurns').textContent = 
         `${gameState.eventTurnsLeft} turno${gameState.eventTurnsLeft > 1 ? 's' : ''} restante${gameState.eventTurnsLeft > 1 ? 's' : ''}`;
-      this.eventBannerEffect.textContent = gameState.currentEvent.effect;
+      document.getElementById('eventBannerEffect').textContent = event.effect;
       
-      this.eventBanner.classList.remove('event-positive', 'event-negative', 'event-mixed', 'event-neutral');
-      
-      let category = 'neutral';
-      if (gameState.currentEvent.id && this.getEventCategory) {
-        category = this.getEventCategory(gameState.currentEvent.id);
-      } else if (gameState.currentEvent.type) {
-        category = gameState.currentEvent.type;
-      }
-      
-      this.eventBanner.classList.add(`event-${category}`);
-      
-      this.eventBannerTitle.style.color = '#ffffff';
-      this.eventBannerTitle.style.fontWeight = 'bold';
-      this.eventBannerTitle.style.textShadow = '0 1px 3px rgba(0, 0, 0, 0.8)';
-      
-      this.eventBannerEffect.style.color = 'rgba(255, 255, 255, 0.95)';
-      this.eventBannerEffect.style.fontWeight = '500';
-      this.eventBannerEffect.style.textShadow = '0 1px 2px rgba(0, 0, 0, 0.7)';
-      
-      this.eventBannerTurns.style.color = '#ffffff';
-      this.eventBannerTurns.style.fontWeight = '600';
-      this.eventBannerTurns.style.backgroundColor = 'rgba(0, 0, 0, 0.6)';
-      
-      this.eventBannerIcon.style.color = '#ffffff';
-      this.eventBannerIcon.style.textShadow = '0 2px 4px rgba(0, 0, 0, 0.5)';
-      
-      this.eventBanner.classList.remove('hidden');
+      this.banner.className = `hidden mb-3 p-3 rounded-lg border animate-pulse-slow event-${category}`;
+      this.banner.classList.remove('hidden');
     } else {
-      this.eventBanner.classList.add('hidden');
+      this.hideBanner();
     }
   }
 
-  hideEventBanner() {
-    this.eventBanner.classList.add('hidden');
+  hideBanner() {
+    this.banner.classList.add('hidden');
   }
 
-  getEventCategory(eventId) {
+  getCategory(eventId) {
     const positive = ['primavera', 'mercado', 'festival', 'exploracao', 'enchente'];
     const negative = ['seca', 'tempestade', 'inflacao', 'escassez_pedra', 'areia', 'depressao'];
     const mixed = ['jazida', 'inverno', 'tecnologia', 'arqueologia'];
@@ -486,282 +208,230 @@ setupEventFilters() {
     if (mixed.includes(eventId)) return 'mixed';
     return 'neutral';
   }
+}
 
-  updateEventModal(event) {
-    if (this.eventIconEl) this.eventIconEl.textContent = event.icon;
-    if (this.eventTitleEl) this.eventTitleEl.textContent = event.name;
-    if (this.eventDescriptionEl) this.eventDescriptionEl.textContent = event.description;
-    if (this.eventEffectEl) this.eventEffectEl.textContent = `Efeito: ${event.effect}`;
-    if (this.eventDurationEl) {
-      const durationText = event.duration === 0 ? 'Imediato' : `${event.duration} turno(s)`;
-      this.eventDurationEl.textContent = `Duração: ${durationText}`;
-    }
-    
-    const modalContent = document.querySelector('#eventModal .relative');
-    if (modalContent) {
-      modalContent.classList.remove('event-positive', 'event-negative', 'event-mixed', 'event-neutral');
-      if (event.type) {
-        modalContent.classList.add(`event-${event.type}`);
-      }
-    }
+class StructureModal {
+  constructor(modalManager) {
+    this.modalManager = modalManager;
+    this.modal = document.getElementById('structureModal');
+    this.setupListeners();
   }
 
-  // ==================== MODAL DE ESTRUTURAS ====================
-  openStructureModal() {
+  setupListeners() {
+    document.getElementById('structureModalClose')?.addEventListener('click', () => this.close());
+    this.modal?.addEventListener('click', (e) => {
+      if (e.target === this.modal) this.close();
+    });
+  }
+
+  open() {
     if (gameState.selectedRegionId === null) {
-      this.showFeedback('Selecione uma região primeiro.', 'error');
+      this.modalManager.showFeedback('Selecione uma região primeiro.', 'error');
       return;
     }
     
     const region = gameState.regions[gameState.selectedRegionId];
-    const player = gameState.players[gameState.currentPlayerIndex];
+    const player = getCurrentPlayer();
     
     if (region.controller !== player.id) {
-      this.showFeedback('Você só pode construir em regiões que controla.', 'error');
+      this.modalManager.showFeedback('Você só pode construir em regiões que controla.', 'error');
       return;
     }
     
-    this.structureModalRegion.textContent = `${region.name} (${region.biome})`;
-    this.renderStructureOptions(region);
-    this.modals.structure.classList.remove('hidden');
+    document.getElementById('structureModalRegion').textContent = `${region.name} (${region.biome})`;
+    this.renderOptions(region);
+    this.modal.classList.remove('hidden');
   }
 
-  closeStructureModal() {
-    this.modals.structure.classList.add('hidden');
+  close() {
+    this.modal.classList.add('hidden');
   }
 
-  renderStructureOptions(region) {
-  const player = gameState.players[gameState.currentPlayerIndex];
-  // VERIFICAR SE JOGADOR ESTÁ ELIMINADO
+  renderOptions(region) {
+    const player = getCurrentPlayer();
+    const container = document.getElementById('structureOptions');
+    
     if (player.eliminated) {
-        this.structureOptions.innerHTML = `
-            <div class="text-center py-8">
-                <p class="text-gray-400">💀 Jogador eliminado não pode construir.</p>
-                <p class="text-sm text-gray-500 mt-2">
-                    Para ressuscitar: domine uma região neutra
-                </p>
-            </div>
-        `;
-        return;
-    }
-    
-  this.structureOptions.innerHTML = '';
-  
-  const colorClasses = {
-    'green': { 
-        border: 'border-green-500/30', 
-        text: 'text-green-100',  // Mais claro
-        bg: 'bg-green-900/20',
-        icon: 'text-green-300'
-    },
-    'blue': { 
-        border: 'border-blue-500/30', 
-        text: 'text-blue-100',
-        bg: 'bg-blue-900/20',
-        icon: 'text-blue-300'
-    },
-    'yellow': { 
-        border: 'border-yellow-500/30', 
-        text: 'text-yellow-100',
-        bg: 'bg-yellow-900/20',
-        icon: 'text-yellow-300'
-    },
-    'purple': { 
-        border: 'border-purple-500/30', 
-        text: 'text-purple-100',
-        bg: 'bg-purple-900/20',
-        icon: 'text-purple-300'
-    },
-    'red': { 
-        border: 'border-red-500/30', 
-        text: 'text-red-100',
-        bg: 'bg-red-900/20',
-        icon: 'text-red-300'
-    }
-};
-  
-  Object.entries(STRUCTURE_CONFIG).forEach(([name, config]) => {
-    if (region.structures.includes(name)) {
+      container.innerHTML = this.getEliminatedPlayerHTML();
       return;
     }
     
+    container.innerHTML = '';
+    
+    Object.entries(STRUCTURE_CONFIG).forEach(([name, config]) => {
+      if (region.structures.includes(name)) return;
+      
+      const option = this.createOption(name, config, region, player);
+      container.appendChild(option);
+    });
+    
+    if (container.children.length === 0) {
+      container.innerHTML = this.getNoStructuresHTML();
+    }
+  }
+
+  createOption(name, config, region, player) {
     const cost = config.cost || {};
     const income = config.income || {};
     const effect = config.effect || {};
-    const colorClass = colorClasses[config.color] || colorClasses.green;
+    const colorClass = this.getColorClass(config.color);
+    const canAfford = this.canAfford(player, cost);
     
     const option = document.createElement('div');
     option.className = `bg-gray-800/50 border ${colorClass.border} rounded-xl p-4 hover:bg-gray-700/50 transition cursor-pointer`;
     option.dataset.structure = name;
-    
-    const player = gameState.players[gameState.currentPlayerIndex];
-    const canAfford = Object.entries(cost).every(([resource, amount]) => 
-      player.resources[resource] >= amount
-    );
     
     if (!canAfford) {
       option.classList.add('opacity-50');
       option.style.cursor = 'not-allowed';
     }
     
-    option.innerHTML = `
-  <div class="flex items-start gap-4 p-1">
-    <span class="text-4xl ${colorClass.icon} filter drop-shadow-lg">${config.icon}</span>
-    <div class="flex-1">
-      <h3 class="font-bold ${colorClass.text} mb-2 text-lg tracking-tight">${name}</h3>
-      <p class="text-sm text-white/90 mb-3 leading-relaxed">${effect.description || ''}</p>
-      
-      <div class="mb-3">
-        <p class="text-xs font-semibold text-white/80 mb-1">Custo:</p>
-        <div class="flex flex-wrap gap-2 mt-1">
-          ${Object.entries(cost).map(([resource, amount]) => `
-            <span class="text-xs px-3 py-1.5 rounded-lg bg-gray-800/80 text-white font-bold border border-white/10 shadow-md">
-              ${amount}${RESOURCE_ICONS[resource]} ${resource}
-            </span>
-          `).join('')}
-        </div>
-      </div>
-      
-      <div class="mb-3">
-        <p class="text-xs font-semibold text-white/80 mb-1">Benefícios por turno:</p>
-        <div class="flex flex-wrap gap-2 mt-1">
-          ${effect.pv ? `
-            <span class="text-xs px-3 py-1.5 rounded-lg bg-yellow-900/50 text-yellow-200 font-bold border border-yellow-500/30 shadow-md">
-              +${effect.pv} ⭐ PV
-            </span>
-          ` : ''}
-          ${Object.entries(income).map(([resource, amount]) => `
-            <span class="text-xs px-3 py-1.5 rounded-lg bg-blue-900/50 text-blue-200 font-bold border border-blue-500/30 shadow-md">
-              +${amount}${RESOURCE_ICONS[resource]} ${resource === 'pv' ? 'PV' : resource}
-            </span>
-          `).join('')}
-        </div>
-      </div>
-      
-      ${!canAfford ? 
-        '<p class="text-sm text-red-300 font-semibold mt-3 text-center py-1.5 bg-red-900/30 rounded border border-red-500/30">❌ Recursos insuficientes</p>' : 
-        '<p class="text-sm text-green-300 font-semibold mt-3 text-center py-1.5 bg-green-900/30 rounded border border-green-500/30 animate-pulse">✅ Clique para construir</p>'
-      }
-    </div>
-  </div>
-`;
+    option.innerHTML = this.getOptionHTML(name, config, cost, income, effect, colorClass, canAfford);
     
     if (canAfford) {
-    option.addEventListener('click', () => {
-        // Adicionar feedback visual
-        this.addStructureSelectionFeedback(name);
-        
-        // Pequeno delay para o feedback
+      option.addEventListener('click', () => {
+        this.addSelectionFeedback(name);
         setTimeout(() => {
-            this.closeStructureModal();
-            
-            if (window.gameLogic && window.gameLogic.handleBuild) {
-                window.gameLogic.handleBuild(name);
-            } else {
-                this.showFeedback('Erro ao construir estrutura. Função não encontrada.', 'error');
-            }
+          this.close();
+          if (window.gameLogic?.handleBuild) {
+            window.gameLogic.handleBuild(name);
+          } else {
+            this.modalManager.showFeedback('Erro ao construir estrutura.', 'error');
+          }
         }, 300);
-    });
-}
+      });
+    }
     
-    this.structureOptions.appendChild(option);
-  });
-  
-  if (this.structureOptions.children.length === 0) {
-    this.structureOptions.innerHTML = `
-      <div class="text-center py-8">
-        <p class="text-gray-400">Todas as estruturas já foram construídas nesta região.</p>
+    return option;
+  }
+
+  getOptionHTML(name, config, cost, income, effect, colorClass, canAfford) {
+    return `
+      <div class="flex items-start gap-4 p-1">
+        <span class="text-4xl ${colorClass.icon}">${config.icon}</span>
+        <div class="flex-1">
+          <h3 class="font-bold ${colorClass.text} mb-2 text-lg">${name}</h3>
+          <p class="text-sm text-white/90 mb-3">${effect.description || ''}</p>
+          
+          <div class="mb-3">
+            <p class="text-xs font-semibold text-white/80 mb-1">Custo:</p>
+            <div class="flex flex-wrap gap-2 mt-1">
+              ${Object.entries(cost).map(([resource, amount]) => `
+                <span class="text-xs px-3 py-1.5 rounded-lg bg-gray-800/80 text-white font-bold border border-white/10">
+                  ${amount}${RESOURCE_ICONS[resource]} ${resource}
+                </span>
+              `).join('')}
+            </div>
+          </div>
+          
+          <div class="mb-3">
+            <p class="text-xs font-semibold text-white/80 mb-1">Benefícios:</p>
+            <div class="flex flex-wrap gap-2 mt-1">
+              ${effect.pv ? `
+                <span class="text-xs px-3 py-1.5 rounded-lg bg-yellow-900/50 text-yellow-200 font-bold border border-yellow-500/30">
+                  +${effect.pv} ⭐ PV
+                </span>
+              ` : ''}
+              ${Object.entries(income).map(([resource, amount]) => `
+                <span class="text-xs px-3 py-1.5 rounded-lg bg-blue-900/50 text-blue-200 font-bold border border-blue-500/30">
+                  +${amount}${RESOURCE_ICONS[resource]}
+                </span>
+              `).join('')}
+            </div>
+          </div>
+          
+          ${!canAfford ? 
+            '<p class="text-sm text-red-300 font-semibold mt-3 text-center py-1.5 bg-red-900/30 rounded border border-red-500/30">❌ Recursos insuficientes</p>' : 
+            '<p class="text-sm text-green-300 font-semibold mt-3 text-center py-1.5 bg-green-900/30 rounded border border-green-500/30">✅ Clique para construir</p>'
+          }
+        </div>
       </div>
     `;
   }
-}
 
-addStructureSelectionFeedback(structureName) {
-    // Encontrar o elemento da estrutura clicada
-    const structureElements = document.querySelectorAll('#structureOptions > div');
-    structureElements.forEach(el => {
-        if (el.querySelector('h3')?.textContent === structureName) {
-            // Adicionar efeito visual
-            el.classList.add('animate-pulse', 'ring-2', 'ring-yellow-400');
-            
-            // Remover depois de 1 segundo
-            setTimeout(() => {
-                el.classList.remove('animate-pulse', 'ring-2', 'ring-yellow-400');
-            }, 1000);
-            
-            // Feedback de áudio (opcional)
-            if (typeof Audio !== 'undefined') {
-                const clickSound = new Audio('data:audio/wav;base64,UklGRigAAABXQVZFZm10IBIAAAABAAEARKwAAIhYAQACABAAZGF0YQQ=');
-                clickSound.volume = 0.3;
-                clickSound.play().catch(() => {});
-            }
-        }
+  getColorClass(color) {
+    const classes = {
+      'green': { border: 'border-green-500/30', text: 'text-green-100', icon: 'text-green-300' },
+      'blue': { border: 'border-blue-500/30', text: 'text-blue-100', icon: 'text-blue-300' },
+      'yellow': { border: 'border-yellow-500/30', text: 'text-yellow-100', icon: 'text-yellow-300' },
+      'purple': { border: 'border-purple-500/30', text: 'text-purple-100', icon: 'text-purple-300' },
+      'red': { border: 'border-red-500/30', text: 'text-red-100', icon: 'text-red-300' }
+    };
+    return classes[color] || classes.green;
+  }
+
+  canAfford(player, cost) {
+    return Object.entries(cost).every(([resource, amount]) => 
+      player.resources[resource] >= amount
+    );
+  }
+
+  addSelectionFeedback(structureName) {
+    const elements = document.querySelectorAll('#structureOptions > div');
+    elements.forEach(el => {
+      if (el.querySelector('h3')?.textContent === structureName) {
+        el.classList.add('animate-pulse', 'ring-2', 'ring-yellow-400');
+        setTimeout(() => el.classList.remove('animate-pulse', 'ring-2', 'ring-yellow-400'), 1000);
+      }
     });
+  }
+
+  getEliminatedPlayerHTML() {
+    return `
+      <div class="text-center py-8">
+        <p class="text-gray-400">💀 Jogador eliminado não pode construir.</p>
+        <p class="text-sm text-gray-500 mt-2">Para ressuscitar: domine uma região neutra</p>
+      </div>
+    `;
+  }
+
+  getNoStructuresHTML() {
+    return `<div class="text-center py-8"><p class="text-gray-400">Todas as estruturas já foram construídas nesta região.</p></div>`;
+  }
 }
 
-  // ==================== MODAL DE RENDA ====================
+class IncomeModal {
+  constructor(modalManager) {
+    this.modalManager = modalManager;
+    this.modal = document.getElementById('incomeModal');
+    this.setupListeners();
+  }
 
-showIncomeModal(player, bonuses) {
-    // VERIFICAÇÃO DE SEGURANÇA
+  setupListeners() {
+    const okBtn = this.modal?.querySelector('#incomeOkBtn');
+    if (okBtn) {
+      const newBtn = okBtn.cloneNode(true);
+      okBtn.parentNode.replaceChild(newBtn, okBtn);
+      newBtn.addEventListener('click', () => this.close());
+    }
+  }
+
+  show(player, bonuses) {
     if (gameState.currentPhase !== 'renda' || gameState.currentPlayerIndex !== player.id) {
-        console.error(`❌ Tentativa de abrir modal de renda em fase incorreta: ${gameState.currentPhase} para jogador ${player.id}`);
-        
-        // Fechar modal se estiver aberto
-        this.closeIncomeModal();
-        
-        // Avançar para fase de ações automaticamente
-        gameState.currentPhase = 'acoes';
-        if (window.uiManager) {
-            window.uiManager.updateUI();
-        }
-        return;
+      this.close();
+      gameState.currentPhase = 'acoes';
+      if (window.uiManager) window.uiManager.updateUI();
+      return;
     }
- 
-  console.log('💰 showIncomeModal chamado para:', player.name);
-
-  // VERIFICAR SE JOGADOR ESTÁ ELIMINADO
+    
     if (player.eliminated) {
-        console.log(`💰 Jogador ${player.name} está eliminado, pulando modal de renda.`);
-        
-        // Pular renda e ir direto para fase de ações (ou passar turno)
-        if (this.uiManager && this.uiManager.setModalMode) {
-            this.uiManager.setModalMode(false);
-        }
-        return;
+      console.log(`💰 Jogador ${player.name} eliminado, pulando renda.`);
+      return;
     }
-  
-  // Garantir que o modal está cacheado
-  if (!this.modals.income) {
-    this.modals.income = document.getElementById('incomeModal');
+    
+    this.modalManager.uiManager.setModalMode(true);
+    
+    document.getElementById('incomePlayerName').textContent = `${player.icon} ${player.name}`;
+    document.getElementById('incomeResources').innerHTML = this.getResourcesHTML(bonuses);
+    
+    this.modal.classList.remove('hidden');
   }
-  
-  if (!this.modals.income) {
-    console.error('❌ incomeModal não encontrado no DOM');
-    return;
-  }
-  
-  // Ativar modo modal
-  if (this.uiManager && this.uiManager.setModalMode) {
-    this.uiManager.setModalMode(true);
-  }
-  
-  // CORREÇÃO: Usar seletores diretos do modal
-  const playerNameEl = this.modals.income.querySelector('#incomePlayerName');
-  const resourcesEl = this.modals.income.querySelector('#incomeResources');
-  const okBtn = this.modals.income.querySelector('#incomeOkBtn');
-  
-  // Configurar nome do jogador
-  if (playerNameEl) {
-    playerNameEl.textContent = `${player.icon} ${player.name}`;
-  }
-  
-  // Configurar recursos
-  if (resourcesEl) {
+
+  getResourcesHTML(bonuses) {
     let html = '<div class="grid grid-cols-2 gap-3">';
     
     Object.entries(bonuses).forEach(([resource, amount]) => {
-      if (amount > 0 && resource !== 'pv') {
-        const icon = RESOURCE_ICONS[resource] || '📦';
+      if (amount > 0 && resource !== 'pv' && RESOURCE_ICONS[resource]) {
         const resourceNames = {
           'madeira': 'Madeira',
           'pedra': 'Pedra', 
@@ -772,7 +442,7 @@ showIncomeModal(player, bonuses) {
         html += `
           <div class="flex items-center justify-between p-2 bg-gray-700/50 rounded">
             <span class="text-white flex items-center gap-2">
-              <span class="text-lg">${icon}</span>
+              <span class="text-lg">${RESOURCE_ICONS[resource]}</span>
               <span>${resourceNames[resource] || resource}</span>
             </span>
             <span class="text-green-400 font-bold">+${amount}</span>
@@ -792,217 +462,376 @@ showIncomeModal(player, bonuses) {
     }
     
     html += '</div>';
-    resourcesEl.innerHTML = html;
+    return html;
   }
-  
-  // CORREÇÃO CRÍTICA: Configurar botão OK corretamente
-  if (okBtn) {
-    // Remover listeners antigos
-    const newOkBtn = okBtn.cloneNode(true);
-    okBtn.parentNode.replaceChild(newOkBtn, okBtn);
+
+  close() {
+    this.modal.classList.add('hidden');
+    this.modalManager.uiManager.setModalMode(false);
     
-    // Adicionar novo listener
-    const currentOkBtn = this.modals.income.querySelector('#incomeOkBtn');
-    if (currentOkBtn) {
-      currentOkBtn.addEventListener('click', () => {
-        console.log('✅ Botão OK do modal de renda clicado');
-        this.closeIncomeModal();
-      });
-    }
-  }
-  
-  // Mostrar modal
-  this.modals.income.classList.remove('hidden');
-  console.log('✅ Modal de renda mostrado com sucesso');
-}
-  
-  closeIncomeModal() {
-  if (!this.modals.income) {
-    this.modals.income = document.getElementById('incomeModal');
-  }
-  
-  if (!this.modals.income) {
-    console.error('❌ Elemento incomeModal não encontrado!');
-    return;
-  }
-  
-  console.log('🔴 Fechando modal de renda...');
-  
-  // Esconder modal
-  this.modals.income.classList.add('hidden');
-  
-  // Desativar modo modal
-  if (this.uiManager && this.uiManager.setModalMode) {
-    this.uiManager.setModalMode(false);
-  }
-  
-  // Avançar para fase de ações (se jogo iniciado)
-  if (gameState.gameStarted && gameState.currentPhase === 'renda') {
-    gameState.currentPhase = 'acoes';
-    gameState.actionsLeft = GAME_CONFIG.ACTIONS_PER_TURN;
-    
-    console.log('🔄 Avançando para fase de ações...');
-    
-    const currentPlayer = getCurrentPlayer();
-    if (currentPlayer) {
-      addActivityLog({
-        type: 'phase',
-        playerName: currentPlayer.name,
-        action: 'iniciou fase de ações',
-        details: '',
-        turn: gameState.turn
-      });
-    }
-    
-    // Atualizar UI
-    setTimeout(() => {
-      if (window.uiManager) {
-        window.uiManager.updateUI();
+    if (gameState.gameStarted && gameState.currentPhase === 'renda') {
+      gameState.currentPhase = 'acoes';
+      gameState.actionsLeft = GAME_CONFIG.ACTIONS_PER_TURN;
+      
+      const currentPlayer = getCurrentPlayer();
+      if (currentPlayer) {
+        addActivityLog({
+          type: 'phase',
+          playerName: currentPlayer.name,
+          action: 'iniciou fase de ações',
+          turn: gameState.turn
+        });
       }
-    }, 100);
-  }
-  
-  console.log('✅ Modal de renda fechado com sucesso');
-  }
-
-  // ==================== MODAL DE CONQUISTAS ====================
-renderAchievementsModal() {
-  let modal = document.getElementById('achievementsModal');
-  
-  if (!modal) {
-    modal = document.createElement('div');
-    modal.id = 'achievementsModal';
-    modal.className = 'hidden fixed inset-0 z-[110] flex items-center justify-center p-6';
-    modal.innerHTML = `
-      <div class="absolute inset-0 bg-black/70"></div>
-      <div class="relative w-full max-w-4xl bg-gray-900/95 backdrop-blur-md border border-yellow-500/30 rounded-2xl shadow-xl p-6">
-        <div class="flex justify-between items-center mb-6">
-          <div>
-            <h2 class="text-2xl text-yellow-300 font-semibold">🏆 Conquistas</h2>
-            <p id="achievementsPlayerName" class="text-gray-300 text-sm"></p>
-          </div>
-          <button id="achievementsModalClose" class="text-gray-300 hover:text-white text-xl">✖</button>
-        </div>
-        <div id="achievementsModalContent" class="grid grid-cols-1 md:grid-cols-2 gap-4 max-h-[60vh] overflow-y-auto"></div>
-      </div>
-    `;
-    document.body.appendChild(modal);
-  }
-  
-  const content = document.getElementById('achievementsModalContent');
-  const playerNameEl = document.getElementById('achievementsPlayerName');
-  if (!content || !playerNameEl) return;
-  
-  content.innerHTML = '';
-  
-  const playerIndex = gameState.currentPlayerIndex;
-  const player = gameState.players[playerIndex];
-  const playerStats = achievementsState.playerAchievements[playerIndex] || {
-    explored: 0,
-    built: 0,
-    negotiated: 0,
-    collected: 0,
-    controlledBiomes: new Set(),
-    maxResources: { madeira: 0, pedra: 0, ouro: 0, agua: 0 }
-  };
-  
-  playerNameEl.textContent = `Jogador atual: ${player.name}`;
-  
-  Object.values(ACHIEVEMENTS_CONFIG).forEach(achievement => {
-    const isUnlocked = (achievementsState.unlockedAchievements[playerIndex] || []).includes(achievement.id);
-    const card = document.createElement('div');
-    card.className = `p-4 rounded-lg border ${isUnlocked ? 'border-yellow-500/50 bg-yellow-900/10' : 'border-gray-700/50 bg-gray-800/30'}`;
-    
-    let progress = 0;
-    let progressText = '';
-    
-    switch (achievement.type) {
-      case 'explored':
-        progress = playerStats.explored || 0;
-        progressText = `Exploradas: ${progress}/${achievement.requirement}`;
-        break;
-      case 'built':
-        progress = playerStats.built || 0;
-        progressText = `Construídas: ${progress}/${achievement.requirement}`;
-        break;
-      case 'negotiated':
-        progress = playerStats.negotiated || 0;
-        progressText = `Negociações: ${progress}/${achievement.requirement}`;
-        break;
-      case 'collected':
-        progress = playerStats.collected || 0;
-        progressText = `Regiões coletadas: ${progress}/${achievement.requirement}`;
-        break;
-      case 'biomes':
-        progress = playerStats.controlledBiomes?.size || 0;
-        progressText = `Biomas: ${progress}/${achievement.requirement}`;
-        break;
-      case 'resources':
-        const resources = playerStats.maxResources || {};
-        const resourceCount = Object.values(resources).filter(value => value >= achievement.requirement).length;
-        progress = resourceCount;
-        progressText = `Recursos: ${progress}/4 com ${achievement.requirement}+`;
-        break;
-      case 'fastWin':
-        progress = gameState.turn;
-        progressText = `Turno atual: ${progress}/${achievement.requirement}`;
-        break;
-      case 'pacifist':
-        progress = playerStats.negotiated || 0;
-        progressText = progress === 0 ? '✅ Nunca negociou' : `Negociações: ${progress}`;
-        break;
-      default:
-        progressText = isUnlocked ? '✅ Desbloqueado' : '🔒 Bloqueado';
+      
+      setTimeout(() => {
+        if (window.uiManager) window.uiManager.updateUI();
+      }, 100);
     }
-    
-    const progressPercent = achievement.requirement > 0 
-      ? Math.min(100, (progress / achievement.requirement) * 100)
-      : (progress === 0 ? 100 : 0); // Para pacifist
-    
-    card.innerHTML = `
-      <div class="flex items-start gap-3">
-        <span class="text-2xl">${achievement.icon}</span>
-        <div class="flex-1">
-          <h3 class="font-bold ${isUnlocked ? 'text-yellow-300' : 'text-gray-300'}">
-            ${achievement.name}
-            ${isUnlocked ? '<span class="text-green-400 ml-2">✓</span>' : ''}
-          </h3>
-          <p class="text-sm text-gray-300 mt-1">${achievement.description}</p>
-          
-          <div class="mt-3">
-            <div class="flex justify-between text-xs text-gray-400 mb-1">
-              <span>Progresso</span>
-              <span>${progressPercent.toFixed(0)}%</span>
-            </div>
-            <div class="w-full bg-gray-700 rounded-full h-2">
-              <div class="bg-green-500 h-2 rounded-full" style="width: ${progressPercent}%"></div>
-            </div>
-            <div class="text-xs text-gray-400 mt-1">${progressText}</div>
-          </div>
-          
-          ${isUnlocked ? `
-            <div class="mt-2 text-xs text-green-300">
-              <strong>Recompensa:</strong> ${this.getAchievementRewardText(achievement)}
-            </div>
-          ` : ''}
-        </div>
-      </div>
-    `;
-    
-    content.appendChild(card);
-  });
-
-  modal.classList.remove('hidden');
-  const closeBtn = document.getElementById('achievementsModalClose');
-  if (closeBtn && !closeBtn.hasListener) {
-    closeBtn.addEventListener('click', () => {
-      modal.classList.add('hidden');
-    });
-    closeBtn.hasListener = true;
   }
 }
 
-  getAchievementRewardText(achievement) {
+class VictoryModal {
+  constructor(modalManager) {
+    this.modalManager = modalManager;
+    this.modal = document.getElementById('victoryModal');
+    this.setupListeners();
+  }
+
+  setupListeners() {
+    const closeBtn = document.getElementById('victoryModalClose');
+    if (closeBtn) {
+      closeBtn.addEventListener('click', () => this.close());
+    }
+    
+    const newGameBtn = document.getElementById('victoryNewGameBtn');
+    if (newGameBtn) {
+      newGameBtn.addEventListener('click', () => {
+        this.saveStatistics();
+        this.close();
+        setTimeout(() => window.location.reload(), 500);
+      });
+    }
+  }
+
+  open(winner) {
+    document.getElementById('victoryPlayerName').textContent = winner.name;
+    document.getElementById('victoryPointsDisplay').textContent = winner.victoryPoints;
+    document.getElementById('victoryTurnCount').textContent = gameState.turn;
+    
+    this.modal.classList.remove('hidden');
+    this.modalManager.disableAllGameActions();
+    this.createConfettiEffect();
+  }
+
+  close() {
+    this.modal.classList.add('hidden');
+    this.clearConfetti();
+  }
+
+  createConfettiEffect() {
+    for (let i = 0; i < 50; i++) {
+      setTimeout(() => {
+        const confetti = document.createElement('div');
+        confetti.innerHTML = '✨';
+        confetti.style.position = 'fixed';
+        confetti.style.left = `${Math.random() * 100}vw`;
+        confetti.style.top = '-50px';
+        confetti.style.fontSize = `${Math.random() * 20 + 10}px`;
+        confetti.style.color = ['#fbbf24', '#f59e0b', '#d97706', '#fde68a'][Math.floor(Math.random() * 4)];
+        confetti.style.zIndex = '9998';
+        confetti.style.pointerEvents = 'none';
+        
+        document.body.appendChild(confetti);
+        
+        confetti.animate([
+          { transform: 'translateY(0) rotate(0deg)', opacity: 1 },
+          { transform: `translateY(${window.innerHeight + 100}px) rotate(${Math.random() * 360}deg)`, opacity: 0 }
+        ], { duration: Math.random() * 2000 + 1000 });
+        
+        setTimeout(() => confetti.remove(), 3000);
+      }, i * 30);
+    }
+  }
+
+  clearConfetti() {
+    document.querySelectorAll('div').forEach(el => {
+      if (el.innerHTML === '✨' && el.style.position === 'fixed') {
+        el.remove();
+      }
+    });
+  }
+
+  saveStatistics() {
+    try {
+      const stats = {
+        winner: getCurrentPlayer().name,
+        victoryPoints: getCurrentPlayer().victoryPoints,
+        turn: gameState.turn,
+        timestamp: new Date().toISOString(),
+        players: gameState.players.map(p => ({
+          name: p.name,
+          points: p.victoryPoints,
+          regions: p.regions.length
+        }))
+      };
+      
+      const existing = JSON.parse(localStorage.getItem('gaia_victory_stats') || '[]');
+      existing.push(stats);
+      if (existing.length > 10) existing.shift();
+      localStorage.setItem('gaia_victory_stats', JSON.stringify(existing));
+    } catch (error) {
+      console.warn('⚠️ Não foi possível salvar estatísticas:', error);
+    }
+  }
+}
+
+// ==================== MODAL MANAGER PRINCIPAL ====================
+
+class ModalManager {
+  constructor(uiManager) {
+    this.uiManager = uiManager;
+    
+    // Inicializar modais especializados
+    this.alert = new AlertModal(this);
+    this.manual = new ManualModal(this);
+    this.event = new EventModal(this);
+    this.structure = new StructureModal(this);
+    this.income = new IncomeModal(this);
+    this.victory = new VictoryModal(this);
+    
+    // Cache de modais
+    this.modals = {
+      alert: document.getElementById('alertModal'),
+      manual: document.getElementById('manualModal'),
+      event: document.getElementById('eventModal'),
+      structure: document.getElementById('structureModal'),
+      income: document.getElementById('incomeModal'),
+      victory: document.getElementById('victoryModal'),
+      dispute: document.getElementById('disputeModal'),
+      disputeResult: document.getElementById('disputeResultModal')
+    };
+  }
+
+  // ==================== MÉTODOS DE INTERFACE (mantidos para compatibilidade) ====================
+
+  showAlert(title, message, type = 'info') {
+    this.alert.show(title, message, type);
+  }
+
+  hideAlert() {
+    this.alert.hide();
+  }
+
+  showConfirm(title, message) {
+    return this.alert.confirm(title, message);
+  }
+
+  showFeedback(message, type = 'info') {
+    const title = type === 'error' ? 'Erro' : 
+                  type === 'success' ? 'Sucesso' : 
+                  type === 'warning' ? 'Aviso' : 'Informação';
+    this.showAlert(title, message, type);
+  }
+
+  openManual() {
+    this.manual.open();
+  }
+
+  closeManual() {
+    this.manual.close();
+  }
+
+  openEventModal(event) {
+    this.event.open(event);
+  }
+
+  closeEventModal() {
+    this.event.close();
+  }
+
+  updateEventBanner() {
+    this.event.updateBanner();
+  }
+
+  hideEventBanner() {
+    this.event.hideBanner();
+  }
+
+  openStructureModal() {
+    this.structure.open();
+  }
+
+  closeStructureModal() {
+    this.structure.close();
+  }
+
+  showIncomeModal(player, bonuses) {
+    this.income.show(player, bonuses);
+  }
+
+  closeIncomeModal() {
+    this.income.close();
+  }
+
+  openVictoryModal(winner) {
+    this.victory.open(winner);
+  }
+
+  closeVictoryModal() {
+    this.victory.close();
+  }
+
+  // ==================== MÉTODOS ESPECÍFICOS (mantidos) ====================
+
+  setupEventFilters() {
+    const setup = () => {
+      const filterButtons = document.querySelectorAll('.event-filter-btn');
+      const eventCards = document.querySelectorAll('.event-card');
+      
+      if (filterButtons.length === 0 || eventCards.length === 0) {
+        setTimeout(setup, 100);
+        return;
+      }
+      
+      filterButtons.forEach(btn => {
+        const newBtn = btn.cloneNode(true);
+        btn.parentNode.replaceChild(newBtn, btn);
+      });
+      
+      const refreshedButtons = document.querySelectorAll('.event-filter-btn');
+      
+      const resetAllButtons = () => {
+        refreshedButtons.forEach(btn => {
+          btn.classList.remove('active', 'bg-blue-600', 'bg-green-600', 'bg-red-600', 'bg-yellow-600', 'text-white');
+          btn.classList.add('bg-gray-800', 'text-gray-300');
+          btn.style.cssText = '';
+        });
+      };
+      
+      const applyFilter = (filterType) => {
+        eventCards.forEach(card => {
+          card.style.transition = 'opacity 0.3s ease';
+          if (filterType === 'all') {
+            card.style.display = 'block';
+            setTimeout(() => card.style.opacity = '1', 10);
+          } else {
+            const hasCategory = card.classList.contains(`category-${filterType}`);
+            card.style.opacity = hasCategory ? '1' : '0';
+            setTimeout(() => card.style.display = hasCategory ? 'block' : 'none', 300);
+          }
+        });
+      };
+      
+      refreshedButtons.forEach(btn => {
+        btn.addEventListener('click', function() {
+          resetAllButtons();
+          this.classList.remove('bg-gray-800', 'text-gray-300');
+          
+          const colors = {
+            'filterAll': 'bg-blue-600',
+            'filterPositive': 'bg-green-600',
+            'filterNegative': 'bg-red-600',
+            'filterMixed': 'bg-yellow-600'
+          };
+          
+          if (colors[this.id]) this.classList.add(colors[this.id], 'text-white');
+          this.classList.add('active');
+          
+          const filterType = this.id.replace('filter', '').toLowerCase();
+          applyFilter(filterType);
+          
+          this.style.transform = 'scale(0.95)';
+          setTimeout(() => this.style.transform = 'scale(1)', 150);
+        });
+      });
+      
+      const allBtn = document.getElementById('filterAll');
+      if (allBtn) {
+        resetAllButtons();
+        allBtn.classList.remove('bg-gray-800', 'text-gray-300');
+        allBtn.classList.add('bg-blue-600', 'text-white', 'active');
+        applyFilter('all');
+      }
+    };
+    
+    setTimeout(setup, 200);
+  }
+
+  renderAchievementsModal() {
+    let modal = document.getElementById('achievementsModal');
+    
+    if (!modal) {
+      modal = document.createElement('div');
+      modal.id = 'achievementsModal';
+      modal.className = 'hidden fixed inset-0 z-[110] flex items-center justify-center p-6';
+      modal.innerHTML = `
+        <div class="absolute inset-0 bg-black/70"></div>
+        <div class="relative w-full max-w-4xl bg-gray-900/95 backdrop-blur-md border border-yellow-500/30 rounded-2xl shadow-xl p-6">
+          <div class="flex justify-between items-center mb-6">
+            <div>
+              <h2 class="text-2xl text-yellow-300 font-semibold">🏆 Conquistas</h2>
+              <p id="achievementsPlayerName" class="text-gray-300 text-sm"></p>
+            </div>
+            <button id="achievementsModalClose" class="text-gray-300 hover:text-white text-xl">✖</button>
+          </div>
+          <div id="achievementsModalContent" class="grid grid-cols-1 md:grid-cols-2 gap-4 max-h-[60vh] overflow-y-auto"></div>
+        </div>
+      `;
+      document.body.appendChild(modal);
+      
+      document.getElementById('achievementsModalClose').addEventListener('click', () => {
+        modal.classList.add('hidden');
+      });
+    }
+    
+    const content = document.getElementById('achievementsModalContent');
+    const playerNameEl = document.getElementById('achievementsPlayerName');
+    if (!content || !playerNameEl) return;
+    
+    const player = getCurrentPlayer();
+    const playerStats = achievementsState.playerAchievements[player.id] || {
+      explored: 0,
+      built: 0,
+      negotiated: 0,
+      collected: 0,
+      controlledBiomes: new Set(),
+      maxResources: { madeira: 0, pedra: 0, ouro: 0, agua: 0 }
+    };
+    
+    playerNameEl.textContent = `Jogador atual: ${player.name}`;
+    content.innerHTML = '';
+    
+    Object.values(ACHIEVEMENTS_CONFIG).forEach(achievement => {
+      const isUnlocked = (achievementsState.unlockedAchievements[player.id] || []).includes(achievement.id);
+      const progress = this.calculateAchievementProgress(achievement, playerStats);
+      
+      const card = document.createElement('div');
+      card.className = `p-4 rounded-lg border ${isUnlocked ? 'border-yellow-500/50 bg-yellow-900/10' : 'border-gray-700/50 bg-gray-800/30'}`;
+      card.innerHTML = this.getAchievementCardHTML(achievement, isUnlocked, progress);
+      content.appendChild(card);
+    });
+    
+    modal.classList.remove('hidden');
+  }
+
+  calculateAchievementProgress(achievement, playerStats) {
+    switch (achievement.type) {
+      case 'explored': return { value: playerStats.explored || 0, text: `Exploradas: ${playerStats.explored}/${achievement.requirement}` };
+      case 'built': return { value: playerStats.built || 0, text: `Construídas: ${playerStats.built}/${achievement.requirement}` };
+      case 'negotiated': return { value: playerStats.negotiated || 0, text: `Negociações: ${playerStats.negotiated}/${achievement.requirement}` };
+      case 'collected': return { value: playerStats.collected || 0, text: `Regiões coletadas: ${playerStats.collected}/${achievement.requirement}` };
+      case 'biomes': return { value: playerStats.controlledBiomes?.size || 0, text: `Biomas: ${playerStats.controlledBiomes?.size}/${achievement.requirement}` };
+      case 'resources': 
+        const resourceCount = Object.values(playerStats.maxResources || {}).filter(v => v >= achievement.requirement).length;
+        return { value: resourceCount, text: `Recursos: ${resourceCount}/4 com ${achievement.requirement}+` };
+      case 'fastWin': return { value: gameState.turn, text: `Turno atual: ${gameState.turn}/${achievement.requirement}` };
+      case 'pacifist': return { value: playerStats.negotiated || 0, text: playerStats.negotiated === 0 ? '✅ Nunca negociou' : `Negociações: ${playerStats.negotiated}` };
+      default: return { value: 0, text: '' };
+    }
+  }
+
+  getAchievementCardHTML(achievement, isUnlocked, progress) {
+    const percent = achievement.requirement > 0 ? Math.min(100, (progress.value / achievement.requirement) * 100) : 100;
     const rewards = {
       'explorador': '+1 PV por turno',
       'construtor': '-1 recurso ao construir',
@@ -1014,348 +843,114 @@ renderAchievementsModal() {
       'pacifista': '+5 PV instantâneos'
     };
     
-    return rewards[achievement.id] || 'Recompensa especial';
-  }
-
-  // ==================== MODAL DE VITÓRIA ====================
-
-openVictoryModal(winner) {
-  console.log('🏆 Abrindo modal de vitória para:', winner.name);
-  
-  // Garantir que o modal exista no DOM
-  if (!this.modals.victory) {
-    this.modals.victory = document.getElementById('victoryModal');
-    if (!this.modals.victory) {
-      console.error('❌ Modal de vitória não encontrado no DOM');
-      return;
-    }
-  }
-  
-  // Atualizar conteúdo do modal
-  if (this.victoryModalTitle) {
-    this.victoryModalTitle.textContent = '🏆 VITÓRIA IMPERIAL!';
-  }
-  
-  // Atualizar nome do jogador
-  const victoryPlayerNameEl = document.getElementById('victoryPlayerName');
-  if (victoryPlayerNameEl) {
-    victoryPlayerNameEl.textContent = winner.name;
-  }
-  
-  // Atualizar a pontuação
-  const pointsDisplay = document.getElementById('victoryPointsDisplay');
-  if (pointsDisplay) {
-    pointsDisplay.textContent = winner.victoryPoints;
-    
-    // Animação de contagem
-    this.animateCounter(pointsDisplay, 0, winner.victoryPoints, 1500);
-  }
-  
-  // Atualizar contador de turnos
-  const turnCountEl = document.getElementById('victoryTurnCount');
-  if (turnCountEl) {
-    turnCountEl.textContent = gameState.turn;
-  }
-  
-  // Configurar botões do modal
-  this.setupVictoryButtons(winner);
-  
-  // Mostrar o modal
-  this.showVictoryModalWithAnimations();
-}
-
-// Método auxiliar: Configurar botões do modal de vitória
-setupVictoryButtons(winner) {
-  // Botão de novo jogo
-  const newGameBtn = document.getElementById('victoryNewGameBtn');
-  if (newGameBtn) {
-    // Remover listeners anteriores
-    const newBtn = newGameBtn.cloneNode(true);
-    newGameBtn.parentNode.replaceChild(newBtn, newGameBtn);
-    
-    // Adicionar novo listener
-    document.getElementById('victoryNewGameBtn').addEventListener('click', () => {
-      console.log('🎮 Jogador clicou em Novo Jogo');
-      
-      // Feedback visual
-      newBtn.classList.add('animate-pulse');
-      
-      // Salvar estatísticas antes de reiniciar
-      this.saveGameStatistics(winner);
-      
-      // Delay para ver a animação
-      setTimeout(() => {
-        this.modals.victory.classList.add('hidden');
-        
-        // Reiniciar o jogo após um breve delay
-        setTimeout(() => {
-          window.location.reload();
-        }, 500);
-      }, 300);
-    });
-  }
-  
-  // Botão de fechar
-  const closeBtn = document.getElementById('victoryModalClose');
-  if (closeBtn) {
-    // Remover listeners anteriores
-    const newCloseBtn = closeBtn.cloneNode(true);
-    closeBtn.parentNode.replaceChild(newCloseBtn, closeBtn);
-    
-    // Adicionar novo listener
-    document.getElementById('victoryModalClose').addEventListener('click', () => {
-      this.closeVictoryModal();
-    });
-  }
-}
-
-// Método auxiliar: Mostrar modal com animações
-showVictoryModalWithAnimations() {
-  // Remover hidden
-  this.modals.victory.classList.remove('hidden');
-  
-  // Garantir que esteja no topo
-  this.modals.victory.style.zIndex = '9999';
-  
-  // Adicionar animações
-  setTimeout(() => {
-    const modalContent = this.modals.victory.querySelector('.relative');
-    if (modalContent) {
-      // Remover classes antigas
-      modalContent.classList.remove('animate__bounceIn');
-      
-      // Forçar reflow
-      void modalContent.offsetWidth;
-      
-      // Adicionar animação
-      modalContent.classList.add('animate__animated', 'animate__bounceIn');
-      
-      // Efeito de confete (simples)
-      this.createConfettiEffect();
-    }
-  }, 100);
-  
-  // Desabilitar ações do jogo
-  this.disableAllGameActions();
-}
-
-// Método auxiliar: Animação de contador
-animateCounter(element, start, end, duration) {
-  let startTimestamp = null;
-  const step = (timestamp) => {
-    if (!startTimestamp) startTimestamp = timestamp;
-    const progress = Math.min((timestamp - startTimestamp) / duration, 1);
-    const current = Math.floor(progress * (end - start) + start);
-    element.textContent = current;
-    
-    if (progress < 1) {
-      window.requestAnimationFrame(step);
-    }
-  };
-  window.requestAnimationFrame(step);
-}
-
-// Método auxiliar: Efeito de confete
-createConfettiEffect() {
-  const confettiCount = 50;
-  const colors = ['#fbbf24', '#f59e0b', '#d97706', '#fde68a'];
-  
-  for (let i = 0; i < confettiCount; i++) {
-    setTimeout(() => {
-      const confetti = document.createElement('div');
-      confetti.innerHTML = '✨';
-      confetti.style.position = 'fixed';
-      confetti.style.left = `${Math.random() * 100}vw`;
-      confetti.style.top = '-50px';
-      confetti.style.fontSize = `${Math.random() * 20 + 10}px`;
-      confetti.style.color = colors[Math.floor(Math.random() * colors.length)];
-      confetti.style.opacity = '0.8';
-      confetti.style.zIndex = '9998';
-      confetti.style.pointerEvents = 'none';
-      confetti.style.userSelect = 'none';
-      
-      document.body.appendChild(confetti);
-      
-      // Animação
-      const animation = confetti.animate([
-        { transform: 'translateY(0) rotate(0deg)', opacity: 1 },
-        { transform: `translateY(${window.innerHeight + 100}px) rotate(${Math.random() * 360}deg)`, opacity: 0 }
-      ], {
-        duration: Math.random() * 2000 + 1000,
-        easing: 'cubic-bezier(0.215, 0.610, 0.355, 1)'
-      });
-      
-      animation.onfinish = () => confetti.remove();
-    }, i * 30);
-  }
-}
-
-// Método auxiliar: Salvar estatísticas
-saveGameStatistics(winner) {
-  try {
-    const stats = {
-      winner: winner.name,
-      victoryPoints: winner.victoryPoints,
-      turn: gameState.turn,
-      timestamp: new Date().toISOString(),
-      players: gameState.players.map(p => ({
-        name: p.name,
-        points: p.victoryPoints,
-        regions: p.regions.length
-      }))
-    };
-    
-    // Salvar no localStorage
-    const existingStats = JSON.parse(localStorage.getItem('gaia_victory_stats') || '[]');
-    existingStats.push(stats);
-    
-    // Manter apenas as 10 últimas vitórias
-    if (existingStats.length > 10) {
-      existingStats.shift();
-    }
-    
-    localStorage.setItem('gaia_victory_stats', JSON.stringify(existingStats));
-    console.log('📊 Estatísticas de vitória salvas:', stats);
-    
-  } catch (error) {
-    console.warn('⚠️ Não foi possível salvar estatísticas:', error);
-  }
-}
-
-closeVictoryModal() {
-  if (this.modals.victory) {
-    this.modals.victory.classList.add('hidden');
-    
-    // Limpar confetes
-    document.querySelectorAll('div').forEach(el => {
-      if (el.innerHTML === '✨' && el.style.position === 'fixed') {
-        el.remove();
-      }
-    });
-  }
-}
-
-// ========== MODAL PARA FIM DE JOGO SEM VENCEDOR ==========°
-
-showNoWinnerModal() {
-  // Criar modal dinamicamente se não existir
-  let modal = document.getElementById('noWinnerModal');
-  
-  if (!modal) {
-    modal = document.createElement('div');
-    modal.id = 'noWinnerModal';
-    modal.className = 'hidden fixed inset-0 z-[110] flex items-center justify-center p-6';
-    modal.innerHTML = `
-      <div class="absolute inset-0 bg-black/80"></div>
-      <div class="relative w-full max-w-2xl bg-gray-900/95 backdrop-blur-md border border-gray-700 rounded-2xl shadow-xl p-8">
-        <div class="text-center">
-          <div class="text-6xl mb-4">💀</div>
-          <h2 class="text-3xl text-white font-bold mb-4">FIM DE JOGO</h2>
-          <p class="text-xl text-gray-300 mb-6">Todos os jogadores foram eliminados!</p>
+    return `
+      <div class="flex items-start gap-3">
+        <span class="text-2xl">${achievement.icon}</span>
+        <div class="flex-1">
+          <h3 class="font-bold ${isUnlocked ? 'text-yellow-300' : 'text-gray-300'}">
+            ${achievement.name} ${isUnlocked ? '<span class="text-green-400 ml-2">✓</span>' : ''}
+          </h3>
+          <p class="text-sm text-gray-300 mt-1">${achievement.description}</p>
           
-          <div class="bg-gray-800/50 p-6 rounded-lg mb-6">
-            <h3 class="text-lg font-semibold text-white mb-4">Resumo do Jogo</h3>
-            <div class="space-y-3">
-              <div class="flex justify-between">
-                <span class="text-gray-400">Turno final:</span>
-                <span class="text-white font-bold">${gameState.turn}</span>
-              </div>
-              <div class="flex justify-between">
-                <span class="text-gray-400">Duração:</span>
-                <span class="text-white font-bold">${gameState.turn} turnos</span>
-              </div>
-              <div class="flex justify-between">
-                <span class="text-gray-400">Jogadores eliminados:</span>
-                <span class="text-white font-bold">${gameState.players.length}</span>
-              </div>
+          <div class="mt-3">
+            <div class="flex justify-between text-xs text-gray-400 mb-1">
+              <span>Progresso</span>
+              <span>${percent.toFixed(0)}%</span>
             </div>
-          </div>
-          
-          <div class="mb-6">
-            <h3 class="text-lg font-semibold text-white mb-3">Linha do Tempo de Eliminação</h3>
-            <div class="space-y-2">
-              ${gameState.eliminatedPlayers?.map((elim, idx) => {
-                const player = gameState.players[elim.playerId];
-                if (!player) return '';
-                return `
-                  <div class="flex items-center justify-between p-2 bg-gray-800/30 rounded">
-                    <div class="flex items-center gap-2">
-                      <span class="text-xl">💀</span>
-                      <span class="text-white">${player.name}</span>
-                    </div>
-                    <div class="text-sm text-gray-400">
-                      Turno ${elim.turn} • -${elim.penalty} PV
-                    </div>
-                  </div>
-                `;
-              }).join('') || '<p class="text-gray-400">Nenhuma eliminação registrada</p>'}
+            <div class="w-full bg-gray-700 rounded-full h-2">
+              <div class="bg-green-500 h-2 rounded-full" style="width: ${percent}%"></div>
             </div>
+            <div class="text-xs text-gray-400 mt-1">${progress.text}</div>
           </div>
           
-          <div class="flex justify-center gap-4">
-            <button id="noWinnerCloseBtn" 
-                    class="px-6 py-3 bg-gray-700 hover:bg-gray-600 rounded-lg text-white font-semibold transition">
-              Fechar
-            </button>
-            <button id="noWinnerNewGameBtn" 
-                    class="px-6 py-3 bg-blue-600 hover:bg-blue-700 rounded-lg text-white font-semibold transition">
-              Novo Jogo
-            </button>
-          </div>
+          ${isUnlocked ? `
+            <div class="mt-2 text-xs text-green-300">
+              <strong>Recompensa:</strong> ${rewards[achievement.id] || 'Recompensa especial'}
+            </div>
+          ` : ''}
         </div>
       </div>
     `;
-    document.body.appendChild(modal);
-    
-    // Event listeners
-    document.getElementById('noWinnerCloseBtn').addEventListener('click', () => {
-      modal.classList.add('hidden');
-    });
-    
-    document.getElementById('noWinnerNewGameBtn').addEventListener('click', () => {
-      modal.classList.add('hidden');
-      setTimeout(() => {
-        window.location.reload();
-      }, 500);
-    });
   }
-  
-  // Mostrar modal
-  modal.classList.remove('hidden');
-}
-  
-// Método para desabilitar ações ao término do jogo
-disableAllGameActions() {
-    // Desabilitar botões de ação
-    const actionButtons = [
-        'actionExplore', 'actionCollect', 'actionBuild', 
-        'actionNegotiate', 'endTurnBtn'
-    ];
+
+  showNoWinnerModal() {
+    let modal = document.getElementById('noWinnerModal');
     
-    actionButtons.forEach(btnId => {
-        const btn = document.getElementById(btnId);
-        if (btn) {
-            btn.disabled = true;
-            btn.classList.add('opacity-30', 'cursor-not-allowed');
-        }
+    if (!modal) {
+      modal = document.createElement('div');
+      modal.id = 'noWinnerModal';
+      modal.className = 'hidden fixed inset-0 z-[110] flex items-center justify-center p-6';
+      modal.innerHTML = `
+        <div class="absolute inset-0 bg-black/80"></div>
+        <div class="relative w-full max-w-2xl bg-gray-900/95 backdrop-blur-md border border-gray-700 rounded-2xl shadow-xl p-8">
+          <div class="text-center">
+            <div class="text-6xl mb-4">💀</div>
+            <h2 class="text-3xl text-white font-bold mb-4">FIM DE JOGO</h2>
+            <p class="text-xl text-gray-300 mb-6">Todos os jogadores foram eliminados!</p>
+            
+            <div class="bg-gray-800/50 p-6 rounded-lg mb-6">
+              <h3 class="text-lg font-semibold text-white mb-4">Resumo do Jogo</h3>
+              <div class="space-y-3">
+                <div class="flex justify-between">
+                  <span class="text-gray-400">Turno final:</span>
+                  <span class="text-white font-bold">${gameState.turn}</span>
+                </div>
+                <div class="flex justify-between">
+                  <span class="text-gray-400">Duração:</span>
+                  <span class="text-white font-bold">${gameState.turn} turnos</span>
+                </div>
+                <div class="flex justify-between">
+                  <span class="text-gray-400">Jogadores eliminados:</span>
+                  <span class="text-white font-bold">${gameState.players.length}</span>
+                </div>
+              </div>
+            </div>
+            
+            <div class="flex justify-center gap-4">
+              <button id="noWinnerCloseBtn" class="px-6 py-3 bg-gray-700 hover:bg-gray-600 rounded-lg text-white font-semibold transition">
+                Fechar
+              </button>
+              <button id="noWinnerNewGameBtn" class="px-6 py-3 bg-blue-600 hover:bg-blue-700 rounded-lg text-white font-semibold transition">
+                Novo Jogo
+              </button>
+            </div>
+          </div>
+        </div>
+      `;
+      document.body.appendChild(modal);
+      
+      document.getElementById('noWinnerCloseBtn').addEventListener('click', () => modal.classList.add('hidden'));
+      document.getElementById('noWinnerNewGameBtn').addEventListener('click', () => {
+        modal.classList.add('hidden');
+        setTimeout(() => window.location.reload(), 500);
+      });
+    }
+    
+    modal.classList.remove('hidden');
+  }
+
+  disableAllGameActions() {
+    ['actionExplore', 'actionCollect', 'actionBuild', 'actionNegotiate', 'endTurnBtn'].forEach(btnId => {
+      const btn = document.getElementById(btnId);
+      if (btn) {
+        btn.disabled = true;
+        btn.classList.add('opacity-30', 'cursor-not-allowed');
+      }
     });
     
-    // Desabilitar cliques no mapa
     const boardContainer = document.getElementById('boardContainer');
     if (boardContainer) {
-        boardContainer.style.pointerEvents = 'none';
-        boardContainer.style.opacity = '0.7';
+      boardContainer.style.pointerEvents = 'none';
+      boardContainer.style.opacity = '0.7';
     }
     
-    // Atualizar indicador de fase
     const phaseIndicator = document.getElementById('phaseIndicator');
     if (phaseIndicator) {
-        phaseIndicator.textContent = '🎉 JOGO TERMINADO!';
-        phaseIndicator.classList.add('text-yellow-400', 'font-bold', 'animate-pulse');
+      phaseIndicator.textContent = '🎉 JOGO TERMINADO!';
+      phaseIndicator.classList.add('text-yellow-400', 'font-bold', 'animate-pulse');
     }
-}
+  }
 
-  // ==================== GERENCIAMENTO DE MODAIS ====================
   closeAllModals() {
     Object.values(this.modals).forEach(modal => {
       if (modal) modal.classList.add('hidden');
