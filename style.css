@@ -1,65 +1,20 @@
 /* ============================================
-   ESTRUTURA DO CSS OTIMIZADO - REORGANIZADO
-   ============================================
-   
-   ÍNDICE:
-   1. RESET E VARIÁVEIS GLOBAIS
-   2. TIPOGRAFIA E ESTILOS BASE
-   3. HIERARQUIA DE Z-INDEX
-   4. UTILITÁRIOS REUTILIZÁVEIS
-   5. ANIMAÇÕES (KEYFRAMES E CLASSES)
-   6. COMPONENTES DE JOGO PRINCIPAIS
-     6.1 Tela de Cadastro/Player Modal
-     6.2 Seleção de Ícones
-     6.3 Botões de IA
-     6.4 Dropdown de Facções
-   7. LAYOUT DO JOGO
-     7.1 Container Principal
-     7.2 Navbar
-     7.3 Sidebar
-     7.4 Mapa
-     7.5 Footer
-   8. CÉLULAS DO TABULEIRO (ESTILOS COMPLETOS)
-   9. MODAIS
-     9.1 Estilos Gerais de Modais
-     9.2 Modais Específicos (Negociação, Estrutura, etc.)
-     9.3 MODAL DE CONQUISTAS
-     9.4 MODAL DE DISPUTA
-   10. TOOLTIPS E BANNERS
-   11. CONTROLES E INTERAÇÕES
-   12. LOGS, CONQUISTAS E SISTEMAS
-   13. IA (INTELIGÊNCIA ARTIFICIAL)
-   14. MANUAL DO JOGO
-   15. COMPONENTES DE INTERFACE
-     15.1 Botões de Ação
-     15.2 Badges e Indicadores
-     15.3 Efeitos de Edição
-     15.4 Estilos para jogadores eliminados 
-   16. EMOJIS E ÍCONES
-   17. RESPONSIVIDADE
-     17.1 Desktop
-     17.2 Tablet
-     17.3 Mobile
-   18. ACESSIBILIDADE
-   19. CORREÇÕES ESPECÍFICAS
+   GAIA DOMINIUM - CSS OTIMIZADO (Versão Reorganizada)
    ============================================ */
 
-/* ============================================
-   1. RESET E VARIÁVEIS GLOBAIS
-   ============================================ */
-
+/* ==================== VARIÁVEIS GLOBAIS ==================== */
 :root {
-  /* PALETA DE CORES BASE */
+  /* Cores base */
   --bg: #0b0d0f;
   --accent: #f8d65c;
   --text-primary: #ffffff;
   --text-secondary: rgba(255, 255, 255, 0.8);
   
-  /* CORES DINÂMICAS DO JOGADOR */
+  /* Cores de jogador */
   --player-rgb: 255, 255, 255;
   --player-color: #ffffff;
   
-  /* GLASSMORPHISM E CÉLULAS */
+  /* Células do tabuleiro */
   --cell-bg: rgba(30, 30, 30, 0.7);
   --cell-border: rgba(255, 255, 255, 0.15);
   --cell-opacity: 0.25;
@@ -67,34 +22,26 @@
   --cell-bg-opacity: 0.15;
   --cell-hover-opacity: 0.30;
   --cell-selected-opacity: 0.45;
-  
-  /* SOMBRAS E EFEITOS VISUAIS */
   --shadow-intensity: 0.3;
   
-  /* DIFICULDADES DA IA */
+  /* Dificuldades da IA */
   --ai-easy-color: #10b981;
   --ai-medium-color: #3b82f6;
   --ai-hard-color: #f59e0b;
   --ai-master-color: #ef4444;
-  
-  /* BREAKPOINTS RESPONSIVOS */
-  --breakpoint-sm: 480px;
-  --breakpoint-md: 768px;
-  --breakpoint-lg: 1024px;
-  --breakpoint-xl: 1280px;
 }
 
-/* RESET MODERNO */
-*, *::before, *::after {
-  box-sizing: border-box;
-  margin: 0;
-  padding: 0;
+/* ==================== RESET E BASE ==================== */
+*, *::before, *::after { 
+  box-sizing: border-box; 
+  margin: 0; 
+  padding: 0; 
 }
 
-html {
-  font-size: 16px;
-  height: 100%;
-  scroll-behavior: smooth;
+html { 
+  font-size: 16px; 
+  height: 100%; 
+  scroll-behavior: smooth; 
 }
 
 body {
@@ -110,24 +57,23 @@ body {
   -moz-osx-font-smoothing: grayscale;
 }
 
-/* ============================================
-   2. TIPOGRAFIA E ESTILOS BASE
-   ============================================ */
+/* ==================== CLASSES UTILITÁRIAS ==================== */
+.hidden { display: none !important; }
+.show { display: flex !important; }
+.flex-center { display: flex; align-items: center; justify-content: center; }
+.grid-center { display: grid; place-items: center; }
 
-h1, h2, h3, h4, h5, h6 {
-  font-weight: 600;
-  line-height: 1.2;
-  margin-bottom: 0.5em;
+.glass-effect {
+  background: rgba(31, 31, 31, 0.8);
+  backdrop-filter: blur(8px);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 10px;
 }
 
-p {
-  margin-bottom: 1rem;
-}
+.transition-all { transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
+.transition-transform { transition: transform 0.2s ease; }
 
-/* ============================================
-   3. HIERARQUIA DE Z-INDEX
-   ============================================ */
-
+/* ==================== HIERARQUIA DE Z-INDEX ==================== */
 #initialScreen { z-index: 50; }
 #manualIcon { z-index: 60; }
 #gameNavbar { z-index: 40; }
@@ -142,418 +88,119 @@ p {
 #alertModal { z-index: 101; }
 #victoryModal { z-index: 102; }
 #saveLoadModal { z-index: 103; }
+#disputeModal { z-index: 104; }
+#disputeResultModal { z-index: 105; }
+#achievementsModal { z-index: 110; }
 
-/* ============================================
-   4. UTILITÁRIOS REUTILIZÁVEIS
-   ============================================ */
+.modal-overlay { z-index: 1000 !important; }
+.negotiation-modal { z-index: 1001 !important; }
+.neg-response-modal { z-index: 1002 !important; }
 
-/* LAYOUT FLEX E GRID */
-.flex-center {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.grid-center {
-  display: grid;
-  place-items: center;
-}
-
-/* CONTROLE DE VISIBILIDADE */
-.hidden {
-  display: none !important;
-}
-
-.show {
-  display: flex !important;
-}
-
-/* EFEITO GLASSMORPHISM */
-.glass-effect {
-  background: rgba(31, 31, 31, 0.8);
-  backdrop-filter: blur(8px);
-  border: 1px solid rgba(255, 255, 255, 0.06);
-  border-radius: 10px;
-}
-
-/* TRANSITIONS */
-.transition-all {
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-.transition-transform {
-  transition: transform 0.2s ease;
-}
-
-/* ============================================
-   5. ANIMAÇÕES (KEYFRAMES E CLASSES)
-   ============================================ */
-
-/* KEYFRAMES PRINCIPAIS */
-@keyframes fadeIn {
-  from { opacity: 0; }
-  to { opacity: 1; }
-}
-
-@keyframes slideInRight {
-  from {
-    transform: translateX(100%);
-    opacity: 0;
-  }
-  to {
-    transform: translateX(0);
-    opacity: 1;
-  }
-}
-
-@keyframes slideUp {
-  from {
-    opacity: 0;
-    transform: translateY(20px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-@keyframes pulse {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.6; }
-}
-
+/* ==================== ANIMAÇÕES ==================== */
+@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+@keyframes slideInRight { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+@keyframes slideUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.6; } }
 @keyframes regionPulse {
-  0%, 100% {
-    box-shadow: 
-      0 0 20px rgba(248, 214, 92, 0.35),
-      0 8px 15px rgba(248, 214, 92, 0.2);
-  }
-  50% {
-    box-shadow: 
-      0 0 25px rgba(248, 214, 92, 0.5),
-      0 10px 20px rgba(248, 214, 92, 0.3);
-  }
+  0%, 100% { box-shadow: 0 0 20px rgba(248, 214, 92, 0.35), 0 8px 15px rgba(248, 214, 92, 0.2); }
+  50% { box-shadow: 0 0 25px rgba(248, 214, 92, 0.5), 0 10px 20px rgba(248, 214, 92, 0.3); }
 }
-
-@keyframes shimmer {
-  0% { background-position: -200% -200%; }
-  100% { background-position: 200% 200%; }
-}
-
-@keyframes eventPulse {
-  0%, 100% { opacity: 1; box-shadow: 0 0 15px rgba(255, 255, 255, 0.1); }
-  50% { opacity: 0.95; box-shadow: 0 0 20px rgba(255, 255, 255, 0.2); }
-}
-
 @keyframes regionSelectedPulse {
-  0%, 100% {
-    box-shadow: 
-      0 0 20px rgba(248, 214, 92, 0.6),
-      0 0 40px rgba(248, 214, 92, 0.3),
-      inset 0 0 15px rgba(248, 214, 92, 0.2);
-  }
-  50% {
-    box-shadow: 
-      0 0 25px rgba(248, 214, 92, 0.8),
-      0 0 50px rgba(248, 214, 92, 0.4),
-      inset 0 0 20px rgba(248, 214, 92, 0.3);
-  }
+  0%, 100% { box-shadow: 0 0 20px rgba(248, 214, 92, 0.6), 0 0 40px rgba(248, 214, 92, 0.3), inset 0 0 15px rgba(248, 214, 92, 0.2); }
+  50% { box-shadow: 0 0 25px rgba(248, 214, 92, 0.8), 0 0 50px rgba(248, 214, 92, 0.4), inset 0 0 20px rgba(248, 214, 92, 0.3); }
 }
-
+@keyframes actionPulse {
+  0%, 100% { box-shadow: 0 0 15px rgba(248, 214, 92, 0.4), 0 4px 12px rgba(248, 214, 92, 0.2); }
+  50% { box-shadow: 0 0 25px rgba(248, 214, 92, 0.6), 0 8px 20px rgba(248, 214, 92, 0.3); }
+}
+@keyframes modalSlideIn {
+  from { opacity: 0; transform: translateY(-20px) scale(0.95); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+@keyframes pulse-red { 0%, 100% { box-shadow: 0 0 10px rgba(220, 38, 38, 0.3); } 50% { box-shadow: 0 0 25px rgba(220, 38, 38, 0.7); } }
+@keyframes pulse-yellow { 0%, 100% { box-shadow: 0 0 10px rgba(217, 119, 6, 0.3); } 50% { box-shadow: 0 0 25px rgba(217, 119, 6, 0.7); } }
+@keyframes iconPulse { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.1); } }
+@keyframes shimmer { 0% { background-position: -200% -200%; } 100% { background-position: 200% 200%; } }
+@keyframes player-owned-pulse {
+  0%, 100% { box-shadow: 0 8px 25px rgba(248, 214, 92, 0.25), inset 0 0 15px rgba(248, 214, 92, 0.1); }
+  50% { box-shadow: 0 10px 30px rgba(248, 214, 92, 0.35), inset 0 0 20px rgba(248, 214, 92, 0.15); }
+}
+@keyframes cellPulse {
+  0%, 100% { opacity: 0.3; transform: scale(1); }
+  50% { opacity: 0.6; transform: scale(1.02); }
+}
 @keyframes clickableBounce {
   0%, 100% { transform: translateY(0); }
   50% { transform: translateY(-5px); }
 }
 
-@keyframes editingGlow {
-  0%, 100% { opacity: 0.5; }
-  50% { opacity: 1; }
-}
-
-@keyframes iconPulse {
-  0%, 100% { transform: scale(1); }
-  50% { transform: scale(1.1); }
-}
-
-@keyframes shine {
-  0%, 100% { background-position: -200% 0; }
-  50% { background-position: 200% 0; }
-}
-
-@keyframes slideOutRight {
-  from {
-    transform: translateX(0);
-    opacity: 1;
-  }
-  to {
-    transform: translateX(100%);
-    opacity: 0;
-  }
-}
-
-@keyframes pulseBorder {
-  0%, 100% { box-shadow: 0 0 0 0 rgba(59, 130, 246, 0); }
-  50% { box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.5); }
-}
-
-@keyframes incomeModalAppear {
-  from {
-    opacity: 0;
-    transform: translateY(-20px) scale(0.95);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0) scale(1);
-  }
-}
-
-@keyframes modalSlideIn {
-  from {
-    opacity: 0;
-    transform: translateY(-20px) scale(0.95);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0) scale(1);
-  }
-}
-
-@keyframes cellPulse {
-  0%, 100% {
-    opacity: 0.3;
-    transform: scale(1);
-  }
-  50% {
-    opacity: 0.6;
-    transform: scale(1.02);
-  }
-}
-
-@keyframes actionPulse {
-  0%, 100% {
-    box-shadow: 
-      0 0 15px rgba(248, 214, 92, 0.4),
-      0 4px 12px rgba(248, 214, 92, 0.2);
-  }
-  50% {
-    box-shadow: 
-      0 0 25px rgba(248, 214, 92, 0.6),
-      0 8px 20px rgba(248, 214, 92, 0.3);
-  }
-}
-
-@keyframes glowPulse {
-  0%, 100% { filter: brightness(1); }
-  50% { filter: brightness(1.2); }
-}
-
-@keyframes achievementUnlock {
-  0% {
-    transform: scale(1);
-    box-shadow: 0 0 0 rgba(245, 158, 11, 0);
-  }
-  50% {
-    transform: scale(1.05);
-    box-shadow: 0 0 20px rgba(245, 158, 11, 0.5);
-  }
-  100% {
-    transform: scale(1);
-    box-shadow: 0 0 0 rgba(245, 158, 11, 0);
-  }
-}
-
-@keyframes factionSelected {
-  0% { box-shadow: 0 0 0 0 rgba(251, 191, 36, 0); }
-  50% { box-shadow: 0 0 0 8px rgba(251, 191, 36, 0.2); }
-  100% { box-shadow: 0 0 0 0 rgba(251, 191, 36, 0); }
-}
-
-/* CLASSES DE ANIMAÇÃO */
 .animate-fade-in { animation: fadeIn 0.3s ease; }
 .animate-slide-in-right { animation: slideInRight 0.3s ease-out forwards; }
 .animate-slide-up { animation: slideUp 0.3s ease-out; }
 .animate-pulse-slow { animation: pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite; }
-.animate-slide-out-right { animation: slideOutRight 0.3s ease-out forwards; }
-.animate-glow-pulse { animation: glowPulse 2s ease-in-out infinite; }
-.event-banner-pulse { animation: eventPulse 2s ease-in-out infinite; }
 
-/* ============================================
-   6. COMPONENTES DE JOGO PRINCIPAIS
-   ============================================ */
+/* ==================== COMPONENTES PRINCIPAIS ==================== */
 
-/* 6.1 TELA DE CADASTRO/PLAYER MODAL */
+/* VÍDEO DE ABERTURA */
+#introVideo {
+  position: fixed !important;
+  top: 0 !important;
+  left: 0 !important;
+  width: 100% !important;
+  height: 100% !important;
+  object-fit: cover !important;
+  z-index: 9999 !important;
+  background-color: black !important;
+  transition: opacity 0.5s ease-out !important;
+}
+
+#introVideo.hidden {
+  opacity: 0 !important;
+  pointer-events: none !important;
+}
+
+/* TELA DE CADASTRO */
 .player-modal {
-  background: linear-gradient(180deg, rgba(12, 12, 12, 0.56), rgba(8, 8, 8, 0.45));
-  border: 1px solid rgba(255, 255, 255, 0.06);
-  backdrop-filter: blur(12px) saturate(120%);
-  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.6);
-  z-index: 51;
-  position: relative;
+  background: linear-gradient(180deg, rgba(12, 12, 12, 0.56), rgba(8, 8, 8, 0.45)) !important;
+  border: 1px solid rgba(255, 255, 255, 0.06) !important;
+  backdrop-filter: blur(12px) saturate(120%) !important;
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.6) !important;
+  z-index: 51 !important;
+  position: relative !important;
 }
 
-.player-card {
-  transition: all 0.2s ease;
-  position: relative;
-}
-
-.player-card-inner {
-  height: 100%;
-  transition: all 0.2s ease;
-}
-
-.player-card:hover:not(.empty) .player-card-inner {
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
-}
-
+.player-card { transition: all 0.2s ease; position: relative; }
+.player-card-inner { height: 100%; transition: all 0.2s ease; }
+.player-card:hover:not(.empty) .player-card-inner { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3); }
 .player-card.editing .player-card-inner {
   box-shadow: 0 0 0 2px #fbbf24, 0 4px 12px rgba(251, 191, 36, 0.3);
   animation: pulse 1.5s infinite;
 }
 
-.player-card-icon {
-  position: relative;
-}
-
-.player-card-name {
-  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.8);
-}
-
-.player-card-actions {
-  opacity: 0;
-  transition: opacity 0.2s ease;
-}
-
-.player-card:hover .player-card-actions {
-  opacity: 1;
-}
-
-.player-card-actions button {
-  padding: 4px 8px;
-  border-radius: 4px;
-  background: rgba(0, 0, 0, 0.5);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  transition: all 0.2s ease;
-}
-
-.player-card-actions button:hover {
-  background: rgba(0, 0, 0, 0.7);
-  transform: scale(1.1);
-}
-
-.player-card-edit:hover {
-  background: rgba(59, 130, 246, 0.5) !important;
-}
-
-.player-card-delete:hover {
-  background: rgba(239, 68, 68, 0.5) !important;
-}
-
-/* 6.2 SELEÇÃO DE ÍCONES */
-#iconSelection {
-  display: flex;
-  gap: 8px;
-  flex-wrap: wrap;
-}
-
+/* SELEÇÃO DE ÍCONES E FACÇÕES */
 .icon-button {
-  min-width: 50px;
-  min-height: 50px;
-  border-radius: 10px;
+  min-width: 50px; min-height: 50px; border-radius: 10px;
   background: rgba(255, 255, 255, 0.02);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 1.5rem;
-  cursor: pointer;
-  transition: .12s;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 1.5rem; cursor: pointer; transition: .12s;
 }
-
-.icon-button:hover {
-  transform: translateY(-4px);
-  background: rgba(255, 255, 255, 0.05);
-}
-
+.icon-button:hover { transform: translateY(-4px); background: rgba(255, 255, 255, 0.05); }
 .icon-button.selected {
-  border: 2px solid var(--accent);
-  background: rgba(248, 214, 92, 0.06);
-  transform: scale(1.06);
-  animation: iconPulse 1.5s infinite;
+  border: 2px solid var(--accent); background: rgba(248, 214, 92, 0.06);
+  transform: scale(1.06); animation: iconPulse 1.5s infinite;
 }
 
-.icon-button.disabled {
-  opacity: 0.4;
-  cursor: not-allowed;
-  filter: grayscale(0.7);
-}
-
-/* 6.3 BOTÕES DE IA */
-#aiButtonsContainer {
-  display: flex;
-  gap: 8px;
-  flex-wrap: wrap;
-}
-
-.ai-button-compact {
-  padding: 8px 12px;
-  border-radius: 10px;
-  font-size: 12px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  border: 2px solid transparent;
-  white-space: nowrap;
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.02), rgba(0, 0, 0, 0.18));
-  color: #fff;
-}
-
-.ai-button-compact:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
-}
-
-.ai-button-compact.easy {
-  background: linear-gradient(135deg, rgba(34, 197, 94, 0.2), rgba(22, 163, 74, 0.2));
-  color: #86efac;
-  border-color: rgba(34, 197, 94, 0.3);
-}
-
-.ai-button-compact.medium {
-  background: linear-gradient(135deg, rgba(59, 130, 246, 0.2), rgba(37, 99, 235, 0.2));
-  color: #93c5fd;
-  border-color: rgba(59, 130, 246, 0.3);
-}
-
-.ai-button-compact.hard {
-  background: linear-gradient(135deg, rgba(245, 158, 11, 0.2), rgba(217, 119, 6, 0.2));
-  color: #fde68a;
-  border-color: rgba(245, 158, 11, 0.3);
-}
-
-.ai-button-compact.master {
-  background: linear-gradient(135deg, rgba(239, 68, 68, 0.2), rgba(220, 38, 38, 0.2));
-  color: #fca5a5;
-  border-color: rgba(239, 68, 68, 0.3);
-}
-
-/* 6.4 DROPDOWN DE FACÇÕES */
 .faction-dropdown {
   background-color: rgba(17, 24, 39, 0.9) !important;
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%23fbbf24'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E") !important;
-  background-repeat: no-repeat !important;
-  background-position: right 12px center !important;
-  background-size: 16px !important;
-  cursor: pointer !important;
+  background-repeat: no-repeat !important; background-position: right 12px center !important;
+  background-size: 16px !important; cursor: pointer !important;
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2) !important;
-  backdrop-filter: blur(8px) !important;
-  height: 48px !important;
-  border: 1px solid rgba(251, 191, 36, 0.3) !important;
-  border-radius: 12px !important;
-  padding: 12px 40px 12px 12px !important;
-  color: white !important;
+  backdrop-filter: blur(8px) !important; height: 48px !important;
+  border: 1px solid rgba(251, 191, 36, 0.3) !important; border-radius: 12px !important;
+  padding: 12px 40px 12px 12px !important; color: white !important;
 }
-
 .faction-dropdown:hover {
   background-color: rgba(30, 41, 59, 0.95) !important;
   border-color: rgba(251, 191, 36, 0.5) !important;
@@ -561,184 +208,106 @@ p {
   transform: translateY(-1px) !important;
 }
 
-.faction-dropdown:focus {
-  background-color: rgba(30, 41, 59, 0.95) !important;
-  border-color: rgba(251, 191, 36, 0.7) !important;
-  box-shadow: 0 0 0 3px rgba(251, 191, 36, 0.2), 0 8px 25px rgba(0, 0, 0, 0.3) !important;
-  outline: none !important;
+/* BOTÕES DE IA */
+.ai-button-compact {
+  padding: 8px 12px; border-radius: 10px; font-size: 12px; font-weight: 600;
+  cursor: pointer; transition: all 0.2s ease; border: 2px solid transparent;
+  white-space: nowrap; background: linear-gradient(180deg, rgba(255, 255, 255, 0.02), rgba(0, 0, 0, 0.18));
+  color: #fff;
 }
+.ai-button-compact.easy { background: linear-gradient(135deg, rgba(34, 197, 94, 0.2), rgba(22, 163, 74, 0.2)); color: #86efac; border-color: rgba(34, 197, 94, 0.3); }
+.ai-button-compact.medium { background: linear-gradient(135deg, rgba(59, 130, 246, 0.2), rgba(37, 99, 235, 0.2)); color: #93c5fd; border-color: rgba(59, 130, 246, 0.3); }
+.ai-button-compact.hard { background: linear-gradient(135deg, rgba(245, 158, 11, 0.2), rgba(217, 119, 6, 0.2)); color: #fde68a; border-color: rgba(245, 158, 11, 0.3); }
+.ai-button-compact.master { background: linear-gradient(135deg, rgba(239, 68, 68, 0.2), rgba(220, 38, 38, 0.2)); color: #fca5a5; border-color: rgba(239, 68, 68, 0.3); }
+.ai-button-compact:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3); }
 
-.faction-dropdown option {
-  background-color: rgba(17, 24, 39, 0.95) !important;
-  color: #f3f4f6 !important;
-  padding: 12px 16px !important;
-  font-size: 13px !important;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.05) !important;
-  transition: all 0.2s ease !important;
+.ai-difficulty-badge {
+  display: inline-block; padding: 2px 6px; border-radius: 10px;
+  font-size: 0.7rem; font-weight: bold; margin-left: 4px;
 }
+.ai-easy { background-color: var(--ai-easy-color); color: white; }
+.ai-medium { background-color: var(--ai-medium-color); color: white; }
+.ai-hard { background-color: var(--ai-hard-color); color: black; }
+.ai-master { background-color: var(--ai-master-color); color: white; }
 
-.faction-dropdown option:checked {
-  background: linear-gradient(135deg, rgba(251, 191, 36, 0.2), rgba(245, 158, 11, 0.1)) !important;
-  color: #fbbf24 !important;
-  font-weight: 600 !important;
-}
-
-/* ============================================
-   7. LAYOUT DO JOGO
-   ============================================ */
-
-/* 7.1 CONTAINER PRINCIPAL */
+/* ==================== LAYOUT DO JOGO ==================== */
 #gameContainer {
-  display: grid;
-  grid-template-columns: 1fr;
-  gap: 1rem;
-  height: calc(100vh - 180px);
-  margin-top: 80px;
-  margin-bottom: 80px;
-  padding: 0 1rem;
-  overflow: hidden;
+  display: grid; grid-template-columns: 1fr; gap: 1rem;
+  height: calc(100vh - 180px); margin-top: 80px; margin-bottom: 80px;
+  padding: 0 1rem; overflow: hidden;
 }
 
-/* 7.2 NAVBAR */
 #gameNavbar {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  z-index: 40;
-  background: rgba(0, 0, 0, 0.6);
-  backdrop-filter: blur(8px);
+  position: fixed; top: 0; left: 0; right: 0; z-index: 40;
+  background: rgba(0, 0, 0, 0.6); backdrop-filter: blur(8px);
   border-bottom: 1px solid rgba(255, 255, 255, 0.06);
 }
 
-/* 7.3 SIDEBAR */
 #sidebar {
-  display: flex;
-  flex-direction: column;
-  height: 100%;
-  max-height: calc(100vh - 200px);
-  overflow-y: auto;
-  background: rgba(31, 31, 31, 0.8);
-  backdrop-filter: blur(8px);
-  border: 1px solid rgba(255, 255, 255, 0.06);
-  border-radius: 10px;
+  display: flex; flex-direction: column; height: 100%;
+  max-height: calc(100vh - 200px); overflow-y: auto;
+  background: rgba(31, 31, 31, 0.8); backdrop-filter: blur(8px);
+  border: 1px solid rgba(255, 255, 255, 0.06); border-radius: 10px;
 }
 
-/* 7.4 MAPA */
 #gameMap {
-  position: relative;
-  width: 100%;
-  height: 100%;
-  min-height: 400px;
-  border-radius: 8px;
-  overflow: hidden;
-  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+  position: relative; width: 100%; height: 100%; min-height: 400px;
+  border-radius: 8px; overflow: hidden; box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
   background: #000;
 }
+#mapViewport { width: 100%; height: 100%; overflow: hidden; cursor: grab; touch-action: none; user-select: none; }
+#mapViewport:active { cursor: grabbing; }
 
-#mapViewport {
-  width: 100%;
-  height: 100%;
-  overflow: hidden;
-  cursor: grab;
-  touch-action: none;
-  user-select: none;
-}
-
-#mapViewport:active {
-  cursor: grabbing;
-}
-
-/* 7.5 FOOTER */
 #gameFooter {
-  position: fixed;
-  bottom: 16px;
-  left: 50%;
-  transform: translateX(-50%);
-  z-index: 45;
-  width: 100%;
-  max-width: 64rem;
-  padding: 0 1rem;
+  position: fixed; bottom: 16px; left: 50%; transform: translateX(-50%); z-index: 45;
+  width: 100%; max-width: 64rem; padding: 0 1rem;
   background: rgba(11, 13, 15, 0.95) !important;
   backdrop-filter: blur(20px) saturate(180%) !important;
   border: 1px solid rgba(255, 255, 255, 0.1) !important;
   border-radius: 16px !important;
-  box-shadow: 
-    0 10px 40px rgba(0, 0, 0, 0.6),
-    0 0 0 1px rgba(255, 255, 255, 0.05) inset !important;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.6), 0 0 0 1px rgba(255, 255, 255, 0.05) inset !important;
 }
 
-/* Estilos para estados do botão Explorar */
-.btn-explore-own {
-    background-color: #059669 !important; /* Verde */
-}
-
-.btn-explore-neutral {
-    background-color: #d97706 !important; /* Amarelo/laranja */
-}
-
-.btn-explore-enemy {
-    background-color: #dc2626 !important; /* Vermelho */
-}
-
-/* ============================================
-   8. CÉLULAS DO TABULEIRO (ESTILOS COMPLETOS)
-   ============================================ */
-
+/* ==================== CÉLULAS DO TABULEIRO ==================== */
 .board-cell {
-  position: relative;
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  position: relative; border: 1px solid rgba(255, 255, 255, 0.08);
   background: rgba(15, 15, 15, var(--cell-bg-opacity));
-  backdrop-filter: blur(var(--cell-blur));
-  border-radius: 4px;
-  transition: all 0.2s ease;
-  display: flex;
-  flex-direction: column;
-  justify-content: space-between;
-  padding: 6px;
-  overflow: hidden;
-  cursor: pointer;
-  user-select: none;
+  backdrop-filter: blur(var(--cell-blur)); border-radius: 4px;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  display: flex; flex-direction: column; justify-content: space-between;
+  padding: 6px; overflow: hidden; cursor: pointer; user-select: none;
+  z-index: 1;
 }
 
-/* EFEITO DE VIDRO FOSCO */
 .board-cell::before {
-  content: '';
-  position: absolute;
-  inset: 0;
-  background: linear-gradient(
-    135deg,
-    rgba(255, 255, 255, 0.02) 0%,
-    rgba(255, 255, 255, 0.008) 100%
-  );
-  z-index: -1;
-  border-radius: 5px;
+  content: ''; position: absolute; inset: 0;
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.02) 0%, rgba(255, 255, 255, 0.008) 100%);
+  z-index: -1; border-radius: 5px;
 }
 
+/* Estados base */
 .board-cell:hover {
   background: rgba(25, 25, 25, calc(var(--cell-bg-opacity) + 0.1));
-  border-color: rgba(255, 255, 255, 0.15);
-  transform: translateY(-1px);
+  border-color: rgba(255, 255, 255, 0.15); transform: translateY(-1px);
+  z-index: 2;
 }
 
-/* ESTADOS DAS CÉLULAS */
 .board-cell.controlled {
   border-left: 4px solid var(--player-color) !important;
   background: rgba(var(--player-rgb), calc(var(--cell-bg-opacity) * 2)) !important;
+  position: relative;
 }
 
 .board-cell.controlled::after {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: 2px;
-  background: linear-gradient(90deg, 
-    transparent 0%,
-    var(--player-color) 50%,
-    transparent 100%);
+  content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px;
+  background: linear-gradient(90deg, transparent 0%, var(--player-color) 50%, transparent 100%);
   opacity: 0.4;
+}
+
+.board-cell.controlled::before {
+  content: ''; position: absolute; top: 0; left: 0; right: 0; bottom: 0;
+  border-radius: 4px; background: radial-gradient(circle at center, rgba(var(--player-rgb), 0.15) 0%, transparent 70%);
+  animation: cellPulse 3s ease-in-out infinite; pointer-events: none; z-index: -1;
 }
 
 .board-cell.neutral {
@@ -746,256 +315,342 @@ p {
   background: rgba(15, 15, 15, calc(var(--cell-bg-opacity) * 0.8)) !important;
 }
 
-/* CÉLULAS SELECIONADAS */
-.board-cell.neutral.region-selected {
-  border: 2px solid var(--accent) !important;
-  background: rgba(15, 15, 15, var(--cell-bg-opacity)) !important;
-  box-shadow: 0 0 10px rgba(248, 214, 92, 0.3) !important;
-  transform: translateY(-1px) !important;
-  z-index: 10;
-}
-
-.board-cell.controlled.region-selected {
-  border: 2px solid var(--accent) !important;
-  background: rgba(var(--player-rgb), calc(var(--cell-bg-opacity) * 2)) !important;
-  box-shadow: 0 0 10px rgba(248, 214, 92, 0.3) !important;
-  transform: translateY(-1px) !important;
-  z-index: 10;
-}
-
+/* Estados especiais */
 .board-cell.region-selected {
   border: 2px solid var(--accent) !important;
   background: rgba(248, 214, 92, calc(var(--cell-bg-opacity) * 3)) !important;
   box-shadow: 0 0 10px rgba(248, 214, 92, 0.3) !important;
-  transform: translateY(-1px) !important;
-  z-index: 10;
+  transform: translateY(-1px) !important; z-index: 5;
   animation: regionSelectedPulse 2s infinite !important;
 }
 
-/* EFEITO DE PULSO */
-.board-cell.controlled::after {
-  opacity: 1;
-  background: radial-gradient(
-    circle at center,
-    rgba(var(--player-rgb), 0.15) 0%,
-    transparent 70%
-  );
-  animation: cellPulse 3s ease-in-out infinite;
-}
-
 .board-cell.player-owned {
-  border-left-width: 6px !important;
-  border-left-color: var(--accent) !important;
+  border-left-width: 6px !important; border-left-color: var(--accent) !important;
   background: rgba(248, 214, 92, calc(var(--cell-bg-opacity) * 3)) !important;
-  box-shadow: 0 8px 25px rgba(248, 214, 92, 0.25) !important;
+  box-shadow: 0 8px 25px rgba(248, 214, 92, 0.25), inset 0 0 15px rgba(248, 214, 92, 0.1) !important;
+  position: relative; z-index: 3;
 }
 
+.board-cell.player-owned::after {
+  content: ''; position: absolute; top: 0; left: 0; right: 0; bottom: 0;
+  background: linear-gradient(135deg, rgba(248, 214, 92, 0.1) 0%, rgba(248, 214, 92, 0.05) 50%, transparent 100%);
+  border-radius: 4px; pointer-events: none; z-index: -1;
+}
+
+.board-cell.player-owned:not(.region-selected) { animation: player-owned-pulse 3s ease-in-out infinite; }
+
+.board-cell.player-owned.region-selected {
+  border: 2px solid var(--accent) !important;
+  background: rgba(248, 214, 92, calc(var(--cell-bg-opacity) * 4)) !important;
+  box-shadow: 0 0 15px rgba(248, 214, 92, 0.4), 0 6px 20px rgba(248, 214, 92, 0.25), inset 0 0 10px rgba(248, 214, 92, 0.2) !important;
+  transform: translateY(-2px) !important; z-index: 7;
+  animation: regionSelectedPulse 2s infinite !important;
+}
+
+.board-cell.player-owned:hover {
+  background: rgba(248, 214, 92, calc(var(--cell-bg-opacity) * 3.5)) !important;
+  border-color: rgba(248, 214, 92, 0.8) !important;
+  transform: translateY(-3px) scale(1.02);
+  box-shadow: 0 12px 30px rgba(248, 214, 92, 0.3), inset 0 0 20px rgba(248, 214, 92, 0.15) !important;
+}
+
+/* Ações disponíveis */
 .board-cell.action-available {
-  position: relative;
-  border: 2px solid rgba(248, 214, 92, 0.6) !important;
-  box-shadow: 
-    0 0 20px rgba(248, 214, 92, 0.3),
-    0 4px 15px rgba(248, 214, 92, 0.2) !important;
-  animation: actionPulse 1.5s infinite !important;
+  position: relative; border: 2px solid rgba(248, 214, 92, 0.6) !important;
+  box-shadow: 0 0 20px rgba(248, 214, 92, 0.3), 0 4px 15px rgba(248, 214, 92, 0.2) !important;
+  animation: actionPulse 1.5s infinite !important; z-index: 4;
 }
 
-/* EFEITO SHIMMER */
 .board-cell.action-available::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  border-radius: 4px;
-  background: linear-gradient(
-    45deg,
-    transparent 30%,
-    rgba(255, 255, 255, 0.05) 50%,
-    transparent 70%
-  );
-  background-size: 200% 200%;
-  animation: shimmer 3s infinite;
-  pointer-events: none;
+  content: ''; position: absolute; top: 0; left: 0; right: 0; bottom: 0;
+  border-radius: 4px; background: linear-gradient(45deg, transparent 30%, rgba(255, 255, 255, 0.05) 50%, transparent 70%);
+  background-size: 200% 200%; animation: shimmer 3s infinite; pointer-events: none;
+  z-index: -1 !important;
 }
 
-/* CONTADOR DE AÇÕES */
-.board-cell .action-counter {
-  position: absolute;
-  top: 4px;
-  right: 4px;
-  background: rgba(0, 0, 0, 0.7);
-  color: var(--text-primary);
-  font-size: 10px;
-  padding: 2px 6px;
-  border-radius: 10px;
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  font-weight: bold;
+/* Estados de jogo */
+.board-cell.eliminated-controlled {
+  position: relative; opacity: 0.6; filter: grayscale(0.5);
+}
+.board-cell.eliminated-controlled::after {
+  content: '💀'; position: absolute; top: 5px; right: 5px;
+  font-size: 12px; z-index: 10; filter: drop-shadow(0 1px 2px rgba(0,0,0,0.8));
 }
 
-/* OUTROS ESTADOS */
+.board-cell.dispute-target { animation: pulse-red 1s infinite; box-shadow: 0 0 20px rgba(220, 38, 38, 0.5); }
+.board-cell.domination-target { animation: pulse-yellow 1s infinite; box-shadow: 0 0 20px rgba(217, 119, 6, 0.5); }
+
 .board-cell.neutral-available {
   border: 2px dashed rgba(255, 255, 255, 0.4) !important;
   background: rgba(255, 255, 255, 0.05) !important;
 }
 
-/* INDICADOR DE CLIQUE */
-.board-cell.clickable::after {
-  content: '👆';
-  position: absolute;
-  top: -8px;
-  right: -8px;
-  font-size: 12px;
-  background: rgba(0, 0, 0, 0.7);
-  border-radius: 50%;
-  width: 20px;
-  height: 20px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  animation: clickableBounce 2s infinite;
+/* Elementos internos das células */
+.board-cell .action-counter {
+  position: absolute; top: 4px; right: 4px;
+  background: rgba(0, 0, 0, 0.7); color: var(--text-primary);
+  font-size: 10px; padding: 2px 6px; border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.2); font-weight: bold; z-index: 10;
 }
 
-/* ESTILOS DE TEXTO DAS CÉLULAS */
-.board-cell .text-xs {
-  font-size: 11px;
-  line-height: 1.3;
-  font-weight: 700;
-  color: #ffffff;
-  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.8);
+.board-cell.player-owned.clickable::after {
+  content: '👆'; position: absolute; top: -8px; right: -8px;
+  font-size: 12px; background: rgba(0, 0, 0, 0.7); border-radius: 50%;
+  width: 20px; height: 20px; display: flex; align-items: center;
+  justify-content: center; animation: clickableBounce 2s infinite; z-index: 10;
 }
 
-.board-cell .text-\[10px\] {
-  font-size: 10px;
-  font-weight: 600;
-  color: rgba(255, 255, 255, 0.95);
-  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.7);
+/* Estilos de texto para células */
+.board-cell.player-owned .text-xs { color: #ffffff !important; text-shadow: 0 1px 3px rgba(0, 0, 0, 0.8); }
+.board-cell.player-owned .text-\[10px\] { color: rgba(255, 255, 255, 0.95) !important; text-shadow: 0 1px 2px rgba(0, 0, 0, 0.7); }
+.board-cell.player-owned .biome-indicator { background: rgba(0, 0, 0, 0.6) !important; border: 1px solid rgba(248, 214, 92, 0.3); color: rgba(248, 214, 92, 0.95) !important; }
+.board-cell.player-owned .resource-item { background: rgba(0, 0, 0, 0.6) !important; border: 1px solid rgba(248, 214, 92, 0.2); }
+.board-cell.player-owned .resource-value { color: #ffffff !important; text-shadow: 0 1px 2px rgba(0, 0, 0, 0.8); }
+.board-cell.player-owned .controller-info { background: rgba(0, 0, 0, 0.7); border: 1px solid rgba(248, 214, 92, 0.3); color: rgba(248, 214, 92, 0.98) !important; }
+.board-cell.player-owned .structure-display { filter: drop-shadow(0 1px 2px rgba(248, 214, 92, 0.5)); }
+
+/* ==================== BOTÕES DE AÇÃO ==================== */
+.action-btn {
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.02), rgba(0, 0, 0, 0.18));
+  color: #fff; padding: 8px 12px; border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.04); font-weight: 500;
+  transition: all 0.2s ease; cursor: pointer;
 }
 
-/* ELEMENTOS DA CÉLULA */
-.board-cell .biome-indicator {
-  font-size: 9px;
-  padding: 2px 6px;
-  border-radius: 10px;
-  background: rgba(0, 0, 0, 0.5) !important;
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  color: rgba(255, 255, 255, 0.95) !important;
-  display: inline-block;
-  margin-top: 2px;
+.action-btn:hover:not(:disabled) {
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.05), rgba(0, 0, 0, 0.25));
+  border-color: rgba(255, 255, 255, 0.1); transform: translateY(-1px);
 }
 
-.board-cell .resource-item {
-  display: flex;
-  align-items: center;
-  gap: 2px;
-  font-size: 12px;
-  padding: 2px 6px;
-  border-radius: 4px;
-  background: rgba(0, 0, 0, 0.45) !important;
-  border: 1px solid rgba(255, 255, 255, 0.08);
+.action-btn:disabled {
+  opacity: 0.45 !important; cursor: not-allowed !important;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.01), rgba(0, 0, 0, 0.1)) !important;
+  border-color: rgba(255, 255, 255, 0.04) !important; transform: none !important; box-shadow: none !important;
 }
 
-.board-cell .resource-value {
-  font-weight: 800;
-  color: #ffffff !important;
-  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.7);
+/* Tipos específicos de botões de ação */
+.btn-explore-own { background-color: #059669 !important; }
+.btn-explore-neutral { background-color: #d97706 !important; }
+.btn-explore-enemy { background-color: #dc2626 !important; }
+.btn-ressurect { background: linear-gradient(135deg, #f59e0b, #d97706) !important; animation: pulse 2s infinite; }
+
+/* ==================== INPUTS E FORMULÁRIOS ==================== */
+input[type="text"], select, input[type="number"] {
+  background: rgba(31, 31, 31, 0.85) !important;
+  color: #EEE !important;
+  border: 1px solid rgba(255, 255, 255, 0.04) !important;
+  border-radius: 8px !important;
+  padding: 10px 12px !important;
+  font-size: 14px !important;
 }
 
-.board-cell .cell-footer {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-top: 8px;
-  padding-top: 6px;
-  border-top: 1px solid rgba(255, 255, 255, 0.06);
+input[type="text"]:focus, select:focus, input[type="number"]:focus {
+  outline: none !important;
+  border-color: #f8d65c !important;
+  box-shadow: 0 0 0 2px rgba(248, 214, 92, 0.2) !important;
 }
 
-.board-cell .controller-info {
-  font-size: 10px;
-  font-weight: 700;
-  color: rgba(255, 255, 255, 0.98) !important;
-  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.8);
-  padding: 2px 6px;
-  border-radius: 4px;
-  background: rgba(0, 0, 0, 0.5);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+#playerName {
+  background: rgba(31, 31, 31, 0.85) !important;
+  color: #EEE !important;
+  border: 1px solid rgba(255, 255, 255, 0.04) !important;
 }
 
-.board-cell .structure-display {
-  display: flex;
-  gap: 2px;
-  font-size: 14px;
-  filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.5));
+#playerName:focus {
+  border-color: #f8d65c !important;
+  box-shadow: 0 0 0 2px rgba(248, 214, 92, 0.2) !important;
 }
 
-/* Feedback visual para células durante disputa */
-.board-cell.dispute-target {
-    animation: pulse-red 1s infinite;
-    box-shadow: 0 0 20px rgba(220, 38, 38, 0.5);
+/* ==================== MODAIS ==================== */
+/* Overlay comum para todos os modais */
+[id$="Modal"] > .absolute {
+  position: absolute !important;
+  inset: 0 !important;
+  background-color: rgba(0, 0, 0, 0.7) !important;
+  backdrop-filter: none !important;
 }
 
-.board-cell.domination-target {
-    animation: pulse-yellow 1s infinite;
-    box-shadow: 0 0 20px rgba(217, 119, 6, 0.5);
-}
-
-@keyframes pulse-red {
-    0%, 100% { box-shadow: 0 0 10px rgba(220, 38, 38, 0.3); }
-    50% { box-shadow: 0 0 25px rgba(220, 38, 38, 0.7); }
-}
-
-@keyframes pulse-yellow {
-    0%, 100% { box-shadow: 0 0 10px rgba(217, 119, 6, 0.3); }
-    50% { box-shadow: 0 0 25px rgba(217, 119, 6, 0.7); }
-}
-
-/* Estilos para tooltips de ação */
-[title*="Disputar"] {
-    cursor: help;
-    border-bottom: 1px dotted rgba(220, 38, 38, 0.5);
-}
-
-[title*="Dominar"] {
-    cursor: help;
-    border-bottom: 1px dotted rgba(217, 119, 6, 0.5);
-}
-
-[title*="Explorar"] {
-    cursor: help;
-    border-bottom: 1px dotted rgba(5, 150, 105, 0.5);
-}
-
-/* ============================================
-   9. MODAIS
-   ============================================ */
-
-/* 9.1 ESTILOS GERAIS DE MODAIS */
-.modal-content-container {
-  position: relative;
-  width: 100%;
-  height: 100%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.modal-content-container > .relative {
+/* Estilo base para conteúdo de modal */
+.modal-content-container > .relative,
+#manualModal > .relative,
+#alertModal > .relative,
+#eventModal > .relative,
+#incomeModal > .relative,
+#saveLoadModal > .relative,
+#negotiationModal > .relative,
+#negResponseModal > .relative,
+#structureModal > .relative,
+#victoryModal > .relative,
+#disputeModal > .relative,
+#disputeResultModal > .relative,
+#achievementsModal > .relative {
   background: rgba(17, 24, 39, 0.98) !important;
   backdrop-filter: blur(25px) saturate(180%) !important;
   border: 1px solid rgba(255, 255, 255, 0.15) !important;
-  border-radius: 1rem;
-  box-shadow: 
-    0 25px 50px -12px rgba(0, 0, 0, 0.5),
-    inset 0 1px 0 rgba(255, 255, 255, 0.1) !important;
-  max-width: 90%;
-  max-height: 90vh;
-  overflow-y: auto;
-  animation: modalSlideIn 0.3s ease-out;
+  border-radius: 1rem !important;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.1) !important;
+  max-width: 90% !important; max-height: 90vh !important;
+  overflow-y: auto !important; animation: modalSlideIn 0.3s ease-out !important;
+  opacity: 1 !important; visibility: visible !important;
 }
 
-/* TÍTULOS E TEXTOS DOS MODAIS */
-.modal-content-container h2, 
-.modal-content-container h3, 
+/* Específico para modal de resposta de negociação */
+#negResponseModal > .relative {
+  background: rgba(17, 24, 39, 0.98) !important;
+  backdrop-filter: blur(25px) saturate(180%) !important;
+  border: 1px solid rgba(255, 255, 255, 0.15) !important;
+}
+
+/* Overlay mais escuro para modais de negociação */
+#negotiationModal > .absolute,
+#negResponseModal > .absolute {
+  background-color: rgba(0, 0, 0, 0.85) !important;
+  backdrop-filter: blur(5px) !important;
+  z-index: 110 !important;
+}
+
+/* Oculta modais */
+#manualModal.hidden,
+#alertModal.hidden,
+#eventModal.hidden,
+#incomeModal.hidden,
+#saveLoadModal.hidden,
+#negotiationModal.hidden,
+#negResponseModal.hidden,
+#structureModal.hidden,
+#victoryModal.hidden,
+#disputeModal.hidden,
+#disputeResultModal.hidden,
+#achievementsModal.hidden {
+  display: none !important;
+}
+
+/* Notificações de negociação */
+#pending-negotiations-summary,
+[id^="negotiation-notification-"],
+.negotiation-notification {
+  background: rgba(17, 24, 39, 0.98) !important;
+  backdrop-filter: blur(25px) saturate(180%) !important;
+  border: 1px solid rgba(255, 255, 255, 0.15) !important;
+  border-radius: 1rem !important;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.1) !important;
+  opacity: 1 !important; visibility: visible !important; z-index: 110 !important;
+}
+
+/* ==================== TOOLTIPS ==================== */
+#regionTooltip {
+  position: fixed !important; z-index: 50 !important; pointer-events: none;
+  transition: opacity 0.15s ease, transform 0.15s ease; transform-origin: center bottom;
+  max-width: 300px; min-width: 200px; background: rgba(31, 41, 55, 0.95);
+  backdrop-filter: blur(8px); border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 0.5rem; padding: 0.75rem; box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
+}
+#regionTooltip.visible { opacity: 1; transform: translateY(0) scale(1); }
+#regionTooltip.hidden { opacity: 0; transform: translateY(10px) scale(0.95); pointer-events: none; }
+
+/* ==================== BANNER DE EVENTO ==================== */
+#eventBanner {
+  background: rgba(0, 0, 0, 0.6); backdrop-filter: blur(8px);
+  border-width: 2px; border-style: solid; margin-bottom: 12px;
+  padding: 10px; border-radius: 0.5rem;
+}
+#eventBanner.animate-pulse-slow { animation: pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite; }
+#eventBanner.event-positive {
+  background: linear-gradient(135deg, rgba(34, 197, 94, 0.25), rgba(22, 163, 74, 0.25));
+  border-color: rgba(34, 197, 94, 0.7); box-shadow: 0 0 15px rgba(34, 197, 94, 0.2);
+}
+#eventBanner.event-negative {
+  background: linear-gradient(135deg, rgba(239, 68, 68, 0.25), rgba(220, 38, 38, 0.25));
+  border-color: rgba(239, 68, 68, 0.7); box-shadow: 0 0 15px rgba(239, 68, 68, 0.2);
+}
+#eventBanner.event-mixed {
+  background: linear-gradient(135deg, rgba(168, 85, 247, 0.25), rgba(147, 51, 234, 0.25));
+  border-color: rgba(168, 85, 247, 0.7); box-shadow: 0 0 15px rgba(168, 85, 247, 0.2);
+}
+
+/* ==================== CONTROLE DE TRANSPARÊNCIA ==================== */
+.transparency-control {
+  transition: all 0.3s ease; position: relative; padding: 0.75rem;
+  background: rgba(55, 65, 81, 0.3); border-radius: 0.5rem;
+  border: 1px solid rgba(255, 255, 255, 0.05);
+}
+.transparency-control:hover {
+  background: rgba(55, 65, 81, 0.5) !important;
+  border-color: rgba(255, 255, 255, 0.1) !important;
+}
+
+.transparency-slider {
+  -webkit-appearance: none; width: 100%; height: 6px; border-radius: 3px;
+  background: linear-gradient(90deg, 
+    rgba(255, 255, 255, 0.05) 0%, 
+    rgba(255, 255, 255, 0.2) 50%, 
+    rgba(255, 255, 255, 0.05) 100%
+  ); outline: none; transition: all 0.2s ease;
+}
+.transparency-slider:hover {
+  background: linear-gradient(90deg, 
+    rgba(255, 255, 255, 0.1) 0%, 
+    rgba(255, 255, 255, 0.3) 50%, 
+    rgba(255, 255, 255, 0.1) 100%
+  );
+}
+
+/* ==================== ÍCONE DO MANUAL ==================== */
+#manualIcon {
+  position: fixed !important; top: 20px !important; right: 20px !important;
+  z-index: 60 !important; padding: 12px; border-radius: 50%;
+  background: rgba(0, 0, 0, 0.5); backdrop-filter: blur(8px);
+  border: 1px solid rgba(248, 214, 92, 0.3);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3); transition: all 0.3s ease;
+  cursor: pointer;
+}
+#manualIcon:hover {
+  transform: scale(1.1); border-color: rgba(248, 214, 92, 0.6);
+  box-shadow: 0 6px 20px rgba(248, 214, 92, 0.2);
+}
+
+/* ==================== ELIMINAÇÃO E RESSURREIÇÃO ==================== */
+.player-eliminated {
+  background-color: rgba(75, 85, 99, 0.3) !important;
+  text-decoration: line-through; opacity: 0.6;
+}
+
+/* ==================== EMOJI SUPPORT ==================== */
+.emoji-font {
+  font-family: 
+    "Segoe UI Emoji", "Apple Color Emoji", "Noto Color Emoji",
+    "Segoe UI Symbol", "Twemoji Mozilla", "EmojiSymbols", sans-serif;
+  font-weight: normal; font-style: normal;
+  display: inline-block; line-height: 1; vertical-align: -0.125em;
+}
+.resource-item, .resource-value, .board-cell .text-xs,
+.board-cell .text-\[10px\], #offerResourcesInfo, #requestResourcesInfo {
+  font-family: 
+    "Segoe UI Emoji", "Apple Color Emoji", "Noto Color Emoji",
+    "Segoe UI Symbol", "Twemoji Mozilla", "EmojiSymbols", sans-serif;
+}
+
+/* ==================== CORREÇÕES ESPECÍFICAS ==================== */
+
+/* Botão Start Game */
+#startGameBtn:disabled {
+  opacity: 0.6 !important; cursor: not-allowed !important;
+  background: linear-gradient(135deg, #4b5563, #374151) !important;
+  border-color: rgba(255, 255, 255, 0.1) !important;
+  transform: none !important; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2) !important;
+}
+#startGameBtn:disabled:hover {
+  transform: none !important; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2) !important;
+  background: linear-gradient(135deg, #4b5563, #374151) !important;
+}
+#startGameBtn:not(:disabled):hover {
+  transform: translateY(-2px) scale(1.02) !important;
+  box-shadow: 0 8px 25px rgba(37, 99, 235, 0.4) !important;
+}
+
+/* Títulos de modais */
+.modal-content-container h2,
+.modal-content-container h3,
 .modal-content-container h4 {
   color: #fbbf24 !important;
   text-shadow: 0 2px 4px rgba(0, 0, 0, 0.7) !important;
@@ -1003,71 +658,39 @@ p {
   letter-spacing: 0.3px !important;
 }
 
-.modal-content-container p, 
-.modal-content-container span:not(.icon), 
-.modal-content-container div:not(.icon) {
+/* Texto em notificações de negociação */
+#negResponseTitle,
+#negResponseBody,
+.negotiation-notification h3,
+.negotiation-notification p {
   color: rgba(255, 255, 255, 0.95) !important;
-  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.7) !important;
-  font-weight: 500 !important;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.7) !important;
 }
 
-/* INPUTS EM MODAIS */
-.modal-content-container input,
-.modal-content-container select,
-.modal-content-container textarea {
-  background: rgba(30, 41, 59, 0.9) !important;
-  color: var(--text-primary) !important;
+#negResponseTitle {
+  color: #fbbf24 !important;
+  font-weight: 700 !important;
+}
+
+/* Botões de negociação */
+#negAcceptBtn,
+#negDeclineBtn {
+  background: linear-gradient(135deg, #059669, #047857) !important;
   border: 1px solid rgba(255, 255, 255, 0.2) !important;
-  font-weight: 500 !important;
+  color: white !important; font-weight: 600 !important;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5) !important;
 }
 
-.modal-content-container input:focus, 
-.modal-content-container select:focus, 
-.modal-content-container textarea:focus {
-  outline: none;
-  border-color: var(--accent) !important;
-  box-shadow: 0 0 0 2px rgba(248, 214, 92, 0.2) !important;
+#negDeclineBtn { background: linear-gradient(135deg, #dc2626, #b91c1c) !important; }
+
+/* Modais abertos - efeito no fundo */
+body.modal-open #boardContainer,
+body.modal-open .board-cell {
+  pointer-events: none !important; opacity: 0.6; filter: blur(1px);
+  transition: opacity 0.3s, filter 0.3s;
 }
 
-/* 9.2 MODAIS ESPECÍFICOS */
-
-/* MODAL DE NEGOCIAÇÃO */
-#negotiationModal .negotiation-section {
-  transition: all 0.2s ease;
-  backdrop-filter: blur(4px);
-  padding: 1rem;
-  border-radius: 0.5rem;
-  margin-bottom: 1rem;
-}
-
-#negotiationModal .negotiation-section:hover {
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
-  transform: translateY(-2px);
-}
-
-#negotiationModal .negotiation-section:first-child {
-  background: linear-gradient(135deg, rgba(34, 197, 94, 0.1), rgba(22, 163, 74, 0.1));
-}
-
-#negotiationModal .negotiation-section:last-child {
-  background: linear-gradient(135deg, rgba(239, 68, 68, 0.1), rgba(220, 38, 38, 0.1));
-}
-
-/* MODAL DE ESTRUTURAS */
-#structureModal .structure-option {
-  transition: all 0.2s ease;
-  border-width: 2px;
-  padding: 1rem;
-  border-radius: 0.5rem;
-  cursor: pointer;
-}
-
-#structureModal .structure-option:hover:not(.opacity-50) {
-  transform: translateY(-4px);
-  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
-}
-
-/* CORES DAS ESTRUTURAS */
+/* ==================== CLASSES DE CORES PARA ESTRUTURAS ==================== */
 .bg-orange-500\/30 { background-color: rgba(249, 115, 22, 0.3); }
 .border-orange-500\/30 { border-color: rgba(249, 115, 22, 0.3); }
 .bg-blue-500\/30 { background-color: rgba(59, 130, 246, 0.3); }
@@ -1079,1481 +702,76 @@ p {
 .bg-green-500\/30 { background-color: rgba(34, 197, 94, 0.3); }
 .border-green-500\/30 { border-color: rgba(34, 197, 94, 0.3); }
 
-/* MODAL DE EVENTO GLOBAL */
-#eventModal .relative.event-positive {
-  background: linear-gradient(135deg, rgba(34, 197, 94, 0.15), rgba(22, 163, 74, 0.15)) !important;
-  border-color: rgba(34, 197, 94, 0.4) !important;
-  backdrop-filter: blur(12px);
-}
-
-#eventModal .relative.event-negative {
-  background: linear-gradient(135deg, rgba(239, 68, 68, 0.15), rgba(220, 38, 38, 0.15)) !important;
-  border-color: rgba(239, 68, 68, 0.4) !important;
-  backdrop-filter: blur(12px);
-}
-
-#eventModal .relative.event-mixed {
-  background: linear-gradient(135deg, rgba(168, 85, 247, 0.15), rgba(147, 51, 234, 0.15)) !important;
-  border-color: rgba(168, 85, 247, 0.4) !important;
-  backdrop-filter: blur(12px);
-}
-
-#eventModal .relative.event-neutral {
-  background: linear-gradient(135deg, rgba(251, 191, 36, 0.15), rgba(245, 158, 11, 0.15)) !important;
-  border-color: rgba(251, 191, 36, 0.4) !important;
-  backdrop-filter: blur(12px);
-}
-
-/* 9.3 MODAL DE CONQUISTAS - CORREÇÃO DO FUNDO TRANSPARENTE */
-#achievementsModal {
-  z-index: 110; /* Mantém a hierarquia definida no HTML */
-}
-
-#achievementsModal > .absolute {
-  background-color: rgba(0, 0, 0, 0.7) !important;
-  backdrop-filter: none !important; /* Remove blur do overlay */
-}
-
-#achievementsModal > .relative {
-  background: rgba(17, 24, 39, 0.98) !important;
-  backdrop-filter: blur(25px) saturate(180%) !important;
-  border: 1px solid rgba(255, 255, 255, 0.15) !important;
-  border-radius: 1rem !important;
-  box-shadow: 
-    0 25px 50px -12px rgba(0, 0, 0, 0.5),
-    inset 0 1px 0 rgba(255, 255, 255, 0.1) !important;
-  opacity: 1 !important;
-  visibility: visible !important;
-}
-
-/* Garante legibilidade do conteúdo */
-#achievementsModal .text-yellow-300 {
-  color: #fbbf24 !important;
-  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5) !important;
-}
-
-#achievementsModal .text-gray-300 {
-  color: rgba(255, 255, 255, 0.95) !important;
-}
-
-#achievementsModal .bg-yellow-900\/10 {
-  background-color: rgba(120, 53, 15, 0.2) !important;
-}
-
-#achievementsModal .border-yellow-500\/50 {
-  border-color: rgba(245, 158, 11, 0.3) !important;
-}
-
-/* ============================================
-   9.4 MODAL DE DISPUTA - CORREÇÃO DO FUNDO TRANSPARENTE
-   ============================================ */
-
-#disputeModal {
-  z-index: 104; /* Acima de outros modais */
-}
-
-#disputeModal > .absolute {
-  background-color: rgba(0, 0, 0, 0.7) !important;
-  backdrop-filter: none !important;
-}
-
-#disputeModal > .relative {
-  background: rgba(17, 24, 39, 0.98) !important;
-  backdrop-filter: blur(25px) saturate(180%) !important;
-  border: 1px solid rgba(255, 255, 255, 0.15) !important;
-  border-radius: 1rem !important;
-  box-shadow: 
-    0 25px 50px -12px rgba(0, 0, 0, 0.5),
-    inset 0 1px 0 rgba(255, 255, 255, 0.1) !important;
-  opacity: 1 !important;
-  visibility: visible !important;
-  animation: modalSlideIn 0.3s ease-out;
-}
-
-/* Títulos do modal de disputa */
-#disputeModal h2, 
-#disputeModal h3, 
-#disputeModal h4 {
-  color: #fbbf24 !important;
-  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.7) !important;
-  font-weight: 700 !important;
-  letter-spacing: 0.3px !important;
-}
-
-/* Conteúdo do modal */
-#disputeModal .text-yellow-300 {
-  color: #fbbf24 !important;
-  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5) !important;
-}
-
-#disputeModal .text-gray-300 {
-  color: rgba(255, 255, 255, 0.95) !important;
-}
-
-/* Seções coloridas do modal */
-#disputeModal .bg-red-900\/30 {
-  background-color: rgba(127, 29, 29, 0.3) !important;
-}
-
-#disputeModal .bg-blue-900\/30 {
-  background-color: rgba(30, 58, 138, 0.3) !important;
-}
-
-/* Botões do modal de disputa */
-#disputeModal #confirmDispute {
-  background: linear-gradient(135deg, #ef4444, #dc2626) !important;
-  border: 1px solid rgba(239, 68, 68, 0.4) !important;
-  color: white !important;
-  transition: all 0.3s ease !important;
-}
-
-#disputeModal #confirmDispute:hover:not(:disabled) {
-  transform: translateY(-2px) !important;
-  box-shadow: 0 8px 25px rgba(239, 68, 68, 0.4) !important;
-}
-
-#disputeModal #cancelDispute {
-  background: linear-gradient(135deg, #6b7280, #4b5563) !important;
-  border: 1px solid rgba(255, 255, 255, 0.1) !important;
-  color: white !important;
-  transition: all 0.3s ease !important;
-}
-
-#disputeModal #cancelDispute:hover:not(:disabled) {
-  transform: translateY(-2px) !important;
-  box-shadow: 0 8px 25px rgba(107, 114, 128, 0.4) !important;
-}
-
-/* Barra de progresso da chance de sucesso */
-#disputeModal .chance-bar {
-  height: 20px;
-  border-radius: 10px;
-  background: linear-gradient(90deg, #ef4444, #f59e0b, #10b981);
-  transition: width 0.5s ease;
-}
-
-/* Estados da barra de chance */
-#disputeModal .chance-bar.low {
-  background: linear-gradient(90deg, #ef4444, #f59e0b);
-}
-
-#disputeModal .chance-bar.medium {
-  background: linear-gradient(90deg, #f59e0b, #fbbf24);
-}
-
-#disputeModal .chance-bar.high {
-  background: linear-gradient(90deg, #fbbf24, #10b981);
-}
-
-/* Modal de resultado da disputa */
-#disputeResultModal {
-  z-index: 105;
-}
-
-#disputeResultModal > .absolute {
-  background-color: rgba(0, 0, 0, 0.7) !important;
-  backdrop-filter: none !important;
-}
-
-#disputeResultModal > .relative {
-  background: rgba(17, 24, 39, 0.98) !important;
-  backdrop-filter: blur(25px) saturate(180%) !important;
-  border: 1px solid rgba(255, 255, 255, 0.15) !important;
-  border-radius: 1rem !important;
-  box-shadow: 
-    0 25px 50px -12px rgba(0, 0, 0, 0.5),
-    inset 0 1px 0 rgba(255, 255, 255, 0.1) !important;
-  opacity: 1 !important;
-  visibility: visible !important;
-  animation: modalSlideIn 0.3s ease-out;
-}
-
-/* Estilos para resultado de sucesso */
-#disputeResultModal .success {
-  background: linear-gradient(135deg, rgba(34, 197, 94, 0.15), rgba(22, 163, 74, 0.15)) !important;
-  border-color: rgba(34, 197, 94, 0.4) !important;
-}
-
-#disputeResultModal .failure {
-  background: linear-gradient(135deg, rgba(239, 68, 68, 0.15), rgba(220, 38, 38, 0.15)) !important;
-  border-color: rgba(239, 68, 68, 0.4) !important;
-}
-
-/* ============================================
-   CORREÇÃO PARA O PROBLEMA 2: CLIQUE NÃO FUNCIONA
-   ============================================ */
-
-/* Garantir que o modal seja interativo */
-#disputeModal,
-#disputeResultModal {
-  pointer-events: auto !important;
-}
-
-/* Remover qualquer estilo que impeça interação */
-#disputeModal .hidden,
-#disputeResultModal .hidden {
-  display: none !important;
-}
-
-#disputeModal:not(.hidden),
-#disputeResultModal:not(.hidden) {
-  display: flex !important;
-}
-
-/* Corrigir possíveis problemas de sobreposição */
-#disputeModal .absolute,
-#disputeResultModal .absolute {
-  pointer-events: none;
-}
-
-#disputeModal .relative,
-#disputeResultModal .relative {
-  pointer-events: auto;
-}
-
-/* Garantir que os botões sejam clicáveis */
-#disputeModal button,
-#disputeResultModal button {
-  pointer-events: auto !important;
-  cursor: pointer !important;
-}
-
-#disputeModal button:disabled,
-#disputeResultModal button:disabled {
-  opacity: 0.5 !important;
-  cursor: not-allowed !important;
-}
-
-/* Animações para disputa */
-@keyframes regionUpdate {
-  0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7); }
-  70% { box-shadow: 0 0 0 10px rgba(239, 68, 68, 0); }
-  100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); }
-}
-
-.region-updated {
-  animation: regionUpdate 1s ease-out;
-}
-
-/* Estilos para modais de disputa */
-#disputeModal .relative,
-#disputeResultModal .relative {
-  animation: modalAppear 0.3s ease-out;
-}
-
-@keyframes modalAppear {
-  from {
-    opacity: 0;
-    transform: scale(0.95) translateY(-10px);
-  }
-  to {
-    opacity: 1;
-    transform: scale(1) translateY(0);
-  }
-}
-
-/* ============================================
-   10. TOOLTIPS E BANNERS
-   ============================================ */
-
-/* TOOLTIP DE REGIÃO */
-#regionTooltip {
-  position: fixed !important;
-  z-index: 90;
-  pointer-events: none;
-  transition: opacity 0.15s ease, transform 0.15s ease;
-  transform-origin: center bottom;
-  max-width: 300px;
-  min-width: 200px;
-  background: rgba(31, 41, 55, 0.95);
-  backdrop-filter: blur(8px);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 0.5rem;
-  padding: 0.75rem;
-  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
-}
-
-#regionTooltip.visible {
-  opacity: 1;
-  transform: translateY(0) scale(1);
-}
-
-#regionTooltip.hidden {
-  opacity: 0;
-  transform: translateY(10px) scale(0.95);
-  pointer-events: none;
-}
-
-.tooltip-section {
-  margin-bottom: 0.5rem;
-  padding-bottom: 0.5rem;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-}
-
-.tooltip-section:last-child {
-  margin-bottom: 0;
-  padding-bottom: 0;
-  border-bottom: none;
-}
-
-/* BANNER DE EVENTO */
-#eventBanner {
-  background: rgba(0, 0, 0, 0.6);
-  backdrop-filter: blur(8px);
-  border-width: 2px;
-  border-style: solid;
-  margin-bottom: 12px;
-  padding: 10px;
-  border-radius: 0.5rem;
-}
-
-#eventBanner.animate-pulse-slow {
-  animation: eventPulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite;
-}
-
-#eventBanner.event-positive {
-  background: linear-gradient(135deg, rgba(34, 197, 94, 0.25), rgba(22, 163, 74, 0.25));
-  border-color: rgba(34, 197, 94, 0.7);
-  box-shadow: 0 0 15px rgba(34, 197, 94, 0.2);
-}
-
-#eventBanner.event-negative {
-  background: linear-gradient(135deg, rgba(239, 68, 68, 0.25), rgba(220, 38, 38, 0.25));
-  border-color: rgba(239, 68, 68, 0.7);
-  box-shadow: 0 0 15px rgba(239, 68, 68, 0.2);
-}
-
-#eventBanner.event-mixed {
-  background: linear-gradient(135deg, rgba(168, 85, 247, 0.25), rgba(147, 51, 234, 0.25));
-  border-color: rgba(168, 85, 247, 0.7);
-  box-shadow: 0 0 15px rgba(168, 85, 247, 0.2);
-}
-
-#eventBanner.event-neutral {
-  background: linear-gradient(135deg, rgba(251, 191, 36, 0.25), rgba(245, 158, 11, 0.25));
-  border-color: rgba(251, 191, 36, 0.7);
-  box-shadow: 0 0 15px rgba(251, 191, 36, 0.2);
-}
-
-/* TEXTO DO BANNER */
-#eventBanner #eventBannerTitle {
-  color: #ffffff !important;
-  font-weight: 700 !important;
-  font-size: 13px !important;
-  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.8) !important;
-}
-
-#eventBanner #eventBannerEffect {
-  color: rgba(255, 255, 255, 0.95) !important;
-  font-weight: 500 !important;
-  font-size: 11px !important;
-}
-
-#eventBanner #eventBannerTurns {
-  background: rgba(0, 0, 0, 0.6) !important;
-  color: #ffffff !important;
-  font-weight: 600 !important;
-}
-
-/* ============================================
-   11. CONTROLES E INTERAÇÕES
-   ============================================ */
-
-/* CONTROLE DE TRANSPARÊNCIA */
-.transparency-control {
-  transition: all 0.3s ease;
-  position: relative;
-  padding: 0.75rem;
-  background: rgba(55, 65, 81, 0.3);
-  border-radius: 0.5rem;
-  border: 1px solid rgba(255, 255, 255, 0.05);
-}
-
-.transparency-control:hover {
-  background: rgba(55, 65, 81, 0.5) !important;
-  border-color: rgba(255, 255, 255, 0.1) !important;
-}
-
-.transparency-slider {
-  -webkit-appearance: none;
-  width: 100%;
-  height: 6px;
-  border-radius: 3px;
-  background: linear-gradient(90deg, 
-    rgba(255, 255, 255, 0.05) 0%, 
-    rgba(255, 255, 255, 0.2) 50%, 
-    rgba(255, 255, 255, 0.05) 100%
-  );
-  outline: none;
-  transition: all 0.2s ease;
-}
-
-.transparency-slider:hover {
-  background: linear-gradient(90deg, 
-    rgba(255, 255, 255, 0.1) 0%, 
-    rgba(255, 255, 255, 0.3) 50%, 
-    rgba(255, 255, 255, 0.1) 100%
-  );
-}
-
-.transparency-slider::-webkit-slider-thumb {
-  -webkit-appearance: none;
-  appearance: none;
-  width: 20px;
-  height: 20px;
-  border-radius: 50%;
-  background: var(--accent);
-  cursor: pointer;
-  border: 2px solid rgba(0, 0, 0, 0.3);
-  box-shadow: 0 2px 8px rgba(248, 214, 92, 0.3);
-  transition: all 0.2s ease;
-}
-
-.transparency-slider::-webkit-slider-thumb:hover {
-  transform: scale(1.1);
-  box-shadow: 0 3px 12px rgba(248, 214, 92, 0.5);
-}
-
-.transparency-slider::-moz-range-thumb {
-  width: 20px;
-  height: 20px;
-  border-radius: 50%;
-  background: var(--accent);
-  cursor: pointer;
-  border: 2px solid rgba(0, 0, 0, 0.3);
-  box-shadow: 0 2px 8px rgba(248, 214, 92, 0.3);
-  transition: all 0.2s ease;
-}
-
-/* INPUTS GERAIS */
-input[type="text"], select, input[type="number"] {
-  background: rgba(31, 31, 31, 0.85);
-  color: #EEE;
-  border: 1px solid rgba(255, 255, 255, 0.04);
-  border-radius: 8px;
-  padding: 10px 12px;
-  font-size: 14px;
-}
-
-input[type="text"]:focus, select:focus, input[type="number"]:focus {
-  outline: none;
-  border-color: #f8d65c;
-  box-shadow: 0 0 0 2px rgba(248, 214, 92, 0.2);
-}
-
-/* ============================================
-   12. LOGS, CONQUISTAS E SISTEMAS
-   ============================================ */
-
-/* LOG DE ATIVIDADES */
-.log-entry {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  padding: 4px 0;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
-}
-
-.log-entry:last-child {
-  border-bottom: none;
-}
-
-.log-filter-sidebar {
-  transition: all 0.2s ease;
-  border: 1px solid transparent;
-  cursor: pointer;
-  padding: 2px 8px;
-  border-radius: 4px;
-  font-size: 10px;
-}
-
-.log-filter-sidebar:hover {
-  background: rgba(255, 255, 255, 0.1) !important;
-}
-
-.log-filter-sidebar.active {
-  background: rgba(59, 130, 246, 0.2) !important;
-  border-color: rgba(59, 130, 246, 0.4) !important;
-  color: #60a5fa !important;
-}
-
-/* CORES DOS TIPOS DE LOG */
-.log-type-action { color: #60a5fa; }
-.log-type-build { color: #f59e0b; }
-.log-type-explore { color: #10b981; }
-.log-type-collect { color: #8b5cf6; }
-.log-type-negotiate { color: #f97316; }
-.log-type-event { color: #ef4444; }
-.log-type-victory { color: #10b981; }
-.log-type-income { color: #22c55e; }
-
-/* CONQUISTAS */
-.achievement {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 8px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
-  border-radius: 6px;
-  transition: all 0.2s ease;
-}
-
-.achievement:hover {
-  background: rgba(255, 255, 255, 0.03);
-}
-
-.achievement-unlocked {
-  opacity: 1;
-  animation: achievementUnlock 0.5s ease-out;
-}
-
-.achievement-locked {
-  opacity: 0.5;
-  filter: grayscale(0.8);
-}
-
-/* ============================================
-   13. IA (INTELIGÊNCIA ARTIFICIAL)
-   ============================================ */
-
-.ai-thinking {
-  animation: pulse 2s infinite;
-  border-color: #8b5cf6 !important;
-}
-
-.ai-difficulty-badge {
-  display: inline-block;
-  padding: 2px 6px;
-  border-radius: 10px;
-  font-size: 0.7rem;
-  font-weight: bold;
-  margin-left: 4px;
-}
-
-.ai-easy { background-color: var(--ai-easy-color); color: white; }
-.ai-medium { background-color: var(--ai-medium-color); color: white; }
-.ai-hard { background-color: var(--ai-hard-color); color: black; }
-.ai-master { background-color: var(--ai-master-color); color: white; }
-
-/* ============================================
-   14. MANUAL DO JOGO
-   ============================================ */
-
-/* ÍCONE DO MANUAL */
-#manualIcon {
-  position: fixed !important;
-  top: 20px !important;
-  right: 20px !important;
-  z-index: 60 !important;
-  padding: 12px;
-  border-radius: 50%;
-  background: rgba(0, 0, 0, 0.5);
-  backdrop-filter: blur(8px);
-  border: 1px solid rgba(248, 214, 92, 0.3);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
-  transition: all 0.3s ease;
-  cursor: pointer;
-}
-
-#manualIcon:hover {
-  transform: scale(1.1);
-  border-color: rgba(248, 214, 92, 0.6);
-  box-shadow: 0 6px 20px rgba(248, 214, 92, 0.2);
-}
-
-#manualIcon svg {
-  width: 24px;
-  height: 24px;
-  color: #f8d65c;
-}
-
-/* IMAGENS DO MANUAL */
-.manual-content img {
-  display: block;
-  margin: 2rem auto;
-  background-color: transparent !important;
-  border: none !important;
-  box-shadow: none !important;
-  outline: none !important;
-  border-radius: 0 !important;
-  -webkit-clip-path: inset(2px round 12px);
-  clip-path: inset(2px round 12px);
-  filter: drop-shadow(0 15px 25px rgba(0, 0, 0, 0.7));
-  transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1), filter 0.3s ease;
-}
-
-.manual-content img:hover {
-  transform: scale(1.03) translateY(-5px);
-  filter: drop-shadow(0 20px 35px rgba(0, 0, 0, 0.85));
-  z-index: 10;
-}
-
-/* FILTRO DE EVENTOS DO MANUAL */
-.event-filter-btn {
-  transition: all 0.3s ease;
-  border: 1px solid transparent;
-}
-
-.event-filter-btn.active {
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.4);
-  border-color: rgba(59, 130, 246, 0.5);
-}
-
-.event-card {
-  transition: all 0.4s ease;
-  animation: fadeIn 0.5s ease forwards;
-}
-
-.event-card:hover {
-  transform: translateY(-5px);
-  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
-}
-
-/* ESTILOS ESPECÍFICOS PARA CADA CATEGORIA */
-.category-positive {
-  border-left: 4px solid #10b981;
-}
-
-.category-negative {
-  border-left: 4px solid #ef4444;
-}
-
-.category-mixed {
-  border-left: 4px solid #f59e0b;
-}
-
-/* TABS DO MANUAL */
-.manual-tab {
-  color: #cfcfcf;
-  background: transparent;
-  border: 1px solid transparent;
-  transition: all 0.2s ease;
-  width: 100%;
-  text-align: left;
-  padding: 8px 16px;
-  border-radius: 6px;
-  margin-bottom: 4px;
-  cursor: pointer;
-}
-
-.manual-tab:hover {
-  color: #fff;
-  background: rgba(255, 255, 255, 0.02);
-}
-
-.manual-tab.active {
-  color: var(--accent);
-  border-color: rgba(248, 214, 92, 0.12);
-  background: linear-gradient(180deg, rgba(248, 214, 92, 0.03), rgba(255, 255, 255, 0.01));
-}
-
-/* ============================================
-   15. COMPONENTES DE INTERFACE
-   ============================================ */
-
-/* 15.1 BOTÕES DE AÇÃO */
-.action-btn {
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.02), rgba(0, 0, 0, 0.18));
-  color: #fff;
-  padding: 8px 12px;
-  border-radius: 8px;
-  border: 1px solid rgba(255, 255, 255, 0.04);
-  font-weight: 500;
-  transition: all 0.2s ease;
-  cursor: pointer;
-}
-
-.action-btn:hover:not(:disabled) {
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.05), rgba(0, 0, 0, 0.25));
-  border-color: rgba(255, 255, 255, 0.1);
-  transform: translateY(-1px);
-}
-
-.action-btn:disabled {
-  opacity: 0.45 !important;
-  cursor: not-allowed !important;
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.01), rgba(0, 0, 0, 0.1)) !important;
-  border-color: rgba(255, 255, 255, 0.04) !important;
-  transform: none !important;
-  box-shadow: none !important;
-}
-
-/* BOTÃO START GAME - CORREÇÃO CRÍTICA */
-#startGameBtn {
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
-  position: relative !important;
-  overflow: hidden !important;
-}
-
-#startGameBtn:disabled {
-  opacity: 0.6 !important;
-  cursor: not-allowed !important;
-  background: linear-gradient(135deg, #4b5563, #374151) !important;
-  border-color: rgba(255, 255, 255, 0.1) !important;
-  transform: none !important;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2) !important;
-}
-
-#startGameBtn:disabled:hover {
-  transform: none !important;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2) !important;
-  background: linear-gradient(135deg, #4b5563, #374151) !important;
-}
-
-#startGameBtn:not(:disabled):hover {
-  transform: translateY(-2px) scale(1.02) !important;
-  box-shadow: 0 8px 25px rgba(37, 99, 235, 0.4) !important;
-}
-
-/* BOTÃO TERMINAR TURNO */
-#endTurnBtn {
-  transition: all 0.3s ease;
-  font-weight: bold;
-}
-
-#endTurnBtn:disabled {
-  opacity: 0.6 !important;
-  cursor: not-allowed !important;
-  background: linear-gradient(135deg, #6b7280, #4b5563) !important;
-  border-color: rgba(255, 255, 255, 0.1) !important;
-  transform: none !important;
-}
-
-#endTurnBtn:not(:disabled):hover {
-  transform: translateY(-2px);
-}
-
-/* BOTÃO DE NEGOCIAÇÃO */
-#negSendBtn:disabled {
-  opacity: 0.5 !important;
-  cursor: not-allowed !important;
-  background: linear-gradient(135deg, #4b5563, #374151) !important;
-  border-color: rgba(255, 255, 255, 0.1) !important;
-}
-
-/* BOTÕES DE IA QUANDO DESABILITADOS */
-.ai-button-compact:disabled {
-  opacity: 0.4 !important;
-  cursor: not-allowed !important;
-  filter: grayscale(0.7) !important;
-  transform: none !important;
-  box-shadow: none !important;
-}
-
-/* 15.2 BADGES E INDICADORES */
-.badge {
-  display: inline-block;
-  padding: 4px 8px;
-  border-radius: 999px;
-  font-size: 12px;
-  background: rgba(255,255,255,0.03);
-  color: #fff;
-  font-weight: 500;
-}
-
-.current-turn-badge {
-  animation: pulse 2s ease-in-out infinite;
-}
-
-/* 15.3 EFEITOS DE EDIÇÃO */
-.editing-mode {
-  animation: pulseBorder 2s infinite;
-}
-
-.player-card.editing::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: 3px;
-  background: linear-gradient(90deg, #3b82f6, #8b5cf6);
-  animation: editingGlow 2s infinite;
-}
-
-.player-actions {
-  transition: opacity 0.2s ease;
-}
-
-.player-actions button {
-  transition: all 0.2s ease;
-}
-
-.player-actions button:hover {
-  transform: scale(1.1);
-}
-
-/* BOTÃO DE ADIÇÃO/EDIÇÃO DINÂMICO */
-#addPlayerBtn.bg-green-600 {
-  background-color: #059669;
-}
-
-#addPlayerBtn.bg-blue-600 {
-  background-color: #2563eb;
-}
-
-#addPlayerBtn.bg-green-600:hover {
-  background-color: #047857;
-}
-
-#addPlayerBtn.bg-blue-600:hover {
-  background-color: #1d4ed8;
-}
-
-/* BOTÃO CANCELAR EDIÇÃO */
-#cancelEditBtn {
-  transition: all 0.2s ease;
-}
-
-#cancelEditBtn:hover {
-  background-color: #4b5563 !important;
-  border-color: rgba(255, 255, 255, 0.2) !important;
-}
-
-/* INDICADOR VISUAL PARA EDIÇÃO EM ANDAMENTO */
-.editing-mode .player-name-input {
-  border-color: #3b82f6 !important;
-  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2);
-}
-
-/* 15.4 ESTILOS PARA JOGADORES ELIMINADOS*/
-/* Estilos para eliminação */
-.eliminated-controlled {
-    position: relative;
-    opacity: 0.6;
-    filter: grayscale(0.5);
-}
-
-.eliminated-controlled::after {
-    content: '💀';
-    position: absolute;
-    top: 5px;
-    right: 5px;
-    font-size: 12px;
-    z-index: 10;
-    filter: drop-shadow(0 1px 2px rgba(0,0,0,0.8));
-}
-
-/* Estilo para botão de ressuscitar */
-.btn-ressurect {
-    background: linear-gradient(135deg, #f59e0b, #d97706) !important;
-    animation: pulse-gold 2s infinite;
-}
-
-@keyframes pulse-gold {
-    0%, 100% { opacity: 1; }
-    50% { opacity: 0.7; }
-}
-
-/* Estilo para célula atualizada após disputa */
-.region-updated {
-    animation: region-update 1s ease-out;
-}
-
-@keyframes region-update {
-    0% { transform: scale(1); }
-    50% { transform: scale(1.05); box-shadow: 0 0 20px rgba(255, 215, 0, 0.5); }
-    100% { transform: scale(1); }
-}
-
-/* Estilo para jogador eliminado no header */
-.player-eliminated {
-    background-color: rgba(75, 85, 99, 0.3) !important;
-    text-decoration: line-through;
-    opacity: 0.6;
-}
-
-/* ============================================
-   16. EMOJIS E ÍCONES
-   ============================================ */
-
-.emoji-font {
-  font-family: 
-    "Segoe UI Emoji",
-    "Apple Color Emoji",
-    "Noto Color Emoji",
-    "Segoe UI Symbol",
-    "Twemoji Mozilla",
-    "EmojiSymbols",
-    sans-serif;
-  font-weight: normal;
-  font-style: normal;
-  display: inline-block;
-  line-height: 1;
-  vertical-align: -0.125em;
-}
-
-/* APLICAR A TODOS OS ELEMENTOS QUE USAM EMOJIS */
-.resource-item,
-.resource-value,
-.board-cell .text-xs,
-.board-cell .text-\[10px\],
-#offerResourcesInfo,
-#requestResourcesInfo {
-  composes: emoji-font;
-}
-
-/* FALLBACK VISUAL PARA QUANDO O EMOJI NÃO CARREGA */
-.emoji-fallback {
-  display: inline-block;
-  width: 1.2em;
-  height: 1.2em;
-  background: rgba(255, 255, 255, 0.1);
-  border-radius: 3px;
-  text-align: center;
-  font-size: 0.8em;
-  line-height: 1.4em;
-}
-
-/* ============================================
-   17. RESPONSIVIDADE
-   ============================================ */
-
-/* 17.1 DESKTOP GRANDE */
-@media (min-width: 1024px) {
-  #gameContainer {
-    grid-template-columns: 320px 1fr;
-    height: calc(100vh - 160px);
-  }
-}
-
-/* 17.2 TABLET */
-@media (max-width: 1024px) {
-  #sidebar {
-    display: none;
-  }
-  
-  #gameContainer {
-    grid-template-columns: 1fr;
-    height: calc(100vh - 200px);
-    margin-top: 70px;
-    margin-bottom: 100px;
-  }
-}
-
-/* 17.3 MOBILE */
-@media (max-width: 768px) {
-  /* LAYOUT PRINCIPAL EM COLUNA ÚNICA */
-  html, body {
-    height: auto;
-    min-height: 100vh;
-    overflow-y: auto;
-    -webkit-tap-highlight-color: transparent;
-  }
-  
-  #gameContainer {
-    grid-template-columns: 1fr !important;
-    height: calc(100vh - 220px);
-    margin-top: 60px;
-    margin-bottom: 120px;
-    padding: 0.5rem;
-    gap: 0.5rem;
-  }
-  
-  /* SIDEBAR OCULTA POR PADRÃO, ACESSÍVEL VIA BOTÃO */
-  #sidebar {
-    display: none;
-    position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    z-index: 999;
-    background: rgba(15, 23, 42, 0.98);
-    backdrop-filter: blur(20px);
-    max-height: 100vh;
-    padding: 1rem;
-    overflow-y: auto;
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    border-radius: 0;
-  }
-  
-  #sidebar.active {
-    display: flex;
-    animation: slideInRight 0.3s ease-out;
-  }
-  
-  /* BOTÃO DE TOGGLE PARA SIDEBAR */
-  .sidebar-toggle {
-    position: fixed;
-    bottom: 140px;
-    right: 15px;
-    z-index: 1000;
-    width: 52px;
-    height: 52px;
-    border-radius: 50%;
-    background: linear-gradient(135deg, #3b82f6, #1d4ed8);
-    border: 2px solid rgba(255, 255, 255, 0.3);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 24px;
-    color: white;
-    box-shadow: 0 4px 20px rgba(59, 130, 246, 0.4);
-    cursor: pointer;
-    transition: all 0.3s ease;
-  }
-  
-  .sidebar-toggle:hover {
-    transform: scale(1.1);
-    box-shadow: 0 6px 25px rgba(59, 130, 246, 0.6);
-  }
-  
-  /* AJUSTES NO MAPA */
-  #gameMap {
-    min-height: 70vh;
-    border-radius: 12px;
-    border: 1px solid rgba(255, 255, 255, 0.1);
-  }
-  
-  /* CONTROLES DE ZOOM PARA MOBILE */
-  .mobile-zoom-controls {
-    position: absolute;
-    bottom: 15px;
-    right: 15px;
-    z-index: 100;
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-  }
-  
-  .mobile-zoom-controls button {
-    width: 44px;
-    height: 44px;
-    border-radius: 50%;
-    background: rgba(0, 0, 0, 0.7);
-    border: 1px solid rgba(255, 255, 255, 0.2);
-    color: white;
-    font-size: 20px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    cursor: pointer;
-    transition: all 0.2s ease;
-  }
-  
-  .mobile-zoom-controls button:hover {
-    background: rgba(0, 0, 0, 0.9);
-    transform: scale(1.1);
-  }
-  
-  /* GAME FOOTER MOBILE */
-  #gameFooter {
-    padding: 0.5rem !important;
-    min-height: auto !important;
-    max-height: 90px !important;
-  }
-  
-  #gameFooter .flex {
-    flex-direction: row !important;
-    gap: 0.5rem !important;
-    align-items: center !important;
-    justify-content: space-between !important;
-  }
-  
-  #gameFooter .flex > div:first-child {
-    display: grid !important;
-    grid-template-columns: repeat(2, 1fr) !important;
-    gap: 0.25rem !important;
-    width: 55% !important;
-  }
-  
-  .action-btn {
-    padding: 6px 4px !important;
-    font-size: 11px !important;
-    min-height: 36px !important;
-    border-radius: 6px !important;
-    margin: 0 !important;
-  }
-  
-  #endTurnBtn {
-    padding: 8px 12px !important;
-    font-size: 12px !important;
-    min-height: 36px !important;
-    width: 45% !important;
-    margin: 0 !important;
-  }
-  
-  #actionsLeft {
-    display: none !important;
-  }
-  
-  /* CÉLULAS EM MOBILE */
-  .board-cell {
-    padding: 6px;
-  }
-  
-  .board-cell .text-xs {
-    font-size: 10px;
-  }
-  
-  .board-cell .text-\[10px\] {
-    font-size: 9px;
-  }
-  
-  /* ESTADO DESABILITADO MELHORADO PARA MOBILE */
-  .action-btn:disabled,
-  #startGameBtn:disabled,
-  #endTurnBtn:disabled {
-    opacity: 0.5 !important;
-    transform: scale(0.95) !important;
-  }
-}
-
-/* MOBILE PEQUENO */
-@media (max-width: 480px) {
-  #gameContainer {
-    height: calc(100vh - 240px);
-    margin-top: 50px;
-    margin-bottom: 140px;
-    padding: 0.25rem;
-  }
-  
-  .board-cell {
-    padding: 4px;
-  }
-}
-
-/* BOTÕES MUITO PEQUENOS */
-@media (max-width: 360px) {
-  .action-btn span:not(.icon) {
-    display: none !important;
-  }
-  
-  .action-btn {
-    font-size: 16px !important;
-    min-width: 44px !important;
-    padding: 8px !important;
-  }
-  
-  #endTurnBtn {
-    font-size: 11px !important;
-    padding: 6px 8px !important;
-  }
-  
-  #startGameBtn {
-    font-size: 14px !important;
-    padding: 12px 8px !important;
-  }
-}
-
-/* ============================================
-   18. ACESSIBILIDADE
-   ============================================ */
-
-@media (prefers-reduced-motion: reduce) {
-  *,
-  *::before,
-  *::after {
-    animation-duration: 0.01ms !important;
-    animation-iteration-count: 1 !important;
-    transition-duration: 0.01ms !important;
-  }
-}
-
-/* MODO CLARO DO SISTEMA */
-@media (prefers-color-scheme: light) {
-  body {
-    background-color: #f5f5f5;
-    color: #333;
-  }
-  
-  .board-cell {
-    background: rgba(30, 30, 30, 0.8);
-    border: 1px solid rgba(255, 255, 255, 0.1);
-  }
-  
-  .board-cell.controlled {
-    background: rgba(var(--player-rgb), 0.3) !important;
-    border-left: 6px solid var(--player-color);
-  }
-  
-  .board-cell.neutral {
-    border-color: rgba(255,255,255,0.3);
-  }
-  
-  .board-cell:hover::before {
-    opacity: 0.8;
-  }
-  
-  .board-cell.region-selected::before {
-    opacity: 0.65;
-    filter: saturate(1.05) contrast(1.02);
-  }
-}
-
-/* ESTADOS DE FOCO PARA ACESSIBILIDADE */
-.action-btn:focus-visible,
-#startGameBtn:focus-visible,
-#endTurnBtn:focus-visible,
-#addPlayerBtn:focus-visible,
-#cancelEditBtn:focus-visible {
-  outline: 2px solid #3b82f6;
-  outline-offset: 2px;
-  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.3);
-}
-
-.action-btn:disabled:focus-visible,
-#startGameBtn:disabled:focus-visible,
-#endTurnBtn:disabled:focus-visible {
-  outline: 2px solid #6b7280;
-  box-shadow: 0 0 0 3px rgba(107, 114, 128, 0.3);
-}
-
-/* ============================================
-   19. CORREÇÕES ESPECÍFICAS
-   ============================================ */
-
-/* CORREÇÃO CRÍTICA - FUNDO DOS MODAIS */
-#negResponseModal .relative {
-  background-color: rgb(17, 24, 39) !important;
-  opacity: 1 !important;
-  border: 1px solid rgba(255, 255, 255, 0.15) !important;
-}
-
-#negotiationModal .relative {
-  background-color: rgb(17, 24, 39) !important;
-  opacity: 1 !important;
-}
-
-#negotiationModal .negotiation-section {
-  background-color: rgba(31, 41, 55, 0.9) !important;
-}
-
-#alertModal .relative {
-  background-color: rgb(17, 24, 39) !important;
-  border: 1px solid rgba(245, 158, 11, 0.3) !important;
-}
-
-#eventModal .relative {
-  background-color: rgb(17, 24, 39) !important;
-  border: 1px solid rgba(245, 158, 11, 0.3) !important;
-}
-
-/* REMOVER BACKDROP-FILTER RESIDUAL */
-#negotiationModal > .relative,
-#negResponseModal > .relative,
-[id^="negotiation-notification-"]:not(.modal-overlay),
-#pending-negotiations-summary:not(.modal-overlay) {
-  backdrop-filter: none !important;
-}
-
-/* GARANTIR LEGIBILIDADE DO TEXTO */
-#negResponseTitle {
-  color: #fbbf24 !important;
-  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
-}
-
-#negResponseBody {
-  color: rgba(255, 255, 255, 0.95) !important;
-}
-
-/* NOTIFICAÇÕES COM FUNDO SÓLIDO */
-[id^="negotiation-notification-"] {
-  background: rgba(17, 24, 39, 0.98) !important;
-}
-
-#pending-negotiations-summary {
-  background: rgba(30, 41, 59, 0.98) !important;
-}
-
-#aiDebugPanel {
-  backdrop-filter: none !important;
-  background: rgba(30, 41, 59, 0.95) !important;
-  border: 1px solid rgba(168, 85, 247, 0.5) !important;
-}
-
-/* BOTÕES DE FECHAR MANUAL */
-#manualCloseBtn:disabled,
-#structureModalClose:disabled {
-  opacity: 0.4 !important;
-  cursor: not-allowed !important;
-}
-
-/* BOTÕES DO MODAL DE ALERTA */
-#alertButtons button:disabled {
-  opacity: 0.5 !important;
-  cursor: not-allowed !important;
-  background: linear-gradient(135deg, #4b5563, #374151) !important;
-}
-
-/* BOTÕES DE LOG FILTER */
-.log-filter-sidebar:disabled {
-  opacity: 0.4 !important;
-  cursor: not-allowed !important;
-  background: rgba(75, 85, 99, 0.3) !important;
-}
-
-/* ESTILOS DE LOADING PARA BOTÕES */
-.button-loading {
-  position: relative;
-  color: transparent !important;
-}
-
-.button-loading::after {
-  content: "";
-  position: absolute;
-  width: 16px;
-  height: 16px;
-  top: 50%;
-  left: 50%;
-  margin-left: -8px;
-  margin-top: -8px;
-  border: 2px solid rgba(255, 255, 255, 0.3);
-  border-radius: 50%;
-  border-top-color: white;
-  animation: button-loading-spinner 0.8s linear infinite;
-}
-
-@keyframes button-loading-spinner {
-  from {
-    transform: rotate(0deg);
-  }
-  to {
-    transform: rotate(360deg);
-  }
-}
-
-/* MODAL DE SAVE/LOAD */
-#saveLoadModal .relative {
-  animation: modalSlideIn 0.3s ease-out;
-}
-
-#saveLoadYesBtn {
-  background: linear-gradient(135deg, #059669, #047857);
-}
-
-#saveLoadNoBtn {
-  background: rgba(55, 65, 81, 0.8);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-}
-
-#saveLoadDeleteBtn:hover {
-  color: #ef4444;
-}
-
-/* VÍDEO DE ABERTURA */
-#introVideo {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  z-index: 9999;
-  background-color: black;
-  transition: opacity 0.5s ease-out;
-}
-
-#introVideo.hidden {
-  opacity: 0;
-  pointer-events: none;
-}
-
-/* ESTILOS PARA MODAIS SOBREPOSTOS */
-body.modal-open #boardContainer,
-body.modal-open .board-cell {
-  pointer-events: none !important;
-  opacity: 0.6;
-  filter: blur(1px);
-  transition: opacity 0.3s, filter 0.3s;
-}
-
-/* GARANTIR QUE MODAIS FIQUEM ACIMA DE TUDO */
-.modal-overlay,
-.income-modal,
-.negotiation-modal,
-.neg-response-modal,
-.structure-modal,
-.event-modal,
-.alert-modal {
-  pointer-events: auto !important;
-  z-index: 1000 !important;
-}
-
-/* CLASSES UTILITÁRIAS */
-.gap-0\.5 { gap: 0.125rem; }
-.gap-1\.5 { gap: 0.375rem; }
-.text-\[10px\] { font-size: 10px; }
-.leading-tight { line-height: 1.25; }
-
-/* ESTILOS DE TEXTO COLORIDO PARA ESTRUTURAS */
 .text-orange-300 { color: #fdba74; }
 .text-blue-300 { color: #93c5fd; }
 .text-yellow-300 { color: #fde047; }
 .text-purple-300 { color: #d8b4fe; }
 .text-green-300 { color: #86efac; }
 
-/* SCROLLBAR PERSONALIZADA */
-.custom-scrollbar {
-  scrollbar-width: thin;
-  scrollbar-color: rgba(251, 191, 36, 0.5) rgba(30, 41, 59, 0.3);
+/* ==================== RESPONSIVIDADE ==================== */
+@media (min-width: 1024px) {
+  #gameContainer { grid-template-columns: 320px 1fr; height: calc(100vh - 160px); }
 }
 
-.custom-scrollbar::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
+@media (max-width: 1024px) {
+  #sidebar { display: none; }
+  #gameContainer {
+    grid-template-columns: 1fr; height: calc(100vh - 200px);
+    margin-top: 70px; margin-bottom: 100px;
+  }
 }
 
-.custom-scrollbar::-webkit-scrollbar-track {
-  background: rgba(30, 41, 59, 0.3);
-  border-radius: 4px;
-}
-
-.custom-scrollbar::-webkit-scrollbar-thumb {
-  background: rgba(251, 191, 36, 0.5);
-  border-radius: 4px;
-}
-
-.custom-scrollbar::-webkit-scrollbar-thumb:hover {
-  background: rgba(251, 191, 36, 0.7);
-}
-
-/* SCROLLBAR GLOBAL */
-::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
-}
-
-::-webkit-scrollbar-track {
-  background: rgba(255, 255, 255, 0.03);
-  border-radius: 4px;
-}
-
-::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.1);
-  border-radius: 4px;
-}
-
-::-webkit-scrollbar-thumb:hover {
-  background: rgba(255, 255, 255, 0.15);
-}
-
-/* OTIMIZAÇÕES MOBILE */
 @media (max-width: 768px) {
-  .board-cell {
-    -webkit-tap-highlight-color: transparent;
-    touch-action: manipulation;
+  html, body { height: auto; min-height: 100vh; overflow-y: auto; -webkit-tap-highlight-color: transparent; }
+  #gameContainer {
+    grid-template-columns: 1fr !important; height: calc(100vh - 220px);
+    margin-top: 60px; margin-bottom: 120px; padding: 0.5rem; gap: 0.5rem;
   }
   
-  /* MELHORA PERFORMANCE DE ANIMAÇÕES NO MOBILE */
-  .animate-pulse, .animate-bounce {
-    will-change: transform, opacity;
+  #sidebar {
+    display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+    z-index: 999; background: rgba(15, 23, 42, 0.98);
+    backdrop-filter: blur(20px); max-height: 100vh; padding: 1rem;
+    overflow-y: auto; border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 0;
   }
+  #sidebar.active { display: flex; animation: slideInRight 0.3s ease-out; }
   
-  /* GARANTE QUE MODAIS USEM TODA A LARGURA */
-  .modal-content-container > .relative {
-    width: 95% !important;
-    max-height: 85vh !important;
+  .action-btn { padding: 6px 4px !important; font-size: 11px !important; min-height: 36px !important; }
+  
+  /* Botão de toggle para sidebar mobile */
+  .sidebar-toggle {
+    position: fixed; bottom: 140px; right: 15px; z-index: 1000;
+    width: 52px; height: 52px; border-radius: 50%;
+    background: linear-gradient(135deg, #3b82f6, #1d4ed8);
+    border: 2px solid rgba(255, 255, 255, 0.3);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 24px; color: white;
+    box-shadow: 0 4px 20px rgba(59, 130, 246, 0.4);
+    cursor: pointer; transition: all 0.3s ease;
   }
-  
-  /* AJUSTES ESPECÍFICOS PARA BOTÕES EM MOBILE */
-  button, 
-  .action-btn, 
-  .icon-button,
-  .ai-button-compact {
-    min-height: 44px !important;
-    min-width: 44px !important;
+  .sidebar-toggle:hover { transform: scale(1.1); box-shadow: 0 6px 25px rgba(59, 130, 246, 0.6); }
+}
+
+/* ==================== ACESSIBILIDADE ==================== */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
   }
 }
+
+.action-btn:focus-visible,
+#startGameBtn:focus-visible,
+#endTurnBtn:focus-visible,
+#addPlayerBtn:focus-visible,
+#cancelEditBtn:focus-visible {
+  outline: 2px solid #3b82f6; outline-offset: 2px;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.3);
+}
+
+/* ==================== SCROLLBAR PERSONALIZADA ==================== */
+::-webkit-scrollbar { width: 8px; height: 8px; }
+::-webkit-scrollbar-track { background: rgba(255, 255, 255, 0.03); border-radius: 4px; }
+::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.1); border-radius: 4px; }
+::-webkit-scrollbar-thumb:hover { background: rgba(255, 255, 255, 0.15); }
