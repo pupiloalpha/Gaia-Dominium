@@ -263,6 +263,7 @@ class GameLogic {
     gameState.turn = 1;
     gameState.actionsLeft = GAME_CONFIG.ACTIONS_PER_TURN;
     gameState.currentPhase = 'renda';
+    gameState.turnsUntilNextEvent = 4;
     
     addActivityLog({
       type: 'system',
