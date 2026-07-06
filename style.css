@@ -73,27 +73,47 @@ body {
 .transition-all { transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
 .transition-transform { transition: transform 0.2s ease; }
 
-/* ==================== HIERARQUIA DE Z-INDEX ==================== */
-#initialScreen { z-index: 50; }
-#manualIcon { z-index: 60; }
+/* ==================== HIERARQUIA DE Z-INDEX (CENTRALIZADA) ==================== */
+/* ESTRUTURA DE Z-INDEX COERENTE:
+   - 0-40: Conteúdo e navbar/footer base
+   - 45-60: Navbar, footer, ícones fixos
+   - 90: Tooltips
+   - 95-110: Modais de jogo (evento, renda, estrutura, etc)
+   - 1000: Overlay dos modais
+   - 2000+: Modais com overlay elevado (negociação, manual, alert)
+*/
+
+/* === CAMADA BASE (0-50) === */
 #gameNavbar { z-index: 40; }
 #gameFooter { z-index: 45; }
-#regionTooltip { z-index: 90; }
-#eventModal { z-index: 95; }
-#incomeModal { z-index: 96; }
-#structureModal { z-index: 97; }
-#negResponseModal { z-index: 99; }
-#manualModal { z-index: 100; }
-#alertModal { z-index: 101; }
-#victoryModal { z-index: 102; }
-#saveLoadModal { z-index: 103; }
-#disputeModal { z-index: 104; }
-#disputeResultModal { z-index: 105; }
-#achievementsModal { z-index: 110; }
 
-.modal-overlay { z-index: 1000 !important; }
-.negotiation-modal { z-index: 1001 !important; }
-.neg-response-modal { z-index: 1002 !important; }
+/* === CAMADA DE HOVER/TOOLTIP (90) === */
+#regionTooltip { z-index: 90; }
+
+/* === CAMADA DE MODAIS DE JOGO (95-110) === */
+#eventModal { z-index: 1010; }
+#incomeModal { z-index: 1010; }
+#structureModal { z-index: 1010; }
+
+/* === CAMADA OVERLAY (1000) === */
+.modal-overlay { z-index: 1000; }
+
+/* === CAMADA DE MODAIS DE NEGOCIAÇÃO (1001-1002) === */
+#negotiationModal { z-index: 1020; }
+#negResponseModal { z-index: 1025; }
+
+/* === CAMADA SUPERIOR (1100+) === */
+#manualModal { z-index: 1050; }
+#alertModal { z-index: 1055; }
+#victoryModal { z-index: 1030; }
+#saveLoadModal { z-index: 1035; }
+#disputeModal { z-index: 1015; }
+#disputeResultModal { z-index: 1016; }
+#achievementsModal { z-index: 1040; }
+
+/* === ÍCONES FIXOS === */
+#manualIcon { z-index: 60; }
+#initialScreen { z-index: 50; }
 
 /* ==================== ANIMAÇÕES ==================== */
 @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
@@ -235,12 +255,6 @@ body {
   height: calc(100vh - 80px - 100px);
   margin-top: 80px; margin-bottom: 100px;
   padding: 1rem; overflow: hidden;
-}
-
-#gameNavbar {
-  position: fixed; top: 0; left: 0; right: 0; height: 80px; z-index: 40;
-  background: rgba(0, 0, 0, 0.6); backdrop-filter: blur(8px);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
 }
 
 #sidebar {
@@ -461,8 +475,152 @@ input[type="text"]:focus, select:focus, input[type="number"]:focus {
   box-shadow: 0 0 0 2px rgba(248, 214, 92, 0.2) !important;
 }
 
-/* ==================== MODAIS ==================== */
-/* Overlay comum para todos os modais */
+/* ==================== SISTEMA DE MODAIS COM Z-INDEX COERENTE ==================== */
+
+/* PADRÃO: Overlay base + Conteúdo elevado */
+/* Todos os modais com overlay devem ter:
+   - overlay: z-index modal - 10
+   - conteúdo: z-index modal */
+
+/* === MODAIS DE JOGO (z-index 1010) === */
+#eventModal,
+#incomeModal,
+#structureModal,
+#disputeModal,
+#disputeResultModal {
+  position: fixed !important;
+  z-index: 1010 !important;
+}
+
+#eventModal > .absolute,
+#incomeModal > .absolute,
+#structureModal > .absolute,
+#disputeModal > .absolute,
+#disputeResultModal > .absolute {
+  z-index: 1000 !important;
+}
+
+#eventModal > .relative,
+#incomeModal > .relative,
+#structureModal > .relative,
+#disputeModal > .relative,
+#disputeResultModal > .relative {
+  z-index: 1010 !important;
+}
+
+/* === MODAL DE VITÓRIA (z-index 1030) === */
+#victoryModal {
+  position: fixed !important;
+  z-index: 1030 !important;
+}
+
+#victoryModal > .absolute {
+  z-index: 1020 !important;
+}
+
+#victoryModal > .relative {
+  z-index: 1030 !important;
+}
+
+/* === MODAL DE CONQUISTAS (z-index 1040) === */
+#achievementsModal {
+  position: fixed !important;
+  z-index: 1040 !important;
+}
+
+#achievementsModal > .absolute {
+  z-index: 1030 !important;
+}
+
+#achievementsModal > .relative {
+  z-index: 1040 !important;
+}
+
+/* === MODAL DE SALVAR/CARREGAR (z-index 1035) === */
+#saveLoadModal {
+  position: fixed !important;
+  z-index: 1035 !important;
+}
+
+#saveLoadModal > .absolute {
+  z-index: 1025 !important;
+}
+
+#saveLoadModal > .relative {
+  z-index: 1035 !important;
+}
+
+/* === MODAIS DE NEGOCIAÇÃO (z-index 1020, 1025) === */
+#negotiationModal {
+  position: fixed !important;
+  z-index: 1020 !important;
+}
+
+#negotiationModal > .absolute {
+  z-index: 1010 !important;
+}
+
+#negotiationModal > .relative {
+  z-index: 1020 !important;
+  max-width: min(90vw, 900px) !important;
+  width: fit-content !important;
+}
+
+#negotiationModal > .relative .grid {
+  display: flex !important;
+  flex-direction: column !important;
+}
+
+@media (min-width: 768px) {
+  #negotiationModal > .relative .grid {
+    display: grid !important;
+    grid-template-columns: 1fr 1fr !important;
+  }
+}
+
+#negResponseModal {
+  position: fixed !important;
+  z-index: 1025 !important;
+}
+
+#negResponseModal > .absolute {
+  z-index: 1015 !important;
+}
+
+#negResponseModal > .relative {
+  z-index: 1025 !important;
+  max-width: min(90vw, 500px) !important;
+  width: fit-content !important;
+}
+
+/* === MODAIS SUPERIORES (Manual, Alert) === */
+#manualModal {
+  position: fixed !important;
+  z-index: 1050 !important;
+}
+
+#manualModal > .absolute {
+  z-index: 1040 !important;
+}
+
+#manualModal > .relative {
+  z-index: 1050 !important;
+}
+
+#alertModal {
+  position: fixed !important;
+  z-index: 1055 !important;
+}
+
+#alertModal > .absolute {
+  z-index: 1045 !important;
+}
+
+#alertModal > .relative {
+  z-index: 1055 !important;
+}
+
+/* Estilos comuns para modais */
 [id$="Modal"] > .absolute {
   position: absolute !important;
   inset: 0 !important;
@@ -470,7 +628,7 @@ input[type="text"]:focus, select:focus, input[type="number"]:focus {
   backdrop-filter: none !important;
 }
 
-/* Estilo base para conteúdo de modal - AJUSTE PRINCIPAL */
+/* Conteúdo dos modais */
 .modal-content-container > .relative,
 #manualModal > .relative,
 #alertModal > .relative,
@@ -497,54 +655,6 @@ input[type="text"]:focus, select:focus, input[type="number"]:focus {
   opacity: 1 !important;
   visibility: visible !important;
   position: relative !important;
-  z-index: 1000 !important;
-}
-
-/* Negociação Modal - específico com z-index garantido */
-#negotiationModal {
-  z-index: 1001 !important;
-  position: fixed !important;
-}
-
-#negotiationModal > .absolute {
-  z-index: 999 !important;
-}
-
-#negotiationModal > .relative {
-  z-index: 1000 !important;
-  max-width: min(90vw, 900px) !important;
-  width: fit-content !important;
-}
-
-#negotiationModal > .relative .grid {
-  display: flex !important;
-  flex-direction: column !important;
-}
-
-@media (min-width: 768px) {
-  #negotiationModal > .relative .grid {
-    display: grid !important;
-    grid-template-columns: 1fr 1fr !important;
-  }
-}
-
-/* Resposta de Negociação Modal - específico com z-index garantido */
-#negResponseModal {
-  z-index: 1002 !important;
-  position: fixed !important;
-}
-
-#negResponseModal > .absolute {
-  z-index: 999 !important;
-}
-
-#negResponseModal > .relative {
-  z-index: 1000 !important;
-  background: rgba(17, 24, 39, 0.98) !important;
-  backdrop-filter: blur(25px) saturate(180%) !important;
-  border: 1px solid rgba(255, 255, 255, 0.15) !important;
-  width: fit-content !important;
-  max-width: min(90vw, 500px) !important;
 }
 
 /* Oculta modais */
@@ -572,12 +682,12 @@ input[type="text"]:focus, select:focus, input[type="number"]:focus {
   border: 1px solid rgba(255, 255, 255, 0.15) !important;
   border-radius: 1rem !important;
   box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.1) !important;
-  opacity: 1 !important; visibility: visible !important; z-index: 110 !important;
+  opacity: 1 !important; visibility: visible !important; z-index: 1110 !important;
 }
 
 /* ==================== TOOLTIPS ==================== */
 #regionTooltip {
-  position: fixed !important; z-index: 50 !important; pointer-events: none;
+  position: fixed !important; z-index: 90 !important; pointer-events: none;
   transition: opacity 0.15s ease, transform 0.15s ease; transform-origin: center bottom;
   max-width: 300px; min-width: 200px; background: rgba(31, 41, 55, 0.95);
   backdrop-filter: blur(8px); border: 1px solid rgba(255, 255, 255, 0.1);
