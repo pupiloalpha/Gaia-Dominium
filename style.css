@@ -82,7 +82,6 @@ body {
 #eventModal { z-index: 95; }
 #incomeModal { z-index: 96; }
 #structureModal { z-index: 97; }
-#negotiationModal { z-index: 98; }
 #negResponseModal { z-index: 99; }
 #manualModal { z-index: 100; }
 #alertModal { z-index: 101; }
@@ -501,8 +500,18 @@ input[type="text"]:focus, select:focus, input[type="number"]:focus {
   z-index: 1000 !important;
 }
 
-/* Negociation Modal - Layout em coluna no mobile, ajuste específico */
+/* Negociação Modal - específico com z-index garantido */
+#negotiationModal {
+  z-index: 1001 !important;
+  position: fixed !important;
+}
+
+#negotiationModal > .absolute {
+  z-index: 999 !important;
+}
+
 #negotiationModal > .relative {
+  z-index: 1000 !important;
   max-width: min(90vw, 900px) !important;
   width: fit-content !important;
 }
@@ -519,21 +528,23 @@ input[type="text"]:focus, select:focus, input[type="number"]:focus {
   }
 }
 
-/* Específico para modal de resposta de negociação */
+/* Resposta de Negociação Modal - específico com z-index garantido */
+#negResponseModal {
+  z-index: 1002 !important;
+  position: fixed !important;
+}
+
+#negResponseModal > .absolute {
+  z-index: 999 !important;
+}
+
 #negResponseModal > .relative {
+  z-index: 1000 !important;
   background: rgba(17, 24, 39, 0.98) !important;
   backdrop-filter: blur(25px) saturate(180%) !important;
   border: 1px solid rgba(255, 255, 255, 0.15) !important;
   width: fit-content !important;
   max-width: min(90vw, 500px) !important;
-}
-
-/* Overlay mais escuro para modais de negociação - COM Z-INDEX CORRETO */
-#negotiationModal > .absolute,
-#negResponseModal > .absolute {
-  background-color: rgba(0, 0, 0, 0.85) !important;
-  backdrop-filter: blur(5px) !important;
-  z-index: 999 !important;
 }
 
 /* Oculta modais */
