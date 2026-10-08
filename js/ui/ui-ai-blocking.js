@@ -30,6 +30,10 @@ export class AIBlockingManager {
     document.body.appendChild(this.blockOverlay);
   }
 
+  /**
+   * Bloqueia a interface do usuário
+   * @param {string} playerName - Nome do jogador IA
+   */
   blockUI(playerName = 'IA') {
     if (this.isBlocked) return;
 
@@ -42,6 +46,9 @@ export class AIBlockingManager {
     console.log(`🔒 UI bloqueada para turno da IA: ${playerName}`);
   }
 
+  /**
+   * Desbloqueia a interface do usuário
+   */
   unblockUI() {
     if (!this.isBlocked) return;
 
@@ -54,9 +61,23 @@ export class AIBlockingManager {
     console.log('🔓 UI desbloqueada');
   }
 
+  /**
+   * Atualiza o status do modal de pensamento da IA
+   * @param {string} status - Novo status (ex: "Explorando", "Coletando", etc)
+   * @param {string} icon - Emoji representando a ação
+   */
+  updateAIStatus(status, icon = '⏳') {
+    const statusIcon = document.getElementById('aiStatusIcon');
+    const statusText = document.getElementById('aiStatusText');
+
+    if (statusIcon) statusIcon.textContent = icon;
+    if (statusText) statusText.textContent = status;
+  }
+
   showAIThinkingModal(playerName) {
     const modal = document.getElementById('aiThinkingModal');
     const nameEl = document.getElementById('aiThinkingPlayerName');
+
     if (modal && nameEl) {
       nameEl.textContent = playerName;
       modal.classList.remove('hidden');
@@ -70,15 +91,16 @@ export class AIBlockingManager {
     }
   }
 
-  updateAIStatus(status, icon = '⏳') {
-    const statusIcon = document.getElementById('aiStatusIcon');
-    const statusText = document.getElementById('aiStatusText');
-    if (statusIcon) statusIcon.textContent = icon;
-    if (statusText) statusText.textContent = status;
-  }
-
   disableGameButtons() {
-    const actionButtons = ['actionExplore', 'actionCollect', 'actionBuild', 'actionNegotiate', 'endTurnBtn'];
+    // Desabilitar botões de ação
+    const actionButtons = [
+      'actionExplore',
+      'actionCollect',
+      'actionBuild',
+      'actionNegotiate',
+      'endTurnBtn'
+    ];
+
     actionButtons.forEach((btnId) => {
       const btn = document.getElementById(btnId);
       if (btn) {
@@ -88,7 +110,14 @@ export class AIBlockingManager {
       }
     });
 
-    const floatingButtons = ['manualIcon', 'manualIconNavbar', 'achievementsNavBtn', 'toggleAIDebug'];
+    // Desabilitar manual e ícones flutuantes
+    const floatingButtons = [
+      'manualIcon',
+      'manualIconNavbar',
+      'achievementsNavBtn',
+      'toggleAIDebug'
+    ];
+
     floatingButtons.forEach((btnId) => {
       const btn = document.getElementById(btnId);
       if (btn) {
@@ -99,7 +128,14 @@ export class AIBlockingManager {
   }
 
   enableGameButtons() {
-    const actionButtons = ['actionExplore', 'actionCollect', 'actionBuild', 'actionNegotiate', 'endTurnBtn'];
+    const actionButtons = [
+      'actionExplore',
+      'actionCollect',
+      'actionBuild',
+      'actionNegotiate',
+      'endTurnBtn'
+    ];
+
     actionButtons.forEach((btnId) => {
       const btn = document.getElementById(btnId);
       if (btn) {
@@ -109,7 +145,13 @@ export class AIBlockingManager {
       }
     });
 
-    const floatingButtons = ['manualIcon', 'manualIconNavbar', 'achievementsNavBtn', 'toggleAIDebug'];
+    const floatingButtons = [
+      'manualIcon',
+      'manualIconNavbar',
+      'achievementsNavBtn',
+      'toggleAIDebug'
+    ];
+
     floatingButtons.forEach((btnId) => {
       const btn = document.getElementById(btnId);
       if (btn) {
@@ -155,6 +197,9 @@ export class AIBlockingManager {
     });
   }
 
+  /**
+   * Verifica se a UI está bloqueada
+   */
   isUIBlocked() {
     return this.isBlocked;
   }
