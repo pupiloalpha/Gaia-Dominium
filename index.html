@@ -592,21 +592,28 @@
         <div id="tooltipTitle" class="font-semibold text-white"></div>
         <div id="tooltipBody" class="text-gray-300 mt-2"></div>
       </div>
+
+      <!-- Controles de Zoom Flutuantes -->
+      <div id="mapZoomControls" class="absolute top-3 left-3 z-30 flex flex-col gap-1 bg-gray-900/85 backdrop-blur-md border border-white/10 rounded-lg p-1 shadow-xl select-none">
+        <button id="zoomInBtn" class="w-8 h-8 flex items-center justify-center text-white hover:bg-white/15 rounded-md font-bold text-lg transition active:scale-95" title="Aproximar (+)">+</button>
+        <button id="zoomOutBtn" class="w-8 h-8 flex items-center justify-center text-white hover:bg-white/15 rounded-md font-bold text-lg transition active:scale-95" title="Afastar (-)">−</button>
+        <button id="zoomResetBtn" class="w-8 h-8 flex items-center justify-center text-yellow-400 hover:bg-white/15 rounded-md font-bold text-xs transition active:scale-95" title="Resetar Visualização (1:1)">⛶</button>
+      </div>
     </main>
   </div>
 
   <!-- FOOTER DE AÇÕES -->
   <footer id="gameFooter" class="hidden fixed bottom-4 left-1/2 -translate-x-1/2 z-45 w-full max-w-4xl px-4">
     <div class="bg-gray-900/85 backdrop-blur-md rounded-lg p-3 flex items-center justify-between gap-3">
-      <div class="flex gap-2">
-        <button id="actionExplore" class="action-btn px-3 py-2 rounded-md">Explorar</button>
-        <button id="actionCollect" class="action-btn px-3 py-2 rounded-md">Coletar</button>
-        <button id="actionBuild" class="action-btn px-3 py-2 rounded-md">Construir</button>
-        <button id="actionNegotiate" class="action-btn px-3 py-2 rounded-md">Negociar</button>
+      <div id="actionButtonsContainer" class="flex gap-2">
+        <button id="actionExplore" class="action-btn px-3 py-2 rounded-md"><span class="action-icon">⛏️</span><span class="action-label">Explorar</span></button>
+        <button id="actionCollect" class="action-btn px-3 py-2 rounded-md"><span class="action-icon">🌾</span><span class="action-label">Coletar</span></button>
+        <button id="actionBuild" class="action-btn px-3 py-2 rounded-md"><span class="action-icon">🏗️</span><span class="action-label">Construir</span></button>
+        <button id="actionNegotiate" class="action-btn px-3 py-2 rounded-md"><span class="action-icon">🤝</span><span class="action-label">Negociar</span></button>
       </div>
-      <div class="flex items-center gap-3">
+      <div id="footerEndTurnContainer" class="flex items-center gap-3">
         <div id="actionsLeft" class="text-sm text-gray-200">Ações restantes: 2</div>
-        <button id="endTurnBtn" class="px-4 py-2 bg-rose-600 rounded-md text-white font-semibold">Término do Turno</button>
+        <button id="endTurnBtn" class="px-4 py-2 bg-rose-600 rounded-md text-white font-semibold"><span class="action-icon">🔄</span><span class="action-label">Término do Turno</span></button>
       </div>
     </div>
   </footer>

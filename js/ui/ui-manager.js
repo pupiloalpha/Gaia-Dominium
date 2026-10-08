@@ -143,6 +143,12 @@ class UIManager {
         // 3. Ocultar ícone manual da barra de navegação
         document.getElementById('manualIcon')?.classList.add('hidden');
         
+        // Notificar gerenciador mobile
+        this.mobileManager?.onGameStart?.();
+        
+        // Garantir inicialização do touch engine do mapa
+        window.utils?.setupMapZoom?.();
+        
         // 4. Inicializar jogo com pequeno delay para garantir renderização
         setTimeout(() => {
             if (window.gameLogic && window.gameLogic.initializeGame) {

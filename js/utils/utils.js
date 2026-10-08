@@ -149,91 +149,328 @@ tryRequestFullscreenOnce() {
   document.body.addEventListener('click', requestFullscreen, { once: true });
 },
 
-  // ==================== SISTEMA DE ZOOM DO MAPA ====================
+  // Estado de pan para evitar cliques acidentais
+  _isMapPanning: false,
+  _mapZoomInitialized: false,
+  isMapPanning() {
+    return this._isMapPanning;
+  },
+
+  // ==================== SISTEMA DE ZOOM E PAN DO MAPA (TOUCH + DESKTOP) ====================
   setupMapZoom() {
     const mapViewport = document.getElementById('mapViewport');
     const mapTransform = document.getElementById('mapTransform');
     
     if (!mapViewport || !mapTransform) return;
+    if (this._mapZoomInitialized) return;
+    this._mapZoomInitialized = true;
+    
+    // Configurar propriedades de aceleração de hardware
+    mapTransform.style.transformOrigin = '0 0';
+    mapTransform.style.willChange = 'transform';
     
     let currentZoom = 1;
-    const minZoom = 0.5;
-    const maxZoom = 3;
-    const zoomStep = 0.1;
-    let isDragging = false;
-    let startX, startY;
-    let translateX = 0, translateY = 0;
+    const minZoom = 0.6;
+    const maxZoom = 2.8;
+    const zoomStep = 0.25;
     
-    const applyTransform = () => {
-      mapTransform.style.transform = `
-        translate(${translateX}px, ${translateY}px)
-        scale(${currentZoom})
-      `;
+    let translateX = 0;
+    let translateY = 0;
+    
+    // Variáveis de arrasto com mouse
+    let isMouseDragging = false;
+    let mouseStartX = 0, mouseStartY = 0;
+    let initialMouseX = 0, initialMouseY = 0;
+    
+    // Variáveis de toque
+    let isTouchPanning = false;
+    let touchStartX = 0, touchStartY = 0;
+    let initialTouchX = 0, initialTouchY = 0;
+    
+    // Variáveis de pinça (Pinch-to-zoom)
+    let isPinching = false;
+    let initialPinchDist = 0;
+    let initialPinchZoom = 1;
+    let pinchMidX = 0, pinchMidY = 0;
+    let pinchInitialTranslateX = 0, pinchInitialTranslateY = 0;
+    
+    // Variáveis de Double Tap
+    let lastTapTime = 0;
+    let lastTapX = 0, lastTapY = 0;
+
+    // Timer para limpar estado de panning
+    let panningClearTimer = null;
+    const setPanningActive = (active, delay = 0) => {
+      if (panningClearTimer) {
+        clearTimeout(panningClearTimer);
+        panningClearTimer = null;
+      }
+      if (active) {
+        Utils._isMapPanning = true;
+      } else if (delay > 0) {
+        panningClearTimer = setTimeout(() => {
+          Utils._isMapPanning = false;
+        }, delay);
+      } else {
+        Utils._isMapPanning = false;
+      }
     };
-    
-    mapViewport.addEventListener('wheel', (e) => {
-      if (!e.ctrlKey && !e.metaKey) return;
+
+    // Restrição de limites para que o tabuleiro não fuja da tela
+    const clampTransform = () => {
+      const vw = mapViewport.clientWidth;
+      const vh = mapViewport.clientHeight;
+      if (!vw || !vh) return;
+
+      if (currentZoom <= 1) {
+        const slackX = Math.max(30, vw * 0.1);
+        const slackY = Math.max(30, vh * 0.1);
+        translateX = Math.max(-slackX, Math.min(slackX, translateX));
+        translateY = Math.max(-slackY, Math.min(slackY, translateY));
+      } else {
+        const minX = vw * (1 - currentZoom) - 40;
+        const maxX = 40;
+        const minY = vh * (1 - currentZoom) - 40;
+        const maxY = 40;
+        translateX = Math.max(minX, Math.min(maxX, translateX));
+        translateY = Math.max(minY, Math.min(maxY, translateY));
+      }
+    };
+
+    // Aplicação das transformações CSS
+    const applyTransform = (smooth = false) => {
+      clampTransform();
+      if (smooth) {
+        mapTransform.style.transition = 'transform 0.26s cubic-bezier(0.16, 1, 0.3, 1)';
+      } else {
+        mapTransform.style.transition = 'none';
+      }
+      mapTransform.style.transform = `translate(${translateX}px, ${translateY}px) scale(${currentZoom})`;
+    };
+
+    // Zoom focalizado em um ponto (x, y) relativo ao viewport
+    const zoomAtPoint = (targetZoom, focalX, focalY, smooth = true) => {
+      const clampedZoom = Math.max(minZoom, Math.min(maxZoom, targetZoom));
+      if (Math.abs(clampedZoom - currentZoom) < 0.001) return;
+
+      const zoomRatio = clampedZoom / currentZoom;
+      translateX = focalX - (focalX - translateX) * zoomRatio;
+      translateY = focalY - (focalY - translateY) * zoomRatio;
+      currentZoom = clampedZoom;
+      applyTransform(smooth);
+    };
+
+    // Reset para 100%
+    const resetTransform = () => {
+      currentZoom = 1;
+      translateX = 0;
+      translateY = 0;
+      applyTransform(true);
+    };
+
+    // ==================== TOUCH ENGINE (MOBILE) ====================
+    mapViewport.addEventListener('touchstart', (e) => {
+      const now = Date.now();
       
-      e.preventDefault();
-      
-      const delta = e.deltaY > 0 ? -zoomStep : zoomStep;
-      const newZoom = Math.max(minZoom, Math.min(maxZoom, currentZoom + delta));
-      
-      if (newZoom !== currentZoom) {
+      // 1. Gesto de 2 dedos: PINCH TO ZOOM
+      if (e.touches.length === 2) {
+        isPinching = true;
+        isTouchPanning = false;
+        setPanningActive(true);
+
+        const touch1 = e.touches[0];
+        const touch2 = e.touches[1];
+        initialPinchDist = Math.hypot(touch2.clientX - touch1.clientX, touch2.clientY - touch1.clientY);
+        initialPinchZoom = currentZoom;
+
         const rect = mapViewport.getBoundingClientRect();
-        const x = e.clientX - rect.left;
-        const y = e.clientY - rect.top;
+        pinchMidX = ((touch1.clientX + touch2.clientX) / 2) - rect.left;
+        pinchMidY = ((touch1.clientY + touch2.clientY) / 2) - rect.top;
+        pinchInitialTranslateX = translateX;
+        pinchInitialTranslateY = translateY;
+        return;
+      }
+
+      // 2. Gesto de 1 dedo: PAN ou DOUBLE-TAP
+      if (e.touches.length === 1) {
+        const touch = e.touches[0];
+        const rect = mapViewport.getBoundingClientRect();
+        const clientX = touch.clientX;
+        const clientY = touch.clientY;
+
+        // Detecção de Double Tap (< 300ms e proximidade < 30px)
+        const timeDiff = now - lastTapTime;
+        const distDiff = Math.hypot(clientX - lastTapX, clientY - lastTapY);
         
-        const zoomRatio = newZoom / currentZoom;
-        
-        translateX = x - (x - translateX) * zoomRatio;
-        translateY = y - (y - translateY) * zoomRatio;
-        
-        currentZoom = newZoom;
-        applyTransform();
+        if (timeDiff < 300 && distDiff < 30) {
+          lastTapTime = 0; // Consumido
+          setPanningActive(true, 150);
+          const focalX = clientX - rect.left;
+          const focalY = clientY - rect.top;
+          
+          if (currentZoom > 1.15) {
+            resetTransform();
+          } else {
+            zoomAtPoint(1.8, focalX, focalY, true);
+          }
+          return;
+        }
+
+        lastTapTime = now;
+        lastTapX = clientX;
+        lastTapY = clientY;
+
+        isTouchPanning = false;
+        touchStartX = clientX - translateX;
+        touchStartY = clientY - translateY;
+        initialTouchX = clientX;
+        initialTouchY = clientY;
       }
     }, { passive: false });
-    
-    mapViewport.addEventListener('mousedown', (e) => {
-      if (e.button !== 0) return;
-      
-      isDragging = true;
-      startX = e.clientX - translateX;
-      startY = e.clientY - translateY;
-      mapViewport.style.cursor = 'grabbing';
+
+    mapViewport.addEventListener('touchmove', (e) => {
+      // 1. PINCH ZOOM ATIVO
+      if (isPinching && e.touches.length >= 2) {
+        e.preventDefault();
+        const touch1 = e.touches[0];
+        const touch2 = e.touches[1];
+        const currentDist = Math.hypot(touch2.clientX - touch1.clientX, touch2.clientY - touch1.clientY);
+        
+        if (initialPinchDist > 0) {
+          const pinchRatio = currentDist / initialPinchDist;
+          const newZoom = Math.max(minZoom, Math.min(maxZoom, initialPinchZoom * pinchRatio));
+          
+          translateX = pinchMidX - (pinchMidX - pinchInitialTranslateX) * (newZoom / initialPinchZoom);
+          translateY = pinchMidY - (pinchMidY - pinchInitialTranslateY) * (newZoom / initialPinchZoom);
+          currentZoom = newZoom;
+          applyTransform(false);
+          setPanningActive(true);
+        }
+        return;
+      }
+
+      // 2. TOUCH PAN ATIVO (1 dedo)
+      if (e.touches.length === 1 && !isPinching) {
+        const touch = e.touches[0];
+        const moveDist = Math.hypot(touch.clientX - initialTouchX, touch.clientY - initialTouchY);
+        
+        if (moveDist > 6) {
+          isTouchPanning = true;
+          setPanningActive(true);
+          e.preventDefault(); // Previne scroll da página enquanto arrasta o tabuleiro
+          
+          translateX = touch.clientX - touchStartX;
+          translateY = touch.clientY - touchStartY;
+          applyTransform(false);
+        }
+      }
+    }, { passive: false });
+
+    mapViewport.addEventListener('touchend', (e) => {
+      if (isPinching) {
+        if (e.touches.length < 2) {
+          isPinching = false;
+          setPanningActive(false, 150);
+        }
+      }
+      if (isTouchPanning) {
+        isTouchPanning = false;
+        setPanningActive(false, 150);
+      }
+    }, { passive: true });
+
+    mapViewport.addEventListener('touchcancel', () => {
+      isPinching = false;
+      isTouchPanning = false;
+      setPanningActive(false, 100);
+    }, { passive: true });
+
+    // ==================== MOUSE DRAG & WHEEL (DESKTOP) ====================
+    mapViewport.addEventListener('wheel', (e) => {
       e.preventDefault();
-    });
-    
-    document.addEventListener('mousemove', (e) => {
-      if (!isDragging) return;
+      const rect = mapViewport.getBoundingClientRect();
+      const focalX = e.clientX - rect.left;
+      const focalY = e.clientY - rect.top;
       
-      translateX = e.clientX - startX;
-      translateY = e.clientY - startY;
-      applyTransform();
+      const delta = e.deltaY > 0 ? -zoomStep : zoomStep;
+      zoomAtPoint(currentZoom + delta, focalX, focalY, true);
+    }, { passive: false });
+
+    mapViewport.addEventListener('mousedown', (e) => {
+      if (e.button !== 0) return; // Apenas botão esquerdo
+      isMouseDragging = true;
+      mouseStartX = e.clientX - translateX;
+      mouseStartY = e.clientY - translateY;
+      initialMouseX = e.clientX;
+      initialMouseY = e.clientY;
+      mapViewport.style.cursor = 'grabbing';
     });
-    
+
+    document.addEventListener('mousemove', (e) => {
+      if (!isMouseDragging) return;
+      const moveDist = Math.hypot(e.clientX - initialMouseX, e.clientY - initialMouseY);
+      if (moveDist > 5) {
+        setPanningActive(true);
+        translateX = e.clientX - mouseStartX;
+        translateY = e.clientY - mouseStartY;
+        applyTransform(false);
+      }
+    });
+
     document.addEventListener('mouseup', () => {
-      isDragging = false;
-      mapViewport.style.cursor = 'grab';
+      if (isMouseDragging) {
+        isMouseDragging = false;
+        mapViewport.style.cursor = 'grab';
+        setPanningActive(false, 120);
+      }
     });
-    
+
+    // ==================== BOTÕES FLUTUANTES (+ / - / RESET) ====================
+    const zoomInBtn = document.getElementById('zoomInBtn');
+    const zoomOutBtn = document.getElementById('zoomOutBtn');
+    const zoomResetBtn = document.getElementById('zoomResetBtn');
+
+    if (zoomInBtn) {
+      zoomInBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const rect = mapViewport.getBoundingClientRect();
+        zoomAtPoint(currentZoom + zoomStep, rect.width / 2, rect.height / 2, true);
+      });
+    }
+
+    if (zoomOutBtn) {
+      zoomOutBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const rect = mapViewport.getBoundingClientRect();
+        zoomAtPoint(currentZoom - zoomStep, rect.width / 2, rect.height / 2, true);
+      });
+    }
+
+    if (zoomResetBtn) {
+      zoomResetBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        resetTransform();
+      });
+    }
+
+    // ==================== ATALHOS DE TECLADO (+, -, 0) ====================
     document.addEventListener('keydown', (e) => {
+      // Ignorar se estiver digitando em campo de texto
+      if (['INPUT', 'SELECT', 'TEXTAREA'].includes(e.target.tagName)) return;
+      
+      const rect = mapViewport.getBoundingClientRect();
+      const centerX = rect.width / 2;
+      const centerY = rect.height / 2;
+
       if (e.key === '+' || e.key === '=') {
         e.preventDefault();
-        currentZoom = Math.min(maxZoom, currentZoom + zoomStep);
-        applyTransform();
-      }
-      if (e.key === '-' || e.key === '_') {
+        zoomAtPoint(currentZoom + zoomStep, centerX, centerY, true);
+      } else if (e.key === '-' || e.key === '_') {
         e.preventDefault();
-        currentZoom = Math.max(minZoom, currentZoom - zoomStep);
-        applyTransform();
-      }
-      if (e.key === '0') {
+        zoomAtPoint(currentZoom - zoomStep, centerX, centerY, true);
+      } else if (e.key === '0') {
         e.preventDefault();
-        currentZoom = 1;
-        translateX = 0;
-        translateY = 0;
-        applyTransform();
+        resetTransform();
       }
     });
     

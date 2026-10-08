@@ -73,13 +73,13 @@ export class RegionRenderer {
 
     _createRegionHeader(region) {
         const header = document.createElement('div');
-        header.className = 'flex items-start justify-between mb-1';
+        header.className = 'region-header flex items-start justify-between mb-0.5';
         header.innerHTML = `
-            <div>
-                <div class="text-xs font-bold text-white leading-tight">${region.name}</div>
-                <div class="text-[9px] text-gray-300 mt-0.5">${region.biome}</div>
+            <div class="overflow-hidden mr-1">
+                <div class="region-title text-xs font-bold text-white leading-tight truncate">${region.name}</div>
+                <div class="region-biome text-[9px] text-gray-300 mt-0.5 truncate">${region.biome}</div>
             </div>
-            <div class="text-xs text-yellow-300 font-bold flex items-center gap-0.5">
+            <div class="region-stars text-xs text-yellow-300 font-bold flex items-center gap-0.5 flex-shrink-0">
                 ${region.explorationLevel}<span class="text-[10px]">⭐</span>
             </div>
         `;
@@ -88,7 +88,7 @@ export class RegionRenderer {
 
     _createResourcesLine(region) {
         const resourcesLine = document.createElement('div');
-        resourcesLine.className = 'flex items-center justify-between gap-1 mt-1';
+        resourcesLine.className = 'region-resources flex items-center justify-between gap-1 mt-1';
         
         const resourceOrder = ['madeira', 'pedra', 'ouro', 'agua'];
         const resourcePairs = [];
@@ -116,8 +116,8 @@ export class RegionRenderer {
         
         if (resourcePairs.length === 0) {
             const placeholder = document.createElement('div');
-            placeholder.className = 'text-[9px] text-gray-400 italic flex-1 text-center';
-            placeholder.textContent = 'Sem recursos';
+            placeholder.className = 'text-[9px] text-gray-400 italic flex-1 text-center no-resources-placeholder';
+            placeholder.textContent = '—';
             resourcesLine.appendChild(placeholder);
         }
         
@@ -126,7 +126,7 @@ export class RegionRenderer {
 
     _createRegionFooter(region) {
         const footer = document.createElement('div');
-        footer.className = 'flex items-center justify-between mt-2 pt-1 border-t border-white/5';
+        footer.className = 'region-footer flex items-center justify-between mt-2 pt-1 border-t border-white/5';
         
         const controller = region.controller !== null 
             ? gameState.players[region.controller].icon
@@ -148,8 +148,8 @@ export class RegionRenderer {
         }
 
         footer.innerHTML = `
-            <div class="text-xs font-medium text-white">${controller}</div>
-            <div class="text-xs">${structureDisplay}</div>
+            <div class="region-controller text-xs font-medium text-white">${controller}</div>
+            <div class="region-structures text-xs">${structureDisplay}</div>
         `;
         
         return footer;
@@ -165,6 +165,9 @@ export class RegionRenderer {
     }
 
     _handleRegionClick(e, cell, region) {
+        // Ignorar clique se o usuário estava arrastando/panning o mapa
+        if (window.utils?.isMapPanning?.()) return;
+
         e.stopPropagation();
         
         const regionId = Number(cell.dataset.regionId);
@@ -174,7 +177,7 @@ export class RegionRenderer {
         
         if (clickedInModal) return;
         
-        this._toggleRegionSelection(regionId, cell);
+        this._toggleRegionSelection(regionId, cell, region);
         if (this.uiGameManager && this.uiGameManager.footerManager) {
             this.uiGameManager.footerManager.updateFooter();
         }
@@ -184,8 +187,13 @@ export class RegionRenderer {
         }
     }
 
-    _toggleRegionSelection(regionId, cell) {
+    _toggleRegionSelection(regionId, cell, region) {
         if (gameState.selectedRegionId === regionId) {
+            // Em dispositivos móveis, um toque adicional na região já selecionada abre a Bottom Sheet de detalhes
+            if (window.innerWidth <= 768 && window.uiManager?.mobileManager) {
+                window.uiManager.mobileManager.showRegionSheet(region);
+                return;
+            }
             gameState.selectedRegionId = null;
             cell.classList.remove('region-selected');
         } else {

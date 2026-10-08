@@ -21,6 +21,18 @@ export class FooterManager {
         this.phaseIndicator = document.getElementById('phaseIndicator');
     }
 
+    _setButtonContent(btn, icon, text) {
+        if (!btn) return;
+        const iconEl = btn.querySelector('.action-icon');
+        const labelEl = btn.querySelector('.action-label');
+        if (iconEl && labelEl) {
+            iconEl.textContent = icon;
+            labelEl.textContent = text;
+        } else {
+            btn.innerHTML = `<span class="action-icon">${icon}</span><span class="action-label">${text}</span>`;
+        }
+    }
+
     updateFooter() {
         if (this._isGameEnded()) {
             this._disableAllActions();
@@ -82,30 +94,28 @@ export class FooterManager {
         
         if (this.endTurnBtn) {
             this.endTurnBtn.disabled = false;
-            this.endTurnBtn.textContent = 'Passar Turno';
+            this._setButtonContent(this.endTurnBtn, '🔄', 'Passar Turno');
             this.endTurnBtn.title = 'Jogador eliminado pode passar o turno';
         }
     }
 
     _configureResurrectionButton(btn, player) {
+        this._setButtonContent(btn, '💀', 'Ressuscitar');
         if (gameState.selectedRegionId !== null) {
             const region = gameState.regions[gameState.selectedRegionId];
             if (region && region.controller === null) {
                 btn.disabled = false;
                 btn.classList.remove('opacity-30', 'cursor-not-allowed');
                 btn.classList.add('bg-purple-600');
-                btn.textContent = '💀 Ressuscitar';
                 btn.title = 'Dominar região neutra para ressuscitar (custo: 2 PV + recursos do bioma)';
             } else {
                 btn.disabled = true;
                 btn.classList.add('opacity-30', 'cursor-not-allowed');
-                btn.textContent = '💀 Ressuscitar';
                 btn.title = 'Selecione uma região neutra para ressuscitar';
             }
         } else {
             btn.disabled = true;
             btn.classList.add('opacity-30', 'cursor-not-allowed');
-            btn.textContent = '💀 Ressuscitar';
             btn.title = 'Selecione uma região neutra para ressuscitar';
         }
     }
@@ -118,13 +128,15 @@ export class FooterManager {
         
         if (this.endTurnBtn) {
             this.endTurnBtn.disabled = true;
-            this.endTurnBtn.textContent = 'Jogo não iniciado';
+            this._setButtonContent(this.endTurnBtn, '⏳', 'Não iniciado');
         }
     }
 
     _updatePhaseIndicator() {
         if (this.phaseIndicator) {
-            this.phaseIndicator.textContent = `Fase: ${PHASE_NAMES[gameState.currentPhase] || 'Renda'}`;
+            const phaseName = PHASE_NAMES[gameState.currentPhase] || 'Renda';
+            this.phaseIndicator.textContent = `Fase: ${phaseName}`;
+            this.uiGameManager?.uiManager?.mobileManager?.updateForCurrentPhase?.(phaseName);
         }
     }
 
@@ -136,8 +148,17 @@ export class FooterManager {
         const baseEnabled = gameState.actionsLeft > 0;
         
         if (regionId === null || regionId === undefined) {
+            this._resetExploreButtonAppearance();
+            this._setButtonContent(this.actionExploreBtn, '⛏️', 'Explorar');
+            this._setButtonContent(this.actionCollectBtn, '🌾', 'Coletar');
+            this._setButtonContent(this.actionBuildBtn, '🏗️', 'Construir');
             [this.actionExploreBtn, this.actionCollectBtn, this.actionBuildBtn]
-                .forEach(btn => { if (btn) btn.disabled = true; });
+                .forEach(btn => { 
+                    if (btn) {
+                        btn.disabled = true;
+                        btn.classList.add('opacity-50', 'cursor-not-allowed');
+                    }
+                });
         } else {
             const region = gameState.regions[regionId];
             if (!region) return;
@@ -152,106 +173,109 @@ export class FooterManager {
     }
 
     _updateExploreButton(region, player, isActionPhase, baseEnabled) {
-    if (!this.actionExploreBtn) return;
-    
-    // Resetar aparência primeiro
-    this._resetExploreButtonAppearance();
-    
-    // Verificar se há região selecionada
-    if (!region) {
-        this.actionExploreBtn.disabled = true;
-        this.actionExploreBtn.title = 'Selecione uma região primeiro';
-        return;
+        if (!this.actionExploreBtn) return;
+        
+        // Resetar aparência primeiro
+        this._resetExploreButtonAppearance();
+        
+        // Verificar se há região selecionada
+        if (!region) {
+            this.actionExploreBtn.disabled = true;
+            this.actionExploreBtn.title = 'Selecione uma região primeiro';
+            this._setButtonContent(this.actionExploreBtn, '⛏️', 'Explorar');
+            return;
+        }
+        
+        // Usar validação centralizada do GameLogic
+        const validation = window.gameLogic?.getActionValidation?.('explore');
+        
+        if (!isActionPhase) {
+            this.actionExploreBtn.disabled = true;
+            this.actionExploreBtn.title = 'Ação permitida apenas na fase de Ações (⚡).';
+            this._setButtonContent(this.actionExploreBtn, '⛏️', 'Explorar');
+            return;
+        }
+        
+        // CORREÇÃO CRÍTICA: Verificar validação primeiro
+        if (!validation) {
+            this.actionExploreBtn.disabled = true;
+            this.actionExploreBtn.title = 'Validação não disponível';
+            this._setButtonContent(this.actionExploreBtn, '⛏️', 'Explorar');
+            return;
+        }
+        
+        // CORREÇÃO: Verificar se há ações disponíveis
+        if (gameState.actionsLeft <= 0) {
+            this.actionExploreBtn.disabled = true;
+            this.actionExploreBtn.title = 'Sem ações disponíveis';
+            this._setButtonContent(this.actionExploreBtn, '⛏️', 'Explorar');
+            return;
+        }
+        
+        // Configurar botão baseado no tipo de ação
+        this.actionExploreBtn.disabled = !validation.valid;
+        
+        if (!validation.valid) {
+            this.actionExploreBtn.title = validation.reason || 'Ação não disponível';
+            this._setButtonContent(this.actionExploreBtn, '⛏️', 'Explorar');
+            return;
+        }
+        
+        // CORREÇÃO: Apenas mudar texto e classe se a ação for válida
+        switch(validation.type) {
+            case 'resurrect':
+                this._setButtonContent(this.actionExploreBtn, '💀', 'Ressuscitar');
+                this.actionExploreBtn.classList.add('bg-purple-600');
+                this.actionExploreBtn.title = 'Dominar região neutra para ressuscitar (custo: 2 PV + recursos do bioma)';
+                break;
+            case 'dominate':
+                this._setButtonContent(this.actionExploreBtn, '🏴', 'Dominar');
+                this.actionExploreBtn.classList.add('bg-yellow-600');
+                this.actionExploreBtn.title = 'Dominar região neutra (custo: 2 PV + recursos do bioma)';
+                break;
+            case 'explore':
+                this._setButtonContent(this.actionExploreBtn, '⛏️', 'Explorar');
+                this.actionExploreBtn.classList.add('bg-green-600');
+                this.actionExploreBtn.title = 'Explorar região própria (custo: recursos)';
+                break;
+            case 'dispute':
+                const enemyPlayer = gameState.players[region.controller];
+                const disputeData = validation.data;
+                let costInfo = `Custo: ${disputeData.finalCost.pv} PV, `;
+                Object.entries(disputeData.finalCost).forEach(([res, amt]) => {
+                    if (res !== 'pv' && amt > 0) {
+                        costInfo += `${amt}${RESOURCE_ICONS[res]} ${res}, `;
+                    }
+                });
+                costInfo = costInfo.slice(0, -2);
+                
+                this._setButtonContent(this.actionExploreBtn, '⚔️', 'Disputar');
+                this.actionExploreBtn.classList.add('bg-red-600');
+                this.actionExploreBtn.title = `Disputar ${region.name} de ${enemyPlayer.name}\n${costInfo}\nChance: ${Math.round(disputeData.successChance)}%`;
+                break;
+            default:
+                this._setButtonContent(this.actionExploreBtn, '⛏️', 'Explorar');
+                this.actionExploreBtn.classList.add('bg-gray-600');
+                this.actionExploreBtn.title = 'Ação não disponível';
+        }
+        
+        // Remover classes de desabilitado se o botão estiver habilitado
+        if (!this.actionExploreBtn.disabled) {
+            this.actionExploreBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+        }
     }
-    
-    // Usar validação centralizada do GameLogic
-    const validation = window.gameLogic?.getActionValidation?.('explore');
-    
-    if (!isActionPhase) {
-        this.actionExploreBtn.disabled = true;
-        this.actionExploreBtn.title = 'Ação permitida apenas na fase de Ações (⚡).';
-        return;
-    }
-    
-    // CORREÇÃO CRÍTICA: Verificar validação primeiro
-    if (!validation) {
-        this.actionExploreBtn.disabled = true;
-        this.actionExploreBtn.title = 'Validação não disponível';
-        return;
-    }
-    
-    // CORREÇÃO: Verificar se há ações disponíveis
-    if (gameState.actionsLeft <= 0) {
-        this.actionExploreBtn.disabled = true;
-        this.actionExploreBtn.title = 'Sem ações disponíveis';
-        return;
-    }
-    
-    // Configurar botão baseado no tipo de ação
-    this.actionExploreBtn.disabled = !validation.valid;
-    
-    if (!validation.valid) {
-        this.actionExploreBtn.title = validation.reason || 'Ação não disponível';
-        return;
-    }
-    
-    // CORREÇÃO: Apenas mudar texto e classe se a ação for válida
-    switch(validation.type) {
-        case 'resurrect':
-            this.actionExploreBtn.textContent = '💀 Ressuscitar';
-            this.actionExploreBtn.classList.add('bg-purple-600');
-            this.actionExploreBtn.title = 'Dominar região neutra para ressuscitar (custo: 2 PV + recursos do bioma)';
-            break;
-        case 'dominate':
-            this.actionExploreBtn.textContent = 'Dominar';
-            this.actionExploreBtn.classList.add('bg-yellow-600');
-            this.actionExploreBtn.title = 'Dominar região neutra (custo: 2 PV + recursos do bioma)';
-            break;
-        case 'explore':
-            this.actionExploreBtn.textContent = 'Explorar';
-            this.actionExploreBtn.classList.add('bg-green-600');
-            this.actionExploreBtn.title = 'Explorar região própria (custo: recursos)';
-            break;
-        case 'dispute':
-            const enemyPlayer = gameState.players[region.controller];
-            const disputeData = validation.data;
-            let costInfo = `Custo: ${disputeData.finalCost.pv} PV, `;
-            Object.entries(disputeData.finalCost).forEach(([res, amt]) => {
-                if (res !== 'pv' && amt > 0) {
-                    costInfo += `${amt}${RESOURCE_ICONS[res]} ${res}, `;
-                }
-            });
-            costInfo = costInfo.slice(0, -2);
-            
-            this.actionExploreBtn.textContent = 'Disputar';
-            this.actionExploreBtn.classList.add('bg-red-600');
-            this.actionExploreBtn.title = `Disputar ${region.name} de ${enemyPlayer.name}\n${costInfo}\nChance: ${Math.round(disputeData.successChance)}%`;
-            break;
-        default:
-            this.actionExploreBtn.textContent = 'Explorar';
-            this.actionExploreBtn.classList.add('bg-gray-600');
-            this.actionExploreBtn.title = 'Ação não disponível';
-    }
-    
-    // Remover classes de desabilitado se o botão estiver habilitado
-    if (!this.actionExploreBtn.disabled) {
-        this.actionExploreBtn.classList.remove('opacity-50', 'cursor-not-allowed');
-    }
-}
 
-// Adicionar este método auxiliar na classe FooterManager:
-_resetExploreButtonAppearance() {
-    if (!this.actionExploreBtn) return;
-    
-    // Remover todas as classes de cor anteriores
-    const colorClasses = ['bg-green-600', 'bg-yellow-600', 'bg-red-600', 'bg-purple-600', 'bg-gray-600'];
-    colorClasses.forEach(cls => {
-        this.actionExploreBtn.classList.remove(cls);
-    });
-}
+    _resetExploreButtonAppearance() {
+        if (!this.actionExploreBtn) return;
+        const colorClasses = ['bg-green-600', 'bg-yellow-600', 'bg-red-600', 'bg-purple-600', 'bg-gray-600'];
+        colorClasses.forEach(cls => {
+            this.actionExploreBtn.classList.remove(cls);
+        });
+    }
 
     _updateCollectButton(region, player, isActionPhase, baseEnabled) {
         if (!this.actionCollectBtn) return;
+        this._setButtonContent(this.actionCollectBtn, '🌾', 'Coletar');
         
         // Usar validação centralizada do GameLogic
         const validation = window.gameLogic?.getActionValidation?.('collect');
@@ -291,6 +315,7 @@ _resetExploreButtonAppearance() {
 
     _updateBuildButton(region, player, isActionPhase, baseEnabled) {
         if (!this.actionBuildBtn) return;
+        this._setButtonContent(this.actionBuildBtn, '🏗️', 'Construir');
         
         const validation = window.gameLogic?.getActionValidation?.('build');
         const isOwnRegion = region.controller === player.id;
@@ -316,6 +341,7 @@ _resetExploreButtonAppearance() {
 
     _updateNegotiateButton(player, isNegotiationPhase, baseEnabled) {
         if (!this.actionNegotiateBtn) return;
+        this._setButtonContent(this.actionNegotiateBtn, '🤝', 'Negociar');
         
         if (isNegotiationPhase) {
             const validation = window.gameLogic?.getActionValidation?.('negotiate');
@@ -361,36 +387,40 @@ _resetExploreButtonAppearance() {
         const pendingNegotiations = getPendingNegotiationsForPlayer(player.id);
         const hasPending = pendingNegotiations.length > 0;
         
+        // Limpar classes de cor dinâmicas
+        const colorClasses = ['bg-blue-600', 'bg-yellow-600', 'bg-green-600', 'bg-gray-600', 'bg-rose-600', 'hover:bg-blue-700', 'hover:bg-yellow-700', 'hover:bg-green-700', 'animate-pulse', 'cursor-not-allowed'];
+        colorClasses.forEach(cls => this.endTurnBtn.classList.remove(cls));
+        
         switch(gameState.currentPhase) {
             case 'acoes':
                 this.endTurnBtn.disabled = false;
-                this.endTurnBtn.textContent = 'Ir para Negociação';
-                this.endTurnBtn.className = 'px-4 py-2 bg-blue-600 hover:bg-blue-700 rounded-md text-white font-semibold transition';
+                this._setButtonContent(this.endTurnBtn, '⚡', 'Ir para Negociação');
+                this.endTurnBtn.classList.add('bg-blue-600', 'hover:bg-blue-700');
                 this.endTurnBtn.title = 'Avançar para fase de negociação';
                 break;
             case 'negociacao':
                 this.endTurnBtn.disabled = false;
                 
                 if (hasPending) {
-                    this.endTurnBtn.textContent = `Terminar Turno (${pendingNegotiations.length} pendente(s))`;
-                    this.endTurnBtn.className = 'px-4 py-2 bg-yellow-600 hover:bg-yellow-700 rounded-md text-white font-semibold transition animate-pulse';
+                    this._setButtonContent(this.endTurnBtn, '📬', `Terminar Turno (${pendingNegotiations.length})`);
+                    this.endTurnBtn.classList.add('bg-yellow-600', 'hover:bg-yellow-700', 'animate-pulse');
                     this.endTurnBtn.title = `Você tem ${pendingNegotiations.length} proposta(s) de negociação pendente(s). Clique para verificar antes de terminar o turno.`;
                 } else {
-                    this.endTurnBtn.textContent = 'Terminar Turno';
-                    this.endTurnBtn.className = 'px-4 py-2 bg-green-600 hover:bg-green-700 rounded-md text-white font-semibold transition';
+                    this._setButtonContent(this.endTurnBtn, '🔄', 'Terminar Turno');
+                    this.endTurnBtn.classList.add('bg-green-600', 'hover:bg-green-700');
                     this.endTurnBtn.title = 'Finalizar seu turno e passar para o próximo jogador';
                 }
                 break;
             case 'renda':
                 this.endTurnBtn.disabled = true;
-                this.endTurnBtn.textContent = 'Aguardando...';
-                this.endTurnBtn.className = 'px-4 py-2 bg-gray-600 rounded-md text-white font-semibold cursor-not-allowed';
+                this._setButtonContent(this.endTurnBtn, '⏳', 'Aguardando...');
+                this.endTurnBtn.classList.add('bg-gray-600', 'cursor-not-allowed');
                 this.endTurnBtn.title = 'Aguardando aplicação da renda';
                 break;
             default:
                 this.endTurnBtn.disabled = false;
-                this.endTurnBtn.textContent = 'Terminar Turno';
-                this.endTurnBtn.className = 'px-4 py-2 bg-blue-600 hover:bg-blue-700 rounded-md text-white font-semibold transition';
+                this._setButtonContent(this.endTurnBtn, '🔄', 'Terminar Turno');
+                this.endTurnBtn.classList.add('bg-blue-600', 'hover:bg-blue-700');
                 this.endTurnBtn.title = 'Finalizar fase atual';
         }
     }

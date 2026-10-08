@@ -126,6 +126,9 @@ export class UIGameManager {
         this.footerManager.updateFooter();
         this.updateTurnInfo();
         this.renderActivityLog();
+        if (this.uiManager?.mobileManager) {
+            this.uiManager.mobileManager.updateUI();
+        }
     }
     
     // Método para garantir compatibilidade:
@@ -585,9 +588,10 @@ export class UIGameManager {
             const isGameFooter = e.target.closest('#gameFooter');
             const isModal = e.target.closest('[id$="Modal"]');
             const isStructureOption = e.target.closest('.structure-option');
+            const isMobileUI = e.target.closest('#gaia-mobile-sheet, #gaia-mobile-menu, #gaia-mobile-overlay, #mapZoomControls');
             
             if (!isRegionCell && !isActionButton && !isGameFooter && !isModal && 
-                !isStructureOption && gameState.selectedRegionId !== null) {
+                !isStructureOption && !isMobileUI && gameState.selectedRegionId !== null) {
                 
                 this.clearRegionSelection();
                 this.footerManager.updateFooter();
