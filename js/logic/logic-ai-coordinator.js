@@ -147,3 +147,5 @@ async checkAndExecuteAITurn() {
         this._unblockAIUI();
     }
 }
+
+}
