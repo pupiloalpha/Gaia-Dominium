@@ -65,6 +65,30 @@ export class AICoordinator {
     }
   }
 
+  // Registra feedbacks vindos do GameLogic/UI para análise da IA
+  captureFeedback(message, type = 'info') {
+    this.feedbackHistory.push({ message, type, timestamp: Date.now() });
+    // Limpar histórico antigo para não crescer indefinidamente
+    const cutoff = Date.now() - 60_000; // manter 60s
+    this.feedbackHistory = this.feedbackHistory.filter(f => f.timestamp >= cutoff);
+    console.log(`IA feedback registrado: [${type}] ${message}`);
+  }
+
+  // Força o fim do turno da IA de forma segura
+  forceAIEndTurn() {
+    try {
+      this.inProgress = false;
+      this._unblockAIUI();
+      if (this.main?.turnLogic?.handleEndTurn) {
+        this.main.turnLogic.handleEndTurn();
+      } else if (window.gameLogic?.handleEndTurn) {
+        window.gameLogic.handleEndTurn();
+      }
+    } catch (e) {
+      console.error('Erro ao forçar fim de turno da IA:', e);
+    }
+  }
+
   // FUNÇÃO helper para obter IA correta
   _getAIPlayerForCurrentPlayer() {
     const currentPlayer = getCurrentPlayer();
@@ -80,6 +104,11 @@ export class AICoordinator {
     } else if (window.aiInstances) {
         allAIs = window.aiInstances;
         console.log(`🤖 ${allAIs.length} IA(s) disponíveis via window`);
+    } else if (window.aiManager && typeof window.aiManager.getAI === 'function') {
+        // AIManager armazena instâncias em um Map
+        const map = window.aiManager.aiInstances || new Map();
+        allAIs = Array.from(map.values());
+        console.log(`🤖 ${allAIs.length} IA(s) disponíveis via aiManager`);
     }
     
     // Log detalhado das IAs disponíveis
@@ -91,7 +120,7 @@ export class AICoordinator {
     
     // Buscar IA correspondente
     const ai = allAIs.find(aiInstance => {
-        const aiId = Number(aiInstance.playerId);
+        const aiId = Number(aiInstance.playerId ?? aiInstance.playerId === 0 ? aiInstance.playerId : aiInstance.playerIndex);
         const playerId = Number(currentPlayer.id);
         console.log(`🔍 Comparando: IA ${aiId} vs Jogador ${playerId}`);
         return aiId === playerId;
@@ -107,6 +136,37 @@ export class AICoordinator {
     return ai;
   }
   
+  // Tenta delegar execução do turno para um runtime de IA disponível
+  async _runAILoop(aiInstance) {
+    // Priorizar manager global
+    if (window.aiManager && typeof window.aiManager.executeAITurn === 'function') {
+      await window.aiManager.executeAITurn();
+      return;
+    }
+
+    // Se a instância provê um método para executar um turno
+    if (aiInstance && typeof aiInstance.executeTurn === 'function') {
+      await aiInstance.executeTurn(gameState, window.uiManager);
+      return;
+    }
+
+    if (aiInstance && typeof aiInstance.runTurn === 'function') {
+      await aiInstance.runTurn(gameState, window.uiManager);
+      return;
+    }
+
+    // Fallback: usar AIFactory/ai-system por player index
+    if (window.aiInstances && Array.isArray(window.aiInstances)) {
+      const ai = window.aiInstances.find(a => Number(a.playerId) === Number(getCurrentPlayer().id));
+      if (ai && typeof ai.executeTurn === 'function') {
+        await ai.executeTurn(gameState, window.uiManager);
+        return;
+      }
+    }
+
+    throw new Error('No AI runtime available to run the AI loop');
+  }
+
   async checkAndExecuteAITurn() {
     if (this.inProgress) return;
     const player = getCurrentPlayer();
