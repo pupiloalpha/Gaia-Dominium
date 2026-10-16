@@ -54,7 +54,8 @@ export class AICoordinator {
   _checkHealth() {
     if (!this.inProgress) return;
     const player = getCurrentPlayer();
-    if (!player || (!player.type === 'ai' && !player.isAI)) return;
+    // Corrigida a condição: verificar corretamente se o jogador atual é IA
+    if (!player || (player.type !== 'ai' && !player.isAI)) return;
 
     // Se tiver erros recentes demais
     const errors = this.feedbackHistory.filter(f => f.type === 'error' && (Date.now() - f.timestamp) < 5000);
@@ -65,7 +66,7 @@ export class AICoordinator {
   }
 
   // FUNÇÃO helper para obter IA correta
-_getAIPlayerForCurrentPlayer() {
+  _getAIPlayerForCurrentPlayer() {
     const currentPlayer = getCurrentPlayer();
     if (!currentPlayer) return null;
     
@@ -104,26 +105,27 @@ _getAIPlayerForCurrentPlayer() {
     }
     
     return ai;
-}
+  }
   
-async checkAndExecuteAITurn() {
+  async checkAndExecuteAITurn() {
     if (this.inProgress) return;
     const player = getCurrentPlayer();
 
-  // Verificar se jogador está eliminado
-  if (!player || player.eliminated) {
-    console.log(`🤖 Jogador ${player?.name || 'desconhecido'} está eliminado, pulando turno.`);
+    // Verificar se jogador está eliminado
+    if (!player || player.eliminated) {
+      console.log(`🤖 Jogador ${player?.name || 'desconhecido'} está eliminado, pulando turno.`);
+      
+      // Pular turno automaticamente
+      setTimeout(() => {
+        if (this.main?.turnLogic?.handleEndTurn) {
+          this.main.turnLogic.handleEndTurn();
+        }
+      }, 1000);
+      return;
+    }
     
-    // Pular turno automaticamente
-    setTimeout(() => {
-      if (this.main?.turnLogic?.handleEndTurn) {
-        this.main.turnLogic.handleEndTurn();
-      }
-    }, 1000);
-    return;
-  }
-    
-    if (!(player.type === 'ai' || player.isAI)) return;
+    // Corrigida a verificação de tipo de jogador IA
+    if (player.type !== 'ai' && !player.isAI) return;
 
     this.inProgress = true;
     this._blockAIUI(player.name);
@@ -146,6 +148,6 @@ async checkAndExecuteAITurn() {
         this.inProgress = false;
         this._unblockAIUI();
     }
-}
+  }
 
 }
