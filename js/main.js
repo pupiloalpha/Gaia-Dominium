@@ -5,6 +5,7 @@ import { UIManager } from './ui/ui-manager.js';
 import { GameLogic } from './logic/game-logic.js';
 import { Utils } from './utils/utils.js';
 import { AIFactory } from './ai/ai-system.js';
+import { aiFeedbackModal } from './ui/ui-ai-feedback.js';
 import { 
   gameState, 
   achievementsState,
@@ -27,8 +28,10 @@ window.GaiaDominium = {
   state: {},
   utils: null,
   ui: null,
-  logic: null
+  logic: null,
+  aiFeedback: aiFeedbackModal
 };
+window.aiFeedbackModal = aiFeedbackModal;
 
 // ==================== FUNÇÃO PRINCIPAL DE INICIALIZAÇÃO ====================
 document.addEventListener('DOMContentLoaded', () => {
@@ -138,6 +141,13 @@ function setupGlobalEventListeners() {
       });
     }
     
+    // Bloquear atalhos durante o turno da IA
+    const currentP = getCurrentPlayer();
+    const isAITurn = (currentP && (currentP.type === 'ai' || currentP.isAI)) || window.aiFeedbackModal?.isBlocked();
+    if (isAITurn) {
+      return;
+    }
+
     // Atalhos numéricos para ações (1-5)
     if (e.key >= '1' && e.key <= '5' && window.gameState?.gameStarted) {
       const index = parseInt(e.key) - 1;

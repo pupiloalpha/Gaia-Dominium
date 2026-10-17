@@ -116,6 +116,7 @@ body {
 #disputeModal { z-index: 1015; }
 #disputeResultModal { z-index: 1016; }
 #achievementsModal { z-index: 1040; }
+#aiFeedbackOverlay { z-index: 1200; }
 
 /* === ÍCONES FIXOS E MENU MOBILE === */
 #manualIcon { z-index: 60; }
@@ -499,6 +500,54 @@ body {
 .board-cell.player-owned .resource-value { color: #ffffff !important; text-shadow: 0 1px 2px rgba(0, 0, 0, 0.8); }
 .board-cell.player-owned .controller-info { background: rgba(0, 0, 0, 0.7); border: 1px solid rgba(248, 214, 92, 0.3); color: rgba(248, 214, 92, 0.98) !important; }
 .board-cell.player-owned .structure-display { filter: drop-shadow(0 1px 2px rgba(248, 214, 92, 0.5)); }
+
+/* ==================== ÍCONES VETORIAIS (SVG) ==================== */
+.svg-icon {
+  display: inline-block;
+  vertical-align: middle;
+  flex-shrink: 0;
+  stroke-width: 2;
+  line-height: 1;
+}
+
+/* Cores temáticas dos recursos */
+.svg-wood {
+  color: #d97706 !important; /* Madeira / Tronco quente */
+}
+
+.svg-stone {
+  color: #94a3b8 !important; /* Cinza ardósia / Rocha */
+}
+
+.svg-gold {
+  color: #f59e0b !important; /* Ouro âmbar vibrante */
+}
+
+.svg-water {
+  color: #38bdf8 !important; /* Azul claro / Água */
+}
+
+.svg-star {
+  color: #fbbf24 !important; /* Amarelo dourado */
+}
+
+/* Contextos de escala dos ícones SVG */
+.board-cell .region-resources .svg-icon {
+  width: 12px;
+  height: 12px;
+}
+
+.action-btn .svg-icon,
+#endTurnBtn .svg-icon {
+  width: 18px;
+  height: 18px;
+}
+
+.modal-content-container .svg-icon,
+[id$="Modal"] .svg-icon {
+  display: inline-block;
+  vertical-align: -2px;
+}
 
 /* ==================== BOTÕES DE AÇÃO ==================== */
 .action-btn {
@@ -1274,6 +1323,14 @@ body.modal-open .board-cell {
   .action-btn .action-icon {
     font-size: 16px !important;
     line-height: 1 !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+  }
+
+  .action-btn .action-icon .svg-icon {
+    width: 18px !important;
+    height: 18px !important;
   }
 
   .action-btn .action-label {
@@ -1533,3 +1590,60 @@ body.modal-open .board-cell {
 ::-webkit-scrollbar-track { background: rgba(255, 255, 255, 0.03); border-radius: 4px; }
 ::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.1); border-radius: 4px; }
 ::-webkit-scrollbar-thumb:hover { background: rgba(255, 255, 255, 0.15); }
+
+/* ==================== BLOQUEIO DE INTERAÇÃO NO TURNO DA IA ==================== */
+body.ai-turn-active {
+  cursor: wait !important;
+}
+
+body.ai-turn-active #gameFooter,
+body.ai-turn-active #gameFooter button,
+body.ai-turn-active #gameNavbar,
+body.ai-turn-active #gameNavbar button,
+body.ai-turn-active #sidebar,
+body.ai-turn-active #boardContainer,
+body.ai-turn-active .board-cell,
+body.ai-turn-active #mapZoomControls,
+body.ai-turn-active #manualIcon,
+body.ai-turn-active #achievementsNavBtn,
+body.ai-turn-active #gaia-mobile-menu,
+body.ai-turn-active #gaia-mobile-sheet {
+  pointer-events: none !important;
+}
+
+body.ai-turn-active #gameFooter button,
+body.ai-turn-active .action-btn,
+body.ai-turn-active #endTurnBtn {
+  opacity: 0.35 !important;
+  cursor: not-allowed !important;
+  filter: grayscale(40%) !important;
+}
+
+body.ai-turn-active #boardContainer {
+  opacity: 0.8 !important;
+}
+
+/* Modal de Feedback da IA */
+#aiFeedbackOverlay {
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+
+#aiActionsFeed::-webkit-scrollbar {
+  width: 5px;
+}
+
+#aiActionsFeed::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.04);
+  border-radius: 4px;
+}
+
+#aiActionsFeed::-webkit-scrollbar-thumb {
+  background: rgba(168, 85, 247, 0.4);
+  border-radius: 4px;
+}
+
+#aiActionsFeed::-webkit-scrollbar-thumb:hover {
+  background: rgba(168, 85, 247, 0.7);
+}
+

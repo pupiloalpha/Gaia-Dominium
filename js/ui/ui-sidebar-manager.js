@@ -2,6 +2,7 @@
 import { gameState, achievementsState } from '../state/game-state.js';
 import { RESOURCE_ICONS, ACHIEVEMENTS_CONFIG, UI_CONSTANTS } from '../state/game-config.js';
 import { Utils } from '../utils/utils.js';
+import { getIcon } from './icons.js';
 
 // Desestruturação das constantes de UI
 const { BIOME_EMOJIS, STRUCTURE_ICONS } = UI_CONSTANTS;
@@ -39,14 +40,14 @@ export class SidebarManager {
             <div class="flex items-center gap-3 p-2 rounded-lg" 
                  style="border-left: 4px solid ${isEliminated ? '#666666' : player.color}; 
                         background: rgba(${Utils.hexToRgb(isEliminated ? '#666666' : player.color).join(', ')}, 0.05)">
-                <div class="text-3xl">${isEliminated ? '💀' : player.icon}</div>
+                <div class="text-3xl flex items-center justify-center text-gray-400">${isEliminated ? getIcon('skull', { size: 28 }) : player.icon}</div>
                 <div class="flex-1">
                     <div class="text-base font-semibold ${isEliminated ? 'text-gray-400 line-through' : 'text-white'}">
                         ${player.name} ${isEliminated ? '(ELIMINADO)' : ''}
                     </div>
-                    <div class="text-xs text-gray-300 mb-1">
-                        Jogador ${player.id + 1} ${isCurrentPlayer && !isEliminated ? '• 🎮 TURNO' : ''}
-                        ${isEliminated ? '• 💀 ELIMINADO' : ''}
+                    <div class="text-xs text-gray-300 mb-1 flex items-center gap-1">
+                        Jogador ${player.id + 1} ${isCurrentPlayer && !isEliminated ? '• TURNO' : ''}
+                        ${isEliminated ? `• ${getIcon('skull', { size: 12 })} ELIMINADO` : ''}
                     </div>
                     ${faction && !isEliminated ? `
                     <div class="text-xs font-medium flex items-center gap-1" style="color: ${factionColor}">
@@ -56,13 +57,13 @@ export class SidebarManager {
                     ` : ''}
                     ${isEliminated ? `
                     <div class="text-xs text-yellow-300 mt-1 flex items-center gap-1">
-                        <span>⚡ Para ressuscitar:</span>
+                        <span class="inline-flex items-center">${getIcon('lightning', { size: 14 })} Para ressuscitar:</span>
                         <span>Domine uma região neutra (custo: 2 PV + recursos do bioma)</span>
                     </div>
                     ` : ''}
                 </div>
-                <div class="text-2xl font-bold ${isEliminated ? 'text-gray-400' : 'text-yellow-400'}">
-                    ${player.victoryPoints} PV
+                <div class="text-2xl font-bold flex items-center gap-1 ${isEliminated ? 'text-gray-400' : 'text-yellow-400'}">
+                    ${player.victoryPoints} <span class="inline-flex items-center text-yellow-400">${getIcon('star', { size: 16 })}</span>
                 </div>
             </div>
         `;

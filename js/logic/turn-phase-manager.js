@@ -453,12 +453,15 @@ export class TurnPhaseManager {
     setTimeout(() => {
       if (player && !player.eliminated && (player.type === 'ai' || player.isAI)) {
         console.log(`🤖 Iniciando turno da IA: ${player.name}`);
+        window.aiFeedbackModal?.startAITurn(player);
         
         this.turnTimeout = setTimeout(() => {
           if (this.main.aiCoordinator) {
             this.main.aiCoordinator.checkAndExecuteAITurn();
           }
         }, 1500);
+      } else {
+        window.aiFeedbackModal?.endAITurn(player);
       }
     }, 1000);
   }

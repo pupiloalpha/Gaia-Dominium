@@ -1,4 +1,6 @@
 // utils.js - Funções utilitárias + helpers de UI
+import { getIcon } from '../ui/icons.js';
+
 const Utils = {
   // ==================== SISTEMA DE ALERT/CONFIRM ====================
   showAlert(title, message, type = 'info') {
@@ -14,12 +16,14 @@ const Utils = {
       return;
     }
     
-    let icon = 'ℹ️';
-    if (type === 'warning') icon = '🟡';
-    if (type === 'error') icon = '🔴';
-    if (type === 'success') icon = '🟢';
+    const iconMap = {
+      'info': 'info',
+      'warning': 'alerta',
+      'error': 'cross',
+      'success': 'check'
+    };
     
-    alertIcon.textContent = icon;
+    alertIcon.innerHTML = getIcon(iconMap[type] || 'info', { size: 36 });
     alertTitle.textContent = title;
     alertMessage.textContent = message;
     
@@ -55,7 +59,7 @@ const Utils = {
         return;
       }
       
-      alertIcon.textContent = '❓';
+      alertIcon.innerHTML = getIcon('question', { size: 36 });
       alertTitle.textContent = title;
       alertMessage.textContent = message;
       

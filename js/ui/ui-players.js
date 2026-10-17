@@ -3,6 +3,7 @@ import { gameState } from '../state/game-state.js';
 import { GAME_CONFIG, FACTION_ABILITIES } from '../state/game-config.js';
 import { AI_DIFFICULTY_SETTINGS } from '../ai/ai-system.js';
 import { RESOURCE_ICONS } from '../state/game-config.js';
+import { getIcon } from './icons.js';
 
 export class UIPlayersManager {
     constructor(uiManager) {
@@ -442,7 +443,7 @@ export class UIPlayersManager {
                 slot.className = "player-card empty";
                 slot.innerHTML = `
                     <div class="player-card-inner flex flex-col items-center justify-center h-full p-4 rounded-lg border-2 border-dashed border-gray-600 bg-gray-800/20 transition-all hover:border-gray-500">
-                        <div class="text-3xl text-gray-500 mb-2">👤</div>
+                        <div class="text-gray-500 mb-2 flex items-center justify-center">${getIcon('user', { size: 32 })}</div>
                         <div class="text-center">
                             <div class="text-sm font-bold text-gray-500">Slot Vazio</div>
                             <div class="text-xs text-gray-500 mt-1">Adicione um jogador</div>
@@ -493,13 +494,13 @@ export class UIPlayersManager {
                     <div class="player-card-icon text-3xl mb-2 relative" style="color: ${borderColor}">
                         ${player.icon}
                         ${player.type === 'ai' || player.isAI ? 
-                            '<span class="absolute -top-1 -right-1 text-xs bg-purple-600 rounded-full p-1">🤖</span>' : 
+                            `<span class="absolute -top-1 -right-1 bg-purple-600 rounded-full p-1 inline-flex items-center justify-center">${getIcon('bot', { size: 12 })}</span>` : 
                             ''}
                     </div>
                     
                     <!-- Pontos de Vitória -->
-                    <div class="player-card-pv text-xs font-bold text-yellow-300 mb-1 bg-black/30 px-2 py-0.5 rounded-full">
-                        ${player.victoryPoints} PV
+                    <div class="player-card-pv text-xs font-bold text-yellow-300 mb-1 bg-black/30 px-2 py-0.5 rounded-full inline-flex items-center gap-1">
+                        ${player.victoryPoints} ${getIcon('star', { size: 11 })}
                     </div>
                     
                     <!-- Nome do jogador -->
@@ -527,7 +528,7 @@ export class UIPlayersManager {
             slot.className = "player-card empty";
             slot.innerHTML = `
                 <div class="player-card-inner flex flex-col items-center justify-center h-full p-4 rounded-lg border-2 border-dashed border-gray-600 bg-gray-800/20 transition-all hover:border-gray-500">
-                    <div class="text-3xl text-gray-500 mb-2">👤</div>
+                    <div class="text-gray-500 mb-2 flex items-center justify-center">${getIcon('user', { size: 32 })}</div>
                     <div class="text-center">
                         <div class="text-sm font-bold text-gray-500">Slot Vazio</div>
                         <div class="text-xs text-gray-500 mt-1">Adicione um jogador</div>
@@ -549,7 +550,7 @@ createEmptyPlayerCard(index) {
     card.dataset.empty = "true";
     card.innerHTML = `
         <div class="player-card-inner flex flex-col items-center justify-center h-full p-4 rounded-lg border-2 border-dashed border-gray-600 bg-gray-800/20 transition-all hover:border-gray-500">
-            <div class="text-3xl text-gray-500 mb-2">👤</div>
+            <div class="text-gray-500 mb-2 flex items-center justify-center">${getIcon('user', { size: 32 })}</div>
             <div class="text-center">
                 <div class="text-sm font-bold text-gray-500">Slot Vazio</div>
                 <div class="text-xs text-gray-500 mt-1">Adicione um jogador</div>

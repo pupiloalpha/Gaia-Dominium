@@ -217,6 +217,9 @@ export class TurnLogic {
         if (nextPlayer && !nextPlayer.eliminated && (nextPlayer.type === 'ai' || nextPlayer.isAI)) {
           console.log(`🤖 Iniciando turno da IA: ${nextPlayer.name}`);
           
+          // Ativar modal de feedback e bloqueio para a IA
+          window.aiFeedbackModal?.startAITurn(nextPlayer);
+          
           // Pequeno delay para UI atualizar
           setTimeout(() => {
             if (this.main.aiCoordinator) {
@@ -225,6 +228,9 @@ export class TurnLogic {
               window.aiCoordinator.checkAndExecuteAITurn();
             }
           }, 1500);
+        } else {
+          // Próximo jogador é humano - desbloquear controles e fechar modal
+          window.aiFeedbackModal?.endAITurn(nextPlayer);
         }
       }, 1000);
     }
@@ -300,6 +306,22 @@ export class TurnLogic {
         // IA pula modal
         gameState.currentPhase = 'acoes';
         gameState.actionsLeft = GAME_CONFIG.ACTIONS_PER_TURN;
+
+        // Notificar renda no feedback modal da IA
+        const resList = [];
+        if (bonuses.madeira > 0) resList.push(`+${bonuses.madeira} Madeira`);
+        if (bonuses.pedra > 0) resList.push(`+${bonuses.pedra} Pedra`);
+        if (bonuses.ouro > 0) resList.push(`+${bonuses.ouro} Ouro`);
+        if (bonuses.agua > 0) resList.push(`+${bonuses.agua} Água`);
+        if (bonuses.pv > 0) resList.push(`+${bonuses.pv} PV`);
+
+        window.aiFeedbackModal?.addActionNotification({
+          title: 'Fase de Renda',
+          description: resList.length > 0 ? `Renda recebida: ${resList.join(', ')}` : 'Renda de turno coletada.',
+          icon: 'moedas',
+          type: 'income'
+        });
+
         if (!this.gameEnded) {
           setTimeout(() => {
             if (this.main.aiCoordinator) {

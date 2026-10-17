@@ -10,6 +10,7 @@ import { Utils } from '../utils/utils.js';
 import { RegionRenderer } from './ui-region-renderer.js';
 import { SidebarManager } from './ui-sidebar-manager.js';
 import { FooterManager } from './ui-footer-manager.js';
+import { getIcon } from './icons.js';
 
 // Desestruturação das constantes de UI
 const { LOG_ICONS, PHASE_NAMES, ACTION_COSTS } = UI_CONSTANTS;
@@ -158,7 +159,7 @@ export class UIGameManager {
             if (isEliminated) {
                 buttonClass += 'bg-gray-800/50 opacity-50 cursor-not-allowed ';
                 content = `
-                    <div class="text-xl">💀</div>
+                    <div class="text-xl flex items-center justify-center text-gray-400">${getIcon('skull', { size: 20 })}</div>
                     <div>
                         <div class="font-medium line-through">${p.name}</div>
                         <div class="text-xs text-gray-300">ELIMINADO</div>
@@ -170,7 +171,7 @@ export class UIGameManager {
                     <div class="text-xl">${p.icon}</div>
                     <div>
                         <div class="font-medium">${p.name}</div>
-                        <div class="text-xs text-yellow-400">${p.victoryPoints} PV</div>
+                        <div class="text-xs text-yellow-400 flex items-center gap-1">${p.victoryPoints} ${getIcon('star', { size: 10 })} PV</div>
                     </div>
                 `;
             } else {
@@ -179,7 +180,7 @@ export class UIGameManager {
                     <div class="text-xl">${p.icon}</div>
                     <div>
                         <div class="font-medium">${p.name}</div>
-                        <div class="text-xs text-yellow-400">${p.victoryPoints} PV</div>
+                        <div class="text-xs text-yellow-400 flex items-center gap-1">${p.victoryPoints} ${getIcon('star', { size: 10 })} PV</div>
                     </div>
                 `;
             }
@@ -508,11 +509,17 @@ export class UIGameManager {
     setupEventListeners() {
         console.log('🎮 Configurando event listeners do jogo...');
         
+        const isAITurnActive = () => {
+            const p = getCurrentPlayer();
+            return (p && (p.type === 'ai' || p.isAI)) || (window.aiFeedbackModal?.isBlocked());
+        };
+
         // Delegar para o footerManager
         if (this.footerManager) {
             // Botão Explorar/Disputar
             if (this.footerManager.actionExploreBtn) {
                 this.footerManager.actionExploreBtn.addEventListener('click', () => {
+                    if (isAITurnActive()) return;
                     console.log('🎮 Botão Explorar/Disputar clicado');
                     this.handleExploreWithContext();
                 });
@@ -521,6 +528,7 @@ export class UIGameManager {
             // Botão Coletar
             if (this.footerManager.actionCollectBtn) {
                 this.footerManager.actionCollectBtn.addEventListener('click', () => {
+                    if (isAITurnActive()) return;
                     console.log('🎮 Botão Coletar clicado');
                     if (window.gameLogic && window.gameLogic.handleCollect) {
                         window.gameLogic.handleCollect();
@@ -531,6 +539,7 @@ export class UIGameManager {
             // Botão Terminar Turno
             if (this.footerManager.endTurnBtn) {
                 this.footerManager.endTurnBtn.addEventListener('click', () => {
+                    if (isAITurnActive()) return;
                     console.log('🎮 Botão Terminar Turno clicado');
                     if (window.gameLogic && window.gameLogic.handleEndTurn) {
                         window.gameLogic.handleEndTurn();
@@ -541,6 +550,7 @@ export class UIGameManager {
             // Botão Negociar
             if (this.footerManager.actionNegotiateBtn) {
                 this.footerManager.actionNegotiateBtn.addEventListener('click', () => {
+                    if (isAITurnActive()) return;
                     console.log('🎮 Botão Negociar clicado');
                     if (this.uiManager.negotiation && this.uiManager.negotiation.openNegotiationModal) {
                         this.uiManager.negotiation.openNegotiationModal();
@@ -551,6 +561,7 @@ export class UIGameManager {
             // Botão Construir
             if (this.footerManager.actionBuildBtn) {
                 this.footerManager.actionBuildBtn.addEventListener('click', () => {
+                    if (isAITurnActive()) return;
                     console.log('🎮 Botão Construir clicado');
                     if (this.uiManager.modals && this.uiManager.modals.openStructureModal) {
                         this.uiManager.modals.openStructureModal();
@@ -560,9 +571,18 @@ export class UIGameManager {
         }
     
         // Navegação
-        document.getElementById('manualIcon')?.addEventListener('click', () => this.uiManager.modals.openManual());
-        document.getElementById('manualIconNavbar')?.addEventListener('click', () => this.uiManager.modals.openManual());
-        document.getElementById('achievementsNavBtn')?.addEventListener('click', () => this.uiManager.modals.renderAchievementsModal());
+        document.getElementById('manualIcon')?.addEventListener('click', () => {
+            if (isAITurnActive()) return;
+            this.uiManager.modals.openManual();
+        });
+        document.getElementById('manualIconNavbar')?.addEventListener('click', () => {
+            if (isAITurnActive()) return;
+            this.uiManager.modals.openManual();
+        });
+        document.getElementById('achievementsNavBtn')?.addEventListener('click', () => {
+            if (isAITurnActive()) return;
+            this.uiManager.modals.renderAchievementsModal();
+        });
 
         // Activity Log filters
         this.logFilterAllSidebar?.addEventListener('click', () => this.renderActivityLog('all'));

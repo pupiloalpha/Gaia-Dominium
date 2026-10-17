@@ -15,6 +15,7 @@ import {
   addActivityLog
 } from '../state/game-state.js';
 import { RESOURCE_ICONS } from '../state/game-config.js';
+import { getIcon } from './icons.js';
 
 class NegotiationUI {
   constructor(uiManager) {
@@ -59,6 +60,12 @@ class NegotiationUI {
   // ==================== MÉTODOS PRINCIPAIS ====================
 
   openNegotiationModal() {
+    const initiator = getCurrentPlayer();
+    if ((initiator && (initiator.type === 'ai' || initiator.isAI)) || window.aiFeedbackModal?.isBlocked()) {
+      console.log('⛔ Modal de negociação bloqueado: Turno da IA');
+      return;
+    }
+
     console.log('Abrindo modal de negociação - resetando estado');
     
     // 1. Resetar estado completamente
@@ -66,14 +73,12 @@ class NegotiationUI {
     
     // 2. Configurar modo modal
     if (this.uiManager && this.uiManager.setModalMode) {
-    this.uiManager.setModalMode(true);
-  }
-    
-    const initiator = getCurrentPlayer();
+      this.uiManager.setModalMode(true);
+    }
     
     // 3. Verificar se jogador atual tem 1+ ouro
     if (!initiator || (initiator.resources.ouro || 0) < 1) {
-      this.uiManager.modals.showFeedback('Você precisa de pelo menos 1 🪙 Ouro para enviar uma proposta.', 'warning');
+      this.uiManager.modals.showFeedback('Você precisa de pelo menos 1 Ouro para enviar uma proposta.', 'warning');
       this.uiManager.setModalMode(false);
       return;
     }
@@ -88,14 +93,14 @@ class NegotiationUI {
       if (p.id !== initiator.id && (p.resources.ouro || 0) >= 1) {
         const opt = document.createElement('option');
         opt.value = String(p.id);
-        opt.textContent = `${p.icon} ${p.name} (${p.resources.ouro}🪙)`;
+        opt.textContent = `${p.icon} ${p.name} (${p.resources.ouro} Ouro)`;
         this.negTargetSelect.appendChild(opt);
         hasValidTargets = true;
       }
     });
     
     if (!hasValidTargets) {
-      this.uiManager.modals.showFeedback('Nenhum outro jogador com 1+ 🪙 Ouro disponível para negociar.', 'warning');
+      this.uiManager.modals.showFeedback('Nenhum outro jogador com 1+ Ouro disponível para negociar.', 'warning');
       this.uiManager.setModalMode(false);
       return;
     }
@@ -693,10 +698,10 @@ class NegotiationUI {
         <div class="text-xs text-gray-400 mb-1">De: <span class="text-green-300">${initiatorName}</span></div>
         <div class="text-xs text-gray-400">Para: <span class="text-red-300">${targetName}</span></div>
       </div>
-      <div class="text-green-300 text-sm font-semibold">🎁 Oferta: ${offerText}</div>
-      <div class="text-red-300 text-sm font-semibold mt-2">📥 Solicitação: ${requestText}</div>
-      <div class="mt-2 text-xs text-gray-400">
-        Custo: 1 🪙 Ouro • ${gameState.actionsLeft} ação(ões) restante(s)
+      <div class="text-green-300 text-sm font-semibold">Oferta: ${offerText}</div>
+      <div class="text-red-300 text-sm font-semibold mt-2">Solicitação: ${requestText}</div>
+      <div class="mt-2 text-xs text-gray-400 flex items-center gap-1">
+        Custo: 1 ${getIcon('ouro', { size: 14 })} Ouro • ${gameState.actionsLeft} ação(ões) restante(s)
       </div>
     `;
   }
@@ -714,7 +719,7 @@ class NegotiationUI {
     }
     
     if (!currentPlayer || (currentPlayer.resources.ouro || 0) < 1) {
-      this.updateSendButton(false, 'Você precisa de 1 🪙 Ouro para enviar proposta');
+      this.updateSendButton(false, 'Você precisa de 1 Ouro para enviar proposta');
       return false;
     }
     
@@ -884,7 +889,7 @@ class NegotiationUI {
       Turno: ${neg.turn} • Enviado em: ${new Date(neg.timestamp).toLocaleTimeString('pt-BR', {hour: '2-digit', minute:'2-digit'})}
     </div>`);
 
-    this.negResponseTitle.textContent = `📨 Proposta de ${initiator.icon} ${initiator.name}`;
+    this.negResponseTitle.innerHTML = `<span class="inline-flex items-center gap-2">${getIcon('pending', { size: 20 })} Proposta de ${initiator.name}</span>`;
     this.negResponseBody.innerHTML = summary.join('');
     
     this.negResponseModal.classList.remove('hidden');
@@ -1018,7 +1023,7 @@ class NegotiationUI {
     
     notification.innerHTML = `
       <div class="flex items-start gap-3">
-        <span class="text-2xl">🤝</span>
+        <span class="text-2xl inline-flex items-center text-purple-400">${getIcon('negociar', { size: 24 })}</span>
         <div class="flex-1">
           <h4 class="font-semibold text-white">Nova Proposta Recebida!</h4>
           <p class="text-sm text-gray-300 mt-1">
@@ -1206,7 +1211,7 @@ class NegotiationUI {
     
     notification.innerHTML = `
       <div class="flex items-center gap-2">
-        <span class="text-xl">📨</span>
+        <span class="text-xl inline-flex items-center text-blue-400">${getIcon('pending', { size: 20 })}</span>
         <div>
           <p class="text-sm text-white font-medium">
             Você tem ${count} proposta(s) pendente(s)
@@ -1246,7 +1251,9 @@ class NegotiationUI {
       <div class="absolute inset-0 bg-black/80 backdrop-blur-sm"></div>
       <div class="relative w-full max-w-2xl bg-gray-900 border border-white/15 rounded-2xl shadow-2xl p-6">
         <div class="flex justify-between items-center mb-6">
-          <h2 class="text-xl text-yellow-300 font-semibold">📨 Propostas Pendentes</h2>
+          <h2 class="text-xl text-yellow-300 font-semibold flex items-center gap-2">
+            ${getIcon('pending', { size: 20 })} Propostas Pendentes
+          </h2>
           <button id="closePendingModalBtn" class="text-gray-300 hover:text-white text-xl">✖</button>
         </div>
         <div class="space-y-3 max-h-[50vh] overflow-y-auto p-2">

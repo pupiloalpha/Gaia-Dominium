@@ -1020,6 +1020,33 @@ class AIBrain {
     
     console.log(`🤖 Executando ação: ${action.description}`);
     
+    // Notificar no modal de feedback da IA
+    const actionTitles = {
+      'assume_control': 'Domínio Territorial',
+      'explore': 'Exploração',
+      'build': 'Construção',
+      'collect': 'Coleta de Recursos',
+      'negotiate': 'Negociação',
+      'dispute': 'Disputa Territorial'
+    };
+    const actionIcons = {
+      'assume_control': 'dominar',
+      'explore': 'explorar',
+      'build': 'construir',
+      'collect': 'coletar',
+      'negotiate': 'negociar',
+      'dispute': 'disputar'
+    };
+
+    if (window.aiFeedbackModal) {
+      window.aiFeedbackModal.addActionNotification({
+        title: actionTitles[action.type] || 'Ação da IA',
+        description: action.description || `${action.type} em execução`,
+        icon: actionIcons[action.type] || 'robo',
+        type: action.type
+      });
+    }
+
     try {
       switch (action.type) {
         case 'assume_control':

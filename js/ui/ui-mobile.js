@@ -1,6 +1,7 @@
 // ui-mobile.js - Gerenciador de Experiência Mobile (Bottom Sheet & Menu Tátil)
 import { gameState, getCurrentPlayer } from '../state/game-state.js';
 import { RESOURCE_ICONS } from '../state/game-config.js';
+import { getIcon } from './icons.js';
 
 export class UIMobileManager {
     constructor(uiManager) {
@@ -202,18 +203,20 @@ export class UIMobileManager {
                 </div>
             `).join('');
 
-        let controllerLabel = '<span style="color:#9ca3af;">🏳️ Região Neutra</span>';
+        let controllerLabel = `<span style="color:#9ca3af;display:inline-flex;align-items:center;gap:4px;">${getIcon('neutral', { size: 14 })} Região Neutra</span>`;
         if (owner) {
             controllerLabel = `<span style="color:${owner.color};font-weight:bold;">${owner.icon} ${owner.name}</span>`;
         }
 
         const structuresHTML = region.structures && region.structures.length > 0 
-            ? region.structures.map(s => `<span style="display:inline-block;padding:2px 8px;background:rgba(251,191,36,0.15);border:1px solid rgba(251,191,36,0.3);border-radius:6px;font-size:11px;color:#fde047;margin:2px;">🏗️ ${s}</span>`).join('')
+            ? region.structures.map(s => `<span style="display:inline-flex;align-items:center;gap:4px;padding:2px 8px;background:rgba(251,191,36,0.15);border:1px solid rgba(251,191,36,0.3);border-radius:6px;font-size:11px;color:#fde047;margin:2px;">${getIcon(s, { size: 12 })} ${s}</span>`).join('')
             : '<span style="color:rgba(255,255,255,0.4);font-size:12px;font-style:italic;">Nenhuma estrutura</span>';
 
         const actionType = region.controller === null ? 'dominate' : (isOwnRegion ? 'explore' : 'dispute');
         const actionLabel = region.controller === null ? 'Dominar' : (isOwnRegion ? 'Explorar' : 'Disputar');
-        const actionIcon = region.controller === null ? '🏴' : (isOwnRegion ? '⛏️' : '⚔️');
+        const actionIcon = region.controller === null 
+            ? getIcon('dominar', { size: 18 }) 
+            : (isOwnRegion ? getIcon('explorar', { size: 18 }) : getIcon('disputar', { size: 18 }));
         const actionColor = region.controller === null ? '#d97706' : (isOwnRegion ? '#2563eb' : '#dc2626');
         
         const content = `
@@ -243,14 +246,14 @@ export class UIMobileManager {
                 <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px;">
                     <button onclick="window.uiManager.mobileManager.executeRegionAction('${actionType}', ${region.id})"
                             style="padding:10px;background:${actionColor};border:none;border-radius:10px;color:white;font-weight:bold;font-size:13px;display:flex;align-items:center;justify-content:center;gap:6px;min-height:44px;cursor:pointer;">
-                        <span>${actionIcon}</span>
+                        <span style="display:inline-flex;align-items:center;">${actionIcon}</span>
                         <span>${actionLabel}</span>
                     </button>
                     
                     <button onclick="window.uiManager.mobileManager.executeRegionAction('collect', ${region.id})"
                             style="padding:10px;background:#059669;border:none;border-radius:10px;color:white;font-weight:bold;font-size:13px;display:flex;align-items:center;justify-content:center;gap:6px;min-height:44px;cursor:pointer;${!isOwnRegion ? 'opacity:0.4;cursor:not-allowed;' : ''}"
                             ${!isOwnRegion ? 'disabled' : ''}>
-                        <span>🌾</span>
+                        <span style="display:inline-flex;align-items:center;">${getIcon('coletar', { size: 18 })}</span>
                         <span>Coletar</span>
                     </button>
                 </div>
@@ -258,7 +261,7 @@ export class UIMobileManager {
                 <button onclick="window.uiManager.mobileManager.executeRegionAction('build', ${region.id})"
                         style="width:100%;padding:10px;background:linear-gradient(135deg,#f59e0b,#d97706);border:none;border-radius:10px;color:white;font-weight:bold;font-size:13px;display:flex;justify-content:center;align-items:center;gap:6px;min-height:44px;cursor:pointer;${!isOwnRegion ? 'opacity:0.4;cursor:not-allowed;' : ''}"
                         ${!isOwnRegion ? 'disabled' : ''}>
-                    <span>🏗️</span>
+                    <span style="display:inline-flex;align-items:center;">${getIcon('construir', { size: 18 })}</span>
                     <span>Construir Estrutura</span>
                 </button>
             </div>
@@ -277,6 +280,13 @@ export class UIMobileManager {
         
         if (!region || !player) {
             console.error('❌ Região ou jogador não encontrados');
+            return;
+        }
+
+        // Bloquear ações durante turno da IA
+        if ((player && (player.type === 'ai' || player.isAI)) || window.aiFeedbackModal?.isBlocked()) {
+            console.log('⛔ Ação mobile bloqueada: Turno da IA');
+            this.closeSheet();
             return;
         }
         
@@ -341,14 +351,16 @@ export class UIMobileManager {
                     <div>
                         <div style="font-size:18px;font-weight:bold;color:white;">${currentPlayer.name}</div>
                         <div style="color:${currentPlayer.color};font-size:12px;margin-bottom:4px;">${currentPlayer.faction?.name || 'Sem facção'}</div>
-                        <div style="background:rgba(245,158,11,0.2);color:#f59e0b;padding:2px 8px;border-radius:8px;font-weight:bold;font-size:13px;display:inline-block;">
-                            ${currentPlayer.victoryPoints} Pontos de Vitória (PV)
+                        <div style="background:rgba(245,158,11,0.2);color:#f59e0b;padding:2px 8px;border-radius:8px;font-weight:bold;font-size:13px;display:inline-flex;align-items:center;gap:4px;">
+                            ${currentPlayer.victoryPoints} ${getIcon('star', { size: 13 })} Pontos de Vitória (PV)
                         </div>
                     </div>
                 </div>
                 
                 <div style="margin-bottom:16px;">
-                    <div style="font-size:14px;font-weight:bold;color:#fbbf24;margin-bottom:8px;">📦 Recursos Atuais</div>
+                    <div style="font-size:14px;font-weight:bold;color:#fbbf24;margin-bottom:8px;display:flex;align-items:center;gap:6px;">
+                        ${getIcon('ouro', { size: 16 })} Recursos Atuais
+                    </div>
                     <div style="max-height:160px;overflow-y:auto;">
                         ${resourcesHTML}
                     </div>
@@ -357,7 +369,7 @@ export class UIMobileManager {
                 ${isNegotiationPhase ? `
                 <button onclick="window.uiManager.mobileManager.handleNegotiate()"
                         style="width:100%;padding:12px;background:linear-gradient(135deg,#8b5cf6,#7c3aed);border:none;border-radius:10px;color:white;font-weight:bold;font-size:14px;display:flex;justify-content:center;align-items:center;gap:8px;margin-bottom:10px;min-height:44px;cursor:pointer;">
-                    <span style="font-size:18px;">🤝</span>
+                    <span style="display:inline-flex;align-items:center;">${getIcon('negociar', { size: 18 })}</span>
                     <span>Criar Proposta de Negociação</span>
                 </button>
                 ` : ''}
@@ -365,13 +377,13 @@ export class UIMobileManager {
                 <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
                     <button onclick="window.gameLogic.handleEndTurn(); window.uiManager.mobileManager.closeSheet();"
                             style="padding:10px;background:linear-gradient(135deg,#10b981,#059669);border:none;border-radius:10px;color:white;font-weight:bold;font-size:13px;display:flex;align-items:center;justify-content:center;gap:6px;min-height:44px;cursor:pointer;">
-                        <span>🔄</span>
+                        <span style="display:inline-flex;align-items:center;">${getIcon('endTurn', { size: 16 })}</span>
                         <span>Passar Turno</span>
                     </button>
                     
                     <button onclick="window.uiManager.modals.openManual(); window.uiManager.mobileManager.closeSheet();"
                             style="padding:10px;background:linear-gradient(135deg,#3b82f6,#1d4ed8);border:none;border-radius:10px;color:white;font-weight:bold;font-size:13px;display:flex;align-items:center;justify-content:center;gap:6px;min-height:44px;cursor:pointer;">
-                        <span>📖</span>
+                        <span style="display:inline-flex;align-items:center;">${getIcon('manual', { size: 16 })}</span>
                         <span>Manual</span>
                     </button>
                 </div>

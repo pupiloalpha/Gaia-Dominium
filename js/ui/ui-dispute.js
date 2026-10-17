@@ -1,6 +1,7 @@
 // ui-dispute.js - Interface para Disputas Territoriais (REFATORADO COM CORREÇÕES)
 import { gameState, getCurrentPlayer, getPlayerById } from '../state/game-state.js';
 import { RESOURCE_ICONS } from '../state/game-config.js';
+import { getIcon } from './icons.js';
 
 export class DisputeUI {
   constructor(uiManager) {
@@ -50,7 +51,7 @@ export class DisputeUI {
           <div class="flex justify-between items-center">
             <div>
               <h2 class="text-2xl font-bold text-red-300 flex items-center gap-3">
-                <span class="text-3xl">⚔️</span>
+                <span class="inline-flex items-center text-red-400">${getIcon('disputar', { size: 28 })}</span>
                 <span>Disputa Territorial</span>
               </h2>
               <p id="disputeRegionName" class="text-gray-300 text-sm mt-2"></p>
@@ -75,8 +76,8 @@ export class DisputeUI {
               Cancelar
             </button>
             <button id="disputeConfirmBtn" 
-                    class="px-6 py-3 bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 rounded-lg text-white font-semibold transition duration-200 transform hover:scale-105 active:scale-95 shadow-lg shadow-red-600/30">
-              ⚔️ Iniciar Disputa
+                    class="px-6 py-3 bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 rounded-lg text-white font-semibold transition duration-200 transform hover:scale-105 active:scale-95 shadow-lg shadow-red-600/30 flex items-center gap-2">
+              ${getIcon('disputar', { size: 18 })} Iniciar Disputa
             </button>
           </div>
         </div>
@@ -188,30 +189,30 @@ export class DisputeUI {
         <!-- Seção: Custos -->
         <div class="bg-gray-800/50 p-5 rounded-xl border border-gray-700">
           <h3 class="text-lg font-semibold text-white mb-3 flex items-center gap-2">
-            <span class="text-yellow-400">💰</span>
+            <span class="inline-flex items-center text-yellow-400">${getIcon('ouro', { size: 18 })}</span>
             <span>Custos da Disputa</span>
           </h3>
           <div class="grid grid-cols-2 md:grid-cols-3 gap-4">
             <div class="bg-gray-900/50 p-3 rounded-lg">
               <div class="text-gray-400 text-sm">Pontos de Vitória</div>
-              <div class="text-yellow-400 font-bold text-xl">${disputeData.finalCost.pv} ⭐</div>
+              <div class="text-yellow-400 font-bold text-xl flex items-center gap-1">${disputeData.finalCost.pv} ${getIcon('star', { size: 16 })}</div>
             </div>
             <div class="bg-gray-900/50 p-3 rounded-lg">
               <div class="text-gray-400 text-sm">Madeira</div>
-              <div class="text-green-400 font-bold text-xl">${disputeData.finalCost.madeira} ${RESOURCE_ICONS.madeira}</div>
+              <div class="text-green-400 font-bold text-xl flex items-center gap-1">${disputeData.finalCost.madeira} ${RESOURCE_ICONS.madeira}</div>
             </div>
             <div class="bg-gray-900/50 p-3 rounded-lg">
               <div class="text-gray-400 text-sm">Pedra</div>
-              <div class="text-gray-300 font-bold text-xl">${disputeData.finalCost.pedra} ${RESOURCE_ICONS.pedra}</div>
+              <div class="text-gray-300 font-bold text-xl flex items-center gap-1">${disputeData.finalCost.pedra} ${RESOURCE_ICONS.pedra}</div>
             </div>
             <div class="bg-gray-900/50 p-3 rounded-lg">
               <div class="text-gray-400 text-sm">Ouro</div>
-              <div class="text-yellow-300 font-bold text-xl">${disputeData.finalCost.ouro} ${RESOURCE_ICONS.ouro}</div>
+              <div class="text-yellow-300 font-bold text-xl flex items-center gap-1">${disputeData.finalCost.ouro} ${RESOURCE_ICONS.ouro}</div>
             </div>
             ${disputeData.finalCost.agua > 0 ? `
             <div class="bg-gray-900/50 p-3 rounded-lg">
               <div class="text-gray-400 text-sm">Água</div>
-              <div class="text-blue-400 font-bold text-xl">${disputeData.finalCost.agua} ${RESOURCE_ICONS.agua}</div>
+              <div class="text-blue-400 font-bold text-xl flex items-center gap-1">${disputeData.finalCost.agua} ${RESOURCE_ICONS.agua}</div>
             </div>
             ` : ''}
           </div>
@@ -220,7 +221,7 @@ export class DisputeUI {
         <!-- Seção: Chance de Sucesso -->
         <div class="bg-blue-900/20 p-5 rounded-xl border border-blue-700/30">
           <h3 class="text-lg font-semibold text-white mb-3 flex items-center gap-2">
-            <span class="text-blue-400">🎯</span>
+            <span class="inline-flex items-center text-blue-400">${getIcon('explorar', { size: 18 })}</span>
             <span>Chance de Sucesso</span>
           </h3>
           <div class="space-y-4">
@@ -236,9 +237,9 @@ export class DisputeUI {
               </span>
             </div>
             <div class="text-sm ${disputeData.successChance >= 70 ? 'text-green-300' : disputeData.successChance >= 40 ? 'text-yellow-300' : 'text-red-300'} font-medium">
-              ${disputeData.successChance >= 70 ? '🎯 Alta chance de sucesso!' : 
-                disputeData.successChance >= 40 ? '⚠️ Chance moderada.' : 
-                '🚫 Baixa chance. Considere fortalecer-se primeiro.'}
+              ${disputeData.successChance >= 70 ? 'Alta chance de sucesso!' : 
+                disputeData.successChance >= 40 ? 'Chance moderada.' : 
+                'Baixa chance. Considere fortalecer-se primeiro.'}
             </div>
           </div>
         </div>
@@ -246,7 +247,7 @@ export class DisputeUI {
         <!-- Seção: Riscos -->
         <div class="bg-red-900/10 p-5 rounded-xl border border-red-700/20">
           <h3 class="text-lg font-semibold text-white mb-3 flex items-center gap-2">
-            <span class="text-red-400">⚠️</span>
+            <span class="inline-flex items-center text-red-400">${getIcon('alerta', { size: 18 })}</span>
             <span>Riscos da Disputa</span>
           </h3>
           <ul class="space-y-2 text-gray-300">
@@ -466,11 +467,11 @@ export class DisputeUI {
     const container = document.getElementById('disputeResultContainer');
 
     if (success) {
-      title.textContent = '🏆 Vitória na Disputa!';
+      title.textContent = 'Vitória na Disputa!';
       header.className = 'p-6 border-b bg-gradient-to-r from-green-900/40 to-gray-900';
       container.className = 'relative z-50 w-full max-w-2xl bg-gray-900 border-2 border-green-600/30 rounded-2xl shadow-2xl overflow-hidden';
     } else {
-      title.textContent = '💀 Disputa Falhou';
+      title.textContent = 'Disputa Falhou';
       header.className = 'p-6 border-b bg-gradient-to-r from-red-900/40 to-gray-900';
       container.className = 'relative z-50 w-full max-w-2xl bg-gray-900 border-2 border-red-600/30 rounded-2xl shadow-2xl overflow-hidden';
     }
@@ -480,7 +481,7 @@ export class DisputeUI {
       <div class="space-y-6">
         <!-- Banner de resultado -->
         <div class="text-center py-4 ${success ? 'bg-green-900/20' : 'bg-red-900/20'} rounded-xl">
-          <div class="text-6xl mb-4">${success ? '🏆' : '💀'}</div>
+          <div class="text-6xl mb-4 flex items-center justify-center">${success ? getIcon('trophy', { size: 64, className: 'text-yellow-400' }) : getIcon('skull', { size: 64, className: 'text-red-400' })}</div>
           <h3 class="text-xl font-bold text-white">${region.name}</h3>
           <p class="text-gray-300 mt-2">${success ? 
             `Você conquistou a região de <strong class="text-yellow-300">${defender.name}</strong>!` : 
@@ -492,13 +493,13 @@ export class DisputeUI {
           <!-- Recompensas -->
           <div class="bg-green-900/10 p-5 rounded-xl border border-green-700/30">
             <h4 class="text-lg font-semibold text-white mb-3 flex items-center gap-2">
-              <span class="text-green-400">🎁</span>
+              <span class="inline-flex items-center text-green-400">${getIcon('trophy', { size: 18 })}</span>
               <span>Recompensas da Conquista</span>
             </h4>
             <div class="space-y-3">
               <div class="flex items-center justify-between">
                 <span class="text-gray-300">Pontos de Vitória:</span>
-                <span class="text-yellow-400 font-bold text-xl">+1 ⭐</span>
+                <span class="text-yellow-400 font-bold text-xl flex items-center gap-1">+1 ${getIcon('star', { size: 16 })}</span>
               </div>
               ${rewards.resources ? `
               <div class="flex items-center justify-between">
@@ -518,7 +519,7 @@ export class DisputeUI {
           <!-- Perdas -->
           <div class="bg-red-900/10 p-5 rounded-xl border border-red-700/30">
             <h4 class="text-lg font-semibold text-white mb-3 flex items-center gap-2">
-              <span class="text-red-400">💀</span>
+              <span class="inline-flex items-center text-red-400">${getIcon('skull', { size: 18 })}</span>
               <span>Consequências da Derrota</span>
             </h4>
             <div class="space-y-3">
@@ -528,7 +529,7 @@ export class DisputeUI {
               </div>
               <div class="flex items-center justify-between">
                 <span class="text-gray-300">Bônus do defensor:</span>
-                <span class="text-yellow-400 font-bold">${defender.name} ganhou +1 PV</span>
+                <span class="text-yellow-400 font-bold flex items-center gap-1">${defender.name} ganhou +1 ${getIcon('star', { size: 14 })} PV</span>
               </div>
               <div class="flex items-center justify-between">
                 <span class="text-gray-300">Dano à região:</span>
@@ -540,15 +541,15 @@ export class DisputeUI {
 
         <!-- Status Atual -->
         <div class="bg-gray-800/50 p-5 rounded-xl border border-gray-700">
-          <h4 class="text-lg font-semibold text-white mb-4">📊 Status Atual dos Jogadores</h4>
+          <h4 class="text-lg font-semibold text-white mb-4">Status Atual dos Jogadores</h4>
           <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
             <!-- Atacante -->
             <div class="bg-gray-900/50 p-4 rounded-lg">
               <div class="text-sm text-gray-400 mb-2">${attacker.name}</div>
               <div class="space-y-2">
-                <div class="flex justify-between">
+                <div class="flex justify-between items-center">
                   <span class="text-gray-300">Pontos de Vitória:</span>
-                  <span class="text-yellow-400 font-bold">${attacker.victoryPoints} ⭐</span>
+                  <span class="text-yellow-400 font-bold flex items-center gap-1">${attacker.victoryPoints} ${getIcon('star', { size: 14 })}</span>
                 </div>
                 <div class="flex justify-between">
                   <span class="text-gray-300">Regiões controladas:</span>

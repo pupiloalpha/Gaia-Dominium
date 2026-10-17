@@ -437,7 +437,23 @@ class GameLogic {
   
   // Utils de Feedback (Centralizado)
   showFeedback(message, type = 'info') {
+    this.feedbackHistory.push({ message, type, timestamp: Date.now() });
     this.aiCoordinator.captureFeedback(message, type);
+
+    const player = getCurrentPlayer();
+    const isAI = (player && (player.type === 'ai' || player.isAI)) || (window.aiFeedbackModal?.isBlocked());
+
+    if (isAI) {
+      if (window.aiFeedbackModal) {
+        window.aiFeedbackModal.addActionNotification({
+          title: type === 'error' ? 'Aviso da IA' : 'Ação da IA',
+          description: message,
+          type: type
+        });
+      }
+      return;
+    }
+
     if (window.uiManager?.modals?.showFeedback) {
       window.uiManager.modals.showFeedback(message, type);
     } else {
@@ -446,6 +462,11 @@ class GameLogic {
   }
 
   async showConfirm(title, message) {
+    const player = getCurrentPlayer();
+    if (player && (player.type === 'ai' || player.isAI)) {
+      return true; // Auto-confirmar para IA sem travar em modais interativos
+    }
+
     if (window.uiManager?.modals?.showConfirm) {
       return await window.uiManager.modals.showConfirm(title, message);
     }

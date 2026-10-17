@@ -18,7 +18,6 @@ import { UIPlayersManager } from '../ui/ui-players.js';
 import { UIGameManager } from '../ui/ui-game.js';
 import { UIMobileManager } from '../ui/ui-mobile.js';
 import { DisputeUI } from '../ui/ui-dispute.js';
-import { AIBlockingManager } from './ui-ai-blocking.js';
 
 class UIManager {
     constructor() {
@@ -28,8 +27,6 @@ class UIManager {
         this.gameManager = new UIGameManager(this);
         this.mobileManager = new UIMobileManager(this);
         this.disputeUI = new DisputeUI(this);
-        this.aiBlockingManager = new AIBlockingManager(this);
-        window.aiBlockingManager = this.aiBlockingManager;
         
         this.cacheElements();
         
@@ -297,6 +294,7 @@ class UIManager {
             
             if (isFirstPlayerAI) {
                 console.log(`🤖 Primeiro jogador é IA: ${firstPlayer.name}, iniciando em 3 segundos...`);
+                window.aiFeedbackModal?.startAITurn(firstPlayer);
                 
                 setTimeout(() => {
                     if (window.gameLogic && window.gameLogic.checkAndExecuteAITurn) {

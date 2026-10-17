@@ -2,6 +2,7 @@
 import { gameState } from '../state/game-state.js';
 import { RESOURCE_ICONS } from '../state/game-config.js';
 import { Utils } from '../utils/utils.js';
+import { getIcon } from './icons.js';
 
 export class RegionRenderer {
     constructor(uiGameManager) {
@@ -80,7 +81,7 @@ export class RegionRenderer {
                 <div class="region-biome text-[9px] text-gray-300 mt-0.5 truncate">${region.biome}</div>
             </div>
             <div class="region-stars text-xs text-yellow-300 font-bold flex items-center gap-0.5 flex-shrink-0">
-                ${region.explorationLevel}<span class="text-[10px]">⭐</span>
+                ${region.explorationLevel}<span class="region-star-icon inline-flex items-center">${getIcon('star', { size: 10 })}</span>
             </div>
         `;
         return header;
@@ -130,18 +131,18 @@ export class RegionRenderer {
         
         const controller = region.controller !== null 
             ? gameState.players[region.controller].icon
-            : '<span class="text-gray-400 text-xs">🏳️</span>';
+            : `<span class="text-gray-400 text-xs inline-flex items-center">${getIcon('neutral', { size: 12 })}</span>`;
 
         let structureDisplay = '—';
         if (region.structures.length > 0) {
             const structureIcons = {
-                'Abrigo': '🛖',
-                'Torre de Vigia': '🏯',
-                'Mercado': '🏪',
-                'Laboratório': '🔬',
-                'Santuário': '🛐'
+                'Abrigo': getIcon('abrigo', { size: 12 }),
+                'Torre de Vigia': getIcon('torreVigia', { size: 12 }),
+                'Mercado': getIcon('mercado', { size: 12 }),
+                'Laboratório': getIcon('laboratorio', { size: 12 }),
+                'Santuário': getIcon('santuario', { size: 12 })
             };
-            structureDisplay = structureIcons[region.structures[0]] || '🏗️';
+            structureDisplay = structureIcons[region.structures[0]] || getIcon('estrutura', { size: 12 });
             if (region.structures.length > 1) {
                 structureDisplay += `+${region.structures.length - 1}`;
             }
@@ -149,7 +150,7 @@ export class RegionRenderer {
 
         footer.innerHTML = `
             <div class="region-controller text-xs font-medium text-white">${controller}</div>
-            <div class="region-structures text-xs">${structureDisplay}</div>
+            <div class="region-structures text-xs inline-flex items-center">${structureDisplay}</div>
         `;
         
         return footer;
@@ -167,6 +168,13 @@ export class RegionRenderer {
     _handleRegionClick(e, cell, region) {
         // Ignorar clique se o usuário estava arrastando/panning o mapa
         if (window.utils?.isMapPanning?.()) return;
+
+        // Bloquear cliques se for turno da IA
+        const currentPlayer = gameState.players[gameState.currentPlayerIndex];
+        if ((currentPlayer && (currentPlayer.type === 'ai' || currentPlayer.isAI)) || window.aiFeedbackModal?.isBlocked()) {
+            console.log('⛔ Clique no mapa ignorado: Turno da IA');
+            return;
+        }
 
         e.stopPropagation();
         

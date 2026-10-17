@@ -1,4 +1,6 @@
 // game-config.js - Configurações do jogo
+import { getIcon } from '../ui/icons.js';
+
 const GAME_CONFIG = {
   GRID_SIZE: 5,
   PLAYER_ICONS: ['🦁','🐯','🐻','🦊','🐺','🦅','🐉','🦈'],
@@ -25,10 +27,10 @@ const GAME_CONFIG = {
 };
 
 const RESOURCE_ICONS = {
-  madeira: '🪵',
-  pedra: '🪨', 
-  ouro: '🪙',
-  agua: '💧'
+  madeira: getIcon('madeira', { size: 16 }),
+  pedra: getIcon('pedra', { size: 16 }), 
+  ouro: getIcon('ouro', { size: 16 }),
+  agua: getIcon('agua', { size: 16 })
 };
 
 const BIOME_INCOME = {
@@ -91,35 +93,35 @@ const STRUCTURE_LIMITS = {
 
 const STRUCTURE_CONFIG = {
   'Abrigo': {
-    icon: '🛖',
+    icon: getIcon('abrigo', { size: 32 }),
     color: 'green',
     cost: STRUCTURE_COSTS['Abrigo'],
     income: STRUCTURE_INCOME['Abrigo'],
     effect: STRUCTURE_EFFECTS['Abrigo']
   },
   'Torre de Vigia': {
-    icon: '🏯',
+    icon: getIcon('torreVigia', { size: 32 }),
     color: 'blue',
     cost: STRUCTURE_COSTS['Torre de Vigia'],
     income: STRUCTURE_INCOME['Torre de Vigia'],
     effect: STRUCTURE_EFFECTS['Torre de Vigia']
   },
   'Mercado': {
-    icon: '🏪',
+    icon: getIcon('mercado', { size: 32 }),
     color: 'yellow',
     cost: STRUCTURE_COSTS['Mercado'],
     income: STRUCTURE_INCOME['Mercado'],
     effect: STRUCTURE_EFFECTS['Mercado']
   },
   'Laboratório': {
-    icon: '🔬',
+    icon: getIcon('laboratorio', { size: 32 }),
     color: 'purple',
     cost: STRUCTURE_COSTS['Laboratório'],
     income: STRUCTURE_INCOME['Laboratório'],
     effect: STRUCTURE_EFFECTS['Laboratório']
   },
   'Santuário': {
-    icon: '🛐',
+    icon: getIcon('santuario', { size: 32 }),
     color: 'red',
     cost: STRUCTURE_COSTS['Santuário'],
     income: STRUCTURE_INCOME['Santuário'],
@@ -635,11 +637,11 @@ const UI_CONSTANTS = {
   },
   
   STRUCTURE_ICONS: {
-    'Abrigo': '🛖',
-    'Torre de Vigia': '🏯',
-    'Mercado': '🏪',
-    'Laboratório': '🔬',
-    'Santuário': '🛐'
+    'Abrigo': getIcon('abrigo', { size: 16 }),
+    'Torre de Vigia': getIcon('torreVigia', { size: 16 }),
+    'Mercado': getIcon('mercado', { size: 16 }),
+    'Laboratório': getIcon('laboratorio', { size: 16 }),
+    'Santuário': getIcon('santuario', { size: 16 })
   },
   
   PLAYER_STATUS: {

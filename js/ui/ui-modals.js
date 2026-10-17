@@ -1,11 +1,13 @@
 // ui-modals.js - Gerenciamento de Modais (REFATORADO)
 import { gameState, achievementsState, getCurrentPlayer, addActivityLog } from '../state/game-state.js';
 import { 
+  GAME_CONFIG,
   RESOURCE_ICONS, 
   STRUCTURE_CONFIG,
   ACHIEVEMENTS_CONFIG 
 } from '../state/game-config.js';
 import { getAllManualContent } from '../utils/game-manual.js';
+import { getIcon } from './icons.js';
 
 // ==================== MODAIS ESPECIALIZADOS ====================
 
@@ -20,14 +22,15 @@ class AlertModal {
   }
 
   show(title, message, type = 'info') {
-    const icons = {
-      'info': 'ℹ️',
-      'warning': '🟡',
-      'error': '🔴',
-      'success': '🟢'
+    const iconMap = {
+      'info': 'info',
+      'warning': 'alerta',
+      'error': 'cross',
+      'success': 'check'
     };
     
-    this.iconEl.textContent = icons[type] || 'ℹ️';
+    const iconName = iconMap[type] || 'info';
+    this.iconEl.innerHTML = getIcon(iconName, { size: 36 });
     this.titleEl.textContent = title;
     this.messageEl.textContent = message;
     
@@ -50,7 +53,7 @@ class AlertModal {
   async confirm(title, message) {
     return new Promise(resolve => {
       let resolved = false;
-      this.iconEl.textContent = '❓';
+      this.iconEl.innerHTML = getIcon('question', { size: 36 });
       this.titleEl.textContent = title;
       this.messageEl.textContent = message;
       this.buttonsEl.innerHTML = '';
@@ -328,12 +331,12 @@ class StructureModal {
             <p class="text-xs font-semibold text-white/80 mb-1">Benefícios:</p>
             <div class="flex flex-wrap gap-2 mt-1">
               ${effect.pv ? `
-                <span class="text-xs px-3 py-1.5 rounded-lg bg-yellow-900/50 text-yellow-200 font-bold border border-yellow-500/30">
-                  +${effect.pv} ⭐ PV
+                <span class="text-xs px-3 py-1.5 rounded-lg bg-yellow-900/50 text-yellow-200 font-bold border border-yellow-500/30 inline-flex items-center gap-1">
+                  +${effect.pv} ${getIcon('star', { size: 12 })} PV
                 </span>
               ` : ''}
               ${Object.entries(income).map(([resource, amount]) => `
-                <span class="text-xs px-3 py-1.5 rounded-lg bg-blue-900/50 text-blue-200 font-bold border border-blue-500/30">
+                <span class="text-xs px-3 py-1.5 rounded-lg bg-blue-900/50 text-blue-200 font-bold border border-blue-500/30 inline-flex items-center gap-1">
                   +${amount}${RESOURCE_ICONS[resource]}
                 </span>
               `).join('')}
@@ -341,8 +344,8 @@ class StructureModal {
           </div>
           
           ${!canAfford ? 
-            '<p class="text-sm text-red-300 font-semibold mt-3 text-center py-1.5 bg-red-900/30 rounded border border-red-500/30">❌ Recursos insuficientes</p>' : 
-            '<p class="text-sm text-green-300 font-semibold mt-3 text-center py-1.5 bg-green-900/30 rounded border border-green-500/30">✅ Clique para construir</p>'
+            `<p class="text-sm text-red-300 font-semibold mt-3 text-center py-1.5 bg-red-900/30 rounded border border-red-500/30 flex items-center justify-center gap-1.5">${getIcon('cross', { size: 14 })} Recursos insuficientes</p>` : 
+            `<p class="text-sm text-green-300 font-semibold mt-3 text-center py-1.5 bg-green-900/30 rounded border border-green-500/30 flex items-center justify-center gap-1.5">${getIcon('check', { size: 14 })} Clique para construir</p>`
           }
         </div>
       </div>
@@ -379,7 +382,7 @@ class StructureModal {
   getEliminatedPlayerHTML() {
     return `
       <div class="text-center py-8">
-        <p class="text-gray-400">💀 Jogador eliminado não pode construir.</p>
+        <p class="text-gray-400 flex items-center justify-center gap-2">${getIcon('skull', { size: 18 })} Jogador eliminado não pode construir.</p>
         <p class="text-sm text-gray-500 mt-2">Para ressuscitar: domine uma região neutra</p>
       </div>
     `;
@@ -633,7 +636,13 @@ class ModalManager {
     this.showAlert(title, message, type);
   }
 
+  _isAIBlocked() {
+    const p = getCurrentPlayer();
+    return (p && (p.type === 'ai' || p.isAI)) || (window.aiFeedbackModal?.isBlocked());
+  }
+
   openManual() {
+    if (this._isAIBlocked()) return;
     this.manual.open();
   }
 
@@ -658,6 +667,7 @@ class ModalManager {
   }
 
   openStructureModal() {
+    if (this._isAIBlocked()) return;
     this.structure.open();
   }
 
@@ -758,6 +768,7 @@ class ModalManager {
   }
 
   renderAchievementsModal() {
+    if (this._isAIBlocked()) return;
     let modal = document.getElementById('achievementsModal');
     
     if (!modal) {
@@ -769,7 +780,9 @@ class ModalManager {
         <div class="relative w-full max-w-4xl bg-gray-900/95 backdrop-blur-md border border-yellow-500/30 rounded-2xl shadow-xl p-6">
           <div class="flex justify-between items-center mb-6">
             <div>
-              <h2 class="text-2xl text-yellow-300 font-semibold">🏆 Conquistas</h2>
+              <h2 class="text-2xl text-yellow-300 font-semibold flex items-center gap-2">
+                ${getIcon('trophy', { size: 24 })} Conquistas
+              </h2>
               <p id="achievementsPlayerName" class="text-gray-300 text-sm"></p>
             </div>
             <button id="achievementsModalClose" class="text-gray-300 hover:text-white text-xl">✖</button>
@@ -825,7 +838,7 @@ class ModalManager {
         const resourceCount = Object.values(playerStats.maxResources || {}).filter(v => v >= achievement.requirement).length;
         return { value: resourceCount, text: `Recursos: ${resourceCount}/4 com ${achievement.requirement}+` };
       case 'fastWin': return { value: gameState.turn, text: `Turno atual: ${gameState.turn}/${achievement.requirement}` };
-      case 'pacifist': return { value: playerStats.negotiated || 0, text: playerStats.negotiated === 0 ? '✅ Nunca negociou' : `Negociações: ${playerStats.negotiated}` };
+      case 'pacifist': return { value: playerStats.negotiated || 0, text: playerStats.negotiated === 0 ? 'Nunca negociou' : `Negociações: ${playerStats.negotiated}` };
       default: return { value: 0, text: '' };
     }
   }
@@ -847,8 +860,8 @@ class ModalManager {
       <div class="flex items-start gap-3">
         <span class="text-2xl">${achievement.icon}</span>
         <div class="flex-1">
-          <h3 class="font-bold ${isUnlocked ? 'text-yellow-300' : 'text-gray-300'}">
-            ${achievement.name} ${isUnlocked ? '<span class="text-green-400 ml-2">✓</span>' : ''}
+          <h3 class="font-bold flex items-center ${isUnlocked ? 'text-yellow-300' : 'text-gray-300'}">
+            ${achievement.name} ${isUnlocked ? `<span class="inline-flex items-center text-green-400 ml-2">${getIcon('check', { size: 14 })}</span>` : ''}
           </h3>
           <p class="text-sm text-gray-300 mt-1">${achievement.description}</p>
           
@@ -884,7 +897,7 @@ class ModalManager {
         <div class="absolute inset-0 bg-black/80"></div>
         <div class="relative w-full max-w-2xl bg-gray-900/95 backdrop-blur-md border border-gray-700 rounded-2xl shadow-xl p-8">
           <div class="text-center">
-            <div class="text-6xl mb-4">💀</div>
+            <div class="text-6xl mb-4 flex items-center justify-center text-red-400">${getIcon('skull', { size: 64 })}</div>
             <h2 class="text-3xl text-white font-bold mb-4">FIM DE JOGO</h2>
             <p class="text-xl text-gray-300 mb-6">Todos os jogadores foram eliminados!</p>
             
@@ -946,7 +959,7 @@ class ModalManager {
     
     const phaseIndicator = document.getElementById('phaseIndicator');
     if (phaseIndicator) {
-      phaseIndicator.textContent = '🎉 JOGO TERMINADO!';
+      phaseIndicator.textContent = 'JOGO TERMINADO';
       phaseIndicator.classList.add('text-yellow-400', 'font-bold', 'animate-pulse');
     }
   }
@@ -954,6 +967,10 @@ class ModalManager {
   closeAllModals() {
     Object.values(this.modals).forEach(modal => {
       if (modal) modal.classList.add('hidden');
+    });
+    ['achievementsModal', 'negotiationModal', 'negResponseModal', 'disputeModal', 'pending-negotiations-summary'].forEach(id => {
+      const el = document.getElementById(id);
+      if (el) el.classList.add('hidden');
     });
   }
 
