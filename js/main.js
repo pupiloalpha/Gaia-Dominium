@@ -16,10 +16,17 @@ import {
   initializeGame,
   setAIPlayers,
   saveGame,
+  saveCurrentGame,
   loadGame,
   hasSavedGame,
   getSavedGame,
-  migrateSaveData
+  deleteSavedGame,
+  migrateSaveData,
+  getSavedGamesList,
+  loadSavedGameById,
+  deleteSavedGameById,
+  getGameRules,
+  setGameRules
 } from './state/game-state.js';
 
 // ==================== INICIALIZAÇÃO GLOBAL ====================
@@ -96,7 +103,13 @@ if (introVideo) {
   window.getCurrentPlayer = getCurrentPlayer;
   window.initializeGame = initializeGame;
   window.saveGame = saveGame;
+  window.saveCurrentGame = saveCurrentGame;
   window.loadGame = loadGame;
+  window.getSavedGamesList = getSavedGamesList;
+  window.loadSavedGameById = loadSavedGameById;
+  window.deleteSavedGameById = deleteSavedGameById;
+  window.getGameRules = getGameRules;
+  window.setGameRules = setGameRules;
   
   // 6. Configurar elementos da interface
   setupInitialUI();
@@ -118,7 +131,7 @@ if (introVideo) {
 function setupInitialUI() {
   if (window.uiManager) {
     if (window.uiManager.playersManager) {
-    window.uiManager.playersManager.renderIconSelection();
+      window.uiManager.playersManager.renderIconSelection();
     }
     // Inicializar seleção de facções
     setTimeout(() => {
@@ -126,6 +139,27 @@ function setupInitialUI() {
         window.uiManager.renderFactionSelection();
       }
     }, 100);
+
+    // Conectar botões de Ajustes e Jogos Salvos
+    const rulesBtn = document.getElementById('openGameRulesBtn');
+    if (rulesBtn) {
+      rulesBtn.addEventListener('click', () => {
+        window.uiManager?.modals?.openGameRules();
+      });
+    }
+
+    const savesBtn = document.getElementById('openSavedGamesBtn');
+    if (savesBtn) {
+      savesBtn.addEventListener('click', () => {
+        window.uiManager?.modals?.openSavedGames();
+      });
+    }
+
+    // Inicializar badges na tela de setup
+    setTimeout(() => {
+      window.uiManager?.modals?.gameRules?.updateBadge();
+      window.uiManager?.modals?.savedGames?.updateSavesCountBadge();
+    }, 150);
   }
 }
 
@@ -436,13 +470,16 @@ async function checkForSavedGame() {
         window._isCheckingSavedGame = false;
       }, 300);
     } else if (result.hasSave && !result.load) {
-      console.log('🎮 Usuário optou por novo jogo');
-      localStorage.removeItem('gaia-dominium-save');
+      console.log('🎮 Usuário optou por configurar novo jogo');
       window._gameWasLoaded = false;
+      
+      // Atualizar badges na tela inicial
+      window.uiManager?.modals?.gameRules?.updateBadge();
+      window.uiManager?.modals?.savedGames?.updateSavesCountBadge();
       
       setTimeout(() => {
         if (window.uiManager?.modals?.showFeedback) {
-          window.uiManager.modals.showFeedback('Novo jogo iniciado!', 'info');
+          window.uiManager.modals.showFeedback('Defina as regras e jogadores para a partida!', 'info');
         }
         window._isCheckingSavedGame = false;
       }, 500);

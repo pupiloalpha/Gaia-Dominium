@@ -15,7 +15,7 @@ import {
   addActivityLog
 } from '../state/game-state.js';
 import { RESOURCE_ICONS } from '../state/game-config.js';
-import { getIcon } from './icons.js';
+import { getIcon, renderPlayerIcon } from './icons.js';
 
 class NegotiationUI {
   constructor(uiManager) {
@@ -93,7 +93,7 @@ class NegotiationUI {
       if (p.id !== initiator.id && (p.resources.ouro || 0) >= 1) {
         const opt = document.createElement('option');
         opt.value = String(p.id);
-        opt.textContent = `${p.icon} ${p.name} (${p.resources.ouro} Ouro)`;
+        opt.textContent = `${p.name} (${p.resources.ouro} Ouro)`;
         this.negTargetSelect.appendChild(opt);
         hasValidTargets = true;
       }
@@ -1026,8 +1026,8 @@ class NegotiationUI {
         <span class="text-2xl inline-flex items-center text-purple-400">${getIcon('negociar', { size: 24 })}</span>
         <div class="flex-1">
           <h4 class="font-semibold text-white">Nova Proposta Recebida!</h4>
-          <p class="text-sm text-gray-300 mt-1">
-            <span class="text-yellow-300">${initiatorPlayer.icon} ${initiatorPlayer.name}</span> enviou uma proposta
+          <p class="text-sm text-gray-300 mt-1 flex items-center gap-1">
+            <span class="text-yellow-300 inline-flex items-center gap-1">${renderPlayerIcon(initiatorPlayer.icon, 14)} <span>${initiatorPlayer.name}</span></span> enviou uma proposta
           </p>
           <div class="mt-2 text-xs text-gray-400">
             ${offerSummary}

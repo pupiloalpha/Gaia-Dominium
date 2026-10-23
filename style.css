@@ -113,6 +113,8 @@ body {
 #alertModal { z-index: 1055; }
 #victoryModal { z-index: 1030; }
 #saveLoadModal { z-index: 1035; }
+#gameRulesModal { z-index: 1060; }
+#savedGamesModal { z-index: 1060; }
 #disputeModal { z-index: 1015; }
 #disputeResultModal { z-index: 1016; }
 #achievementsModal { z-index: 1040; }

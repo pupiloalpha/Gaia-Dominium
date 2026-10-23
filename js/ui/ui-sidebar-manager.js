@@ -2,7 +2,7 @@
 import { gameState, achievementsState } from '../state/game-state.js';
 import { RESOURCE_ICONS, ACHIEVEMENTS_CONFIG, UI_CONSTANTS } from '../state/game-config.js';
 import { Utils } from '../utils/utils.js';
-import { getIcon } from './icons.js';
+import { getIcon, renderPlayerIcon } from './icons.js';
 
 // Desestruturação das constantes de UI
 const { BIOME_EMOJIS, STRUCTURE_ICONS } = UI_CONSTANTS;
@@ -40,7 +40,7 @@ export class SidebarManager {
             <div class="flex items-center gap-3 p-2 rounded-lg" 
                  style="border-left: 4px solid ${isEliminated ? '#666666' : player.color}; 
                         background: rgba(${Utils.hexToRgb(isEliminated ? '#666666' : player.color).join(', ')}, 0.05)">
-                <div class="text-3xl flex items-center justify-center text-gray-400">${isEliminated ? getIcon('skull', { size: 28 }) : player.icon}</div>
+                <div class="text-3xl flex items-center justify-center text-gray-400">${isEliminated ? getIcon('skull', { size: 28 }) : renderPlayerIcon(player.icon, 28)}</div>
                 <div class="flex-1">
                     <div class="text-base font-semibold ${isEliminated ? 'text-gray-400 line-through' : 'text-white'}">
                         ${player.name} ${isEliminated ? '(ELIMINADO)' : ''}
@@ -51,7 +51,7 @@ export class SidebarManager {
                     </div>
                     ${faction && !isEliminated ? `
                     <div class="text-xs font-medium flex items-center gap-1" style="color: ${factionColor}">
-                        <span class="text-sm">${faction.icon || '🏛️'}</span>
+                        <span class="inline-flex items-center">${faction.icon || getIcon('faction_forest', { size: 14 })}</span>
                         <span>${faction.name}</span>
                     </div>
                     ` : ''}
@@ -106,7 +106,7 @@ export class SidebarManager {
                 return `
                     <div class="mb-2">
                         <div class="text-xs font-semibold text-gray-400 mb-1 flex items-center gap-1">
-                            <span>${BIOME_EMOJIS[biome] || '🗺️'}</span>
+                            <span class="inline-flex items-center">${BIOME_EMOJIS[biome] || getIcon('scroll', { size: 14 })}</span>
                             <span>${biome}</span>
                             <span class="text-yellow-400">(${regions.length})</span>
                         </div>

@@ -3,7 +3,7 @@ import { getIcon } from '../ui/icons.js';
 
 const GAME_CONFIG = {
   GRID_SIZE: 5,
-  PLAYER_ICONS: ['🦁','🐯','🐻','🦊','🐺','🦅','🐉','🦈'],
+  PLAYER_ICONS: ['leao', 'tigre', 'urso', 'raposa', 'lobo', 'aguia', 'dragao', 'tubarao'],
   PLAYER_COLORS: ['#166A38', '#1E40AF', '#991B1B', '#A16207'],
   BIOMES: ['Floresta Tropical','Floresta Temperada','Savana','Pântano'],
   REGION_NAMES: Array.from({length:25}, (_,i)=>`Região ${String.fromCharCode(65+i)}`),
@@ -25,6 +25,56 @@ const GAME_CONFIG = {
   MAX_PLAYERS: 4,
   MIN_PLAYERS: 2
 };
+
+const DEFAULT_GAME_RULES = {
+  targetVictoryPoints: 25,
+  victoryCondition: 'pv', // 'pv' | 'domination' | 'elimination' | 'all'
+  eventFrequency: 'normal' // 'normal' | 'every_round'
+};
+
+const VICTORY_POINTS_OPTIONS = [25, 50, 75, 100];
+
+const VICTORY_CONDITION_OPTIONS = [
+  {
+    id: 'pv',
+    name: 'Pontos de Vitória (PV)',
+    description: 'Vence o primeiro jogador a atingir a meta estipulada de PV.',
+    icon: 'trofeu'
+  },
+  {
+    id: 'domination',
+    name: 'Dominação Total do Mapa',
+    description: 'O jogo prossegue até que todas as 25 regiões estejam dominadas. Vence quem controlar o maior número de regiões (desempate por PV).',
+    icon: 'dominar'
+  },
+  {
+    id: 'elimination',
+    name: 'Sobrevivência / Eliminação',
+    description: 'O jogo só termina quando todos os adversários forem eliminados. Vence o último jogador sobrevivente.',
+    icon: 'skull'
+  },
+  {
+    id: 'all',
+    name: 'Misto (Qualquer Condição)',
+    description: 'Termina imediatamente assim que qualquer condição ocorrer: meta de PV, todas as 25 regiões dominadas ou eliminação dos rivais.',
+    icon: 'lightning'
+  }
+];
+
+const EVENT_FREQUENCY_OPTIONS = [
+  {
+    id: 'normal',
+    name: 'Ritmo Padrão',
+    description: 'Um novo evento global ocorre a cada 4 rodadas.',
+    icon: 'turn'
+  },
+  {
+    id: 'every_round',
+    name: 'Evento a Cada Rodada (Caos)',
+    description: 'Um novo evento global afeta Gaia no início de cada rodada.',
+    icon: 'lightning'
+  }
+];
 
 const RESOURCE_ICONS = {
   madeira: getIcon('madeira', { size: 16 }),
@@ -518,7 +568,7 @@ const FACTION_ABILITIES = {
     id: 'forest_guardians',
     name: 'Guardiões da Floresta',
     color: '#166A38',
-    icon: '🦌',
+    icon: getIcon('faction_forest', { size: 18 }),
     description: 'Mestres da natureza e biomas florestais',
     abilities: {
       // Bônus permanente em Florestas Tropicais e Temperadas
@@ -538,7 +588,7 @@ const FACTION_ABILITIES = {
     id: 'water_masters',
     name: 'Mestres das Águas',
     color: '#1E40AF',
-    icon: '🌊',
+    icon: getIcon('faction_water', { size: 18 }),
     description: 'Exploradores dos recursos hídricos e costeiros',
     abilities: {
       // Bônus permanente em Pântanos
@@ -559,7 +609,7 @@ const FACTION_ABILITIES = {
     id: 'mountain_builders',
     name: 'Construtores da Montanha',
     color: '#991B1B',
-    icon: '⛰️',
+    icon: getIcon('faction_mountain', { size: 18 }),
     description: 'Mestres em mineração e construções robustas',
     abilities: {
       // Bônus permanente em Savanas (consideradas áridas/montanhosas)
@@ -580,7 +630,7 @@ const FACTION_ABILITIES = {
     id: 'merchants_barons',
     name: 'Barões do Comércio',
     color: '#A16207',
-    icon: '💰',
+    icon: getIcon('faction_trade', { size: 18 }),
     description: 'Especialistas em comércio e economia',
     abilities: {
       // Bônus permanente em Savanas
@@ -598,28 +648,33 @@ const FACTION_ABILITIES = {
     }
   }
 };
-
+export const FACTION_CONFIG = {
+  amarela: { id: 'amarela', name: 'Barões do Comércio', img: 'assets/images/faccao_amarela_icone.webp', abilities: FACTION_ABILITIES[3] },
+  azul:    { id: 'azul',    name: 'Mestres das Águas', img: 'assets/images/faccao_azul_icone.webp',    abilities: FACTION_ABILITIES[1] },
+  verde:   { id: 'verde',   name: 'Guardiões da Floresta', img: 'assets/images/faccao_verde_icone.webp',   abilities: FACTION_ABILITIES[0] },
+  vermelha:{ id: 'vermelha',name: 'Construtores da Montanha', img: 'assets/images/faccao_vermelha_icone.webp', abilities: FACTION_ABILITIES[2] }
+};
 // ==================== CONSTANTES DE UI ====================
 const UI_CONSTANTS = {
   LOG_ICONS: {
-    'action': '⚡',
-    'build': '🏗️',
-    'explore': '⛏️',
-    'collect': '🌾',
-    'negotiate': '🤝',
-    'event': '🎴',
-    'victory': '🏆',
-    'phase': '🔄',
-    'turn': '📅',
-    'system': '⚙️',
-    'income': '💰',
-    'default': '📝'
+    'action': getIcon('lightning', { size: 14 }),
+    'build': getIcon('construir', { size: 14 }),
+    'explore': getIcon('explorar', { size: 14 }),
+    'collect': getIcon('coletar', { size: 14 }),
+    'negotiate': getIcon('negociar', { size: 14 }),
+    'event': getIcon('evento', { size: 14 }),
+    'victory': getIcon('trofeu', { size: 14 }),
+    'phase': getIcon('turn', { size: 14 }),
+    'turn': getIcon('turn', { size: 14 }),
+    'system': getIcon('gear', { size: 14 }),
+    'income': getIcon('ouro', { size: 14 }),
+    'default': getIcon('scroll', { size: 14 })
   },
   
   PHASE_NAMES: {
-    'renda': '💰 Renda',
-    'acoes': '⚡ Ações',
-    'negociacao': '🤝 Negociação'
+    'renda': `${getIcon('ouro', { size: 14 })} Renda`,
+    'acoes': `${getIcon('lightning', { size: 14 })} Ações`,
+    'negociacao': `${getIcon('negociar', { size: 14 })} Negociação`
   },
   
   ACTION_COSTS: {
@@ -630,10 +685,10 @@ const UI_CONSTANTS = {
   },
   
   BIOME_EMOJIS: {
-    'Floresta Tropical': '🌴',
-    'Floresta Temperada': '🌲',
-    'Savana': '🏜️',
-    'Pântano': '🌊'
+    'Floresta Tropical': getIcon('tropical', { size: 16 }),
+    'Floresta Temperada': getIcon('temperada', { size: 16 }),
+    'Savana': getIcon('savana', { size: 16 }),
+    'Pântano': getIcon('pantano', { size: 16 })
   },
   
   STRUCTURE_ICONS: {
@@ -645,9 +700,9 @@ const UI_CONSTANTS = {
   },
   
   PLAYER_STATUS: {
-    ELIMINATED: '💀 ELIMINADO',
-    CURRENT_TURN: '🎮 TURNO',
-    DEFAULT: '🏹 ATIVO'
+    ELIMINATED: `${getIcon('skull', { size: 14 })} ELIMINADO`,
+    CURRENT_TURN: `${getIcon('turn', { size: 14 })} TURNO`,
+    DEFAULT: `${getIcon('star', { size: 14 })} ATIVO`
   }
 };
 
@@ -670,5 +725,9 @@ export {
   ACHIEVEMENTS,
   EVENT_CATEGORIES,
   FACTION_ABILITIES,
-  UI_CONSTANTS
+  UI_CONSTANTS,
+  DEFAULT_GAME_RULES,
+  VICTORY_POINTS_OPTIONS,
+  VICTORY_CONDITION_OPTIONS,
+  EVENT_FREQUENCY_OPTIONS
 };

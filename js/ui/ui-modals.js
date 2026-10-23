@@ -1,13 +1,23 @@
-// ui-modals.js - Gerenciamento de Modais (REFATORADO)
-import { gameState, achievementsState, getCurrentPlayer, addActivityLog } from '../state/game-state.js';
+import { 
+  gameState, 
+  achievementsState, 
+  getCurrentPlayer, 
+  addActivityLog,
+  getGameRules,
+  setGameRules,
+  getSavedGamesList,
+  loadSavedGameById,
+  deleteSavedGameById
+} from '../state/game-state.js';
 import { 
   GAME_CONFIG,
   RESOURCE_ICONS, 
   STRUCTURE_CONFIG,
-  ACHIEVEMENTS_CONFIG 
+  ACHIEVEMENTS_CONFIG,
+  DEFAULT_GAME_RULES 
 } from '../state/game-config.js';
 import { getAllManualContent } from '../utils/game-manual.js';
-import { getIcon } from './icons.js';
+import { getIcon, renderPlayerIcon } from './icons.js';
 
 // ==================== MODAIS ESPECIALIZADOS ====================
 
@@ -424,7 +434,7 @@ class IncomeModal {
     
     this.modalManager.uiManager.setModalMode(true);
     
-    document.getElementById('incomePlayerName').textContent = `${player.icon} ${player.name}`;
+    document.getElementById('incomePlayerName').innerHTML = `<span class="inline-flex items-center gap-1.5">${renderPlayerIcon(player.icon, 18)} <span>${player.name}</span></span>`;
     document.getElementById('incomeResources').innerHTML = this.getResourcesHTML(bonuses);
     
     this.modal.classList.remove('hidden');
@@ -516,10 +526,24 @@ class VictoryModal {
     }
   }
 
-  open(winner) {
-    document.getElementById('victoryPlayerName').textContent = winner.name;
-    document.getElementById('victoryPointsDisplay').textContent = winner.victoryPoints;
-    document.getElementById('victoryTurnCount').textContent = gameState.turn;
+  open(winner, customReason = null) {
+    const nameEl = document.getElementById('victoryPlayerName');
+    if (nameEl) nameEl.textContent = winner.name;
+    
+    const ptsEl = document.getElementById('victoryPointsDisplay');
+    if (ptsEl) ptsEl.textContent = winner.victoryPoints;
+    
+    const turnEl = document.getElementById('victoryTurnCount');
+    if (turnEl) turnEl.textContent = gameState.turn;
+    
+    const reasonEl = document.getElementById('victoryModalMessage');
+    if (reasonEl) {
+      if (customReason) {
+        reasonEl.innerHTML = `Parabéns, <span class="text-yellow-300 font-bold">${winner.name}</span>!<br><span class="text-sm text-yellow-200/90 mt-2 inline-block font-normal bg-yellow-950/40 border border-yellow-500/20 px-3 py-1.5 rounded-lg">${customReason}</span>`;
+      } else {
+        reasonEl.innerHTML = `Parabéns, <span class="text-yellow-300 font-bold">${winner.name}</span>!`;
+      }
+    }
     
     this.modal.classList.remove('hidden');
     this.modalManager.disableAllGameActions();
@@ -588,6 +612,332 @@ class VictoryModal {
   }
 }
 
+// ==================== MODAL DE AJUSTES E REGRAS ====================
+
+class GameRulesModal {
+  constructor(modalManager) {
+    this.modalManager = modalManager;
+    this.modal = document.getElementById('gameRulesModal');
+    this.closeBtn = document.getElementById('rulesCloseBtn');
+    this.cancelBtn = document.getElementById('rulesCancelBtn');
+    this.confirmBtn = document.getElementById('rulesConfirmBtn');
+    this.resetBtn = document.getElementById('rulesResetBtn');
+    this.pvOptionsContainer = document.getElementById('pvOptionsContainer');
+    this.eventCheckbox = document.getElementById('rulesEventEveryRoundCheckbox');
+    this.summaryBadge = document.getElementById('rulesActiveSummaryBadge');
+    
+    this.selectedPV = 25;
+    this.setupListeners();
+    this.updateBadge();
+  }
+
+  setupListeners() {
+    this.closeBtn?.addEventListener('click', () => this.close());
+    this.cancelBtn?.addEventListener('click', () => this.close());
+    this.confirmBtn?.addEventListener('click', () => this.confirm());
+    this.resetBtn?.addEventListener('click', () => this.reset());
+
+    if (this.pvOptionsContainer) {
+      this.pvOptionsContainer.addEventListener('click', (e) => {
+        const btn = e.target.closest('.pv-option-btn');
+        if (!btn) return;
+        const pv = Number(btn.dataset.pv);
+        this.selectPV(pv);
+      });
+    }
+
+    const radios = document.querySelectorAll('input[name="victoryConditionRadio"]');
+    radios.forEach(radio => {
+      radio.addEventListener('change', () => {
+        this._updateRadioCardsVisual();
+      });
+    });
+  }
+
+  selectPV(pv) {
+    this.selectedPV = pv;
+    const buttons = this.pvOptionsContainer?.querySelectorAll('.pv-option-btn') || [];
+    buttons.forEach(btn => {
+      const val = Number(btn.dataset.pv);
+      if (val === pv) {
+        btn.className = 'pv-option-btn p-3 rounded-xl border text-center transition flex flex-col items-center justify-center gap-1 bg-yellow-500/20 border-yellow-400 text-yellow-300 ring-2 ring-yellow-400/30';
+      } else {
+        btn.className = 'pv-option-btn p-3 rounded-xl border text-center transition flex flex-col items-center justify-center gap-1 bg-gray-800/80 border-white/10 text-gray-300 hover:border-yellow-500/50 hover:bg-gray-700/80';
+      }
+    });
+  }
+
+  _updateRadioCardsVisual() {
+    const cards = document.querySelectorAll('.victory-cond-card');
+    cards.forEach(card => {
+      const radio = card.querySelector('input[type="radio"]');
+      if (radio && radio.checked) {
+        card.className = 'victory-cond-card flex items-start gap-3 p-3.5 rounded-xl border cursor-pointer transition bg-yellow-500/10 border-yellow-400/50 text-white';
+      } else {
+        card.className = 'victory-cond-card flex items-start gap-3 p-3.5 rounded-xl border border-white/10 bg-gray-800/60 hover:bg-gray-700/60 hover:border-yellow-500/40 cursor-pointer transition text-gray-200';
+      }
+    });
+  }
+
+  open() {
+    const currentRules = getGameRules();
+    this.selectPV(Number(currentRules.targetVictoryPoints) || 25);
+    
+    const radios = document.querySelectorAll('input[name="victoryConditionRadio"]');
+    radios.forEach(r => {
+      r.checked = (r.value === (currentRules.victoryCondition || 'pv'));
+    });
+    this._updateRadioCardsVisual();
+
+    if (this.eventCheckbox) {
+      this.eventCheckbox.checked = currentRules.eventFrequency === 'every_round';
+    }
+
+    if (this.modal) {
+      this.modal.classList.remove('hidden');
+    }
+  }
+
+  close() {
+    if (this.modal) {
+      this.modal.classList.add('hidden');
+    }
+  }
+
+  confirm() {
+    const selectedRadio = document.querySelector('input[name="victoryConditionRadio"]:checked');
+    const condition = selectedRadio ? selectedRadio.value : 'pv';
+    const isEveryRound = this.eventCheckbox ? this.eventCheckbox.checked : false;
+
+    setGameRules({
+      targetVictoryPoints: this.selectedPV,
+      victoryCondition: condition,
+      eventFrequency: isEveryRound ? 'every_round' : 'normal'
+    });
+
+    this.updateBadge();
+    this.close();
+    this.modalManager.showFeedback('Ajustes salvos com sucesso!', 'success');
+  }
+
+  reset() {
+    this.selectPV(25);
+    const radios = document.querySelectorAll('input[name="victoryConditionRadio"]');
+    radios.forEach(r => {
+      r.checked = (r.value === 'pv');
+    });
+    this._updateRadioCardsVisual();
+    if (this.eventCheckbox) {
+      this.eventCheckbox.checked = false;
+    }
+  }
+
+  updateBadge() {
+    const badge = document.getElementById('rulesActiveSummaryBadge');
+    if (!badge) return;
+    const rules = getGameRules();
+    let text = `${rules.targetVictoryPoints || 25} PV`;
+    if (rules.victoryCondition === 'domination') {
+      text = 'Dominação';
+    } else if (rules.victoryCondition === 'elimination') {
+      text = 'Eliminação';
+    } else if (rules.victoryCondition === 'all') {
+      text = 'Misto';
+    }
+    if (rules.eventFrequency === 'every_round') {
+      text += ' • Caos';
+    }
+    badge.textContent = text;
+  }
+}
+
+// ==================== MODAL DE JOGOS SALVOS ====================
+
+class SavedGamesModal {
+  constructor(modalManager) {
+    this.modalManager = modalManager;
+    this.modal = document.getElementById('savedGamesModal');
+    this.closeBtn = document.getElementById('savedGamesCloseBtn');
+    this.footerCloseBtn = document.getElementById('savedGamesFooterCloseBtn');
+    this.listContainer = document.getElementById('savedGamesListContainer');
+    this.emptyState = document.getElementById('savedGamesEmptyState');
+    this.totalText = document.getElementById('savedGamesTotalText');
+    this.savesCountBadge = document.getElementById('savesCountBadge');
+
+    this.setupListeners();
+    this.updateSavesCountBadge();
+  }
+
+  setupListeners() {
+    this.closeBtn?.addEventListener('click', () => this.close());
+    this.footerCloseBtn?.addEventListener('click', () => this.close());
+
+    if (this.listContainer) {
+      this.listContainer.addEventListener('click', async (e) => {
+        const btn = e.target.closest('button[data-action]');
+        if (!btn) return;
+        const action = btn.dataset.action;
+        const saveId = btn.dataset.id;
+
+        if (action === 'load') {
+          this.handleLoad(saveId);
+        } else if (action === 'delete') {
+          await this.handleDelete(saveId);
+        }
+      });
+    }
+  }
+
+  open() {
+    this.renderList();
+    if (this.modal) {
+      this.modal.classList.remove('hidden');
+    }
+  }
+
+  close() {
+    if (this.modal) {
+      this.modal.classList.add('hidden');
+    }
+  }
+
+  updateSavesCountBadge() {
+    const list = getSavedGamesList();
+    const count = list.length;
+    const badge = document.getElementById('savesCountBadge');
+    if (badge) {
+      badge.textContent = count;
+      if (count > 0) {
+        badge.classList.remove('hidden');
+      }
+    }
+    if (this.totalText) {
+      this.totalText.textContent = `${count} ${count === 1 ? 'partida salva' : 'partidas salvas'}`;
+    }
+  }
+
+  renderList() {
+    const list = getSavedGamesList();
+    this.updateSavesCountBadge();
+
+    if (!this.listContainer) return;
+
+    if (list.length === 0) {
+      this.listContainer.innerHTML = '';
+      if (this.emptyState) this.emptyState.classList.remove('hidden');
+      return;
+    }
+
+    if (this.emptyState) this.emptyState.classList.add('hidden');
+
+    this.listContainer.innerHTML = list.map(save => {
+      const dateStr = save.timestamp ? new Date(save.timestamp).toLocaleString('pt-BR', {
+        day: '2-digit', month: '2-digit', year: 'numeric',
+        hour: '2-digit', minute: '2-digit'
+      }) : 'Data desconhecida';
+
+      const rules = save.rules || {};
+      let ruleBadge = `${rules.targetVictoryPoints || 25} PV`;
+      if (rules.victoryCondition === 'domination') ruleBadge = 'Dominação Total';
+      else if (rules.victoryCondition === 'elimination') ruleBadge = 'Eliminação';
+      else if (rules.victoryCondition === 'all') ruleBadge = 'Modo Misto';
+
+      if (rules.eventFrequency === 'every_round') {
+        ruleBadge += ' • Caos';
+      }
+
+      const playersHtml = (save.players || []).map(p => `
+        <div class="flex items-center gap-1.5 px-2 py-0.5 rounded-lg bg-gray-800/80 border border-white/5 text-[11px]">
+          <span class="w-2 h-2 rounded-full" style="background-color: ${p.color || '#fbbf24'}"></span>
+          <span class="font-medium text-white truncate max-w-[80px]">${p.name}</span>
+          <span class="text-yellow-400 font-bold">${p.victoryPoints} PV</span>
+          <span class="text-gray-400">(${p.regionsCount || 0} reg)</span>
+          ${p.isAI ? '<span class="text-[9px] px-1 rounded bg-purple-900/60 text-purple-300">IA</span>' : ''}
+        </div>
+      `).join('');
+
+      return `
+        <div class="p-4 rounded-xl bg-gray-800/50 hover:bg-gray-800/80 border border-white/10 hover:border-blue-500/40 transition flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+          <div class="flex-1 min-w-0">
+            <div class="flex flex-wrap items-center gap-2 mb-1">
+              <h4 class="text-sm font-bold text-white truncate">${save.name || 'Partida'}</h4>
+              <span class="text-[10px] px-2 py-0.5 rounded-full bg-blue-500/20 text-blue-300 border border-blue-500/30 font-semibold">
+                Turno ${save.turn || 1}
+              </span>
+              <span class="text-[10px] px-2 py-0.5 rounded-full bg-yellow-500/20 text-yellow-300 border border-yellow-500/30">
+                ${ruleBadge}
+              </span>
+            </div>
+            
+            <div class="text-[11px] text-gray-400 mb-2 flex items-center gap-2">
+              <span>📅 ${dateStr}</span>
+              <span>•</span>
+              <span>👥 ${save.playersCount || save.players?.length || 0} jogadores</span>
+            </div>
+
+            <div class="flex flex-wrap gap-1.5">
+              ${playersHtml}
+            </div>
+          </div>
+
+          <div class="flex items-center gap-2 w-full sm:w-auto justify-end pt-2 sm:pt-0 border-t sm:border-t-0 border-white/5">
+            <button 
+              type="button" 
+              class="px-3.5 py-2 rounded-xl bg-green-600 hover:bg-green-700 text-white text-xs font-semibold flex items-center gap-1.5 shadow transition transform hover:scale-[1.02] cursor-pointer"
+              data-action="load" 
+              data-id="${save.id}"
+              title="Carregar esta partida e jogar"
+            >
+              <span>▶️</span>
+              <span>Carregar</span>
+            </button>
+            <button 
+              type="button" 
+              class="p-2 rounded-xl bg-gray-800 hover:bg-red-900/40 text-gray-400 hover:text-red-300 border border-white/10 hover:border-red-500/30 transition cursor-pointer"
+              data-action="delete" 
+              data-id="${save.id}"
+              title="Excluir este save"
+            >
+              ${getIcon('trash', { size: 16 })}
+            </button>
+          </div>
+        </div>
+      `;
+    }).join('');
+  }
+
+  handleLoad(saveId) {
+    const success = loadSavedGameById(saveId);
+    if (success) {
+      this.close();
+      window._gameWasLoaded = true;
+      if (window.showGameInterface) {
+        window.showGameInterface();
+      }
+      this.modalManager.showFeedback('Partida carregada com sucesso!', 'success');
+    } else {
+      this.modalManager.showFeedback('Não foi possível carregar a partida.', 'error');
+    }
+  }
+
+  async handleDelete(saveId) {
+    const confirmed = await this.modalManager.showConfirm(
+      'Excluir Jogo Salvo',
+      'Tem certeza que deseja excluir esta partida salva? Essa ação não pode ser desfeita.'
+    );
+
+    if (confirmed) {
+      const success = deleteSavedGameById(saveId);
+      if (success) {
+        this.renderList();
+        this.modalManager.showFeedback('Partida excluída com sucesso!', 'info');
+      } else {
+        this.modalManager.showFeedback('Erro ao excluir partida.', 'error');
+      }
+    }
+  }
+}
+
 // ==================== MODAL MANAGER PRINCIPAL ====================
 
 class ModalManager {
@@ -601,6 +951,8 @@ class ModalManager {
     this.structure = new StructureModal(this);
     this.income = new IncomeModal(this);
     this.victory = new VictoryModal(this);
+    this.gameRules = new GameRulesModal(this);
+    this.savedGames = new SavedGamesModal(this);
     
     // Cache de modais
     this.modals = {
@@ -611,8 +963,26 @@ class ModalManager {
       income: document.getElementById('incomeModal'),
       victory: document.getElementById('victoryModal'),
       dispute: document.getElementById('disputeModal'),
-      disputeResult: document.getElementById('disputeResultModal')
+      disputeResult: document.getElementById('disputeResultModal'),
+      gameRules: document.getElementById('gameRulesModal'),
+      savedGames: document.getElementById('savedGamesModal')
     };
+  }
+
+  openGameRules() {
+    this.gameRules.open();
+  }
+
+  closeGameRules() {
+    this.gameRules.close();
+  }
+
+  openSavedGames() {
+    this.savedGames.open();
+  }
+
+  closeSavedGames() {
+    this.savedGames.close();
   }
 
   // ==================== MÉTODOS DE INTERFACE (mantidos para compatibilidade) ====================

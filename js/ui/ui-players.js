@@ -1,15 +1,16 @@
 // ui-players.js - Gestão de Jogadores Humanos e IA
 import { gameState } from '../state/game-state.js';
-import { GAME_CONFIG, FACTION_ABILITIES } from '../state/game-config.js';
+import { GAME_CONFIG, FACTION_ABILITIES, FACTION_CONFIG } from '../state/game-config.js';
 import { AI_DIFFICULTY_SETTINGS } from '../ai/ai-system.js';
 import { RESOURCE_ICONS } from '../state/game-config.js';
-import { getIcon } from './icons.js';
+import { getIcon, renderPlayerIcon } from './icons.js';
 
 export class UIPlayersManager {
     constructor(uiManager) {
         this.uiManager = uiManager;
         this.selectedIcon = null;
         this.editingIndex = null;
+        this.selectedFactionCard = null;
         
         // Bind methods
         this.selectIcon = this.selectIcon.bind(this);
@@ -32,13 +33,14 @@ export class UIPlayersManager {
         // Seleção de ícones e facções
         this.iconSelection = document.getElementById('iconSelection');
         this.factionDropdown = document.getElementById('factionDropdown');
+        this.factionCardContainer = document.getElementById('factionCardContainer');
         
         console.log("✅ Elementos de jogadores cacheados");
     }
 
     init() {
-        this.renderIconSelection();
         this.populateFactionDropdown();
+        this.renderFactionCards();
         this.addAIPlayerButtons();
         this.updatePlayerCountDisplay();
         this.setupFormValidation();
@@ -58,10 +60,10 @@ export class UIPlayersManager {
         
         GAME_CONFIG.PLAYER_ICONS.forEach(icon => {
             const iconButton = document.createElement('button');
-            iconButton.className = 'icon-button';
+            iconButton.className = 'icon-button flex items-center justify-center p-2 rounded-lg bg-gray-800/80 border border-white/10 hover:border-yellow-400/50 hover:bg-gray-700/80 transition-all cursor-pointer text-gray-200 hover:text-white';
             iconButton.type = 'button';
-            iconButton.innerHTML = icon;
-            iconButton.title = `Ícone ${icon}`;
+            iconButton.innerHTML = getIcon(icon, { size: 26 });
+            iconButton.title = `Avatar ${icon}`;
             iconButton.dataset.icon = icon;
             
             // Verificar se ícone já está em uso por outros jogadores
@@ -74,8 +76,8 @@ export class UIPlayersManager {
             
             if (isUsedByOthers) {
                 iconButton.classList.add('disabled');
-                iconButton.title = `Ícone ${icon} (já em uso por outro jogador)`;
-                iconButton.style.opacity = '0.4';
+                iconButton.title = `Avatar ${icon} (já em uso por outro jogador)`;
+                iconButton.style.opacity = '0.35';
                 iconButton.style.cursor = 'not-allowed';
                 iconButton.disabled = true;
             } else {
@@ -98,21 +100,94 @@ export class UIPlayersManager {
         console.log(`✅ ${GAME_CONFIG.PLAYER_ICONS.length} botões de ícone renderizados`);
     }
 
+    // Renderização das cartas de facção como botões com imagens
+    renderFactionCards() {
+        if (!this.factionCardContainer) {
+            console.error("❌ Elemento factionCardContainer não encontrado");
+            return;
+        }
+        // Limpar container
+        this.factionCardContainer.innerHTML = '';
+        const configMap = {
+            0: FACTION_CONFIG.verde,
+            1: FACTION_CONFIG.azul,
+            2: FACTION_CONFIG.vermelha,
+            3: FACTION_CONFIG.amarela
+        };
+        Object.entries(FACTION_ABILITIES).forEach(([id, faction]) => {
+            const btn = document.createElement('button');
+            btn.type = 'button';
+            btn.className = 'faction-card flex items-center gap-2 p-2 rounded-lg bg-gray-800/80 border border-white/10 hover:border-yellow-400/50 hover:bg-gray-700/80 transition-all cursor-pointer';
+            const img = document.createElement('img');
+            const cfg = configMap[id];
+            img.src = cfg.img;
+            img.alt = `Facção ${cfg.name}`;
+            img.className = 'w-8 h-8 object-contain rounded';
+            btn.appendChild(img);
+            const label = document.createElement('div');
+            label.textContent = cfg.name;
+            label.className = 'text-xs text-gray-200 whitespace-nowrap';
+            btn.appendChild(label);
+            // Verificar disponibilidade
+            const isAvailable = this.isFactionAvailable(id, this.editingIndex);
+            if (!isAvailable) {
+                btn.disabled = true;
+                btn.classList.add('opacity-40', 'cursor-not-allowed');
+            }
+            // Seleção via clique
+            btn.addEventListener('click', () => {
+                this.selectFactionCard(id, btn);
+            });
+            // Seleção via teclado (Enter ou Space)
+            btn.tabIndex = 0;
+            btn.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    this.selectFactionCard(id, btn);
+                }
+            });
+            this.factionCardContainer.appendChild(btn);
+        });
+        console.log(`✅ ${Object.keys(FACTION_ABILITIES).length} cartas de facção renderizadas`);
+    }
+
+    // Manipulação de seleção de carta de facção
+    selectFactionCard(factionId, element) {
+        console.log(`🎯 Selecionando facção: ${FACTION_ABILITIES[factionId].name}`);
+        // Desmarcar todas
+        document.querySelectorAll('.faction-card.selected').forEach(el => {
+            el.classList.remove('selected');
+            el.style.transform = '';
+        });
+        // Atualizar estado interno
+        this.selectedFactionCard = factionId;
+        // Atualizar dropdown oculto
+        if (this.factionDropdown) {
+            this.factionDropdown.value = factionId;
+            const changeEvent = new Event('change', { bubbles: true });
+            this.factionDropdown.dispatchEvent(changeEvent);
+        }
+        // Marcar visualmente o elemento clicado
+        if (element) {
+            element.classList.add('selected');
+            element.style.transform = 'scale(1.05)';
+        }
+    }
     selectIcon(icon, buttonElement) {
         console.log(`🎯 Selecionando ícone: ${icon}`);
-        
+
         // Desselecionar todos
         document.querySelectorAll('.icon-button.selected').forEach(btn => {
             btn.classList.remove('selected');
             btn.style.transform = '';
         });
-        
+
         this.selectedIcon = icon;
-        
+
         if (buttonElement) {
             buttonElement.classList.add('selected');
             buttonElement.style.transform = 'scale(1.1)';
-            
+
             // Feedback visual
             buttonElement.animate([
                 { transform: 'scale(1)', opacity: 1 },
@@ -123,16 +198,17 @@ export class UIPlayersManager {
                 easing: 'ease-out'
             });
         }
-        
+
         // Atualizar display do ícone selecionado
         const selectedIconDisplay = document.getElementById('selectedIconDisplay');
         if (selectedIconDisplay) {
-            selectedIconDisplay.textContent = icon;
+            selectedIconDisplay.innerHTML = getIcon(icon, { size: 24 });
             selectedIconDisplay.style.color = '#fbbf24';
         }
-        
+
         console.log(`✅ Ícone selecionado: ${icon}`);
     }
+
 
     // ==================== DROPDOWN DE FACÇÕES ====================
 
@@ -152,7 +228,7 @@ export class UIPlayersManager {
         const option = document.createElement('option');
         option.value = id;
         option.title = faction.description || `Facção ${faction.name}`;
-        option.textContent = `${faction.icon || '🏛️'} ${faction.name}`;
+        option.textContent = faction.name;
         
         // Verificar se facção está disponível (para qualquer jogador)
         // Ao editar, excluímos o jogador atual da verificação
@@ -166,13 +242,12 @@ export class UIPlayersManager {
             const userType = user?.isAI ? 'IA' : 'Jogador';
             const userName = user?.name || 'Desconhecido';
             
-            option.textContent += ` ✗ (usado por ${userType}: ${userName})`;
+            option.textContent += ` (em uso por ${userType}: ${userName})`;
             option.style.color = '#9ca3af';
             option.style.fontStyle = 'italic';
             option.style.backgroundColor = 'rgba(156, 163, 175, 0.1)';
         } else {
-            // Adicionar emoji indicador de disponibilidade
-            option.textContent += ' ✓';
+            option.textContent += ' [Disponível]';
             option.style.color = '#f0f0f0';
             option.style.backgroundColor = 'transparent';
         }
@@ -200,8 +275,8 @@ export class UIPlayersManager {
             const faction = FACTION_ABILITIES[selectedValue];
             
             if (faction && dropdownIcon) {
-                // Atualizar ícone do dropdown com o ícone da facção selecionada
-                dropdownIcon.textContent = faction.icon || '🏛️';
+                // Atualizar ícone do dropdown com o ícone SVG da facção selecionada
+                dropdownIcon.innerHTML = faction.icon || getIcon('faction_forest', { size: 18 });
                 
                 // Efeito visual de confirmação
                 dropdownContainer.style.animation = 'factionSelected 0.5s ease';
@@ -210,7 +285,7 @@ export class UIPlayersManager {
                 }, 500);
             } else if (dropdownIcon) {
                 // Resetar ícone se nenhuma facção selecionada
-                dropdownIcon.textContent = '🏛️';
+                dropdownIcon.innerHTML = getIcon('faction_forest', { size: 18 });
             }
         });
         
@@ -287,12 +362,10 @@ export class UIPlayersManager {
     
     // Obter valores
     const name = this.playerNameInput?.value.trim() || '';
-    const icon = this.selectedIcon;
-    const factionId = this.factionDropdown?.value || '';
+    const factionId = this.factionDropdown?.value || this.selectedFactionCard || '';
     
     console.log("🔍 DEBUG handleAddPlayer:");
     console.log("• Nome:", name);
-    console.log("• Ícone:", icon);
     console.log("• Facção:", factionId);
     
     // VALIDAÇÃO
@@ -303,16 +376,9 @@ export class UIPlayersManager {
         return;
     }
     
-    if (!icon) {
-        console.error("❌ Falta ícone");
-        this.uiManager.modals.showFeedback('Selecione um ícone para o jogador.', 'error');
-        return;
-    }
-    
     if (!factionId) {
         console.error("❌ Falta facção");
         this.uiManager.modals.showFeedback('Selecione uma facção para o jogador.', 'error');
-        this.factionDropdown?.focus();
         return;
     }
     
@@ -332,23 +398,18 @@ export class UIPlayersManager {
         return;
     }
     
-    // Ícone único
-    const iconUsed = gameState.players.some(p => p.icon === icon);
-    if (iconUsed) {
-        this.uiManager.modals.showFeedback('Este ícone já está sendo usado por outro jogador.', 'error');
-        return;
-    }
-    
-    // Criar jogador
+    // Criar jogador - ícone é a imagem da facção
     const faction = FACTION_ABILITIES[factionId];
-    
-    // USAR A COR DA FACÇÃO
     const color = faction.color || '#9ca3af';
+    
+    // Buscar imagem do ícone da facção no FACTION_CONFIG
+    const configMap = { 0: FACTION_CONFIG.verde, 1: FACTION_CONFIG.azul, 2: FACTION_CONFIG.vermelha, 3: FACTION_CONFIG.amarela };
+    const factionImg = configMap[factionId]?.img || '';
     
     const player = {
         id: gameState.players.length,
         name,
-        icon,
+        icon: factionImg,
         color,
         resources: {...GAME_CONFIG.INITIAL_RESOURCES},
         victoryPoints: 0,
@@ -378,7 +439,7 @@ export class UIPlayersManager {
     // Atualizar UI
     this.updatePlayerCountDisplay();
     this.renderRegisteredPlayersList();
-    this.renderIconSelection();
+    this.renderFactionCards();
     this.populateFactionDropdown();
     
     this.uiManager.modals.showFeedback(`${name} adicionado como ${faction.name}!`, 'success');
@@ -396,19 +457,12 @@ export class UIPlayersManager {
             this.playerNameInput.focus();
         }
         
-        // Resetar seleção de ícone
-        this.selectedIcon = null;
-        document.querySelectorAll('.icon-button.selected').forEach(btn => {
+        // Resetar seleção de facção (cartas)
+        this.selectedFactionCard = null;
+        document.querySelectorAll('.faction-card.selected').forEach(btn => {
             btn.classList.remove('selected');
             btn.style.transform = '';
         });
-        
-        // Resetar display do ícone selecionado
-        const selectedIconDisplay = document.getElementById('selectedIconDisplay');
-        if (selectedIconDisplay) {
-            selectedIconDisplay.textContent = '❌';
-            selectedIconDisplay.style.color = '';
-        }
         
         // Resetar dropdown de facção
         if (this.factionDropdown) {
@@ -490,12 +544,9 @@ export class UIPlayersManager {
                 <div class="player-card-inner flex flex-col items-center justify-between h-full p-3 rounded-lg border-2 transition-all"
                      style="border-color: ${borderColor}; background: ${bgColor};">
                     
-                    <!-- Ícone do jogador -->
-                    <div class="player-card-icon text-3xl mb-2 relative" style="color: ${borderColor}">
-                        ${player.icon}
-                        ${player.type === 'ai' || player.isAI ? 
-                            `<span class="absolute -top-1 -right-1 bg-purple-600 rounded-full p-1 inline-flex items-center justify-center">${getIcon('bot', { size: 12 })}</span>` : 
-                            ''}
+                    <!-- Ícone da facção -->
+                    <div class="player-card-icon mb-2 relative flex items-center justify-center">
+                        ${renderPlayerIcon(player.icon, 40)}
                     </div>
                     
                     <!-- Pontos de Vitória -->
@@ -505,12 +556,14 @@ export class UIPlayersManager {
                     
                     <!-- Nome do jogador -->
                     <div class="player-card-name text-sm font-bold text-white text-center truncate w-full mb-1">
-                        ${player.name}
+                        ${player.type === 'ai' || player.isAI 
+                            ? `<span class="inline-flex items-center gap-1">${getIcon('bot', { size: 14 })} ${player.name}</span>` 
+                            : player.name}
                     </div>
                     
                     <!-- Facção -->
-                    <div class="player-card-faction text-xs text-gray-300 text-center truncate w-full">
-                        ${player.faction ? `${player.faction.icon || '🏛️'} ${player.faction.name}` : 'Sem facção'}
+                    <div class="player-card-faction text-xs text-gray-300 text-center truncate w-full flex items-center justify-center gap-1">
+                        ${player.faction ? `<span class="inline-flex items-center gap-1">${player.faction.icon || ''} <span>${player.faction.name}</span></span>` : 'Sem facção'}
                     </div>
                     
                     <!-- Ações (se editável) -->
@@ -594,17 +647,7 @@ createEmptyPlayerCard(index) {
         // Preencher campos
         this.playerNameInput.value = player.name;
         
-        // Selecionar ícone
-        this.selectedIcon = player.icon;
-        document.querySelectorAll('.icon-button').forEach(btn => {
-            if (btn.textContent === player.icon) {
-                btn.classList.add('selected');
-            } else {
-                btn.classList.remove('selected');
-            }
-        });
-        
-        // Selecionar facção no dropdown
+        // Selecionar facção no dropdown e nas cartas
         if (player.faction && this.factionDropdown) {
             const factionId = Object.keys(FACTION_ABILITIES).find(
                 id => FACTION_ABILITIES[id].id === player.faction.id
@@ -617,6 +660,17 @@ createEmptyPlayerCard(index) {
                         break;
                     }
                 }
+                // Selecionar carta correspondente
+                this.selectedFactionCard = factionId;
+                document.querySelectorAll('.faction-card').forEach((card, idx) => {
+                    if (String(idx) === String(factionId)) {
+                        card.classList.add('selected');
+                        card.style.transform = 'scale(1.05)';
+                    } else {
+                        card.classList.remove('selected');
+                        card.style.transform = '';
+                    }
+                });
             }
         }
         
@@ -707,8 +761,8 @@ createEmptyPlayerCard(index) {
     const icon = this.selectedIcon;
     const factionId = this.factionDropdown?.value;
     
-    if (!name || !icon || !factionId) {
-        this.uiManager.modals.showFeedback('Preencha todos os campos.', 'error');
+    if (!name || !factionId) {
+        this.uiManager.modals.showFeedback('Preencha o nome e selecione uma facção.', 'error');
         return;
     }
     
@@ -722,24 +776,16 @@ createEmptyPlayerCard(index) {
         return;
     }
     
-    // Validar ícone único (exceto para o próprio jogador)
-    const iconUsed = gameState.players.some((p, i) => 
-        i !== index && p.icon === icon
-    );
-    
-    if (iconUsed) {
-        this.uiManager.modals.showFeedback('Este ícone já está sendo usado por outro jogador.', 'error');
-        return;
-    }
-    
-    // Atualizar jogador
+    // Atualizar jogador - ícone é a imagem da facção
     const faction = FACTION_ABILITIES[factionId];
+    const configMap = { 0: FACTION_CONFIG.verde, 1: FACTION_CONFIG.azul, 2: FACTION_CONFIG.vermelha, 3: FACTION_CONFIG.amarela };
+    const factionImg = configMap[factionId]?.img || '';
     
     gameState.players[index] = {
         ...gameState.players[index],
         name,
-        icon,
-        color: faction.color, // ATUALIZAR COR DA FACÇÃO
+        icon: factionImg,
+        color: faction.color,
         faction,
         turnBonuses: {
             freeNegotiationAvailable: faction.abilities.freeNegotiationPerTurn || 0,
@@ -760,6 +806,7 @@ createEmptyPlayerCard(index) {
     // Atualizar UI
     this.updatePlayerCountDisplay();
     this.renderRegisteredPlayersList();
+    this.renderFactionCards();
     this.populateFactionDropdown();
     
     this.uiManager.modals.showFeedback(`${name} atualizado como ${faction.name}!`, 'success');
@@ -822,12 +869,14 @@ createEmptyPlayerCard(index) {
     // USAR A COR DA FACÇÃO
     const color = faction.color || '#9ca3af';
     
-    const aiIcon = '🤖';
+    // Buscar imagem do ícone da facção no FACTION_CONFIG
+    const configMap = { 0: FACTION_CONFIG.verde, 1: FACTION_CONFIG.azul, 2: FACTION_CONFIG.vermelha, 3: FACTION_CONFIG.amarela };
+    const factionImg = configMap[factionId]?.img || '';
     
     const player = {
         id: gameState.players.length,
         name: aiName,
-        icon: aiIcon,
+        icon: factionImg,
         color,
         resources: {...GAME_CONFIG.INITIAL_RESOURCES},
         victoryPoints: 0,
@@ -855,7 +904,7 @@ createEmptyPlayerCard(index) {
     // Atualizar UI
     this.updatePlayerCountDisplay();
     this.renderRegisteredPlayersList();
-    this.renderIconSelection();
+    this.renderFactionCards();
     this.populateFactionDropdown();
     
     const diffName = AI_DIFFICULTY_SETTINGS[difficulty]?.name || difficulty;
@@ -877,17 +926,17 @@ createEmptyPlayerCard(index) {
         }
         
         container.innerHTML = `
-            <button class="ai-button-compact easy" data-diff="easy" title="IA Fácil">
-                🤖 Fácil
+            <button class="ai-button-compact easy inline-flex items-center gap-1.5 justify-center" data-diff="easy" title="IA Fácil">
+                ${getIcon('bot', { size: 14 })} Fácil
             </button>
-            <button class="ai-button-compact medium" data-diff="medium" title="IA Média">
-                🤖 Média
+            <button class="ai-button-compact medium inline-flex items-center gap-1.5 justify-center" data-diff="medium" title="IA Média">
+                ${getIcon('bot', { size: 14 })} Média
             </button>
-            <button class="ai-button-compact hard" data-diff="hard" title="IA Difícil">
-                🤖 Difícil
+            <button class="ai-button-compact hard inline-flex items-center gap-1.5 justify-center" data-diff="hard" title="IA Difícil">
+                ${getIcon('bot', { size: 14 })} Difícil
             </button>
-            <button class="ai-button-compact master" data-diff="master" title="IA Mestre">
-                🤖 Mestre
+            <button class="ai-button-compact master inline-flex items-center gap-1.5 justify-center" data-diff="master" title="IA Mestre">
+                ${getIcon('bot', { size: 14 })} Mestre
             </button>
         `;
         

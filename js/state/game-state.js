@@ -1,5 +1,5 @@
 // game-state.js - Estado do jogo + funções de persistência
-import { GAME_CONFIG } from './game-config.js';
+import { GAME_CONFIG, DEFAULT_GAME_RULES } from './game-config.js';
 
 // ==================== CONSTANTES DE CONFIGURAÇÃO ====================
 const INITIAL_STATE = {
@@ -22,7 +22,9 @@ const INITIAL_STATE = {
   disputeHistory: [],
   totalDisputes: 0,
   successfulDisputes: 0,
-  failedDisputes: 0
+  failedDisputes: 0,
+  rules: { ...DEFAULT_GAME_RULES },
+  saveId: null
 };
 
 const ELIMINATION_CONFIG = {
@@ -49,6 +51,7 @@ const INITIAL_ACHIEVEMENTS_STATE = {
 
 const LOG_HISTORY_LIMIT = 50;
 const SAVE_KEY = 'gaia-dominium-save';
+const SAVES_LIST_KEY = 'gaia-dominium-saves-list';
 const SAVE_VERSION = '1.0.0';
 
 // ==================== CONSTANTES DE NEGOCIAÇÃO ====================
@@ -479,11 +482,62 @@ function getNegotiationValidationErrors() {
 // ==================== VERIFICAÇÕES DE ESTADO ====================
 
 function hasPlayerWon() {
-  return gameState.players.some(p => p.victoryPoints >= GAME_CONFIG.VICTORY_POINTS);
+  if (!gameState.players || gameState.players.length === 0) return false;
+  const rules = gameState.rules || DEFAULT_GAME_RULES;
+  const condition = rules.victoryCondition || 'pv';
+  const targetPV = rules.targetVictoryPoints || GAME_CONFIG.VICTORY_POINTS || 25;
+
+  if (condition === 'pv' || condition === 'all') {
+    if (gameState.players.some(p => !p.eliminated && p.victoryPoints >= targetPV)) {
+      return true;
+    }
+  }
+
+  if (condition === 'domination' || condition === 'all') {
+    if (gameState.regions && gameState.regions.length > 0 && gameState.regions.every(r => r.controller !== null)) {
+      return true;
+    }
+  }
+
+  if (condition === 'elimination' || condition === 'all') {
+    const active = gameState.players.filter(p => !p.eliminated);
+    if (active.length === 1 && gameState.players.length > 1) {
+      return true;
+    }
+  }
+
+  return false;
 }
 
 function getWinner() {
-  return gameState.players.find(p => p.victoryPoints >= GAME_CONFIG.VICTORY_POINTS);
+  if (!gameState.players || gameState.players.length === 0) return null;
+  const rules = gameState.rules || DEFAULT_GAME_RULES;
+  const condition = rules.victoryCondition || 'pv';
+  const targetPV = rules.targetVictoryPoints || GAME_CONFIG.VICTORY_POINTS || 25;
+
+  if (condition === 'pv' || condition === 'all') {
+    const pvWinner = gameState.players.find(p => !p.eliminated && p.victoryPoints >= targetPV);
+    if (pvWinner) return pvWinner;
+  }
+
+  if (condition === 'domination' || condition === 'all') {
+    if (gameState.regions && gameState.regions.length > 0 && gameState.regions.every(r => r.controller !== null)) {
+      const ranked = [...gameState.players.filter(p => !p.eliminated)].sort((a, b) => {
+        if ((b.regions?.length || 0) !== (a.regions?.length || 0)) {
+          return (b.regions?.length || 0) - (a.regions?.length || 0);
+        }
+        return b.victoryPoints - a.victoryPoints;
+      });
+      if (ranked.length > 0) return ranked[0];
+    }
+  }
+
+  const active = gameState.players.filter(p => !p.eliminated);
+  if (active.length === 1 && gameState.players.length > 1) {
+    return active[0];
+  }
+
+  return gameState.players.find(p => !p.eliminated && p.victoryPoints >= targetPV) || null;
 }
 
 function canPlayerAfford(playerIndex, cost) {
@@ -597,10 +651,91 @@ function addDisputeRecord(attackerId, defenderId, regionId, success, costs) {
   }
 }
 
-// ==================== PERSISTÊNCIA ====================
+// ==================== REGRAS DO JOGO ====================
 
-function saveGame() {
+function getGameRules() {
+  return { ...(gameState.rules || DEFAULT_GAME_RULES) };
+}
+
+function setGameRules(newRules) {
+  gameState.rules = {
+    ...DEFAULT_GAME_RULES,
+    ...(gameState.rules || {}),
+    ...newRules
+  };
+  if (gameState.rules.targetVictoryPoints) {
+    GAME_CONFIG.VICTORY_POINTS = gameState.rules.targetVictoryPoints;
+  }
+  return gameState.rules;
+}
+
+// ==================== PERSISTÊNCIA & GERENCIADOR DE SAVES ====================
+
+function getSavedGamesListRaw() {
   try {
+    const raw = localStorage.getItem(SAVES_LIST_KEY);
+    if (!raw) return [];
+    const parsed = JSON.parse(raw);
+    return Array.isArray(parsed) ? parsed : [];
+  } catch (e) {
+    console.error('Erro ao ler lista de saves:', e);
+    return [];
+  }
+}
+
+function getSavedGamesList() {
+  const list = getSavedGamesListRaw();
+
+  // Compatibilidade: verificar se existe save legado em SAVE_KEY que ainda não está na lista
+  try {
+    const legacyRaw = localStorage.getItem(SAVE_KEY);
+    if (legacyRaw) {
+      const legacyData = JSON.parse(legacyRaw);
+      if (legacyData && legacyData.gameState) {
+        const legacyId = legacyData.gameState.saveId || 'save_legacy';
+        const alreadyInList = list.some(s => s.id === legacyId);
+        if (!alreadyInList) {
+          const players = legacyData.gameState.players || [];
+          const legacyEntry = {
+            id: legacyId,
+            name: 'Partida Salva',
+            timestamp: legacyData.timestamp || new Date().toISOString(),
+            turn: legacyData.gameState.turn || 1,
+            playersCount: players.length,
+            players: players.map(p => ({
+              id: p.id,
+              name: p.name,
+              color: p.color,
+              icon: p.icon,
+              factionName: p.faction?.name || 'Facção',
+              victoryPoints: p.victoryPoints || 0,
+              regionsCount: p.regions ? p.regions.length : 0,
+              isAI: !!(p.type === 'ai' || p.isAI),
+              eliminated: !!p.eliminated
+            })),
+            rules: legacyData.gameState.rules || { ...DEFAULT_GAME_RULES },
+            data: legacyData
+          };
+          list.unshift(legacyEntry);
+          localStorage.setItem(SAVES_LIST_KEY, JSON.stringify(list));
+        }
+      }
+    }
+  } catch (e) {
+    console.warn('Erro ao verificar compatibilidade de save legado:', e);
+  }
+
+  // Ordenar por data mais recente primeiro
+  list.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
+  return list;
+}
+
+function saveGame(customName = null) {
+  try {
+    if (!gameState.saveId) {
+      gameState.saveId = `save_${Date.now()}`;
+    }
+
     const saveData = {
       gameState: getGameState(),
       achievementsState: getAchievementsState(),
@@ -608,14 +743,50 @@ function saveGame() {
       timestamp: new Date().toISOString(),
       version: SAVE_VERSION
     };
-    
+
+    const playersSummary = (gameState.players || []).map(p => ({
+      id: p.id,
+      name: p.name,
+      color: p.color,
+      icon: p.icon,
+      factionName: p.faction?.name || 'Facção',
+      victoryPoints: p.victoryPoints || 0,
+      regionsCount: p.regions ? p.regions.length : 0,
+      isAI: !!(p.type === 'ai' || p.isAI),
+      eliminated: !!p.eliminated
+    }));
+
+    const saveEntry = {
+      id: gameState.saveId,
+      name: customName || `Partida ${gameState.saveId.slice(-4)} (Turno ${gameState.turn})`,
+      timestamp: new Date().toISOString(),
+      turn: gameState.turn,
+      playersCount: gameState.players.length,
+      players: playersSummary,
+      rules: { ...(gameState.rules || DEFAULT_GAME_RULES) },
+      data: saveData
+    };
+
+    const savesList = getSavedGamesListRaw();
+    const existingIndex = savesList.findIndex(s => s.id === gameState.saveId);
+    if (existingIndex >= 0) {
+      savesList[existingIndex] = saveEntry;
+    } else {
+      savesList.unshift(saveEntry);
+    }
+
+    localStorage.setItem(SAVES_LIST_KEY, JSON.stringify(savesList));
     localStorage.setItem(SAVE_KEY, JSON.stringify(saveData));
-    console.log('💾 Jogo salvo:', saveData);
+    console.log(`💾 Jogo salvo com sucesso (Slot: ${gameState.saveId})`);
     return true;
   } catch (error) {
     console.error('Erro ao salvar jogo:', error);
     return false;
   }
+}
+
+function saveCurrentGame(customTitle = null) {
+  return saveGame(customTitle);
 }
 
 function loadGame(saveData) {
@@ -633,13 +804,20 @@ function loadGame(saveData) {
     if (saveData.activityLogHistory) {
       setActivityLogHistory(saveData.activityLogHistory);
     }
+
+    if (saveData.gameState.rules) {
+      gameState.rules = { ...DEFAULT_GAME_RULES, ...saveData.gameState.rules };
+      if (gameState.rules.targetVictoryPoints) {
+        GAME_CONFIG.VICTORY_POINTS = gameState.rules.targetVictoryPoints;
+      }
+    }
     
     // GARANTIR que gameStarted seja true
     if (!gameState.gameStarted) {
       gameState.gameStarted = true;
     }
     
-    console.log('🎮 Jogo carregado:', saveData);
+    console.log('🎮 Jogo carregado com sucesso:', saveData);
     return true;
   } catch (error) {
     console.error('Erro ao carregar jogo:', error);
@@ -647,12 +825,57 @@ function loadGame(saveData) {
   }
 }
 
+function loadSavedGameById(saveId) {
+  const saves = getSavedGamesList();
+  const entry = saves.find(s => s.id === saveId);
+  if (!entry || !entry.data) {
+    console.error(`Save com id ${saveId} não encontrado.`);
+    return false;
+  }
+  const migrated = migrateSaveData(entry.data);
+  const success = loadGame(migrated);
+  if (success) {
+    gameState.saveId = entry.id;
+    localStorage.setItem(SAVE_KEY, JSON.stringify(entry.data));
+  }
+  return success;
+}
+
+function deleteSavedGameById(saveId) {
+  try {
+    let saves = getSavedGamesListRaw();
+    saves = saves.filter(s => s.id !== saveId);
+    localStorage.setItem(SAVES_LIST_KEY, JSON.stringify(saves));
+
+    const legacy = localStorage.getItem(SAVE_KEY);
+    if (legacy) {
+      try {
+        const legData = JSON.parse(legacy);
+        if (legData?.gameState?.saveId === saveId || saveId === 'save_legacy') {
+          localStorage.removeItem(SAVE_KEY);
+        }
+      } catch (e) {
+        localStorage.removeItem(SAVE_KEY);
+      }
+    }
+    return true;
+  } catch (error) {
+    console.error(`Erro ao excluir save ${saveId}:`, error);
+    return false;
+  }
+}
+
 function hasSavedGame() {
-  return localStorage.getItem(SAVE_KEY) !== null;
+  const list = getSavedGamesList();
+  return list.length > 0;
 }
 
 function getSavedGame() {
   try {
+    const list = getSavedGamesList();
+    if (list.length > 0) {
+      return list[0].data;
+    }
     const saved = localStorage.getItem(SAVE_KEY);
     return saved ? JSON.parse(saved) : null;
   } catch (error) {
@@ -663,11 +886,19 @@ function getSavedGame() {
 
 function deleteSavedGame() {
   localStorage.removeItem(SAVE_KEY);
+  localStorage.removeItem(SAVES_LIST_KEY);
   return true;
 }
 
 // Função de compatibilidade para migrar saves antigos
 function migrateSaveData(data) {
+  if (!data) return data;
+  if (!data.gameState) return data;
+
+  if (!data.gameState.rules) {
+    data.gameState.rules = { ...DEFAULT_GAME_RULES };
+  }
+
   if (!data.version) {
     // Adicionar campos que podem faltar em saves antigos
     if (!data.gameState.selectedPlayerForSidebar) {
@@ -1080,13 +1311,21 @@ export {
   getWinner,
   canPlayerAfford,
   
-  // Persistência
+  // Persistência e Saves
   saveGame,
+  saveCurrentGame,
   loadGame,
   hasSavedGame,
   getSavedGame,
   deleteSavedGame,
   migrateSaveData,
+  getSavedGamesList,
+  loadSavedGameById,
+  deleteSavedGameById,
+  
+  // Regras
+  getGameRules,
+  setGameRules,
   
  // Exportações IA
   aiInstances,

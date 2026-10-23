@@ -486,24 +486,36 @@ tryRequestFullscreenOnce() {
     try {
       await new Promise(resolve => setTimeout(resolve, 300));
       
-      const saved = localStorage.getItem('gaia-dominium-save');
-      if (!saved) {
-        return { hasSave: false };
+      const saves = window.getSavedGamesList ? window.getSavedGamesList() : [];
+      let data = null;
+      let saveId = null;
+
+      if (saves && saves.length > 0) {
+        data = saves[0].data;
+        saveId = saves[0].id;
+      } else {
+        const saved = localStorage.getItem('gaia-dominium-save');
+        if (!saved) {
+          return { hasSave: false };
+        }
+        data = JSON.parse(saved);
       }
-      
-      const data = JSON.parse(saved);
       
       const response = await this.showSaveLoadModal();
       
       switch (response.action) {
         case 'load':
-          return { hasSave: true, data: data, load: true };
+          return { hasSave: true, data: data, load: true, saveId };
         case 'delete':
-          localStorage.removeItem('gaia-dominium-save');
+          if (saveId && window.deleteSavedGameById) {
+            window.deleteSavedGameById(saveId);
+          } else {
+            localStorage.removeItem('gaia-dominium-save');
+          }
           this.showFeedback('Save excluído com sucesso!', 'success');
           return { hasSave: false };
         default:
-          return { hasSave: true, data: data, load: false };
+          return { hasSave: true, data: data, load: false, saveId };
       }
     } catch (error) {
       console.error('Erro ao verificar save:', error);

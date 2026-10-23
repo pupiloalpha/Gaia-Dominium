@@ -398,38 +398,49 @@ export class TurnLogic {
   _handleEvents() {
     if (this.gameEnded) return;
     
-    // Reduz duração evento atual
-    if (gameState.currentEvent) {
-      gameState.eventTurnsLeft--;
-      if (gameState.eventTurnsLeft <= 0) {
-        if(gameState.currentEvent.remove) gameState.currentEvent.remove(gameState);
+    const isEveryRound = gameState.rules?.eventFrequency === 'every_round';
+    
+    if (isEveryRound) {
+      // Um evento a cada rodada: limpa o anterior e dispara novo evento para esta rodada
+      if (gameState.currentEvent) {
+        if (gameState.currentEvent.remove) gameState.currentEvent.remove(gameState);
         gameState.currentEvent = null;
         gameState.eventModifiers = {};
-        this.main.showFeedback('Evento global terminou.', 'info');
       }
-    }
-    // Novo evento
-    if (!gameState.currentEvent) {
-      gameState.turnsUntilNextEvent--;
-      if (gameState.turnsUntilNextEvent <= 0) {
-        this.triggerRandomEvent();
-        gameState.turnsUntilNextEvent = 4;
+      this.triggerRandomEvent(1);
+    } else {
+      // Reduz duração evento atual
+      if (gameState.currentEvent) {
+        gameState.eventTurnsLeft--;
+        if (gameState.eventTurnsLeft <= 0) {
+          if (gameState.currentEvent.remove) gameState.currentEvent.remove(gameState);
+          gameState.currentEvent = null;
+          gameState.eventModifiers = {};
+          this.main.showFeedback('Evento global terminou.', 'info');
+        }
+      }
+      // Novo evento no ritmo normal (a cada 4 rodadas)
+      if (!gameState.currentEvent) {
+        gameState.turnsUntilNextEvent--;
+        if (gameState.turnsUntilNextEvent <= 0) {
+          this.triggerRandomEvent();
+          gameState.turnsUntilNextEvent = 4;
+        }
       }
     }
   }
 
-  triggerRandomEvent() {
+  triggerRandomEvent(customDuration = null) {
     if (this.gameEnded) return;
     
     if (!GAME_EVENTS || !GAME_EVENTS.length) return;
     const ev = GAME_EVENTS[Math.floor(Math.random() * GAME_EVENTS.length)];
+    const duration = customDuration !== null ? customDuration : (ev.duration || 2);
     
-    if (ev.duration > 1) {
-      gameState.currentEvent = ev;
-      gameState.eventTurnsLeft = ev.duration;
-      gameState.eventModifiers = {};
-    }
-    if(ev.apply) ev.apply(gameState);
+    gameState.currentEvent = ev;
+    gameState.eventTurnsLeft = duration;
+    gameState.eventModifiers = {};
+    if (ev.apply) ev.apply(gameState);
     
     addActivityLog({ 
       type: 'event', 
@@ -444,33 +455,64 @@ export class TurnLogic {
   checkVictory() {
     if (this.gameEnded) return;
     
-    // Verificar vitória por pontos
-    const winner = gameState.players.find(p => p.victoryPoints >= GAME_CONFIG.VICTORY_POINTS);
-    if (winner) {
-      console.log(`🎉 Vitória detectada: ${winner.name} com ${winner.victoryPoints} PV`);
-      this._declareVictory(winner);
-      this._stopGameAfterVictory();
-      return;
+    const rules = gameState.rules || {
+      victoryCondition: 'pv',
+      targetVictoryPoints: GAME_CONFIG.VICTORY_POINTS || 25,
+      eventFrequency: 'normal'
+    };
+    const condition = rules.victoryCondition || 'pv';
+    const targetPV = Number(rules.targetVictoryPoints) || 25;
+
+    // 1. Condição: Pontos de Vitória (se 'pv' ou 'all')
+    if (condition === 'pv' || condition === 'all') {
+      const winner = gameState.players.find(p => !p.eliminated && p.victoryPoints >= targetPV);
+      if (winner) {
+        console.log(`🎉 Vitória por Pontos de Vitória: ${winner.name} com ${winner.victoryPoints} PV (Meta: ${targetPV})`);
+        this._declareVictory(winner, `${winner.name} alcançou a meta de ${winner.victoryPoints} PV!`);
+        this._stopGameAfterVictory();
+        return;
+      }
     }
-    
-    // Verificar vitória por eliminação
+
+    // 2. Condição: Dominação Total do Mapa (se 'domination' ou 'all')
+    if (condition === 'domination' || condition === 'all') {
+      const totalRegions = gameState.regions?.length || 0;
+      const isAllDominated = totalRegions > 0 && gameState.regions.every(r => r.controller !== null);
+      
+      if (isAllDominated) {
+        const ranked = [...gameState.players.filter(p => !p.eliminated)].sort((a, b) => {
+          const regA = a.regions ? a.regions.length : 0;
+          const regB = b.regions ? b.regions.length : 0;
+          if (regB !== regA) return regB - regA;
+          return b.victoryPoints - a.victoryPoints;
+        });
+
+        const winner = ranked[0];
+        if (winner) {
+          console.log(`🎉 Vitória por Dominação Total: ${winner.name} domina com ${winner.regions.length} regiões`);
+          this._declareVictory(winner, `Todas as 25 regiões de Gaia foram dominadas! ${winner.name} conquistou o maior domínio com ${winner.regions.length} territórios!`);
+          this._stopGameAfterVictory();
+          return;
+        }
+      }
+    }
+
+    // 3. Condição: Eliminação (Sobrevivência)
     const activePlayers = window.gameState?.getActivePlayers?.() || 
       gameState.players.filter(p => !p.eliminated);
     
-    if (activePlayers.length === 1) {
+    if (activePlayers.length === 1 && gameState.players.length > 1) {
       const eliminationWinner = activePlayers[0];
       console.log(`🎉 Vitória por eliminação: ${eliminationWinner.name} é o único jogador ativo`);
-      this._declareVictory(eliminationWinner);
+      this._declareVictory(eliminationWinner, `${eliminationWinner.name} sobreviveu e eliminou todas as facções adversárias!`);
       this._stopGameAfterVictory();
       return;
     }
     
     if (activePlayers.length === 0) {
-      // Todos os jogadores eliminados
       console.log('💀 Todos os jogadores foram eliminados!');
       this.gameEnded = true;
       
-      // Mostrar modal de fim de jogo sem vencedor
       if (window.uiManager?.modals?.showNoWinnerModal) {
         window.uiManager.modals.showNoWinnerModal();
       } else {
@@ -500,10 +542,10 @@ export class TurnLogic {
     return -1;
   }
   
-  _declareVictory(winner) {
+  _declareVictory(winner, customReason = null) {
     this.gameEnded = true;
     
-    const victoryMessage = `${winner.name} venceu o jogo com ${winner.victoryPoints} PV!`;
+    const victoryMessage = customReason || `${winner.name} venceu o jogo com ${winner.victoryPoints} PV!`;
     this.main.showFeedback(victoryMessage, 'success');
     
     addActivityLog({ 
@@ -520,7 +562,7 @@ export class TurnLogic {
     
     setTimeout(() => {
       if (window.uiManager && window.uiManager.modals && window.uiManager.modals.openVictoryModal) {
-        window.uiManager.modals.openVictoryModal(winner);
+        window.uiManager.modals.openVictoryModal(winner, victoryMessage);
       } else {
         this.main.showFeedback(victoryMessage, 'success');
       }

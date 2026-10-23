@@ -163,7 +163,7 @@ export class FooterManager {
     _updatePhaseIndicator() {
         if (this.phaseIndicator) {
             const phaseName = PHASE_NAMES[gameState.currentPhase] || 'Renda';
-            this.phaseIndicator.textContent = `Fase: ${phaseName}`;
+            this.phaseIndicator.innerHTML = `Fase: ${phaseName}`;
             this.uiGameManager?.uiManager?.mobileManager?.updateForCurrentPhase?.(phaseName);
         }
     }

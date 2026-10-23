@@ -85,8 +85,8 @@
 </div>
 
   <!-- ==================== FEEDBACK MODAL DA IA COM BLOQUEIO TOTAL ==================== -->
-  <div id="aiFeedbackOverlay" class="hidden fixed inset-0 z-[1200] flex items-center justify-center p-4 bg-black/75 backdrop-blur-sm select-none transition-opacity duration-300">
-    <div id="aiFeedbackModalCard" class="relative w-full max-w-lg bg-gradient-to-b from-gray-900/98 via-purple-950/90 to-gray-900/98 border-2 border-purple-500/40 rounded-2xl shadow-2xl p-6 text-white transform transition-all duration-300 scale-95 opacity-0">
+  <div id="aiFeedbackOverlay" class="hidden fixed inset-0 z-[1200] flex items-center justify-center p-4 bg-gray-900/95 select-none transition-opacity duration-300">
+    <div id="aiFeedbackModalCard" class="relative w-full max-w-lg bg-gray-900/95 border-2 border-purple-500/40 rounded-2xl shadow-2xl p-6 text-white transform transition-all duration-300 scale-95 opacity-0">
       
       <!-- Faixa de Brilho Superior -->
       <div class="absolute -top-px left-10 right-10 h-1 bg-gradient-to-r from-transparent via-purple-400 to-transparent"></div>
@@ -291,6 +291,196 @@
   </div>
 </div>
 
+<!-- MODAL DE AJUSTES E REGRAS DO JOGO -->
+<div id="gameRulesModal" class="hidden fixed inset-0 z-[105] flex items-center justify-center p-4 modal-content-container">
+  <div class="absolute inset-0 bg-black/75 backdrop-blur-sm"></div>
+  <div class="relative w-full max-w-2xl bg-gray-900/95 backdrop-blur-md border border-yellow-500/40 rounded-2xl shadow-2xl p-6 text-white max-h-[90vh] overflow-y-auto">
+    
+    <!-- Cabeçalho do Modal -->
+    <div class="flex items-center justify-between pb-4 mb-4 border-b border-white/10">
+      <div class="flex items-center gap-3">
+        <div class="w-10 h-10 rounded-xl bg-yellow-500/20 border border-yellow-500/40 flex items-center justify-center text-yellow-300">
+          <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="svg-icon svg-gear"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+        </div>
+        <div>
+          <h3 class="text-xl font-bold text-yellow-300">Ajustes & Regras da Partida</h3>
+          <p class="text-xs text-gray-400">Personalize a meta de pontos, condições de término e dinâmica de eventos</p>
+        </div>
+      </div>
+      <button id="rulesCloseBtn" class="text-gray-400 hover:text-white text-xl p-1" aria-label="Fechar">✖</button>
+    </div>
+
+    <!-- Conteúdo do Modal -->
+    <div class="space-y-6">
+      <!-- SEÇÃO 1: PONTOS DE VITÓRIA (PV) -->
+      <div>
+        <label class="block text-sm font-semibold text-yellow-200 mb-2 flex items-center gap-1.5">
+          <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor" class="svg-icon svg-star text-yellow-400"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+          Meta de Pontos de Vitória (PV)
+        </label>
+        <p class="text-xs text-gray-400 mb-3">Defina a pontuação necessária para vencer (quando a vitória por PV estiver ativa):</p>
+        
+        <div class="grid grid-cols-2 sm:grid-cols-4 gap-2.5" id="pvOptionsContainer">
+          <button type="button" class="pv-option-btn p-3 rounded-xl border text-center transition flex flex-col items-center justify-center gap-1 bg-yellow-500/20 border-yellow-400 text-yellow-300 ring-2 ring-yellow-400/30" data-pv="25">
+            <span class="text-2xl font-black">25 PV</span>
+            <span class="text-[11px] opacity-80">Rápida (Padrão)</span>
+          </button>
+          <button type="button" class="pv-option-btn p-3 rounded-xl border text-center transition flex flex-col items-center justify-center gap-1 bg-gray-800/80 border-white/10 text-gray-300 hover:border-yellow-500/50 hover:bg-gray-700/80" data-pv="50">
+            <span class="text-2xl font-black">50 PV</span>
+            <span class="text-[11px] opacity-80">Média</span>
+          </button>
+          <button type="button" class="pv-option-btn p-3 rounded-xl border text-center transition flex flex-col items-center justify-center gap-1 bg-gray-800/80 border-white/10 text-gray-300 hover:border-yellow-500/50 hover:bg-gray-700/80" data-pv="75">
+            <span class="text-2xl font-black">75 PV</span>
+            <span class="text-[11px] opacity-80">Longa</span>
+          </button>
+          <button type="button" class="pv-option-btn p-3 rounded-xl border text-center transition flex flex-col items-center justify-center gap-1 bg-gray-800/80 border-white/10 text-gray-300 hover:border-yellow-500/50 hover:bg-gray-700/80" data-pv="100">
+            <span class="text-2xl font-black">100 PV</span>
+            <span class="text-[11px] opacity-80">Épica</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- SEÇÃO 2: MODELO DE TÉRMINO / CONDIÇÃO DE VITÓRIA -->
+      <div>
+        <label class="block text-sm font-semibold text-yellow-200 mb-2 flex items-center gap-1.5">
+          <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" class="svg-icon svg-trophy text-yellow-400"><path d="M6 9H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h2"/><path d="M18 9h2a2 2 0 0 0 2-2V5a2 2 0 0 0-2-2h-2"/><path d="M6 3h12v7a6 6 0 0 1-12 0V3z"/><path d="M12 16v5"/><path d="M8 21h8"/></svg>
+          Condição de Término e Vitória
+        </label>
+        <p class="text-xs text-gray-400 mb-3">Escolha o critério que determina o fim do jogo:</p>
+
+        <div class="space-y-2.5" id="victoryConditionContainer">
+          <!-- Opção PV -->
+          <label class="victory-cond-card flex items-start gap-3 p-3.5 rounded-xl border cursor-pointer transition bg-yellow-500/10 border-yellow-400/50 text-white">
+            <input type="radio" name="victoryConditionRadio" value="pv" checked class="mt-1 text-yellow-500 focus:ring-yellow-400"/>
+            <div class="flex-1 min-w-0">
+              <div class="text-sm font-bold text-yellow-300 flex items-center gap-2">
+                🏆 Vitória por Pontos de Vitória (PV)
+                <span class="text-[10px] px-2 py-0.5 rounded-full bg-yellow-400/20 text-yellow-200 font-normal">Padrão</span>
+              </div>
+              <p class="text-xs text-gray-300 mt-0.5">O primeiro jogador a atingir a meta estipulada de PV vence imediatamente.</p>
+            </div>
+          </label>
+
+          <!-- Opção Dominação -->
+          <label class="victory-cond-card flex items-start gap-3 p-3.5 rounded-xl border border-white/10 bg-gray-800/60 hover:bg-gray-700/60 hover:border-yellow-500/40 cursor-pointer transition text-gray-200">
+            <input type="radio" name="victoryConditionRadio" value="domination" class="mt-1 text-yellow-500 focus:ring-yellow-400"/>
+            <div class="flex-1 min-w-0">
+              <div class="text-sm font-bold text-white flex items-center gap-2">
+                🗺️ Dominação Total do Mapa
+              </div>
+              <p class="text-xs text-gray-300 mt-0.5">O jogo prossegue até que todas as 25 regiões estejam dominadas. Vence o jogador com maior número de territórios (desempate por PV).</p>
+            </div>
+          </label>
+
+          <!-- Opção Eliminação -->
+          <label class="victory-cond-card flex items-start gap-3 p-3.5 rounded-xl border border-white/10 bg-gray-800/60 hover:bg-gray-700/60 hover:border-yellow-500/40 cursor-pointer transition text-gray-200">
+            <input type="radio" name="victoryConditionRadio" value="elimination" class="mt-1 text-yellow-500 focus:ring-yellow-400"/>
+            <div class="flex-1 min-w-0">
+              <div class="text-sm font-bold text-white flex items-center gap-2">
+                💀 Sobrevivência / Eliminação de Jogadores
+              </div>
+              <p class="text-xs text-gray-300 mt-0.5">O jogo só termina quando todos os demais adversários perderem todas as regiões e forem eliminados. Vence o último jogador restante.</p>
+            </div>
+          </label>
+
+          <!-- Opção Misto -->
+          <label class="victory-cond-card flex items-start gap-3 p-3.5 rounded-xl border border-white/10 bg-gray-800/60 hover:bg-gray-700/60 hover:border-yellow-500/40 cursor-pointer transition text-gray-200">
+            <input type="radio" name="victoryConditionRadio" value="all" class="mt-1 text-yellow-500 focus:ring-yellow-400"/>
+            <div class="flex-1 min-w-0">
+              <div class="text-sm font-bold text-white flex items-center gap-2">
+                ⚔️ Misto (Primeira Condição Alcançada)
+              </div>
+              <p class="text-xs text-gray-300 mt-0.5">Qualquer condição que for atingida primeiro encerra a partida: atingir a meta de PV, conquistar as 25 regiões do mapa ou eliminar os adversários.</p>
+            </div>
+          </label>
+        </div>
+      </div>
+
+      <!-- SEÇÃO 3: MECÂNICAS ESPECIAIS -->
+      <div>
+        <label class="block text-sm font-semibold text-yellow-200 mb-2 flex items-center gap-1.5">
+          <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor" class="svg-icon svg-lightning text-yellow-400"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+          Dinâmica de Eventos Globais
+        </label>
+        
+        <label class="flex items-start gap-3 p-3.5 rounded-xl border border-white/10 bg-gray-800/60 hover:bg-gray-700/60 cursor-pointer transition">
+          <input type="checkbox" id="rulesEventEveryRoundCheckbox" class="mt-1 rounded text-yellow-500 focus:ring-yellow-400"/>
+          <div class="flex-1 min-w-0">
+            <div class="text-sm font-bold text-white flex items-center gap-2">
+              ⚡ Um evento a cada rodada (Caos Contínuo)
+              <span class="text-[10px] px-2 py-0.5 rounded-full bg-purple-500/20 text-purple-200 border border-purple-500/30">Mecânica Especial</span>
+            </div>
+            <p class="text-xs text-gray-300 mt-0.5">Gera um novo evento climático no início de cada rodada, renovando os efeitos e mantendo o tabuleiro dinâmico e imprevisível. Se desmarcado, eventos ocorrem no ritmo padrão (a cada 4 rodadas).</p>
+          </div>
+        </label>
+      </div>
+    </div>
+
+    <!-- Rodapé de Ações -->
+    <div class="mt-6 pt-4 border-t border-white/10 flex flex-wrap items-center justify-between gap-3">
+      <button id="rulesResetBtn" type="button" class="px-4 py-2.5 rounded-xl bg-gray-800 hover:bg-gray-700 text-gray-300 text-xs font-medium border border-white/10 transition">
+        Restaurar Padrões
+      </button>
+
+      <div class="flex items-center gap-2 ml-auto">
+        <button id="rulesCancelBtn" type="button" class="px-4 py-2.5 rounded-xl bg-gray-800 hover:bg-gray-700 text-white text-xs font-semibold border border-white/10 transition">
+          Cancelar
+        </button>
+        <button id="rulesConfirmBtn" type="button" class="px-6 py-2.5 rounded-xl bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 text-white text-xs font-bold shadow-lg transition transform hover:scale-[1.02]">
+          Confirmar Ajustes
+        </button>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- MODAL DE GERENCIAMENTO DE JOGOS SALVOS -->
+<div id="savedGamesModal" class="hidden fixed inset-0 z-[106] flex items-center justify-center p-4 modal-content-container">
+  <div class="absolute inset-0 bg-black/75 backdrop-blur-sm"></div>
+  <div class="relative w-full max-w-2xl bg-gray-900/95 backdrop-blur-md border border-blue-500/40 rounded-2xl shadow-2xl p-6 text-white max-h-[90vh] flex flex-col">
+    
+    <!-- Cabeçalho do Modal -->
+    <div class="flex items-center justify-between pb-4 mb-4 border-b border-white/10 flex-shrink-0">
+      <div class="flex items-center gap-3">
+        <div class="w-10 h-10 rounded-xl bg-blue-500/20 border border-blue-500/40 flex items-center justify-center text-blue-300">
+          <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="svg-icon svg-save"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+        </div>
+        <div>
+          <h3 class="text-xl font-bold text-blue-300">Jogos Salvos</h3>
+          <p class="text-xs text-gray-400">Carregue ou exclua suas partidas salvas</p>
+        </div>
+      </div>
+      <button id="savedGamesCloseBtn" class="text-gray-400 hover:text-white text-xl p-1" aria-label="Fechar">✖</button>
+    </div>
+
+    <!-- Lista de Jogos Salvos (Scrollável) -->
+    <div id="savedGamesListContainer" class="flex-1 overflow-y-auto space-y-3 pr-1 min-h-[160px]">
+      <!-- Itens gerados dinamicamente via JS -->
+    </div>
+
+    <!-- Estado Vazio -->
+    <div id="savedGamesEmptyState" class="hidden py-12 text-center flex flex-col items-center justify-center">
+      <div class="w-16 h-16 rounded-2xl bg-gray-800/80 border border-white/10 flex items-center justify-center text-gray-500 mb-3">
+        <svg viewBox="0 0 24 24" width="32" height="32" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="svg-icon svg-save"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+      </div>
+      <h4 class="text-base font-bold text-gray-300">Nenhum jogo salvo encontrado</h4>
+      <p class="text-xs text-gray-400 mt-1 max-w-xs">Inicie uma partida e ela será gravada automaticamente ao longo do jogo.</p>
+    </div>
+
+    <!-- Rodapé -->
+    <div class="mt-4 pt-4 border-t border-white/10 flex items-center justify-between flex-shrink-0">
+      <span id="savedGamesTotalText" class="text-xs text-gray-400">0 partidas salvas</span>
+      <div class="flex items-center gap-2">
+        <button id="savedGamesFooterCloseBtn" type="button" class="px-5 py-2.5 rounded-xl bg-gray-800 hover:bg-gray-700 text-white text-xs font-semibold border border-white/10 transition">
+          Fechar
+        </button>
+      </div>
+    </div>
+
+  </div>
+</div>
+
   <!-- NEGOTIATION MODAL (offer creation) -->
   <div id="negotiationModal" class="hidden fixed inset-0 z-[98] flex items-center justify-center p-6 modal-content-container">
     <div class="absolute inset-0 bg-black/70"></div>
@@ -460,8 +650,48 @@
   <div class="relative w-full max-w-5xl">
     <!-- Faixa principal de cadastro -->
     <div class="player-modal border border-white/15 rounded-2xl p-6 shadow-2xl">
+      <!-- Linha Superior: Cabeçalho com Botões de Ajustes e Saves -->
+      <div class="flex flex-wrap items-center justify-between pb-3 mb-4 border-b border-white/10 gap-3">
+        <div class="flex items-center gap-2.5">
+          <span class="text-2xl select-none">🌍</span>
+          <div>
+            <h2 class="text-base font-bold text-yellow-300 tracking-wide flex items-center gap-2">
+              Gaia Dominium
+              <span class="text-[10px] font-medium px-2 py-0.5 rounded-full bg-yellow-400/10 text-yellow-300 border border-yellow-400/20">Setup</span>
+            </h2>
+            <p class="text-xs text-gray-400">Configure as regras ou carregue um save antes de iniciar</p>
+          </div>
+        </div>
+
+        <div class="flex items-center gap-2 ml-auto">
+          <!-- Botão Ajustes de Regras -->
+          <button 
+            id="openGameRulesBtn" 
+            type="button" 
+            class="px-3.5 py-2 rounded-xl bg-gray-800/90 hover:bg-gray-700/90 border border-yellow-500/40 text-yellow-300 text-xs font-semibold flex items-center gap-2 transition hover:scale-[1.02] shadow-sm cursor-pointer"
+            title="Ajustar regras do jogo (PV, dominação, eventos, eliminação)"
+          >
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="svg-icon svg-gear"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+            <span>Ajustes & Regras</span>
+            <span id="rulesActiveSummaryBadge" class="px-2 py-0.5 rounded-full bg-yellow-500/20 text-[11px] text-yellow-200 border border-yellow-500/30 font-bold">25 PV</span>
+          </button>
+
+          <!-- Botão Jogos Salvos -->
+          <button 
+            id="openSavedGamesBtn" 
+            type="button" 
+            class="px-3.5 py-2 rounded-xl bg-gray-800/90 hover:bg-gray-700/90 border border-blue-500/40 text-blue-300 text-xs font-semibold flex items-center gap-2 transition hover:scale-[1.02] shadow-sm cursor-pointer"
+            title="Listar, carregar ou excluir jogos salvos"
+          >
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="svg-icon svg-save"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+            <span>Jogos Salvos</span>
+            <span id="savesCountBadge" class="px-2 py-0.5 rounded-full bg-blue-500/20 text-[11px] text-blue-200 border border-blue-500/30 font-bold">0</span>
+          </button>
+        </div>
+      </div>
+
       <!-- Linha 1: Controles principais -->
-      <div class="flex items-center gap-4 mb-6">
+      <div class="flex items-center gap-4 mb-4">
         <!-- Nome do jogador -->
         <div class="flex-1">
           <div class="relative">
@@ -473,17 +703,15 @@
           </div>
         </div>
         
-        <!-- Dropdown de facção -->
-        <div class="w-48">
-          <div class="relative">
-            <select 
+        <!-- Dropdown de facção (oculto, para binding de valor) -->
+        <div class="hidden">
+          <select 
                id="factionDropdown"
-               class="faction-dropdown w-full bg-gray-900/80 text-white border border-yellow-500/30 rounded-xl px-4 py-3 pl-12 pr-10 text-sm appearance-none focus:outline-none focus:ring-2 focus:ring-yellow-500/70 focus:border-yellow-500/50 transition-all backdrop-blur-sm shadow-lg"
+               class="faction-dropdown hidden"
     >
               <option value="" selected disabled class="placeholder-option">Qual Facção?  </option>
               <!-- Opções preenchidas por JS -->
               </select>
-           </div>
         </div>
         
         <!-- Botões de ação -->
@@ -514,27 +742,20 @@
           </span>
         </button>
       </div>
+
+      <!-- Linha 2: Seleção de Facção por cartas -->
+      <div class="mb-4 border-t border-white/10 pt-4">
+        <div class="flex items-center gap-2 mb-3">
+          <span class="text-sm font-medium text-gray-200 flex items-center gap-1.5">
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" class="svg-icon"><path d="M4 4h16v16H4z"/><path d="M4 8h16"/><path d="M8 4v16"/></svg>
+            Selecione sua facção:
+          </span>
+        </div>
+        <div id="factionCardContainer" class="flex flex-wrap gap-2"></div>
+      </div>
       
-      <!-- Linha 2: Botões de ícones e IA -->
-      <div class="flex items-center justify-between border-t border-white/10 pt-6">
-        <!-- Botões de ícones -->
-        <div class="flex-1">
-          <div class="flex items-center gap-2 mb-2">
-            <span class="text-sm font-medium text-gray-200 flex items-center gap-1.5">
-              <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" class="svg-icon svg-mask"><path d="M2 12c0 5 4 9 10 9s10-4 10-9c0-4-3-8-10-8S2 8 2 12z"/><path d="M7 11a2 2 0 1 0 4 0 2 2 0 0 0-4 0z"/><path d="M13 11a2 2 0 1 0 4 0 2 2 0 0 0-4 0z"/><path d="M9 16c1.5 1 4.5 1 6 0"/></svg>
-              Selecione um ícone:
-            </span>
-            <span id="selectedIconDisplay" class="text-lg ml-2"></span>
-          </div>
-            <div id="iconSelection" class="flex flex-wrap gap-2">
-              <!-- Botões de ícones serão inseridos aqui -->
-            </div>
-          </div>
-        
-        <!-- Divisor vertical -->
-        <div class="h-12 w-px bg-white/10 mx-6"></div>
-        
-        <!-- Botões de IA -->
+      <!-- Linha 3: Botões de IA -->
+      <div class="flex items-center border-t border-white/10 pt-4">
         <div>
           <div class="flex items-center gap-2 mb-2">
             <span class="text-sm font-medium text-gray-200 flex items-center gap-1.5">

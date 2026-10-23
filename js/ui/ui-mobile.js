@@ -1,7 +1,7 @@
 // ui-mobile.js - Gerenciador de Experiência Mobile (Bottom Sheet & Menu Tátil)
 import { gameState, getCurrentPlayer } from '../state/game-state.js';
 import { RESOURCE_ICONS } from '../state/game-config.js';
-import { getIcon } from './icons.js';
+import { getIcon, renderPlayerIcon } from './icons.js';
 
 export class UIMobileManager {
     constructor(uiManager) {
@@ -223,7 +223,7 @@ export class UIMobileManager {
             <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:14px;border-bottom:1px solid rgba(255,255,255,0.1);padding-bottom:12px;">
                 <div>
                     <h3 style="font-size:18px;font-weight:bold;color:#fbbf24;margin-bottom:2px;">${region.name}</h3>
-                    <div style="font-size:12px;color:rgba(255,255,255,0.7);">Bioma: ${region.biome} • Exploração: ${region.explorationLevel} ⭐</div>
+                    <div style="font-size:12px;color:rgba(255,255,255,0.7);display:flex;align-items:center;gap:4px;">Bioma: ${region.biome} • Exploração: ${region.explorationLevel} ${getIcon('star', { size: 12 })}</div>
                 </div>
                 <div style="text-align:right;">
                     <div style="font-size:12px;">${controllerLabel}</div>
@@ -347,7 +347,7 @@ export class UIMobileManager {
         const content = `
             <div style="padding:4px 0;">
                 <div style="display:flex;align-items:center;gap:12px;margin-bottom:16px;padding-bottom:12px;border-bottom:1px solid rgba(255,255,255,0.1);">
-                    <span style="font-size:36px;">${currentPlayer.icon}</span>
+                    <span style="font-size:36px;display:inline-flex;align-items:center;">${renderPlayerIcon(currentPlayer.icon, 36)}</span>
                     <div>
                         <div style="font-size:18px;font-weight:bold;color:white;">${currentPlayer.name}</div>
                         <div style="color:${currentPlayer.color};font-size:12px;margin-bottom:4px;">${currentPlayer.faction?.name || 'Sem facção'}</div>

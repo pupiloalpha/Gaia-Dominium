@@ -10,7 +10,7 @@ import { Utils } from '../utils/utils.js';
 import { RegionRenderer } from './ui-region-renderer.js';
 import { SidebarManager } from './ui-sidebar-manager.js';
 import { FooterManager } from './ui-footer-manager.js';
-import { getIcon } from './icons.js';
+import { getIcon, renderPlayerIcon } from './icons.js';
 
 // Desestruturação das constantes de UI
 const { LOG_ICONS, PHASE_NAMES, ACTION_COSTS } = UI_CONSTANTS;
@@ -168,7 +168,7 @@ export class UIGameManager {
             } else if (isCurrent) {
                 buttonClass += 'ring-2 ring-yellow-300 bg-white/5 ';
                 content = `
-                    <div class="text-xl">${p.icon}</div>
+                    <div class="text-xl flex items-center justify-center">${renderPlayerIcon(p.icon, 22)}</div>
                     <div>
                         <div class="font-medium">${p.name}</div>
                         <div class="text-xs text-yellow-400 flex items-center gap-1">${p.victoryPoints} ${getIcon('star', { size: 10 })} PV</div>
@@ -177,7 +177,7 @@ export class UIGameManager {
             } else {
                 buttonClass += 'bg-white/5 ';
                 content = `
-                    <div class="text-xl">${p.icon}</div>
+                    <div class="text-xl flex items-center justify-center">${renderPlayerIcon(p.icon, 22)}</div>
                     <div>
                         <div class="font-medium">${p.name}</div>
                         <div class="text-xs text-yellow-400 flex items-center gap-1">${p.victoryPoints} ${getIcon('star', { size: 10 })} PV</div>
@@ -212,7 +212,21 @@ export class UIGameManager {
     updateTurnInfo() {
         const currentPlayer = gameState.players[gameState.currentPlayerIndex];
         if (this.turnInfo) {
-            this.turnInfo.textContent = `Turno: ${gameState.turn} • Jogador: ${currentPlayer?.name || '—'}`;
+            const rules = gameState.rules || {};
+            let ruleSummary = '';
+            if (rules.victoryCondition === 'domination') {
+                ruleSummary = ' • Meta: Dominação Total';
+            } else if (rules.victoryCondition === 'elimination') {
+                ruleSummary = ' • Meta: Sobrevivência';
+            } else if (rules.victoryCondition === 'all') {
+                ruleSummary = ` • Meta: Misto (${rules.targetVictoryPoints || 25} PV)`;
+            } else {
+                ruleSummary = ` • Meta: ${rules.targetVictoryPoints || 25} PV`;
+            }
+            if (rules.eventFrequency === 'every_round') {
+                ruleSummary += ' (Caos)';
+            }
+            this.turnInfo.textContent = `Turno: ${gameState.turn} • Jogador: ${currentPlayer?.name || '—'}${ruleSummary}`;
         }
     }
 
@@ -330,7 +344,7 @@ export class UIGameManager {
 
     showRegionTooltip(region, targetEl) {
         const owner = region.controller !== null 
-            ? `${gameState.players[region.controller].icon} ${gameState.players[region.controller].name}`
+            ? `<span class="inline-flex items-center gap-1">${renderPlayerIcon(gameState.players[region.controller].icon, 14)} <span>${gameState.players[region.controller].name}</span></span>`
             : 'Neutro';
         const structures = region.structures.length ? region.structures.join(', ') : 'Nenhuma';
         
@@ -339,11 +353,11 @@ export class UIGameManager {
             <div class="tooltip-section">
                 <div class="tooltip-section-title">Informações</div>
                 <div class="text-xs text-gray-300">
-                    <div class="flex justify-between">
+                    <div class="flex justify-between items-center">
                         <span>Exploração:</span>
-                        <span class="font-bold">${region.explorationLevel}⭐</span>
+                        <span class="font-bold flex items-center gap-0.5 text-yellow-300">${region.explorationLevel} ${getIcon('star', { size: 11 })}</span>
                     </div>
-                    <div class="flex justify-between mt-1">
+                    <div class="flex justify-between items-center mt-1">
                         <span>Controlado por:</span>
                         <span class="font-bold">${owner}</span>
                     </div>

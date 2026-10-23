@@ -2,7 +2,7 @@
 import { gameState } from '../state/game-state.js';
 import { RESOURCE_ICONS } from '../state/game-config.js';
 import { Utils } from '../utils/utils.js';
-import { getIcon } from './icons.js';
+import { getIcon, renderPlayerIcon } from './icons.js';
 
 export class RegionRenderer {
     constructor(uiGameManager) {
@@ -130,7 +130,7 @@ export class RegionRenderer {
         footer.className = 'region-footer flex items-center justify-between mt-2 pt-1 border-t border-white/5';
         
         const controller = region.controller !== null 
-            ? gameState.players[region.controller].icon
+            ? renderPlayerIcon(gameState.players[region.controller].icon, 14)
             : `<span class="text-gray-400 text-xs inline-flex items-center">${getIcon('neutral', { size: 12 })}</span>`;
 
         let structureDisplay = '—';

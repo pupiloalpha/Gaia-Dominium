@@ -129,7 +129,9 @@ export const SVG_ICONS = {
   
   gear: `<svg viewBox="0 0 24 24" width="{size}" height="{size}" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="svg-icon svg-gear"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>`,
   
-  scroll: `<svg viewBox="0 0 24 24" width="{size}" height="{size}" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="svg-icon svg-scroll"><path d="M19 17h2a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2H9a2 2 0 0 0-2 2v2"/><path d="M15 22H5a2 2 0 0 1-2-2V9a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v11a2 2 0 0 1-2 2z"/><line x1="8" y1="12" x2="12" y2="12"/><line x1="8" y1="16" x2="14" y2="16"/></svg>`
+  scroll: `<svg viewBox="0 0 24 24" width="{size}" height="{size}" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="svg-icon svg-scroll"><path d="M19 17h2a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2H9a2 2 0 0 0-2 2v2"/><path d="M15 22H5a2 2 0 0 1-2-2V9a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v11a2 2 0 0 1-2 2z"/><line x1="8" y1="12" x2="12" y2="12"/><line x1="8" y1="16" x2="14" y2="16"/></svg>`,
+
+  trash: `<svg viewBox="0 0 24 24" width="{size}" height="{size}" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="svg-icon svg-trash"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>`
 };
 
 SVG_ICONS.manual = SVG_ICONS.book;
@@ -178,6 +180,53 @@ SVG_ICONS.event = SVG_ICONS.evento;
 SVG_ICONS.mask = SVG_ICONS.mascara;
 SVG_ICONS.pv = SVG_ICONS.star;
 
+// Aliases de biomas
+SVG_ICONS['Floresta Tropical'] = SVG_ICONS.tropical;
+SVG_ICONS['Floresta Temperada'] = SVG_ICONS.temperada;
+SVG_ICONS['Savana'] = SVG_ICONS.savana;
+SVG_ICONS['Pântano'] = SVG_ICONS.pantano;
+
+// Aliases de facções
+SVG_ICONS.forest_guardians = SVG_ICONS.faction_forest;
+SVG_ICONS['Guardiões da Floresta'] = SVG_ICONS.faction_forest;
+SVG_ICONS.water_masters = SVG_ICONS.faction_water;
+SVG_ICONS['Mestres das Águas'] = SVG_ICONS.faction_water;
+SVG_ICONS.mountain_builders = SVG_ICONS.faction_mountain;
+SVG_ICONS['Construtores da Montanha'] = SVG_ICONS.faction_mountain;
+SVG_ICONS.merchants_barons = SVG_ICONS.faction_trade;
+SVG_ICONS['Barões do Comércio'] = SVG_ICONS.faction_trade;
+
+// Aliases de avatares
+SVG_ICONS.lion = SVG_ICONS.leao;
+SVG_ICONS.tiger = SVG_ICONS.tigre;
+SVG_ICONS.bear = SVG_ICONS.urso;
+SVG_ICONS.fox = SVG_ICONS.raposa;
+SVG_ICONS.wolf = SVG_ICONS.lobo;
+SVG_ICONS.eagle = SVG_ICONS.aguia;
+SVG_ICONS.dragon = SVG_ICONS.dragao;
+SVG_ICONS.shark = SVG_ICONS.tubarao;
+
+// Retrocompatibilidade para conversão transparente de emojis legados
+SVG_ICONS['🦁'] = SVG_ICONS.leao;
+SVG_ICONS['🐯'] = SVG_ICONS.tigre;
+SVG_ICONS['🐻'] = SVG_ICONS.urso;
+SVG_ICONS['🦊'] = SVG_ICONS.raposa;
+SVG_ICONS['🐺'] = SVG_ICONS.lobo;
+SVG_ICONS['🦅'] = SVG_ICONS.aguia;
+SVG_ICONS['🐉'] = SVG_ICONS.dragao;
+SVG_ICONS['🦈'] = SVG_ICONS.tubarao;
+SVG_ICONS['🤖'] = SVG_ICONS.robo;
+SVG_ICONS['🌴'] = SVG_ICONS.tropical;
+SVG_ICONS['🌲'] = SVG_ICONS.temperada;
+SVG_ICONS['🏜️'] = SVG_ICONS.savana;
+SVG_ICONS['🌊'] = SVG_ICONS.pantano;
+SVG_ICONS['🦌'] = SVG_ICONS.faction_forest;
+SVG_ICONS['⛰️'] = SVG_ICONS.faction_mountain;
+SVG_ICONS['🪙'] = SVG_ICONS.ouro;
+SVG_ICONS['🪵'] = SVG_ICONS.madeira;
+SVG_ICONS['🪨'] = SVG_ICONS.pedra;
+SVG_ICONS['💧'] = SVG_ICONS.agua;
+
 // Aliases de status e feedback
 SVG_ICONS.swords = SVG_ICONS.disputar;
 SVG_ICONS.warning = SVG_ICONS.alerta;
@@ -189,13 +238,17 @@ SVG_ICONS.eliminated = SVG_ICONS.skull;
 
 /**
  * Retorna o SVG em string com dimensões e classes configuráveis
- * @param {string} name - Nome do ícone
+ * @param {string} name - Nome do ícone ou chave
  * @param {Object} options
  * @param {number|string} [options.size=16] - Tamanho em pixels
  * @param {string} [options.className=''] - Classes CSS adicionais
  * @returns {string} String contendo a tag <svg>
  */
 export function getIcon(name, { size = 16, className = '' } = {}) {
+  if (!name) return '';
+  if (typeof name === 'string' && name.trim().startsWith('<svg')) {
+    return name;
+  }
   const template = SVG_ICONS[name] || '';
   if (!template) return '';
   
@@ -204,4 +257,19 @@ export function getIcon(name, { size = 16, className = '' } = {}) {
     result = result.replace('class="', `class="${className} `);
   }
   return result;
+}
+
+/**
+ * Renderiza o ícone de um jogador — aceita tanto caminhos de imagem (faction icons .webp/.png)
+ * quanto nomes de ícone SVG do catálogo.
+ */
+export function renderPlayerIcon(icon, size = 22) {
+  if (!icon) return getIcon('user', { size });
+  if (typeof icon === 'string' && (icon.includes('/') || icon.includes('.'))) {
+    return `<img src="${icon}" alt="Ícone" class="inline-block object-contain rounded" style="width:${size}px;height:${size}px;">`;
+  }
+  if (typeof icon === 'string' && icon.trim().startsWith('<svg')) {
+    return icon;
+  }
+  return getIcon(icon, { size }) || getIcon('user', { size });
 }

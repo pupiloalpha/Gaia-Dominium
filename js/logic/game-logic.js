@@ -263,15 +263,26 @@ class GameLogic {
     gameState.turn = 1;
     gameState.actionsLeft = GAME_CONFIG.ACTIONS_PER_TURN;
     gameState.currentPhase = 'renda';
-    gameState.turnsUntilNextEvent = 4;
+    gameState.saveId = gameState.saveId || `save_${Date.now()}`;
+    
+    const isEveryRound = gameState.rules?.eventFrequency === 'every_round';
+    gameState.turnsUntilNextEvent = isEveryRound ? 1 : 4;
     
     addActivityLog({
       type: 'system',
       playerName: 'SISTEMA',
       action: 'Jogo iniciado',
-      details: '',
+      details: `Regras: ${gameState.rules?.victoryCondition || 'PV'} (${gameState.rules?.targetVictoryPoints || 25} PV)`,
       turn: gameState.turn
     });
+    
+    if (isEveryRound) {
+      setTimeout(() => {
+        if (this.turnLogic && !this.turnLogic.gameEnded) {
+          this.turnLogic.triggerRandomEvent(1);
+        }
+      }, 500);
+    }
     
     // 4. Iniciar Monitor de IA
     this.aiCoordinator.startHealthMonitor();

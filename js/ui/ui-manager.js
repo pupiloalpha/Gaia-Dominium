@@ -18,6 +18,7 @@ import { UIPlayersManager } from '../ui/ui-players.js';
 import { UIGameManager } from '../ui/ui-game.js';
 import { UIMobileManager } from '../ui/ui-mobile.js';
 import { DisputeUI } from '../ui/ui-dispute.js';
+import { getIcon, renderPlayerIcon } from './icons.js';
 
 class UIManager {
     constructor() {
@@ -395,9 +396,9 @@ class UIManager {
                     <div class="flex justify-between items-start mb-2">
                         <div>
                             <div class="flex items-center gap-2">
-                                <span class="text-lg">${player.icon}</span>
-                                <span class="text-sm font-bold ${statusColor}">
-                                    ${player.name} ${isCurrent ? '🎮' : ''}
+                                <span class="text-lg flex items-center justify-center">${renderPlayerIcon(player.icon, 20)}</span>
+                                <span class="text-sm font-bold flex items-center gap-1 ${statusColor}">
+                                    ${player.name} ${isCurrent ? getIcon('turn', { size: 14 }) : ''}
                                 </span>
                             </div>
                             <div class="text-xs text-gray-400 mt-1">

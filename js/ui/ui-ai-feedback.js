@@ -1,8 +1,7 @@
 // ui-ai-feedback.js - Modal de Feedback para Turnos da IA com Bloqueio de Interações
 // Exibe as ações e notificações dos jogadores IA em tempo real e bloqueia interações na UI.
 
-import { gameState, getCurrentPlayer } from '../state/game-state.js';
-import { getIcon } from './icons.js';
+import { getIcon, renderPlayerIcon } from './icons.js';
 
 class AIFeedbackModal {
   constructor() {
@@ -38,7 +37,7 @@ class AIFeedbackModal {
     this.overlay.addEventListener('touchstart', (e) => e.stopPropagation(), { passive: false });
 
     this.overlay.innerHTML = `
-      <div id="aiFeedbackModalCard" class="relative w-full max-w-lg bg-gradient-to-b from-gray-900/98 via-purple-950/90 to-gray-900/98 border-2 border-purple-500/40 rounded-2xl shadow-2xl p-6 text-white transform transition-all duration-300 scale-95 opacity-0">
+      <div id="aiFeedbackModalCard" class="relative w-full max-w-lg bg-gray-950 border-2 border-purple-500/40 rounded-2xl shadow-2xl p-6 text-white transform transition-all duration-300 scale-95 opacity-0">
         
         <!-- Faixa de Brilho Superior -->
         <div class="absolute -top-px left-10 right-10 h-1 bg-gradient-to-r from-transparent via-purple-400 to-transparent"></div>
@@ -190,7 +189,7 @@ class AIFeedbackModal {
 
     if (nameEl) nameEl.textContent = player.name || 'Jogador IA';
     if (avatarBadge) {
-      avatarBadge.innerHTML = player.icon || getIcon('robo', { size: 32 });
+      avatarBadge.innerHTML = renderPlayerIcon(player.icon, 32);
       if (player.color) {
         avatarBadge.style.borderColor = player.color;
         avatarBadge.style.boxShadow = `0 0 15px ${player.color}40`;
