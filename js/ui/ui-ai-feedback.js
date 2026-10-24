@@ -169,10 +169,6 @@ class AIFeedbackModal {
     if (window.uiManager?.modals?.closeAllModals) {
       window.uiManager.modals.closeAllModals();
     }
-    // Fechar bottom sheet mobile se aberta
-    if (window.uiManager?.mobileManager?.closeSheet) {
-      window.uiManager.mobileManager.closeSheet();
-    }
 
     // 3. Atualizar elementos visuais do jogador IA
     const nameEl = document.getElementById('aiPlayerName');

@@ -16,7 +16,6 @@ import { ModalManager } from '../ui/ui-modals.js';
 import { NegotiationUI } from '../ui/ui-negotiation.js';
 import { UIPlayersManager } from '../ui/ui-players.js';
 import { UIGameManager } from '../ui/ui-game.js';
-import { UIMobileManager } from '../ui/ui-mobile.js';
 import { DisputeUI } from '../ui/ui-dispute.js';
 import { getIcon, renderPlayerIcon } from './icons.js';
 
@@ -26,7 +25,6 @@ class UIManager {
         this.negotiation = new NegotiationUI(this);
         this.playersManager = new UIPlayersManager(this);
         this.gameManager = new UIGameManager(this);
-        this.mobileManager = new UIMobileManager(this);
         this.disputeUI = new DisputeUI(this);
         
         this.cacheElements();
@@ -77,9 +75,6 @@ class UIManager {
         this.playersManager.init();
         this.gameManager.init();
         this.setupGlobalEventListeners();
-
-        // Inicializar mobile por último para que possa sobrescrever/adaptar o que foi criado
-        this.mobileManager.init();
 
         // GARANTIR que o footer seja atualizado inicialmente
         setTimeout(() => {
@@ -143,9 +138,6 @@ class UIManager {
         
         // 3. Ocultar ícone manual da barra de navegação
         document.getElementById('manualIcon')?.classList.add('hidden');
-        
-        // Notificar gerenciador mobile
-        this.mobileManager?.onGameStart?.();
         
         // Garantir inicialização do touch engine do mapa
         window.utils?.setupMapZoom?.();

@@ -197,11 +197,6 @@ export class RegionRenderer {
 
     _toggleRegionSelection(regionId, cell, region) {
         if (gameState.selectedRegionId === regionId) {
-            // Em dispositivos móveis, um toque adicional na região já selecionada abre a Bottom Sheet de detalhes
-            if (window.innerWidth <= 768 && window.uiManager?.mobileManager) {
-                window.uiManager.mobileManager.showRegionSheet(region);
-                return;
-            }
             gameState.selectedRegionId = null;
             cell.classList.remove('region-selected');
         } else {
