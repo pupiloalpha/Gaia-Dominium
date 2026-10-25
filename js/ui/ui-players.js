@@ -30,6 +30,12 @@ export class UIPlayersManager {
         this.playerCountDisplay = document.getElementById('playerCountDisplay');
         this.startGameBtn = document.getElementById('startGameBtn');
         
+        // Elementos de status / feedback do lobby
+        this.playerSetupStatusBadge = document.getElementById('playerSetupStatusBadge');
+        this.playerSetupStatusText = document.getElementById('playerSetupStatusText');
+        this.startGameHint = document.getElementById('startGameHint');
+        this.selectedFactionBadge = document.getElementById('selectedFactionBadge');
+        
         // Seleção de ícones e facções
         this.iconSelection = document.getElementById('iconSelection');
         this.factionDropdown = document.getElementById('factionDropdown');
@@ -171,6 +177,15 @@ export class UIPlayersManager {
         if (element) {
             element.classList.add('selected');
             element.style.transform = 'scale(1.05)';
+        }
+
+        // Atualizar badge de facção selecionada
+        if (this.selectedFactionBadge) {
+            const faction = FACTION_ABILITIES[factionId];
+            if (faction) {
+                this.selectedFactionBadge.textContent = `✓ ${faction.name}`;
+                this.selectedFactionBadge.classList.remove('hidden');
+            }
         }
     }
     selectIcon(icon, buttonElement) {
@@ -464,6 +479,12 @@ export class UIPlayersManager {
             btn.style.transform = '';
         });
         
+        // Resetar badge de facção selecionada
+        if (this.selectedFactionBadge) {
+            this.selectedFactionBadge.textContent = '';
+            this.selectedFactionBadge.classList.add('hidden');
+        }
+
         // Resetar dropdown de facção
         if (this.factionDropdown) {
             this.factionDropdown.selectedIndex = 0;
@@ -733,15 +754,10 @@ createEmptyPlayerCard(index) {
             return;
         }
         
-        if (gameState.players.length <= 2) {
-            this.uiManager.modals.showFeedback('É necessário pelo menos 2 jogadores para iniciar o jogo.', 'error');
-            return;
-        }
-        
         const player = gameState.players[index];
         const confirmed = await this.uiManager.modals.showConfirm(
             'Remover Jogador',
-            `Tem certeza que deseja remover "${player.name}" (${player.icon})?`
+            `Tem certeza que deseja remover "${player.name}"?`
         );
         
         if (!confirmed) return;
@@ -753,6 +769,8 @@ createEmptyPlayerCard(index) {
         
         this.updatePlayerCountDisplay();
         this.renderRegisteredPlayersList();
+        this.renderFactionCards();
+        this.populateFactionDropdown();
         this.uiManager.modals.showFeedback(`Jogador ${player.name} removido com sucesso!`, 'success');
     }
 
@@ -814,21 +832,50 @@ createEmptyPlayerCard(index) {
 
     updatePlayerCountDisplay() {
         const count = gameState.players.length;
-        const display = document.getElementById('playerCountDisplay');
+        const minPlayers = GAME_CONFIG.MIN_PLAYERS || 2;
         
-        if (display) {
-            display.textContent = count;
+        if (this.playerCountDisplay) {
+            this.playerCountDisplay.textContent = count;
         }
         
-        // Atualizar estado do botão iniciar
-        if (this.startGameBtn) {
-            const minPlayers = GAME_CONFIG.MIN_PLAYERS || 2;
-            this.startGameBtn.disabled = count < minPlayers;
-            
+        const remaining = Math.max(0, minPlayers - count);
+        
+        // Atualizar badge de status no cabeçalho da mesa
+        if (this.playerSetupStatusBadge && this.playerSetupStatusText) {
             if (count < minPlayers) {
-                this.startGameBtn.title = `Adicione mais ${minPlayers - count} jogador(es)`;
+                this.playerSetupStatusBadge.className = 'text-[11px] font-semibold px-2.5 py-1 rounded-full bg-yellow-500/20 text-yellow-300 border border-yellow-500/30 flex items-center gap-1.5';
+                this.playerSetupStatusText.textContent = remaining === 1 ? 'Falta 1 jogador' : `Faltam ${remaining} jogadores`;
             } else {
-                this.startGameBtn.title = 'Iniciar jogo';
+                this.playerSetupStatusBadge.className = 'text-[11px] font-semibold px-2.5 py-1 rounded-full bg-green-500/20 text-green-300 border border-green-500/30 flex items-center gap-1.5';
+                this.playerSetupStatusText.textContent = `${count} jogadores prontos!`;
+            }
+        }
+        
+        // Atualizar dica de status do botão Iniciar Partida
+        if (this.startGameHint) {
+            if (count === 0) {
+                this.startGameHint.textContent = 'Cadastre ao menos 2 jogadores para liberar a partida.';
+                this.startGameHint.className = 'text-xs text-gray-400';
+            } else if (count < minPlayers) {
+                this.startGameHint.textContent = 'Adicione mais 1 jogador (humano ou IA) para liberar o início.';
+                this.startGameHint.className = 'text-xs text-yellow-300/90 font-medium';
+            } else {
+                this.startGameHint.textContent = `Tudo pronto com ${count} jogadores! Clique em Iniciar Partida.`;
+                this.startGameHint.className = 'text-xs text-green-300 font-medium';
+            }
+        }
+        
+        // Atualizar estado e estilos do botão iniciar
+        if (this.startGameBtn) {
+            const isReady = count >= minPlayers;
+            this.startGameBtn.disabled = !isReady;
+            
+            if (!isReady) {
+                this.startGameBtn.title = `Adicione mais ${remaining} jogador(es) para iniciar`;
+                this.startGameBtn.classList.remove('ring-4', 'ring-blue-400/30', 'animate-pulse');
+            } else {
+                this.startGameBtn.title = 'Tudo pronto! Clique para iniciar a partida';
+                this.startGameBtn.classList.add('ring-4', 'ring-blue-400/30');
             }
         }
     }
@@ -954,9 +1001,17 @@ createEmptyPlayerCard(index) {
     // ==================== EVENT LISTENERS ====================
 
     setupEventListeners() {
-        // Início do jogo
+        // Ações de cadastro
         this.addPlayerBtn?.addEventListener('click', () => this.handleAddPlayer());
         this.cancelEditBtn?.addEventListener('click', () => this.cancelEdit());
+        
+        // Tecla Enter no campo de nome para agilizar o cadastro
+        this.playerNameInput?.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                this.handleAddPlayer();
+            }
+        });
     }
 
     hexToRgba(hex, alpha) {

@@ -644,14 +644,14 @@
   <!-- ==================== TELA DE CADASTRO - FORMATO HORIZONTAL ==================== -->
 <div id="initialScreen" class="fixed inset-0 z-50 flex items-center justify-center p-4">
   <!-- Overlay sutil -->
-  <div class="absolute inset-0 bg-black/25"></div>
+  <div class="absolute inset-0 bg-black/40 backdrop-blur-sm"></div>
   
-  <!-- Faixa horizontal flutuante -->
+  <!-- Container principal -->
   <div class="relative w-full max-w-5xl">
     <!-- Faixa principal de cadastro -->
-    <div class="player-modal border border-white/15 rounded-2xl p-6 shadow-2xl">
+    <div class="player-modal border border-white/15 rounded-2xl p-5 md:p-6 shadow-2xl">
       <!-- Linha Superior: Cabeçalho com Botões de Ajustes e Saves -->
-      <div class="flex flex-wrap items-center justify-between pb-3 mb-4 border-b border-white/10 gap-3">
+      <div class="flex flex-wrap items-center justify-between pb-3 mb-5 border-b border-white/10 gap-3">
         <div class="flex items-center gap-2.5">
           <span class="text-2xl select-none">🌍</span>
           <div>
@@ -659,7 +659,7 @@
               Gaia Dominium
               <span class="text-[10px] font-medium px-2 py-0.5 rounded-full bg-yellow-400/10 text-yellow-300 border border-yellow-400/20">Setup</span>
             </h2>
-            <p class="text-xs text-gray-400">Configure as regras ou carregue um save antes de iniciar</p>
+            <p class="text-xs text-gray-400">Configure os jogadores e as regras antes de iniciar a partida</p>
           </div>
         </div>
 
@@ -690,149 +690,193 @@
         </div>
       </div>
 
-      <!-- Linha 1: Controles principais -->
-      <div class="flex items-center gap-4 mb-4">
-        <!-- Nome do jogador -->
-        <div class="flex-1">
-          <div class="relative">
-            <input 
-              id="playerName" 
-              type="text" 
-              placeholder="Nome do jogador" 
-              class="w-full bg-gray-800/70 text-white placeholder-gray-400 border border-white/10 rounded-xl px-4 py-3 pl-12 text-sm focus:outline-none focus:ring-2 focus:ring-yellow-500/50 focus:border-yellow-500/30 transition-all"/>
+      <!-- CORPO PRINCIPAL EM 2 COLUNAS (Lobby de Jogadores) -->
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-5 items-start">
+        
+        <!-- COLUNA DA ESQUERDA: CADASTRO DE JOGADOR (lg:col-span-5) -->
+        <div class="lg:col-span-5 flex flex-col gap-3.5 bg-gray-900/60 p-4 rounded-xl border border-white/10">
+          <div>
+            <h3 class="text-sm font-bold text-white flex items-center gap-2">
+              <span class="w-5 h-5 rounded-full bg-yellow-500/20 text-yellow-300 text-xs flex items-center justify-center font-bold">1</span>
+              Cadastrar Jogador
+            </h3>
+            <p class="text-[11px] text-gray-400 mt-0.5">Informe o nome, selecione a facção e adicione à partida</p>
           </div>
-        </div>
-        
-        <!-- Dropdown de facção (oculto, para binding de valor) -->
-        <div class="hidden">
-          <select 
-               id="factionDropdown"
-               class="faction-dropdown hidden"
-    >
-              <option value="" selected disabled class="placeholder-option">Qual Facção?  </option>
-              <!-- Opções preenchidas por JS -->
-              </select>
-        </div>
-        
-        <!-- Botões de ação -->
-        <div class="flex gap-3">
-          <button 
-            id="addPlayerBtn" 
-            class="px-6 py-3 bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 rounded-xl text-white font-semibold transition-all transform hover:scale-[1.02] active:scale-[0.98] shadow-lg"
-          >
-            + Adicionar
-          </button>
-          <button 
-            id="cancelEditBtn" 
-            class="hidden px-6 py-3 bg-gray-800 hover:bg-gray-700 border border-white/10 rounded-xl text-white font-semibold transition-all"
-          >
-            ✗ Cancelar
-          </button>
-        </div>
-        
-        <!-- Botão iniciar jogo -->
-        <button 
-          id="startGameBtn" 
-          disabled
-          class="px-8 py-3 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 disabled:from-gray-800 disabled:to-gray-900 disabled:cursor-not-allowed rounded-xl text-white font-semibold transition-all whitespace-nowrap shadow-lg"
-        >
-          <span class="flex items-center justify-center gap-2">
-            <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor" class="svg-icon"><polygon points="5 3 19 12 5 21 5 3"/></svg>
-            Iniciar Jogo
-          </span>
-        </button>
-      </div>
 
-      <!-- Linha 2: Seleção de Facção por cartas -->
-      <div class="mb-4 border-t border-white/10 pt-4">
-        <div class="flex items-center gap-2 mb-3">
-          <span class="text-sm font-medium text-gray-200 flex items-center gap-1.5">
-            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" class="svg-icon"><path d="M4 4h16v16H4z"/><path d="M4 8h16"/><path d="M8 4v16"/></svg>
-            Selecione sua facção:
-          </span>
+          <!-- Passo 1: Nome -->
+          <div>
+            <label for="playerName" class="block text-xs font-semibold text-gray-300 mb-1">
+              Nome do Jogador:
+            </label>
+            <div class="relative">
+              <input 
+                id="playerName" 
+                type="text" 
+                placeholder="Ex: João, Maria, Estrategista..." 
+                class="w-full bg-gray-800/80 text-white placeholder-gray-400 border border-white/10 rounded-xl px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-yellow-500/50 focus:border-yellow-500/30 transition-all"/>
+            </div>
+          </div>
+
+          <!-- Dropdown oculto mantido para sincronização e binds legados -->
+          <div class="hidden">
+            <select id="factionDropdown" class="faction-dropdown hidden">
+              <option value="" selected disabled class="placeholder-option">Qual Facção?</option>
+            </select>
+          </div>
+
+          <!-- Passo 2: Seleção de Facção por cartas -->
+          <div>
+            <div class="flex items-center justify-between mb-1.5">
+              <label class="text-xs font-semibold text-gray-300 flex items-center gap-1.5">
+                Escolha a Facção:
+              </label>
+              <span id="selectedFactionBadge" class="text-[11px] text-yellow-300 font-medium hidden"></span>
+            </div>
+            <div id="factionCardContainer" class="grid grid-cols-2 gap-2"></div>
+          </div>
+
+          <!-- Passo 3: Botão de Adicionar / Atualizar -->
+          <div class="flex gap-2 pt-1">
+            <button 
+              id="addPlayerBtn" 
+              type="button"
+              class="flex-1 py-2.5 px-4 bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 rounded-xl text-white text-sm font-semibold transition-all transform hover:scale-[1.02] active:scale-[0.98] shadow-lg flex items-center justify-center gap-2 cursor-pointer"
+            >
+              <span>+ Adicionar Jogador</span>
+            </button>
+            <button 
+              id="cancelEditBtn" 
+              type="button"
+              class="hidden py-2.5 px-4 bg-gray-800 hover:bg-gray-700 border border-white/10 rounded-xl text-white text-sm font-semibold transition-all cursor-pointer"
+            >
+              ✗ Cancelar
+            </button>
+          </div>
+
+          <!-- Alternativa: Adicionar Jogador IA -->
+          <div class="border-t border-white/10 pt-3 mt-1">
+            <div class="flex items-center justify-between mb-2">
+              <span class="text-xs font-semibold text-gray-300 flex items-center gap-1.5">
+                <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="svg-icon svg-bot text-purple-400"><rect x="3" y="11" width="18" height="10" rx="2"/><circle cx="12" cy="5" r="2"/><path d="M12 7v4"/><line x1="8" y1="16" x2="8" y2="16"/><line x1="16" y1="16" x2="16" y2="16"/></svg>
+                Ou adicione adversário IA:
+              </span>
+            </div>
+            <div id="aiButtonsContainer" class="grid grid-cols-2 sm:grid-cols-4 gap-2">
+              <!-- Botões de IA preenchidos dinamicamente -->
+            </div>
+          </div>
         </div>
-        <div id="factionCardContainer" class="flex flex-wrap gap-2"></div>
+
+        <!-- COLUNA DA DIREITA: MESA DA PARTIDA & INICIAR JOGO (lg:col-span-7) -->
+        <div class="lg:col-span-7 flex flex-col justify-between h-full bg-gray-900/60 p-4 rounded-xl border border-white/10">
+          <div>
+            <!-- Cabeçalho da Mesa -->
+            <div class="flex flex-wrap items-center justify-between pb-3 mb-3 border-b border-white/10 gap-2">
+              <div>
+                <h3 class="text-sm font-bold text-white flex items-center gap-2">
+                  <span class="w-5 h-5 rounded-full bg-blue-500/20 text-blue-300 text-xs flex items-center justify-center font-bold">2</span>
+                  Jogadores na Mesa
+                </h3>
+                <p class="text-[11px] text-gray-400 mt-0.5">Mínimo de 2 e máximo de 4 jogadores</p>
+              </div>
+
+              <!-- Contador e Status -->
+              <div class="flex items-center gap-2">
+                <span id="playerSetupStatusBadge" class="text-[11px] font-semibold px-2.5 py-1 rounded-full bg-yellow-500/20 text-yellow-300 border border-yellow-500/30 flex items-center gap-1.5">
+                  <span class="w-2 h-2 rounded-full bg-yellow-400 animate-pulse"></span>
+                  <span id="playerSetupStatusText">Faltam 2 jogadores</span>
+                </span>
+                <span class="text-xs font-mono font-bold text-gray-300 bg-black/40 px-2.5 py-1 rounded-md border border-white/10">
+                  <span id="playerCountDisplay">0</span>/4
+                </span>
+              </div>
+            </div>
+
+            <!-- Grade de Slots dos Jogadores Registrados (Grid 2x2) -->
+            <div 
+              id="registeredPlayersList" 
+              class="grid grid-cols-2 gap-3 py-1 min-h-[170px]"
+            >
+              <!-- Slot 1 -->
+              <div class="player-card empty" data-index="0" data-empty="true">
+                <div class="player-card-inner flex flex-col items-center justify-center h-full p-4 rounded-lg border-2 border-dashed border-gray-600 bg-gray-800/20 transition-all hover:border-gray-500">
+                  <div class="text-3xl text-gray-500 mb-2 flex items-center justify-center">
+                    <svg viewBox="0 0 24 24" width="32" height="32" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="svg-icon svg-user"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                  </div>
+                  <div class="text-center">
+                    <div class="text-sm font-bold text-gray-500">Slot Vazio</div>
+                    <div class="text-xs text-gray-500 mt-1">Adicione um jogador</div>
+                  </div>
+                </div>
+              </div>
+              
+              <!-- Slot 2 -->
+              <div class="player-card empty" data-index="1" data-empty="true">
+                <div class="player-card-inner flex flex-col items-center justify-center h-full p-4 rounded-lg border-2 border-dashed border-gray-600 bg-gray-800/20 transition-all hover:border-gray-500">
+                  <div class="text-3xl text-gray-500 mb-2 flex items-center justify-center">
+                    <svg viewBox="0 0 24 24" width="32" height="32" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="svg-icon svg-user"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                  </div>
+                  <div class="text-center">
+                    <div class="text-sm font-bold text-gray-500">Slot Vazio</div>
+                    <div class="text-xs text-gray-500 mt-1">Adicione um jogador</div>
+                  </div>
+                </div>
+              </div>
+              
+              <!-- Slot 3 -->
+              <div class="player-card empty" data-index="2" data-empty="true">
+                <div class="player-card-inner flex flex-col items-center justify-center h-full p-4 rounded-lg border-2 border-dashed border-gray-600 bg-gray-800/20 transition-all hover:border-gray-500">
+                  <div class="text-3xl text-gray-500 mb-2 flex items-center justify-center">
+                    <svg viewBox="0 0 24 24" width="32" height="32" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="svg-icon svg-user"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                  </div>
+                  <div class="text-center">
+                    <div class="text-sm font-bold text-gray-500">Slot Vazio</div>
+                    <div class="text-xs text-gray-500 mt-1">Adicione um jogador</div>
+                  </div>
+                </div>
+              </div>
+              
+              <!-- Slot 4 -->
+              <div class="player-card empty" data-index="3" data-empty="true">
+                <div class="player-card-inner flex flex-col items-center justify-center h-full p-4 rounded-lg border-2 border-dashed border-gray-600 bg-gray-800/20 transition-all hover:border-gray-500">
+                  <div class="text-3xl text-gray-500 mb-2 flex items-center justify-center">
+                    <svg viewBox="0 0 24 24" width="32" height="32" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="svg-icon svg-user"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                  </div>
+                  <div class="text-center">
+                    <div class="text-sm font-bold text-gray-500">Slot Vazio</div>
+                    <div class="text-xs text-gray-500 mt-1">Adicione um jogador</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Rodapé de Ação: Iniciar Jogo -->
+          <div class="border-t border-white/10 pt-4 mt-4">
+            <div class="flex flex-col sm:flex-row items-center justify-between gap-3">
+              <div class="text-left w-full sm:w-auto">
+                <p id="startGameHint" class="text-xs text-gray-400">
+                  Cadastre ao menos 2 jogadores para liberar a partida.
+                </p>
+              </div>
+
+              <button 
+                id="startGameBtn" 
+                disabled
+                type="button"
+                class="w-full sm:w-auto px-7 py-3 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 disabled:from-gray-800 disabled:to-gray-900 disabled:text-gray-500 disabled:border disabled:border-white/5 disabled:cursor-not-allowed rounded-xl text-white font-bold text-sm shadow-xl transition-all transform hover:scale-[1.02] active:scale-[0.98] cursor-pointer flex items-center justify-center gap-2"
+              >
+                <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor" class="svg-icon"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+                <span>Iniciar Partida</span>
+              </button>
+            </div>
+          </div>
+        </div>
+
       </div>
-      
-      <!-- Linha 3: Botões de IA -->
-      <div class="flex items-center border-t border-white/10 pt-4">
-        <div>
-          <div class="flex items-center gap-2 mb-2">
-            <span class="text-sm font-medium text-gray-200 flex items-center gap-1.5">
-              <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="svg-icon svg-bot"><rect x="3" y="11" width="18" height="10" rx="2"/><circle cx="12" cy="5" r="2"/><path d="M12 7v4"/><line x1="8" y1="16" x2="8" y2="16"/><line x1="16" y1="16" x2="16" y2="16"/></svg>
-              Adicionar IA:
-            </span>
-          </div>
-          <div id="aiButtonsContainer" class="flex gap-2">
-            <!-- Botões de IA serão inseridos aqui -->
-          </div>
-        </div>
-      </div>
-      <div class="flex items-center justify-between mb-4">
-        <p class="text-sm text-gray-300 flex items-center gap-1.5">
-          <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="svg-icon svg-players"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
-          Jogadores Registrados
-        </p>
-        <div class="text-sm text-gray-300">
-          <span id="playerCountDisplay">0</span>/4 jogadores
-        </div>
-      </div>
-      
-      <div 
-        id="registeredPlayersList" 
-        class="grid grid-cols-2 md:grid-cols-4 gap-3 py-3 px-2 max-w-full min-h-[140px]">
-        <!-- Slot 1 -->
-        <div class="player-card empty" data-index="0" data-empty="true">
-          <div class="player-card-inner flex flex-col items-center justify-center h-full p-4 rounded-lg border-2 border-dashed border-gray-600 bg-gray-800/20 transition-all hover:border-gray-500">
-            <div class="text-3xl text-gray-500 mb-2 flex items-center justify-center">
-              <svg viewBox="0 0 24 24" width="32" height="32" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="svg-icon svg-user"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
-            </div>
-            <div class="text-center">
-              <div class="text-sm font-bold text-gray-500">Slot Vazio</div>
-              <div class="text-xs text-gray-500 mt-1">Adicione um jogador</div>
-            </div>
-          </div>
-        </div>
-        
-        <!-- Slot 2 -->
-        <div class="player-card empty" data-index="1" data-empty="true">
-          <div class="player-card-inner flex flex-col items-center justify-center h-full p-4 rounded-lg border-2 border-dashed border-gray-600 bg-gray-800/20 transition-all hover:border-gray-500">
-            <div class="text-3xl text-gray-500 mb-2 flex items-center justify-center">
-              <svg viewBox="0 0 24 24" width="32" height="32" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="svg-icon svg-user"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
-            </div>
-            <div class="text-center">
-              <div class="text-sm font-bold text-gray-500">Slot Vazio</div>
-              <div class="text-xs text-gray-500 mt-1">Adicione um jogador</div>
-            </div>
-          </div>
-        </div>
-        
-        <!-- Slot 3 -->
-        <div class="player-card empty" data-index="2" data-empty="true">
-          <div class="player-card-inner flex flex-col items-center justify-center h-full p-4 rounded-lg border-2 border-dashed border-gray-600 bg-gray-800/20 transition-all hover:border-gray-500">
-            <div class="text-3xl text-gray-500 mb-2 flex items-center justify-center">
-              <svg viewBox="0 0 24 24" width="32" height="32" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="svg-icon svg-user"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
-            </div>
-            <div class="text-center">
-              <div class="text-sm font-bold text-gray-500">Slot Vazio</div>
-              <div class="text-xs text-gray-500 mt-1">Adicione um jogador</div>
-            </div>
-          </div>
-        </div>
-        
-        <!-- Slot 4 -->
-        <div class="player-card empty" data-index="3" data-empty="true">
-          <div class="player-card-inner flex flex-col items-center justify-center h-full p-4 rounded-lg border-2 border-dashed border-gray-600 bg-gray-800/20 transition-all hover:border-gray-500">
-            <div class="text-3xl text-gray-500 mb-2 flex items-center justify-center">
-              <svg viewBox="0 0 24 24" width="32" height="32" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="svg-icon svg-user"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
-            </div>
-            <div class="text-center">
-              <div class="text-sm font-bold text-gray-500">Slot Vazio</div>
-              <div class="text-xs text-gray-500 mt-1">Adicione um jogador</div>
-            </div>
-          </div>
-        </div>
-      </div>
+    </div>
+  </div>
+</div>
     </div>
   </div>
 </div>
