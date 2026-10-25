@@ -987,6 +987,8 @@ body.modal-open .board-cell {
 .border-yellow-500\/30 { border-color: rgba(234, 179, 8, 0.3); }
 .bg-purple-500\/30 { background-color: rgba(168, 85, 247, 0.3); }
 .border-purple-500\/30 { border-color: rgba(168, 85, 247, 0.3); }
+.border-purple-500\/40 { border-color: rgba(168, 85, 247, 0.4); }
+.bg-purple-950\/60 { background-color: rgba(59, 7, 100, 0.4); }
 .bg-green-500\/30 { background-color: rgba(34, 197, 94, 0.3); }
 .border-green-500\/30 { border-color: rgba(34, 197, 94, 0.3); }
 
@@ -1437,12 +1439,14 @@ body.modal-open .board-cell {
 
   /* 6. MODAIS RESPONSIVOS NO MOBILE */
   .modal-content-container,
-  [id$="Modal"] {
+  [id$="Modal"],
+  #aiFeedbackOverlay {
     padding: 10px !important;
   }
 
   .modal-content-container > .relative,
-  [id$="Modal"] > .relative {
+  [id$="Modal"] > .relative,
+  #aiFeedbackModalCard {
     max-width: 95vw !important;
     max-height: 88vh !important;
     max-height: 88dvh !important;
@@ -1627,8 +1631,26 @@ body.ai-turn-active #boardContainer {
 
 /* Modal de Feedback da IA */
 #aiFeedbackOverlay {
+  background-color: rgba(0, 0, 0, 0.7) !important;
   backdrop-filter: blur(8px);
   -webkit-backdrop-filter: blur(8px);
+}
+
+#aiFeedbackModalCard {
+  background: rgba(17, 24, 39, 0.98) !important;
+  backdrop-filter: blur(25px) saturate(180%) !important;
+  -webkit-backdrop-filter: blur(25px) saturate(180%) !important;
+  border-radius: 1rem !important;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.1) !important;
+}
+
+#aiFeedbackModalCard .bg-purple-950\/60,
+#aiFeedbackOverlay .bg-purple-950\/60 {
+  background-color: rgba(59, 7, 100, 0.4) !important;
+}
+
+#aiActionsFeed > div {
+  background-color: rgba(31, 41, 55, 0.7) !important;
 }
 
 #aiActionsFeed::-webkit-scrollbar {

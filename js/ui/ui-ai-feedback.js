@@ -27,14 +27,14 @@ class AIFeedbackModal {
 
     this.overlay = document.createElement('div');
     this.overlay.id = 'aiFeedbackOverlay';
-    this.overlay.className = 'hidden fixed inset-0 z-[1200] flex items-center justify-center p-4 bg-black/75 backdrop-blur-sm select-none transition-opacity duration-300';
+    this.overlay.className = 'hidden fixed inset-0 z-[1200] flex items-center justify-center p-4 bg-black bg-opacity-70 backdrop-blur-sm select-none transition-opacity duration-300';
     
     this.overlay.addEventListener('click', (e) => e.stopPropagation());
     this.overlay.addEventListener('mousedown', (e) => e.stopPropagation());
     this.overlay.addEventListener('touchstart', (e) => e.stopPropagation(), { passive: false });
 
     this.overlay.innerHTML = `
-      <div id="aiFeedbackModalCard" class="relative w-full max-w-lg bg-gray-950 border-2 border-purple-500/40 rounded-2xl shadow-2xl p-6 text-white transform transition-all duration-300 scale-95 opacity-0">
+      <div id="aiFeedbackModalCard" class="relative w-full max-w-lg bg-gray-900 border-2 border-purple-500/40 rounded-2xl shadow-2xl p-6 text-white transform transition-all duration-300 scale-95 opacity-0">
         <div class="absolute -top-px left-10 right-10 h-1 bg-gradient-to-r from-transparent via-purple-400 to-transparent"></div>
         <div class="flex items-center gap-4 mb-4 pb-4 border-b border-white/10">
           <div class="relative">
