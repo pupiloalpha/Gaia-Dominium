@@ -1,10 +1,14 @@
-// ui-footer-manager.js - Gerenciamento do Footer (REFATORADO)
+// ui-footer-manager.js - Gerenciamento do Footer (CORRIGIDO)
 import { gameState, getCurrentPlayer, getPendingNegotiationsForPlayer } from '../state/game-state.js';
 import { RESOURCE_ICONS, UI_CONSTANTS } from '../state/game-config.js';
 import { getIcon } from './icons.js';
 
-// Desestruturação das constantes de UI
 const { ACTION_COSTS, PHASE_NAMES } = UI_CONSTANTS;
+
+// Classes utilitárias usadas para indicar botão desabilitado.
+// Centralizadas aqui para garantir que TODOS os métodos de update
+// removam exatamente as mesmas classes que _disableAllActionsForAI adiciona.
+const DISABLED_CLASSES = ['opacity-40', 'opacity-50', 'cursor-not-allowed'];
 
 export class FooterManager {
     constructor(uiGameManager) {
@@ -34,6 +38,14 @@ export class FooterManager {
         }
     }
 
+    /**
+     * Remove as classes de "desabilitado" de um botão e devolve o estado visual limpo.
+     */
+    _clearDisabledClasses(btn) {
+        if (!btn) return;
+        DISABLED_CLASSES.forEach(cls => btn.classList.remove(cls));
+    }
+
     updateFooter() {
         if (this._isGameEnded()) {
             this._disableAllActions();
@@ -48,9 +60,13 @@ export class FooterManager {
             return;
         }
 
-        // Bloquear todas as ações e botões se o turno for de IA
-        const isAI = (player && (player.type === 'ai' || player.isAI)) || (window.aiFeedbackModal?.isBlocked());
-        if (isAI) {
+        // CORREÇÃO CRÍTICA:
+        // O bloqueio depende SOMENTE do jogador atual ser IA.
+        // isBlocked() do modal agora retorna false se o overlay estiver oculto,
+        // mas ainda assim só bloqueamos se o jogador atual for IA — não deixamos
+        // um estado residual do modal impedir o turno do humano.
+        const isAIPlayer = player && (player.type === 'ai' || player.isAI);
+        if (isAIPlayer) {
             this._disableAllActionsForAI(player);
             return;
         }
@@ -67,14 +83,28 @@ export class FooterManager {
     }
 
     _disableAllActionsForAI(player) {
-        [this.actionExploreBtn, this.actionCollectBtn, this.actionBuildBtn, this.actionNegotiateBtn, this.endTurnBtn]
-            .forEach(btn => {
-                if (btn) {
-                    btn.disabled = true;
-                    btn.classList.add('opacity-40', 'cursor-not-allowed');
-                    btn.title = `Turno da IA (${player?.name || 'IA'}). Interações desabilitadas.`;
-                }
-            });
+        const buttons = [
+            this.actionExploreBtn,
+            this.actionCollectBtn,
+            this.actionBuildBtn,
+            this.actionNegotiateBtn,
+            this.endTurnBtn
+        ];
+        buttons.forEach(btn => {
+            if (!btn) return;
+            btn.disabled = true;
+            // Remove qualquer cor de ação que tenha sobrado do turno anterior
+            btn.classList.remove(
+                'bg-green-600', 'bg-blue-600', 'bg-yellow-600', 'bg-red-600',
+                'bg-orange-600', 'bg-purple-600', 'bg-gray-600',
+                'hover:bg-green-700', 'hover:bg-blue-700', 'hover:bg-yellow-700',
+                'hover:bg-orange-700', 'hover:bg-red-700'
+            );
+            // PADRONIZADO: usa opacity-50 (não opacity-40) para casar com os
+            // métodos de update que removem opacity-50.
+            btn.classList.add('opacity-50', 'cursor-not-allowed');
+            btn.title = `Turno da IA (${player?.name || 'IA'}). Interações desabilitadas.`;
+        });
         
         if (this.phaseIndicator) {
             this.phaseIndicator.textContent = `Turno da IA: ${player?.name || 'IA'}`;
@@ -129,6 +159,7 @@ export class FooterManager {
 
     _configureResurrectionButton(btn, player) {
         this._setButtonContent(btn, getIcon('ressuscitar', { size: 18 }), 'Ressuscitar');
+        this._clearDisabledClasses(btn);
         if (gameState.selectedRegionId !== null) {
             const region = gameState.regions[gameState.selectedRegionId];
             if (region && region.controller === null) {
@@ -151,12 +182,18 @@ export class FooterManager {
     _handleGameNotStarted() {
         [this.actionExploreBtn, this.actionCollectBtn, this.actionBuildBtn, this.actionNegotiateBtn]
             .forEach(b => {
-                if (b) b.disabled = true;
+                if (b) {
+                    b.disabled = true;
+                    this._clearDisabledClasses(b);
+                    b.classList.add('opacity-50', 'cursor-not-allowed');
+                }
             });
         
         if (this.endTurnBtn) {
             this.endTurnBtn.disabled = true;
             this._setButtonContent(this.endTurnBtn, getIcon('waiting', { size: 18 }), 'Não iniciado');
+            this._clearDisabledClasses(this.endTurnBtn);
+            this.endTurnBtn.classList.add('opacity-50', 'cursor-not-allowed');
         }
     }
 
@@ -164,6 +201,7 @@ export class FooterManager {
         if (this.phaseIndicator) {
             const phaseName = PHASE_NAMES[gameState.currentPhase] || 'Renda';
             this.phaseIndicator.innerHTML = `Fase: ${phaseName}`;
+            this.phaseIndicator.classList.remove('text-purple-300');
         }
     }
 
@@ -183,6 +221,7 @@ export class FooterManager {
                 .forEach(btn => { 
                     if (btn) {
                         btn.disabled = true;
+                        this._clearDisabledClasses(btn);
                         btn.classList.add('opacity-50', 'cursor-not-allowed');
                     }
                 });
@@ -190,7 +229,6 @@ export class FooterManager {
             const region = gameState.regions[regionId];
             if (!region) return;
             
-            // Usar validação centralizada para todos os botões
             this._updateExploreButton(region, player, isActionPhase, baseEnabled);
             this._updateCollectButton(region, player, isActionPhase, baseEnabled);
             this._updateBuildButton(region, player, isActionPhase, baseEnabled);
@@ -202,53 +240,56 @@ export class FooterManager {
     _updateExploreButton(region, player, isActionPhase, baseEnabled) {
         if (!this.actionExploreBtn) return;
         
-        // Resetar aparência primeiro
         this._resetExploreButtonAppearance();
         
-        // Verificar se há região selecionada
         if (!region) {
             this.actionExploreBtn.disabled = true;
             this.actionExploreBtn.title = 'Selecione uma região primeiro';
             this._setButtonContent(this.actionExploreBtn, getIcon('explorar', { size: 18 }), 'Explorar');
+            this._clearDisabledClasses(this.actionExploreBtn);
+            this.actionExploreBtn.classList.add('opacity-50', 'cursor-not-allowed');
             return;
         }
         
-        // Usar validação centralizada do GameLogic
         const validation = window.gameLogic?.getActionValidation?.('explore');
         
         if (!isActionPhase) {
             this.actionExploreBtn.disabled = true;
             this.actionExploreBtn.title = 'Ação permitida apenas na fase de Ações.';
             this._setButtonContent(this.actionExploreBtn, getIcon('explorar', { size: 18 }), 'Explorar');
+            this._clearDisabledClasses(this.actionExploreBtn);
+            this.actionExploreBtn.classList.add('opacity-50', 'cursor-not-allowed');
             return;
         }
         
-        // CORREÇÃO CRÍTICA: Verificar validação primeiro
         if (!validation) {
             this.actionExploreBtn.disabled = true;
             this.actionExploreBtn.title = 'Validação não disponível';
             this._setButtonContent(this.actionExploreBtn, getIcon('explorar', { size: 18 }), 'Explorar');
+            this._clearDisabledClasses(this.actionExploreBtn);
+            this.actionExploreBtn.classList.add('opacity-50', 'cursor-not-allowed');
             return;
         }
         
-        // CORREÇÃO: Verificar se há ações disponíveis
         if (gameState.actionsLeft <= 0) {
             this.actionExploreBtn.disabled = true;
             this.actionExploreBtn.title = 'Sem ações disponíveis';
             this._setButtonContent(this.actionExploreBtn, getIcon('explorar', { size: 18 }), 'Explorar');
+            this._clearDisabledClasses(this.actionExploreBtn);
+            this.actionExploreBtn.classList.add('opacity-50', 'cursor-not-allowed');
             return;
         }
         
-        // Configurar botão baseado no tipo de ação
         this.actionExploreBtn.disabled = !validation.valid;
         
         if (!validation.valid) {
             this.actionExploreBtn.title = validation.reason || 'Ação não disponível';
             this._setButtonContent(this.actionExploreBtn, getIcon('explorar', { size: 18 }), 'Explorar');
+            this._clearDisabledClasses(this.actionExploreBtn);
+            this.actionExploreBtn.classList.add('opacity-50', 'cursor-not-allowed');
             return;
         }
         
-        // CORREÇÃO: Apenas mudar texto e classe se a ação for válida
         switch(validation.type) {
             case 'resurrect':
                 this._setButtonContent(this.actionExploreBtn, getIcon('ressuscitar', { size: 18 }), 'Ressuscitar');
@@ -286,25 +327,26 @@ export class FooterManager {
                 this.actionExploreBtn.title = 'Ação não disponível';
         }
         
-        // Remover classes de desabilitado se o botão estiver habilitado
         if (!this.actionExploreBtn.disabled) {
-            this.actionExploreBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+            this._clearDisabledClasses(this.actionExploreBtn);
         }
     }
 
     _resetExploreButtonAppearance() {
         if (!this.actionExploreBtn) return;
-        const colorClasses = ['bg-green-600', 'bg-yellow-600', 'bg-red-600', 'bg-purple-600', 'bg-gray-600'];
-        colorClasses.forEach(cls => {
-            this.actionExploreBtn.classList.remove(cls);
-        });
+        const colorClasses = [
+            'bg-green-600', 'bg-yellow-600', 'bg-red-600', 'bg-purple-600', 'bg-gray-600',
+            'hover:bg-green-700', 'hover:bg-yellow-700', 'hover:bg-red-700'
+        ];
+        colorClasses.forEach(cls => this.actionExploreBtn.classList.remove(cls));
+        // Garante que qualquer resíduo de desabilitação seja removido
+        this._clearDisabledClasses(this.actionExploreBtn);
     }
 
     _updateCollectButton(region, player, isActionPhase, baseEnabled) {
         if (!this.actionCollectBtn) return;
         this._setButtonContent(this.actionCollectBtn, getIcon('coletar', { size: 18 }), 'Coletar');
         
-        // Usar validação centralizada do GameLogic
         const validation = window.gameLogic?.getActionValidation?.('collect');
         const isOwnRegion = region.controller === player.id;
         const hasExploration = region.explorationLevel > 0;
@@ -312,19 +354,20 @@ export class FooterManager {
         if (!isActionPhase) {
             this.actionCollectBtn.disabled = true;
             this.actionCollectBtn.title = 'Ação permitida apenas na fase de Ações.';
+            this._clearDisabledClasses(this.actionCollectBtn);
+            this.actionCollectBtn.classList.add('opacity-50', 'cursor-not-allowed');
             return;
         }
         
-        // Determinar estado do botão usando validação centralizada
         if (validation && validation.valid) {
             this.actionCollectBtn.disabled = false;
             this.actionCollectBtn.title = `Coletar recursos (custo: 1 Madeira)\nNível de exploração: ${region.explorationLevel}`;
-            this.actionCollectBtn.classList.remove('bg-gray-600', 'opacity-50', 'cursor-not-allowed');
+            this.actionCollectBtn.classList.remove('bg-gray-600');
+            this._clearDisabledClasses(this.actionCollectBtn);
             this.actionCollectBtn.classList.add('bg-blue-600', 'hover:bg-blue-700');
         } else {
             this.actionCollectBtn.disabled = true;
             
-            // Configurar tooltip informativo baseado na validação
             if (!isOwnRegion) {
                 this.actionCollectBtn.title = 'Você não controla esta região';
             } else if (!hasExploration) {
@@ -336,6 +379,7 @@ export class FooterManager {
             }
             
             this.actionCollectBtn.classList.remove('bg-blue-600', 'hover:bg-blue-700');
+            this._clearDisabledClasses(this.actionCollectBtn);
             this.actionCollectBtn.classList.add('bg-gray-600', 'opacity-50', 'cursor-not-allowed');
         }
     }
@@ -350,18 +394,20 @@ export class FooterManager {
         if (!isActionPhase) {
             this.actionBuildBtn.disabled = true;
             this.actionBuildBtn.title = 'Ação permitida apenas na fase de Ações.';
+            this._clearDisabledClasses(this.actionBuildBtn);
+            this.actionBuildBtn.classList.add('opacity-50', 'cursor-not-allowed');
             return;
         }
         
         this.actionBuildBtn.disabled = !baseEnabled || !isOwnRegion || !validation?.valid;
         this.actionBuildBtn.title = validation?.reason || 'Construir estrutura';
         
-        // Ajustar aparência do botão
         if (this.actionBuildBtn.disabled) {
             this.actionBuildBtn.classList.remove('bg-orange-600', 'hover:bg-orange-700');
+            this._clearDisabledClasses(this.actionBuildBtn);
             this.actionBuildBtn.classList.add('bg-gray-600', 'opacity-50', 'cursor-not-allowed');
         } else {
-            this.actionBuildBtn.classList.remove('bg-gray-600', 'opacity-50', 'cursor-not-allowed');
+            this._clearDisabledClasses(this.actionBuildBtn);
             this.actionBuildBtn.classList.add('bg-orange-600', 'hover:bg-orange-700');
         }
     }
@@ -372,21 +418,22 @@ export class FooterManager {
         
         if (isNegotiationPhase) {
             const validation = window.gameLogic?.getActionValidation?.('negotiate');
-            
             this.actionNegotiateBtn.disabled = !validation?.valid;
             
             if (!validation?.valid) {
                 this.actionNegotiateBtn.title = validation?.reason || 'Negociação não disponível';
                 this.actionNegotiateBtn.classList.remove('bg-green-600', 'hover:bg-green-700');
+                this._clearDisabledClasses(this.actionNegotiateBtn);
                 this.actionNegotiateBtn.classList.add('bg-gray-600', 'opacity-50', 'cursor-not-allowed');
             } else {
                 this.actionNegotiateBtn.title = 'Abrir negociação (custo: 1 Ouro)';
-                this.actionNegotiateBtn.classList.remove('bg-gray-600', 'opacity-50', 'cursor-not-allowed');
+                this._clearDisabledClasses(this.actionNegotiateBtn);
                 this.actionNegotiateBtn.classList.add('bg-green-600', 'hover:bg-green-700');
             }
         } else {
             this.actionNegotiateBtn.disabled = true;
             this.actionNegotiateBtn.classList.remove('bg-green-600', 'hover:bg-green-700');
+            this._clearDisabledClasses(this.actionNegotiateBtn);
             this.actionNegotiateBtn.classList.add('bg-gray-600', 'opacity-50', 'cursor-not-allowed');
             this.actionNegotiateBtn.title = 'Disponível apenas na fase de negociação';
         }
@@ -396,7 +443,6 @@ export class FooterManager {
         if (this.actionsLeftEl) {
             this.actionsLeftEl.textContent = `Ações restantes: ${gameState.actionsLeft}`;
             
-            // Destaque visual quando ações estão acabando
             if (gameState.actionsLeft === 1) {
                 this.actionsLeftEl.classList.add('text-yellow-300', 'font-bold', 'animate-pulse');
             } else if (gameState.actionsLeft === 0) {
@@ -414,8 +460,13 @@ export class FooterManager {
         const pendingNegotiations = getPendingNegotiationsForPlayer(player.id);
         const hasPending = pendingNegotiations.length > 0;
         
-        // Limpar classes de cor dinâmicas
-        const colorClasses = ['bg-blue-600', 'bg-yellow-600', 'bg-green-600', 'bg-gray-600', 'bg-rose-600', 'hover:bg-blue-700', 'hover:bg-yellow-700', 'hover:bg-green-700', 'animate-pulse', 'cursor-not-allowed'];
+        // Remove TODAS as classes dinâmicas — incluindo opacity-40/opacity-50
+        // (antes só opacity-50 era removido, deixando resíduo de opacity-40)
+        const colorClasses = [
+            'bg-blue-600', 'bg-yellow-600', 'bg-green-600', 'bg-gray-600', 'bg-rose-600',
+            'hover:bg-blue-700', 'hover:bg-yellow-700', 'hover:bg-green-700',
+            'animate-pulse', 'cursor-not-allowed', 'opacity-40', 'opacity-50'
+        ];
         colorClasses.forEach(cls => this.endTurnBtn.classList.remove(cls));
         
         switch(gameState.currentPhase) {

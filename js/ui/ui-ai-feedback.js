@@ -12,7 +12,6 @@ class AIFeedbackModal {
     this.actionsHistory = [];
     this.hideTimeout = null;
     
-    // Inicializar quando o DOM estiver pronto
     if (document.readyState === 'loading') {
       document.addEventListener('DOMContentLoaded', () => this.initContainer());
     } else {
@@ -26,23 +25,17 @@ class AIFeedbackModal {
       return;
     }
 
-    // Criar o container do modal com z-index alto e bloqueio total de cliques
     this.overlay = document.createElement('div');
     this.overlay.id = 'aiFeedbackOverlay';
     this.overlay.className = 'hidden fixed inset-0 z-[1200] flex items-center justify-center p-4 bg-black/75 backdrop-blur-sm select-none transition-opacity duration-300';
     
-    // Impedir propagação de cliques e toques para o fundo
     this.overlay.addEventListener('click', (e) => e.stopPropagation());
     this.overlay.addEventListener('mousedown', (e) => e.stopPropagation());
     this.overlay.addEventListener('touchstart', (e) => e.stopPropagation(), { passive: false });
 
     this.overlay.innerHTML = `
       <div id="aiFeedbackModalCard" class="relative w-full max-w-lg bg-gray-950 border-2 border-purple-500/40 rounded-2xl shadow-2xl p-6 text-white transform transition-all duration-300 scale-95 opacity-0">
-        
-        <!-- Faixa de Brilho Superior -->
         <div class="absolute -top-px left-10 right-10 h-1 bg-gradient-to-r from-transparent via-purple-400 to-transparent"></div>
-        
-        <!-- Cabeçalho do Jogador IA -->
         <div class="flex items-center gap-4 mb-4 pb-4 border-b border-white/10">
           <div class="relative">
             <div id="aiAvatarBadge" class="w-14 h-14 rounded-2xl bg-purple-900/80 border-2 border-purple-400/60 flex items-center justify-center text-3xl shadow-lg ring-4 ring-purple-500/20 animate-pulse">
@@ -52,7 +45,6 @@ class AIFeedbackModal {
               IA
             </div>
           </div>
-          
           <div class="flex-1 min-w-0">
             <div class="flex items-center justify-between gap-2">
               <h3 id="aiPlayerName" class="text-xl font-bold text-white truncate tracking-wide">
@@ -63,7 +55,6 @@ class AIFeedbackModal {
                 <span id="aiTurnPhaseText">Fase de Ações</span>
               </span>
             </div>
-            
             <div class="flex items-center gap-2 mt-1">
               <span id="aiFactionBadge" class="text-xs px-2 py-0.5 rounded bg-white/10 text-gray-300 font-medium truncate flex items-center gap-1">
                 Facção
@@ -75,7 +66,6 @@ class AIFeedbackModal {
           </div>
         </div>
 
-        <!-- Card de Ação em Andamento (Destaque Principal) -->
         <div class="mb-4 bg-purple-950/60 border border-purple-500/30 rounded-xl p-4 shadow-inner relative overflow-hidden">
           <div class="flex items-start gap-3">
             <div id="aiCurrentActionIcon" class="w-10 h-10 rounded-xl bg-purple-800/70 border border-purple-400/40 flex items-center justify-center text-purple-300 flex-shrink-0 mt-0.5 shadow">
@@ -97,14 +87,11 @@ class AIFeedbackModal {
               </p>
             </div>
           </div>
-          
-          <!-- Barra de Progresso Animada -->
           <div class="mt-3 w-full bg-purple-900/50 rounded-full h-1.5 overflow-hidden">
             <div class="bg-gradient-to-r from-purple-400 via-yellow-400 to-purple-400 h-1.5 rounded-full animate-pulse w-full"></div>
           </div>
         </div>
 
-        <!-- Seção de Notificações / Histórico de Ações da Rodada -->
         <div class="mb-4">
           <div class="flex items-center justify-between mb-2 px-1">
             <span class="text-xs font-semibold text-gray-300 uppercase tracking-wider flex items-center gap-1.5">
@@ -115,17 +102,13 @@ class AIFeedbackModal {
               0 ações
             </span>
           </div>
-
-          <!-- Feed com scroll estilizado -->
           <div id="aiActionsFeed" class="max-h-44 overflow-y-auto space-y-1.5 pr-1 text-xs">
-            <!-- Itens de ação serão injetados dinamicamente -->
             <div class="text-center py-4 text-gray-400 italic text-xs">
               Aguardando início das ações...
             </div>
           </div>
         </div>
 
-        <!-- Rodapé de Aviso e Bloqueio -->
         <div class="pt-3 border-t border-white/10 flex items-center justify-between text-xs text-gray-400">
           <div class="flex items-center gap-2">
             <span class="text-yellow-400 flex items-center justify-center">
@@ -137,16 +120,12 @@ class AIFeedbackModal {
           </div>
           <span class="text-[11px] text-purple-300/80 font-mono">Modo Espectador</span>
         </div>
-
       </div>
     `;
 
     document.body.appendChild(this.overlay);
   }
 
-  /**
-   * Ativa o modal de feedback e bloqueia a interface quando o turno da IA começa
-   */
   startAITurn(player) {
     if (!this.overlay) this.initContainer();
     if (!player) player = getCurrentPlayer();
@@ -156,21 +135,17 @@ class AIFeedbackModal {
     this.isBlockedState = true;
     this.actionsHistory = [];
 
-    // Limpar timeout de ocultação anterior se houver
     if (this.hideTimeout) {
       clearTimeout(this.hideTimeout);
       this.hideTimeout = null;
     }
 
-    // 1. Bloquear interação em nível de body (CSS e pointer-events)
     document.body.classList.add('ai-turn-active');
 
-    // 2. Fechar qualquer modal interativo que o usuário tenha deixado aberto
     if (window.uiManager?.modals?.closeAllModals) {
       window.uiManager.modals.closeAllModals();
     }
 
-    // 3. Atualizar elementos visuais do jogador IA
     const nameEl = document.getElementById('aiPlayerName');
     const avatarBadge = document.getElementById('aiAvatarBadge');
     const factionBadge = document.getElementById('aiFactionBadge');
@@ -213,7 +188,6 @@ class AIFeedbackModal {
     if (feed) feed.innerHTML = '';
     if (actionsCount) actionsCount.textContent = '0 ações';
 
-    // 4. Exibir o modal com animação suave
     this.overlay.classList.remove('hidden');
     const card = document.getElementById('aiFeedbackModalCard');
     if (card) {
@@ -223,19 +197,14 @@ class AIFeedbackModal {
       });
     }
 
-    // 5. Desabilitar explicitamente ações do footer
     if (window.uiManager?.gameManager?.footerManager?.updateFooter) {
       window.uiManager.gameManager.footerManager.updateFooter();
     }
   }
 
-  /**
-   * Adiciona uma notificação de ação da IA ao modal e atualiza a ação atual
-   */
   addActionNotification(actionData) {
     if (!this.overlay) this.initContainer();
 
-    // Normalizar parâmetros (se receber string ou objeto)
     let title = 'Ação da IA';
     let description = '';
     let iconName = 'robo';
@@ -263,7 +232,6 @@ class AIFeedbackModal {
 
     this.actionsHistory.push(actionItem);
 
-    // 1. Atualizar card de ação em andamento
     const currentActionTitle = document.getElementById('aiCurrentActionTitle');
     const currentActionDesc = document.getElementById('aiCurrentActionDesc');
     const currentActionIcon = document.getElementById('aiCurrentActionIcon');
@@ -282,7 +250,6 @@ class AIFeedbackModal {
       turnPhaseText.textContent = this._formatPhaseName(gameState.currentPhase);
     }
 
-    // 2. Renderizar no feed de histórico
     this._appendActionToFeed(actionItem);
   }
 
@@ -298,7 +265,6 @@ class AIFeedbackModal {
     const itemEl = document.createElement('div');
     itemEl.className = 'flex items-center gap-2.5 p-2 rounded-lg bg-gray-800/80 border border-white/5 animate-fade-in transition-all';
     
-    // Cores específicas para cada tipo de ação
     const colorMap = {
       explore: 'text-green-400 bg-green-950/60 border-green-500/30',
       dominate: 'text-yellow-400 bg-yellow-950/60 border-yellow-500/30',
@@ -327,13 +293,9 @@ class AIFeedbackModal {
     `;
 
     feed.appendChild(itemEl);
-    // Rolagem automática para o item mais recente
     feed.scrollTop = feed.scrollHeight;
   }
 
-  /**
-   * Atualiza o indicador de fase no modal
-   */
   updatePhase(phaseName) {
     const turnPhaseText = document.getElementById('aiTurnPhaseText');
     if (turnPhaseText) {
@@ -341,16 +303,12 @@ class AIFeedbackModal {
     }
   }
 
-  /**
-   * Finaliza o turno da IA e desbloqueia a interface se for a vez de um jogador humano
-   */
   endAITurn(nextPlayer) {
     const card = document.getElementById('aiFeedbackModalCard');
     const currentActionTitle = document.getElementById('aiCurrentActionTitle');
     const currentActionDesc = document.getElementById('aiCurrentActionDesc');
     const currentActionIcon = document.getElementById('aiCurrentActionIcon');
 
-    // Se o próximo jogador também for IA, transicionar suavemente
     if (nextPlayer && (nextPlayer.type === 'ai' || nextPlayer.isAI) && !nextPlayer.eliminated) {
       if (currentActionTitle) currentActionTitle.textContent = 'Passando para a próxima IA...';
       if (currentActionDesc) currentActionDesc.textContent = `Turno concluído. Iniciando turno de ${nextPlayer.name}.`;
@@ -362,7 +320,6 @@ class AIFeedbackModal {
       return;
     }
 
-    // Se o próximo jogador for humano, anunciar e fechar o modal
     const playerName = nextPlayer ? nextPlayer.name : 'sua';
     if (currentActionTitle) currentActionTitle.textContent = 'Turno da IA finalizado!';
     if (currentActionDesc) currentActionDesc.textContent = `É a vez do jogador ${playerName}! Controles reabilitados.`;
@@ -382,7 +339,6 @@ class AIFeedbackModal {
         this.isBlockedState = false;
         document.body.classList.remove('ai-turn-active');
 
-        // Atualizar interface e habilitar controles para o jogador humano
         if (window.uiManager?.updateUI) {
           window.uiManager.updateUI();
         } else if (window.uiManager?.gameManager?.updateUI) {
@@ -393,9 +349,20 @@ class AIFeedbackModal {
   }
 
   /**
-   * Verifica se a interface está bloqueada por turno de IA
+   * Verifica se o overlay do modal está atualmente visível na tela.
+   * Fonte de verdade visual para saber se o bloqueio deve ser considerado.
+   */
+  isVisible() {
+    return !!(this.overlay && !this.overlay.classList.contains('hidden'));
+  }
+
+  /**
+   * CORRIGIDO: só considera bloqueado se o overlay estiver realmente visível.
+   * Isso evita que isBlockedState "preso" em true (por qualquer razão) impeça
+   * o jogador humano de interagir após o turno da IA terminar.
    */
   isBlocked() {
+    if (!this.isVisible()) return false;
     return this.isBlockedState;
   }
 
@@ -435,7 +402,6 @@ class AIFeedbackModal {
   }
 }
 
-// Criar e exportar instância singleton
 export const aiFeedbackModal = new AIFeedbackModal();
 if (typeof window !== 'undefined') {
   window.aiFeedbackModal = aiFeedbackModal;
