@@ -134,7 +134,15 @@ export class SidebarManager {
         const unlocked = achievementsState.unlockedAchievements?.[playerIndex] || [];
         
         if (unlocked.length === 0) {
-            this.achievementsList.innerHTML = '<p class="text-xs text-gray-400">Nenhuma conquista ainda</p>';
+            this.achievementsList.innerHTML = `
+                <div class="flex items-center justify-between">
+                    <p class="text-xs text-gray-400">Nenhuma conquista ainda</p>
+                    <button id="sidebarViewAllAchievementsBtn" class="text-xs text-yellow-400 hover:text-yellow-300 hover:underline">Ver todas</button>
+                </div>
+            `;
+            document.getElementById('sidebarViewAllAchievementsBtn')?.addEventListener('click', () => {
+                window.uiManager?.modals?.renderAchievementsModal(playerIndex);
+            });
             return;
         }
         
@@ -152,10 +160,10 @@ export class SidebarManager {
             
             if (achievement) {
                 html += `
-                    <div class="flex items-center gap-2 p-2 bg-gray-800/30 rounded border border-yellow-500/20">
+                    <div class="flex items-center gap-2 p-2 bg-gray-800/30 rounded border border-yellow-500/20 cursor-pointer hover:bg-gray-800/50 transition achievement-sidebar-item">
                         <span class="text-lg">${achievement.icon}</span>
-                        <div class="text-xs">
-                            <div class="text-yellow-300 font-semibold">${achievement.name}</div>
+                        <div class="text-xs min-w-0">
+                            <div class="text-yellow-300 font-semibold truncate">${achievement.name}</div>
                             <div class="text-gray-400 truncate">${achievement.description}</div>
                         </div>
                     </div>
@@ -163,12 +171,18 @@ export class SidebarManager {
             }
         });
         
-        if (unlocked.length > 3) {
-            html += `<div class="text-center text-xs text-gray-500 mt-1">
-                +${unlocked.length - 3} mais conquistas
-            </div>`;
-        }
+        html += `
+            <button id="sidebarViewAllAchievementsBtn" class="w-full text-center text-xs text-yellow-400 hover:text-yellow-300 hover:underline mt-1.5 py-0.5">
+                ${unlocked.length > 3 ? `+${unlocked.length - 3} mais (Ver todas)` : 'Ver todas as conquistas'}
+            </button>
+        `;
         
         this.achievementsList.innerHTML = html;
+
+        this.achievementsList.querySelectorAll('.achievement-sidebar-item, #sidebarViewAllAchievementsBtn').forEach(el => {
+            el.addEventListener('click', () => {
+                window.uiManager?.modals?.renderAchievementsModal(playerIndex);
+            });
+        });
     }
 }

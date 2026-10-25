@@ -127,6 +127,7 @@ export class UIGameManager {
         this.footerManager.updateFooter();
         this.updateTurnInfo();
         this.renderActivityLog();
+        this.uiManager?.modals?.refreshAchievementsModalIfOpen?.();
     }
     
     // Método para garantir compatibilidade:
@@ -592,7 +593,7 @@ export class UIGameManager {
         });
         document.getElementById('achievementsNavBtn')?.addEventListener('click', () => {
             if (isAITurnActive()) return;
-            this.uiManager.modals.renderAchievementsModal();
+            this.uiManager.modals.renderAchievementsModal(gameState.selectedPlayerForSidebar ?? gameState.currentPlayerIndex);
         });
 
         // Activity Log filters

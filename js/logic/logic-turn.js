@@ -5,7 +5,10 @@ import {
   addActivityLog, 
   getCurrentPlayer, 
   saveGame, 
-  getPendingNegotiationsForPlayer
+  getPendingNegotiationsForPlayer,
+  checkAndUnlockAchievements,
+  checkAllPlayersAchievements,
+  hasAchievement
 } from '../state/game-state.js';
 import { GAME_CONFIG, BIOME_INCOME, GAME_EVENTS, STRUCTURE_INCOME } from '../state/game-config.js';
 
@@ -278,6 +281,18 @@ export class TurnLogic {
       }
     }
 
+    // Aplicar bônus de conquistas na renda
+    if (hasAchievement(player.id, 'explorador')) {
+      bonuses.pv = (bonuses.pv || 0) + 1;
+    }
+    if (hasAchievement(player.id, 'magnata')) {
+      ['madeira', 'pedra', 'ouro', 'agua'].forEach(res => {
+        if (bonuses[res] > 0) {
+          bonuses[res] = Math.ceil(bonuses[res] * 1.1);
+        }
+      });
+    }
+
     // Aplicar
     Object.keys(bonuses).forEach(k => {
       if(k === 'pv') {
@@ -293,6 +308,8 @@ export class TurnLogic {
         player.resources[k] = (player.resources[k] || 0) + bonuses[k];
       }
     });
+
+    checkAndUnlockAchievements(player.id);
 
     // Se o jogo terminou durante a renda, cancelar
     if (this.gameEnded) {
@@ -559,6 +576,7 @@ export class TurnLogic {
     if (achievementsState && achievementsState.wins !== undefined) {
       achievementsState.wins++;
     }
+    checkAndUnlockAchievements(winner.id, { isVictory: true });
     
     setTimeout(() => {
       if (window.uiManager && window.uiManager.modals && window.uiManager.modals.openVictoryModal) {

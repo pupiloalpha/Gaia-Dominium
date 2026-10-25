@@ -1,7 +1,8 @@
 // logic-actions.js - Gerenciador de Ações Físicas (REFATORADO)
 import { 
   gameState, achievementsState, addActivityLog, 
-  getCurrentPlayer, clearRegionSelection 
+  getCurrentPlayer, clearRegionSelection,
+  recordPlayerAchievementProgress, checkAndUnlockAchievements, hasAchievement
 } from '../state/game-state.js';
 import { GAME_CONFIG, RESOURCE_ICONS, STRUCTURE_COSTS, STRUCTURE_EFFECTS, STRUCTURE_INCOME } from '../state/game-config.js';
 
@@ -204,7 +205,8 @@ export class ActionLogic {
     
     region.explorationLevel = Math.min(3, region.explorationLevel + 1);
     player.victoryPoints += 1;
-    achievementsState.totalExplored++;
+    recordPlayerAchievementProgress(player.id, 'explore');
+    checkAndUnlockAchievements(player.id);
     
     // 4. Lógica de Bônus de Facção (Ex: Chance extra de ouro ou madeira em floresta)
     let bonusMsg = '';
@@ -300,6 +302,8 @@ export class ActionLogic {
     }
 
     player.victoryPoints += 1;
+    recordPlayerAchievementProgress(player.id, 'collect', { regionId: region.id });
+    checkAndUnlockAchievements(player.id);
     this.main.showFeedback(`Recursos coletados! +1 PV${factionMsg}`, 'success');
     addActivityLog({ 
       type: 'collect', 
@@ -368,7 +372,8 @@ export class ActionLogic {
                    pvBonus;
 
     player.victoryPoints += pvGain;
-    achievementsState.totalBuilt++;
+    recordPlayerAchievementProgress(player.id, 'build');
+    checkAndUnlockAchievements(player.id);
     
     this.main.showFeedback(`Construído ${structureType}. +${pvGain} PV.`, 'success');
     addActivityLog({ 

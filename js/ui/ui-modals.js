@@ -2,6 +2,8 @@ import {
   gameState, 
   achievementsState, 
   getCurrentPlayer, 
+  getPlayerById,
+  ensurePlayerAchievements,
   addActivityLog,
   getGameRules,
   setGameRules,
@@ -1137,59 +1139,113 @@ class ModalManager {
     setTimeout(setup, 200);
   }
 
-  renderAchievementsModal() {
+  renderAchievementsModal(selectedPlayerId = null) {
     if (this._isAIBlocked()) return;
+
+    if (selectedPlayerId !== null && selectedPlayerId !== undefined) {
+      this.currentAchievementsPlayerId = selectedPlayerId;
+    } else if (this.currentAchievementsPlayerId === undefined || this.currentAchievementsPlayerId === null) {
+      this.currentAchievementsPlayerId = gameState.selectedPlayerForSidebar ?? gameState.currentPlayerIndex ?? 0;
+    }
+
     let modal = document.getElementById('achievementsModal');
     
     if (!modal) {
       modal = document.createElement('div');
       modal.id = 'achievementsModal';
-      modal.className = 'hidden fixed inset-0 z-[110] flex items-center justify-center p-6';
+      modal.className = 'hidden fixed inset-0 z-[110] flex items-center justify-center p-4 md:p-6';
       modal.innerHTML = `
-        <div class="absolute inset-0 bg-black/70"></div>
-        <div class="relative w-full max-w-4xl bg-gray-900/95 backdrop-blur-md border border-yellow-500/30 rounded-2xl shadow-xl p-6">
-          <div class="flex justify-between items-center mb-6">
+        <div class="achievements-backdrop absolute inset-0 bg-black/75 backdrop-blur-sm cursor-pointer"></div>
+        <div class="relative w-full max-w-4xl bg-gray-900/95 backdrop-blur-md border border-yellow-500/30 rounded-2xl shadow-2xl p-6 z-10 flex flex-col max-h-[90vh]">
+          <div class="flex justify-between items-start mb-4 border-b border-gray-700/50 pb-4">
             <div>
-              <h2 class="text-2xl text-yellow-300 font-semibold flex items-center gap-2">
+              <h2 class="text-2xl text-yellow-300 font-bold flex items-center gap-2">
                 ${getIcon('trophy', { size: 24 })} Conquistas
               </h2>
-              <p id="achievementsPlayerName" class="text-gray-300 text-sm"></p>
+              <p id="achievementsPlayerSummary" class="text-gray-300 text-sm mt-1"></p>
             </div>
-            <button id="achievementsModalClose" class="text-gray-300 hover:text-white text-xl">✖</button>
+            <button id="achievementsModalClose" class="text-gray-400 hover:text-white text-2xl leading-none px-2 py-1 rounded hover:bg-gray-800 transition">✖</button>
           </div>
-          <div id="achievementsModalContent" class="grid grid-cols-1 md:grid-cols-2 gap-4 max-h-[60vh] overflow-y-auto"></div>
+
+          <!-- Abas de Seleção de Jogador -->
+          <div id="achievementsPlayerTabs" class="flex flex-wrap gap-2 mb-4 pb-2 border-b border-gray-800"></div>
+
+          <!-- Lista de Conquistas -->
+          <div id="achievementsModalContent" class="grid grid-cols-1 md:grid-cols-2 gap-4 overflow-y-auto pr-1"></div>
         </div>
       `;
       document.body.appendChild(modal);
       
-      document.getElementById('achievementsModalClose').addEventListener('click', () => {
+      document.getElementById('achievementsModalClose')?.addEventListener('click', () => {
+        modal.classList.add('hidden');
+      });
+
+      modal.querySelector('.achievements-backdrop')?.addEventListener('click', () => {
         modal.classList.add('hidden');
       });
     }
     
     const content = document.getElementById('achievementsModalContent');
-    const playerNameEl = document.getElementById('achievementsPlayerName');
-    if (!content || !playerNameEl) return;
+    const summaryEl = document.getElementById('achievementsPlayerSummary');
+    const tabsContainer = document.getElementById('achievementsPlayerTabs');
+    if (!content || !summaryEl || !tabsContainer) return;
     
-    const player = getCurrentPlayer();
-    const playerStats = achievementsState.playerAchievements[player.id] || {
-      explored: 0,
-      built: 0,
-      negotiated: 0,
-      collected: 0,
-      controlledBiomes: new Set(),
-      maxResources: { madeira: 0, pedra: 0, ouro: 0, agua: 0 }
-    };
-    
-    playerNameEl.textContent = `Jogador atual: ${player.name}`;
+    // Garantir que todos os jogadores possuem estrutura de conquistas
+    if (gameState.players && gameState.players.length > 0) {
+      gameState.players.forEach(p => ensurePlayerAchievements(p.id));
+    }
+
+    // Se o jogador selecionado não existir, usar o primeiro disponível
+    let player = getPlayerById(this.currentAchievementsPlayerId) || gameState.players?.[0] || getCurrentPlayer();
+    if (!player) return;
+    this.currentAchievementsPlayerId = player.id;
+
+    const playerStats = ensurePlayerAchievements(player.id);
+    const unlockedList = achievementsState.unlockedAchievements?.[player.id] || [];
+    const totalAchievements = Object.keys(ACHIEVEMENTS_CONFIG).length;
+
+    // Renderizar Abas de Jogadores
+    tabsContainer.innerHTML = '';
+    (gameState.players || []).forEach(p => {
+      const pUnlocked = (achievementsState.unlockedAchievements?.[p.id] || []).length;
+      const isSelected = p.id === player.id;
+      const tabBtn = document.createElement('button');
+      tabBtn.className = `flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-semibold transition border ${
+        isSelected 
+          ? 'bg-yellow-500/20 text-yellow-300 border-yellow-500/60 shadow-sm' 
+          : 'bg-gray-800/80 text-gray-400 hover:text-gray-200 border-gray-700 hover:bg-gray-700/60'
+      }`;
+      tabBtn.innerHTML = `
+        <span class="w-2.5 h-2.5 rounded-full" style="background-color: ${p.color || '#eab308'}"></span>
+        <span>${p.name}</span>
+        <span class="px-1.5 py-0.5 rounded text-[10px] ${isSelected ? 'bg-yellow-400/20 text-yellow-200' : 'bg-gray-700 text-gray-300'}">${pUnlocked}/${totalAchievements}</span>
+      `;
+      tabBtn.addEventListener('click', () => {
+        this.renderAchievementsModal(p.id);
+      });
+      tabsContainer.appendChild(tabBtn);
+    });
+
+    // Atualizar resumo do jogador selecionado
+    const isPlayerCurrentTurn = player.id === gameState.currentPlayerIndex;
+    summaryEl.innerHTML = `
+      <span class="font-semibold text-white">${player.name}</span>
+      ${isPlayerCurrentTurn ? '<span class="text-xs bg-blue-600/30 text-blue-300 px-2 py-0.5 rounded ml-2">Turno Atual</span>' : ''}
+      <span class="text-xs text-gray-400 ml-2">| Desbloqueadas: <strong class="text-yellow-400">${unlockedList.length}</strong> de <strong>${totalAchievements}</strong> (${Math.round((unlockedList.length / totalAchievements) * 100)}%)</span>
+    `;
+
     content.innerHTML = '';
     
     Object.values(ACHIEVEMENTS_CONFIG).forEach(achievement => {
-      const isUnlocked = (achievementsState.unlockedAchievements[player.id] || []).includes(achievement.id);
-      const progress = this.calculateAchievementProgress(achievement, playerStats);
+      const isUnlocked = unlockedList.includes(achievement.id);
+      const progress = this.calculateAchievementProgress(achievement, playerStats, player);
       
       const card = document.createElement('div');
-      card.className = `p-4 rounded-lg border ${isUnlocked ? 'border-yellow-500/50 bg-yellow-900/10' : 'border-gray-700/50 bg-gray-800/30'}`;
+      card.className = `p-4 rounded-xl border transition-all ${
+        isUnlocked 
+          ? 'border-yellow-500/40 bg-gradient-to-br from-yellow-950/20 to-gray-900/60 shadow-md' 
+          : 'border-gray-800 bg-gray-850/50 hover:border-gray-700'
+      }`;
       card.innerHTML = this.getAchievementCardHTML(achievement, isUnlocked, progress);
       content.appendChild(card);
     });
@@ -1197,24 +1253,91 @@ class ModalManager {
     modal.classList.remove('hidden');
   }
 
-  calculateAchievementProgress(achievement, playerStats) {
+  refreshAchievementsModalIfOpen() {
+    const modal = document.getElementById('achievementsModal');
+    if (modal && !modal.classList.contains('hidden')) {
+      this.renderAchievementsModal(this.currentAchievementsPlayerId);
+    }
+  }
+
+  calculateAchievementProgress(achievement, playerStats, player) {
     switch (achievement.type) {
-      case 'explored': return { value: playerStats.explored || 0, text: `Exploradas: ${playerStats.explored}/${achievement.requirement}` };
-      case 'built': return { value: playerStats.built || 0, text: `Construídas: ${playerStats.built}/${achievement.requirement}` };
-      case 'negotiated': return { value: playerStats.negotiated || 0, text: `Negociações: ${playerStats.negotiated}/${achievement.requirement}` };
-      case 'collected': return { value: playerStats.collected || 0, text: `Regiões coletadas: ${playerStats.collected}/${achievement.requirement}` };
-      case 'biomes': return { value: playerStats.controlledBiomes?.size || 0, text: `Biomas: ${playerStats.controlledBiomes?.size}/${achievement.requirement}` };
-      case 'resources': 
-        const resourceCount = Object.values(playerStats.maxResources || {}).filter(v => v >= achievement.requirement).length;
-        return { value: resourceCount, text: `Recursos: ${resourceCount}/4 com ${achievement.requirement}+` };
-      case 'fastWin': return { value: gameState.turn, text: `Turno atual: ${gameState.turn}/${achievement.requirement}` };
-      case 'pacifist': return { value: playerStats.negotiated || 0, text: playerStats.negotiated === 0 ? 'Nunca negociou' : `Negociações: ${playerStats.negotiated}` };
-      default: return { value: 0, text: '' };
+      case 'explored': 
+        return { 
+          value: playerStats.explored || 0, 
+          text: `Exploradas: ${playerStats.explored || 0}/${achievement.requirement}` 
+        };
+      case 'built': 
+        return { 
+          value: playerStats.built || 0, 
+          text: `Construídas: ${playerStats.built || 0}/${achievement.requirement}` 
+        };
+      case 'negotiated': 
+        return { 
+          value: playerStats.negotiated || 0, 
+          text: `Negociações: ${playerStats.negotiated || 0}/${achievement.requirement}` 
+        };
+      case 'collected': {
+        const collectedCount = playerStats.collectedRegions?.length || playerStats.collected || 0;
+        return { 
+          value: collectedCount, 
+          text: `Regiões coletadas: ${collectedCount}/${achievement.requirement}` 
+        };
+      }
+      case 'biomes': {
+        const biomes = new Set((player?.regions || []).map(rId => gameState.regions[rId]?.biome).filter(Boolean));
+        return { 
+          value: biomes.size, 
+          text: `Biomas controlados: ${biomes.size}/${achievement.requirement}` 
+        };
+      }
+      case 'resources': {
+        const resKeys = ['madeira', 'pedra', 'ouro', 'agua'];
+        const resourceCount = resKeys.filter(v => (player?.resources?.[v] || 0) >= achievement.requirement).length;
+        return { 
+          value: resourceCount, 
+          text: `Recursos com ${achievement.requirement}+: ${resourceCount}/4` 
+        };
+      }
+      case 'fastWin': 
+        return { 
+          value: gameState.turn, 
+          text: `Turno atual: ${gameState.turn} (Meta: vencer em ≤ ${achievement.requirement} turnos)` 
+        };
+      case 'pacifist': {
+        const neg = playerStats.negotiated || 0;
+        return { 
+          value: neg === 0 ? 1 : 0, 
+          text: neg === 0 ? 'Nenhuma negociação realizada (Válido para a vitória)' : `${neg} negociações realizadas (Inválido)` 
+        };
+      }
+      case 'disputes': 
+        return { 
+          value: playerStats.disputesWon || 0, 
+          text: `Vitórias em disputa: ${playerStats.disputesWon || 0}/${achievement.requirement}` 
+        };
+      case 'regions': 
+        return { 
+          value: player?.regions?.length || 0, 
+          text: `Regiões controladas: ${player?.regions?.length || 0}/${achievement.requirement}` 
+        };
+      default: 
+        return { value: 0, text: '' };
     }
   }
 
   getAchievementCardHTML(achievement, isUnlocked, progress) {
-    const percent = achievement.requirement > 0 ? Math.min(100, (progress.value / achievement.requirement) * 100) : 100;
+    let percent = 0;
+    if (isUnlocked) {
+      percent = 100;
+    } else if (achievement.type === 'pacifist') {
+      percent = progress.value === 1 ? 100 : 0;
+    } else if (achievement.type === 'fastWin') {
+      percent = gameState.turn <= achievement.requirement ? Math.max(10, Math.min(100, Math.round(((achievement.requirement - gameState.turn) / achievement.requirement) * 100))) : 0;
+    } else if (achievement.requirement > 0) {
+      percent = Math.min(100, Math.max(0, Math.round((progress.value / achievement.requirement) * 100)));
+    }
+    
     const rewards = {
       'explorador': '+1 PV por turno',
       'construtor': '-1 recurso ao construir',
@@ -1222,35 +1345,35 @@ class ModalManager {
       'colecionador': '+1 recurso ao recolher',
       'diversificador': '+3 PV instantâneos',
       'magnata': '+10% em todos os recursos',
-      'vencedor_rapido': 'Título especial',
-      'pacifista': '+5 PV instantâneos'
+      'vencedor_rapido': 'Título especial de vitória rápida',
+      'pacifista': '+5 PV instantâneos na vitória',
+      'senhor_guerra': '+10% de chance em disputas',
+      'conquistador': '+2 de defesa em regiões (+10%)'
     };
     
     return `
       <div class="flex items-start gap-3">
-        <span class="text-2xl">${achievement.icon}</span>
-        <div class="flex-1">
-          <h3 class="font-bold flex items-center ${isUnlocked ? 'text-yellow-300' : 'text-gray-300'}">
-            ${achievement.name} ${isUnlocked ? `<span class="inline-flex items-center text-green-400 ml-2">${getIcon('check', { size: 14 })}</span>` : ''}
-          </h3>
-          <p class="text-sm text-gray-300 mt-1">${achievement.description}</p>
+        <span class="text-3xl p-2 rounded-lg ${isUnlocked ? 'bg-yellow-500/20 border border-yellow-500/30' : 'bg-gray-800 border border-gray-700/60'}">${achievement.icon}</span>
+        <div class="flex-1 min-w-0">
+          <div class="flex items-center justify-between">
+            <h3 class="font-bold text-sm flex items-center ${isUnlocked ? 'text-yellow-300' : 'text-gray-200'}">
+              ${achievement.name}
+              ${isUnlocked ? `<span class="inline-flex items-center text-green-400 ml-1.5" title="Concluída">${getIcon('check', { size: 14 })}</span>` : ''}
+            </h3>
+            <span class="text-xs font-semibold ${isUnlocked ? 'text-green-400' : 'text-gray-400'}">${percent}%</span>
+          </div>
+          <p class="text-xs text-gray-300 mt-0.5">${achievement.description}</p>
           
-          <div class="mt-3">
-            <div class="flex justify-between text-xs text-gray-400 mb-1">
-              <span>Progresso</span>
-              <span>${percent.toFixed(0)}%</span>
+          <div class="mt-2.5">
+            <div class="w-full bg-gray-800 rounded-full h-1.5 overflow-hidden border border-gray-700/40">
+              <div class="${isUnlocked ? 'bg-yellow-400' : 'bg-green-500'} h-1.5 rounded-full transition-all duration-300" style="width: ${percent}%"></div>
             </div>
-            <div class="w-full bg-gray-700 rounded-full h-2">
-              <div class="bg-green-500 h-2 rounded-full" style="width: ${percent}%"></div>
-            </div>
-            <div class="text-xs text-gray-400 mt-1">${progress.text}</div>
+            <div class="text-[11px] text-gray-400 mt-1">${progress.text}</div>
           </div>
           
-          ${isUnlocked ? `
-            <div class="mt-2 text-xs text-green-300">
-              <strong>Recompensa:</strong> ${rewards[achievement.id] || 'Recompensa especial'}
-            </div>
-          ` : ''}
+          <div class="mt-2 text-[11px] ${isUnlocked ? 'text-yellow-300/90 font-medium' : 'text-gray-400'}">
+            <strong>Recompensa:</strong> ${rewards[achievement.id] || 'Bônus especial'}
+          </div>
         </div>
       </div>
     `;

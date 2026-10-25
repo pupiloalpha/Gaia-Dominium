@@ -5,7 +5,10 @@ import {
   addActivityLog, 
   getCurrentPlayer, 
   getPlayerById,
-  ELIMINATION_CONFIG
+  ELIMINATION_CONFIG,
+  recordPlayerAchievementProgress,
+  checkAndUnlockAchievements,
+  hasAchievement
 } from '../state/game-state.js';
 import { GAME_CONFIG, STRUCTURE_EFFECTS } from '../state/game-config.js';
 
@@ -179,6 +182,14 @@ export class DisputeLogic {
     if (this.main.factionLogic) {
       const factionDefense = this.main.factionLogic.getDefenseBonus(defender, region);
       baseChance -= factionDefense;
+    }
+
+    // 4. Bônus de conquistas
+    if (hasAchievement(attacker.id, 'senhor_guerra')) {
+      baseChance += 10;
+    }
+    if (hasAchievement(defender.id, 'conquistador')) {
+      baseChance -= 10;
     }
 
     // Limites
@@ -390,8 +401,9 @@ export class DisputeLogic {
 
     // Bônus de conquista
     attacker.victoryPoints += 1; // Bônus por conquista
-    achievementsState.totalDisputes = (achievementsState.totalDisputes || 0) + 1;
-    achievementsState.successfulDisputes = (achievementsState.successfulDisputes || 0) + 1;
+    recordPlayerAchievementProgress(attacker.id, 'dispute_win');
+    checkAndUnlockAchievements(attacker.id);
+    checkAndUnlockAchievements(defender.id);
 
     // Log
     this.main.showFeedback(`✅ Vitória! Você conquistou ${region.name}! +1 PV`, 'success');
@@ -455,8 +467,8 @@ export class DisputeLogic {
     // A região pode ganhar bônus defensivo
     region.explorationLevel = Math.min(3, region.explorationLevel + 1);
 
-    achievementsState.totalDisputes = (achievementsState.totalDisputes || 0) + 1;
-    achievementsState.failedDisputes = (achievementsState.failedDisputes || 0) + 1;
+    recordPlayerAchievementProgress(attacker.id, 'dispute_loss');
+    checkAndUnlockAchievements(defender.id);
 
     // Log
     this.main.showFeedback(`❌ Falha! ${defender.name} defendeu ${region.name}. -1 PV para você, +1 PV para ${defender.name}`, 'error');

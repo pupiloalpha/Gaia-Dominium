@@ -4,7 +4,8 @@ import {
   addPendingNegotiation, removePendingNegotiation, clearActiveNegotiation,
   updateNegotiationStatus, getNegotiationState, resetNegotiationState,
   validateNegotiationState, getNegotiationValidationErrors, updateRegionController,
-  getPendingNegotiationsForPlayer
+  getPendingNegotiationsForPlayer,
+  recordPlayerAchievementProgress, checkAndUnlockAchievements, hasAchievement
 } from '../state/game-state.js';
 
 export class NegotiationLogic {
@@ -27,6 +28,9 @@ export class NegotiationLogic {
         // Para verificar, usamos o modify mas sabemos que ele não altera estado do player, 
         // apenas retorna o valor.
         negCost = this.main.factionLogic.modifyNegotiationCost(player);
+    }
+    if (hasAchievement(player.id, 'diplomata')) {
+        negCost = Math.max(0, negCost - 1);
     }
 
     // 2. Verificar se tem ouro suficiente (mesmo que seja 0)
@@ -148,7 +152,8 @@ export class NegotiationLogic {
     
     this.main.showFeedback(`Proposta enviada para ${target.name}!${bonusMsg}`, 'success');
     
-    achievementsState.totalNegotiations++;
+    recordPlayerAchievementProgress(initiator.id, 'negotiate');
+    checkAndUnlockAchievements(initiator.id);
     if (window.uiManager && window.uiManager.gameManager) {
             window.uiManager.gameManager.updateFooter();
     }
@@ -287,7 +292,10 @@ export class NegotiationLogic {
 
         initiator.victoryPoints++;
         target.victoryPoints++;
-        achievementsState.totalNegotiations++;
+        recordPlayerAchievementProgress(initiator.id, 'negotiate');
+        recordPlayerAchievementProgress(target.id, 'negotiate');
+        checkAndUnlockAchievements(initiator.id);
+        checkAndUnlockAchievements(target.id);
 
         console.log('Troca concluída com sucesso');
       // Verificar vitória IMEDIATAMENTE após negociação

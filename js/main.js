@@ -26,7 +26,11 @@ import {
   loadSavedGameById,
   deleteSavedGameById,
   getGameRules,
-  setGameRules
+  setGameRules,
+  checkAndUnlockAchievements,
+  recordPlayerAchievementProgress,
+  ensurePlayerAchievements,
+  hasAchievement
 } from './state/game-state.js';
 
 // ==================== INICIALIZAÇÃO GLOBAL ====================
@@ -110,6 +114,10 @@ if (introVideo) {
   window.deleteSavedGameById = deleteSavedGameById;
   window.getGameRules = getGameRules;
   window.setGameRules = setGameRules;
+  window.checkAndUnlockAchievements = checkAndUnlockAchievements;
+  window.recordPlayerAchievementProgress = recordPlayerAchievementProgress;
+  window.ensurePlayerAchievements = ensurePlayerAchievements;
+  window.hasAchievement = hasAchievement;
   
   // 6. Configurar elementos da interface
   setupInitialUI();

@@ -1,5 +1,5 @@
 // game-state.js - Estado do jogo + funções de persistência
-import { GAME_CONFIG, DEFAULT_GAME_RULES } from './game-config.js';
+import { GAME_CONFIG, DEFAULT_GAME_RULES, ACHIEVEMENTS_CONFIG } from './game-config.js';
 
 // ==================== CONSTANTES DE CONFIGURAÇÃO ====================
 const INITIAL_STATE = {
@@ -150,6 +150,7 @@ function setAchievementsState(newState) {
       achievementsState[key] = newState[key];
     }
   });
+  ensureAllPlayersAchievements();
 }
 
 function setCurrentPhase(phase) {
@@ -231,6 +232,194 @@ function addActivityLog(entry) {
 function incrementAchievement(achievementType, amount = 1) {
   if (achievementsState.hasOwnProperty(achievementType)) {
     achievementsState[achievementType] += amount;
+  }
+}
+
+function ensurePlayerAchievements(playerId) {
+  if (!achievementsState.playerAchievements) {
+    achievementsState.playerAchievements = [];
+  }
+  if (!achievementsState.unlockedAchievements) {
+    achievementsState.unlockedAchievements = [];
+  }
+  while (achievementsState.playerAchievements.length <= playerId) {
+    achievementsState.playerAchievements.push({
+      explored: 0,
+      built: 0,
+      negotiated: 0,
+      collected: 0,
+      collectedRegions: [],
+      disputesWon: 0,
+      controlledBiomes: [],
+      maxResources: { madeira: 0, pedra: 0, ouro: 0, agua: 0 }
+    });
+  }
+  while (achievementsState.unlockedAchievements.length <= playerId) {
+    achievementsState.unlockedAchievements.push([]);
+  }
+  const stats = achievementsState.playerAchievements[playerId];
+  if (!stats) return { explored: 0, built: 0, negotiated: 0, collected: 0, collectedRegions: [], disputesWon: 0, controlledBiomes: [], maxResources: { madeira: 0, pedra: 0, ouro: 0, agua: 0 } };
+  if (!Array.isArray(stats.collectedRegions)) stats.collectedRegions = [];
+  if (stats.disputesWon === undefined) stats.disputesWon = 0;
+  if (!stats.maxResources) stats.maxResources = { madeira: 0, pedra: 0, ouro: 0, agua: 0 };
+  return stats;
+}
+
+function ensureAllPlayersAchievements() {
+  if (Array.isArray(gameState.players)) {
+    gameState.players.forEach(p => ensurePlayerAchievements(p.id));
+  }
+}
+
+function getPlayerAchievementsStats(playerId) {
+  return ensurePlayerAchievements(playerId);
+}
+
+function hasAchievement(playerId, achievementId) {
+  ensurePlayerAchievements(playerId);
+  return (achievementsState.unlockedAchievements[playerId] || []).includes(achievementId);
+}
+
+function recordPlayerAchievementProgress(playerId, type, data = {}) {
+  const stats = ensurePlayerAchievements(playerId);
+  const player = getPlayerById(playerId);
+
+  switch (type) {
+    case 'explore':
+      stats.explored = (stats.explored || 0) + 1;
+      achievementsState.totalExplored = (achievementsState.totalExplored || 0) + 1;
+      break;
+    case 'build':
+      stats.built = (stats.built || 0) + 1;
+      achievementsState.totalBuilt = (achievementsState.totalBuilt || 0) + 1;
+      break;
+    case 'collect':
+      stats.collected = (stats.collected || 0) + 1;
+      if (data.regionId !== undefined && !stats.collectedRegions.includes(data.regionId)) {
+        stats.collectedRegions.push(data.regionId);
+      }
+      break;
+    case 'negotiate':
+      stats.negotiated = (stats.negotiated || 0) + 1;
+      achievementsState.totalNegotiations = (achievementsState.totalNegotiations || 0) + 1;
+      break;
+    case 'dispute_win':
+      stats.disputesWon = (stats.disputesWon || 0) + 1;
+      achievementsState.totalDisputes = (achievementsState.totalDisputes || 0) + 1;
+      achievementsState.successfulDisputes = (achievementsState.successfulDisputes || 0) + 1;
+      break;
+    case 'dispute_loss':
+      achievementsState.totalDisputes = (achievementsState.totalDisputes || 0) + 1;
+      achievementsState.failedDisputes = (achievementsState.failedDisputes || 0) + 1;
+      break;
+  }
+
+  if (player && player.resources) {
+    Object.keys(player.resources).forEach(res => {
+      const current = player.resources[res] || 0;
+      if (current > (stats.maxResources[res] || 0)) {
+        stats.maxResources[res] = current;
+      }
+    });
+  }
+}
+
+function checkAndUnlockAchievements(playerId, options = { isVictory: false }) {
+  const stats = ensurePlayerAchievements(playerId);
+  const player = getPlayerById(playerId);
+  if (!player) return [];
+
+  const newlyUnlocked = [];
+  const currentUnlocked = achievementsState.unlockedAchievements[playerId];
+
+  const controlledBiomes = new Set(
+    (player.regions || []).map(rId => gameState.regions[rId]?.biome).filter(Boolean)
+  );
+
+  const resKeys = ['madeira', 'pedra', 'ouro', 'agua'];
+  const has20OfEachResource = resKeys.every(k => (player.resources?.[k] || 0) >= 20);
+
+  if (typeof ACHIEVEMENTS_CONFIG !== 'undefined') {
+    Object.values(ACHIEVEMENTS_CONFIG).forEach(achievement => {
+      if (currentUnlocked.includes(achievement.id)) return;
+
+      let conditionMet = false;
+      switch (achievement.type) {
+        case 'explored':
+          conditionMet = (stats.explored || 0) >= achievement.requirement;
+          break;
+        case 'built':
+          conditionMet = (stats.built || 0) >= achievement.requirement;
+          break;
+        case 'negotiated':
+          conditionMet = (stats.negotiated || 0) >= achievement.requirement;
+          break;
+        case 'collected':
+          conditionMet = (stats.collectedRegions?.length || stats.collected || 0) >= achievement.requirement;
+          break;
+        case 'biomes':
+          conditionMet = controlledBiomes.size >= achievement.requirement;
+          break;
+        case 'resources':
+          conditionMet = has20OfEachResource;
+          break;
+        case 'disputes':
+          conditionMet = (stats.disputesWon || 0) >= achievement.requirement;
+          break;
+        case 'regions':
+          conditionMet = (player.regions?.length || 0) >= achievement.requirement;
+          break;
+        case 'fastWin':
+          conditionMet = options.isVictory && gameState.turn <= achievement.requirement;
+          break;
+        case 'pacifist':
+          conditionMet = options.isVictory && (stats.negotiated || 0) === 0;
+          break;
+      }
+
+      if (conditionMet) {
+        currentUnlocked.push(achievement.id);
+        newlyUnlocked.push(achievement);
+
+        if (achievement.reward?.pvBonus) {
+          player.victoryPoints = (player.victoryPoints || 0) + achievement.reward.pvBonus;
+        }
+        if (achievement.reward?.peacefulBonus) {
+          player.victoryPoints = (player.victoryPoints || 0) + achievement.reward.peacefulBonus;
+        }
+
+        addActivityLog({
+          type: 'achievement',
+          playerName: player.name,
+          action: 'desbloqueou conquista',
+          details: `${achievement.name} - ${achievement.description}`,
+          turn: gameState.turn
+        });
+
+        if (typeof window !== 'undefined' && window.gameLogic && window.gameLogic.showFeedback) {
+          window.gameLogic.showFeedback(`🏆 Conquista (${player.name}): ${achievement.name}!`, 'success');
+        }
+      }
+    });
+  }
+
+  if (newlyUnlocked.length > 0) {
+    if (typeof window !== 'undefined') {
+      if (window.uiManager?.sidebarManager) {
+        window.uiManager.sidebarManager._renderAchievementsInSidebar(gameState.selectedPlayerForSidebar);
+      }
+      if (window.uiManager?.modals?.refreshAchievementsModalIfOpen) {
+        window.uiManager.modals.refreshAchievementsModalIfOpen();
+      }
+    }
+  }
+
+  return newlyUnlocked;
+}
+
+function checkAllPlayersAchievements(options = {}) {
+  if (Array.isArray(gameState.players)) {
+    gameState.players.forEach(p => checkAndUnlockAchievements(p.id, options));
   }
 }
 
@@ -1136,7 +1325,9 @@ function initializeGame(playersData) {
       built: 0,
       negotiated: 0,
       collected: 0,
-      controlledBiomes: new Set(),
+      collectedRegions: [],
+      disputesWon: 0,
+      controlledBiomes: [],
       maxResources: { madeira: 0, pedra: 0, ouro: 0, agua: 0 }
     });
   });
@@ -1279,6 +1470,13 @@ export {
   // Manipulação de estado
   addActivityLog,
   incrementAchievement,
+  ensurePlayerAchievements,
+  ensureAllPlayersAchievements,
+  getPlayerAchievementsStats,
+  hasAchievement,
+  recordPlayerAchievementProgress,
+  checkAndUnlockAchievements,
+  checkAllPlayersAchievements,
   clearRegionSelection,
   updateCurrentPlayerIndex,
   resetActions,
