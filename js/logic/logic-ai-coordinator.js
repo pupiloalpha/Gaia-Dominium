@@ -19,6 +19,18 @@ export class AICoordinator {
     this.feedbackHistory = [];
   }
 
+  _isGameOver() {
+    return !!(this.main?.turnLogic?.gameEnded || (typeof gameState !== 'undefined' && gameState.gameStarted === false));
+  }
+
+  stop() {
+    this.inProgress = false;
+    if (this.healthMonitor) {
+      clearInterval(this.healthMonitor);
+      this.healthMonitor = null;
+    }
+  }
+
   startHealthMonitor() {
     if (this.healthMonitor) clearInterval(this.healthMonitor);
     this.healthMonitor = setInterval(() => this._checkHealth(), 5000);
@@ -80,6 +92,10 @@ _getAIPlayerForCurrentPlayer() {
 }
   
 async checkAndExecuteAITurn() {
+    if (this._isGameOver()) {
+      console.log('🛑 Jogo encerrado. checkAndExecuteAITurn cancelado.');
+      return;
+    }
     if (this.inProgress) return;
     const player = getCurrentPlayer();
 
@@ -89,6 +105,7 @@ async checkAndExecuteAITurn() {
     
     // Pular turno automaticamente
     setTimeout(() => {
+      if (this._isGameOver()) return;
       if (this.main?.turnLogic?.handleEndTurn) {
         this.main.turnLogic.handleEndTurn();
       }
@@ -105,7 +122,6 @@ async checkAndExecuteAITurn() {
     window.aiFeedbackModal?.startAITurn(player);
 
     try {
-        // USAR a nova função helper
         const ai = this._getAIPlayerForCurrentPlayer();
         if (!ai) { 
             console.error(`🤖 IA não encontrada para ${player.name}`);
@@ -115,6 +131,7 @@ async checkAndExecuteAITurn() {
 
         await this._runAILoop(ai); // Passar a instância da IA
     } catch (e) {
+        if (this._isGameOver()) return;
         console.error('Erro crítico IA:', e);
         this.forceAIEndTurn();
     } finally {
@@ -123,6 +140,7 @@ async checkAndExecuteAITurn() {
 }
 
 async _runAILoop(ai) {
+    if (this._isGameOver()) return;
     const currentPlayer = getCurrentPlayer();
     
     if (!ai) {
@@ -137,24 +155,38 @@ async _runAILoop(ai) {
         // Executar baseado na fase atual
         switch(gameState.currentPhase) {
             case 'renda':
+                if (this._isGameOver()) return;
                 window.aiFeedbackModal?.updatePhase('Renda');
                 // A renda já foi aplicada, avançar para ações
                 gameState.currentPhase = 'acoes';
                 gameState.actionsLeft = GAME_CONFIG.ACTIONS_PER_TURN;
                 await this._delay(1000);
+                if (this._isGameOver()) return;
                 window.aiFeedbackModal?.updatePhase('Ações');
                 // Continuar para ações
                 await this._executeActions(ai);
-                break;
-            case 'acoes':
-                window.aiFeedbackModal?.updatePhase('Ações');
-                await this._executeActions(ai);
-                // Avançar para negociação APENAS SE AINDA FOR TURNO DA IA
+                if (this._isGameOver()) return;
                 if (getCurrentPlayer().id === currentPlayer.id) {
                     if (this.main.negotiationLogic) {
                         this.main.negotiationLogic.setupPhase();
                     }
                     await this._delay(1000);
+                    if (this._isGameOver()) return;
+                    await this._executeNegotiationPhaseForAI();
+                }
+                break;
+            case 'acoes':
+                if (this._isGameOver()) return;
+                window.aiFeedbackModal?.updatePhase('Ações');
+                await this._executeActions(ai);
+                if (this._isGameOver()) return;
+                // Avançar para negociação APENAS SE AINDA FOR TURNO DA IA E JOGO NÃO TERMINOU
+                if (getCurrentPlayer().id === currentPlayer.id) {
+                    if (this.main.negotiationLogic) {
+                        this.main.negotiationLogic.setupPhase();
+                    }
+                    await this._delay(1000);
+                    if (this._isGameOver()) return;
                     // Chamar negociação imediatamente
                     await this._executeNegotiationPhaseForAI();
                 } else {
@@ -162,6 +194,7 @@ async _runAILoop(ai) {
                 }
                 break;
             case 'negociacao':
+                if (this._isGameOver()) return;
                 window.aiFeedbackModal?.updatePhase('Negociação');
                 // VERIFICAR SE AINDA É TURNO DA IA
                 if (getCurrentPlayer().id === currentPlayer.id) {
@@ -172,10 +205,12 @@ async _runAILoop(ai) {
                 break;
         }
         
+        if (this._isGameOver()) return;
         // Garantir que o turno foi finalizado
         await this._ensureAICompletion();
         
     } catch (error) {
+        if (this._isGameOver()) return;
         console.error(`🤖 Erro no loop da IA ${currentPlayer.name}:`, error);
         this.forceAIEndTurn();
     }
@@ -185,9 +220,10 @@ async _executeActions(ai) {
   const maxIterations = 20; // Limite máximo para evitar loop infinito
   let iterations = 0;
   
-  while (gameState.actionsLeft > 0 && iterations < maxIterations && !this.main.turnLogic.gameEnded) {
+  while (gameState.actionsLeft > 0 && iterations < maxIterations && !this._isGameOver()) {
     iterations++;
     await this._delay(1000);
+    if (this._isGameOver()) break;
     
     try {
       // 1. Verificar se ainda é turno da IA
@@ -227,6 +263,8 @@ async _executeActions(ai) {
         }
       }
       
+      if (this._isGameOver()) break;
+      
       // 5. Atualizar UI
       if (window.uiManager) {
         window.uiManager.updateUI();
@@ -236,6 +274,7 @@ async _executeActions(ai) {
       }
       
     } catch (e) {
+      if (this._isGameOver()) break;
       console.error('Erro ação IA:', e);
       // Em caso de erro, decrementar ação para evitar loop
       if (gameState.actionsLeft > 0) {
@@ -245,6 +284,7 @@ async _executeActions(ai) {
     }
   }
   
+  if (this._isGameOver()) return;
   // Se excedeu o limite de iterações, forçar término
   if (iterations >= maxIterations) {
     console.warn(`⚠️ IA ${getCurrentPlayer()?.name} excedeu limite de iterações, forçando término`);
@@ -516,6 +556,7 @@ async _sendSimpleProposal(ai, player, gameState) {
 }
 
   async _executeNegotiationPhaseForAI() {
+    if (this._isGameOver()) return;
     try {
         const currentPlayer = getCurrentPlayer();
         const ai = this._getAIPlayerForCurrentPlayer();
@@ -527,11 +568,11 @@ async _sendSimpleProposal(ai, player, gameState) {
         }
       
         // VERIFICAÇÃO DE SEGURANÇA: Se jogador está eliminado, pular
-    if (currentPlayer.eliminated) {
-      console.log(`🤖 ${currentPlayer.name} está eliminado, pulando negociação`);
-      this.forceAIEndTurn();
-      return;
-    }
+        if (currentPlayer.eliminated) {
+            console.log(`🤖 ${currentPlayer.name} está eliminado, pulando negociação`);
+            this.forceAIEndTurn();
+            return;
+        }
       
         console.log(`🤖 ${currentPlayer.name} (${ai.personality?.type || 'IA'}) iniciando fase de negociação`);
         console.log(`📊 Status: Ações: ${gameState.actionsLeft}, Ouro: ${currentPlayer.resources.ouro}`);
@@ -545,6 +586,7 @@ async _sendSimpleProposal(ai, player, gameState) {
             
             // Pequeno delay para simulação
             await this._delay(2000);
+            if (this._isGameOver()) return;
             
             if (ai.processPendingNegotiations) {
                 const result = await ai.processPendingNegotiations(gameState);
@@ -552,10 +594,12 @@ async _sendSimpleProposal(ai, player, gameState) {
             } else {
                 // Fallback: Processar manualmente
                 for (const negotiation of pending) {
+                    if (this._isGameOver()) return;
                     console.log(`🤖 Avaliando proposta ${negotiation.id}...`);
                     
                     // Pequeno delay entre avaliações
                     await this._delay(1500);
+                    if (this._isGameOver()) return;
                     
                     const shouldAccept = ai.evaluateNegotiationProposal ? 
                         ai.evaluateNegotiationProposal(negotiation, gameState) : 
@@ -597,6 +641,8 @@ async _sendSimpleProposal(ai, player, gameState) {
             console.log(`🤖 Nenhuma proposta pendente para ${currentPlayer.name}`);
         }
         
+        if (this._isGameOver()) return;
+        
         // 2. Verificar se ainda pode enviar proposta
         if (gameState.actionsLeft > 0 && currentPlayer.resources.ouro >= 1) {
             console.log(`🤖 ${currentPlayer.name} pode enviar proposta, verificando alvos...`);
@@ -612,6 +658,7 @@ async _sendSimpleProposal(ai, player, gameState) {
                 
                 // Pequeno delay para decisão
                 await this._delay(2000);
+                if (this._isGameOver()) return;
                 
                 let success = false;
                 if (ai.createAndSendProposal) {
@@ -639,6 +686,8 @@ async _sendSimpleProposal(ai, player, gameState) {
             console.log(`🤖 ${currentPlayer.name} não pode enviar proposta (ações: ${gameState.actionsLeft}, ouro: ${currentPlayer.resources.ouro})`);
         }
         
+        if (this._isGameOver()) return;
+        
         // 3. Finalizar fase de negociação
         console.log(`🤖 ${currentPlayer.name} finalizando fase de negociação...`);
         
@@ -656,6 +705,7 @@ async _sendSimpleProposal(ai, player, gameState) {
         
         // Pequeno delay antes de finalizar
         await this._delay(2000);
+        if (this._isGameOver()) return;
         
         // Finalizar turno
         if (this.main?.turnLogic?.handleEndTurn) {
@@ -665,12 +715,14 @@ async _sendSimpleProposal(ai, player, gameState) {
         }
         
     } catch (error) {
+        if (this._isGameOver()) return;
         console.error(`🤖 Erro na negociação da IA:`, error);
         this.forceAIEndTurn();
     }
 }
 
   async _ensureAICompletion() {
+    if (this._isGameOver()) return;
     console.log(`🤖 Garantindo conclusão do turno da IA...`);
     
     const currentPlayer = getCurrentPlayer();
@@ -695,6 +747,7 @@ async _sendSimpleProposal(ai, player, gameState) {
     
     // Timeout de segurança
     setTimeout(() => {
+        if (this._isGameOver()) return;
         if (this.inProgress) {
             console.warn(`⚠️ Timeout de segurança para IA ${currentPlayer.name}, forçando término`);
             this.forceAIEndTurn();
@@ -716,6 +769,13 @@ async _sendSimpleProposal(ai, player, gameState) {
 
   forceAIEndTurn() {
     this.inProgress = false;
+    if (this._isGameOver()) {
+        console.log('🛑 Jogo encerrado. forceAIEndTurn abortando handleEndTurn.');
+        if (window.aiFeedbackModal) {
+            window.aiFeedbackModal.forceClose();
+        }
+        return;
+    }
     this.main.turnLogic.handleEndTurn();
   }
 

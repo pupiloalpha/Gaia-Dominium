@@ -418,10 +418,22 @@ export class TurnPhaseManager {
 
   _declareVictory(winner) {
     this.gameEnded = true;
+    gameState.gameStarted = false;
     
     if (this.turnTimeout) {
       clearTimeout(this.turnTimeout);
       this.turnTimeout = null;
+    }
+
+    // Parar a IA e fechar o modal dela imediatamente
+    if (window.aiFeedbackModal) {
+      window.aiFeedbackModal.forceClose();
+    }
+    if (this.main?.aiCoordinator) {
+      this.main.aiCoordinator.stop();
+    }
+    if (window.uiManager?.modals?.closeAllModals) {
+      window.uiManager.modals.closeAllModals('victoryModal');
     }
     
     const message = `${winner.name} venceu o jogo com ${winner.victoryPoints} PV!`;
@@ -436,8 +448,12 @@ export class TurnPhaseManager {
     });
     
     setTimeout(() => {
+      // Garantir novamente que o modal da IA está fechado antes de abrir o de vitória
+      if (window.aiFeedbackModal) {
+        window.aiFeedbackModal.forceClose();
+      }
       if (window.uiManager?.modals?.openVictoryModal) {
-        window.uiManager.modals.openVictoryModal(winner);
+        window.uiManager.modals.openVictoryModal(winner, message);
       }
     }, 1000);
     

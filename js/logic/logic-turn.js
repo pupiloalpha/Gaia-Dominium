@@ -214,6 +214,7 @@ export class TurnLogic {
     // GATILHO CRÍTICO PARA IA
     if (!this.gameEnded) {
       setTimeout(() => {
+        if (this.gameEnded) return;
         const nextPlayer = getCurrentPlayer();
         
         // Se o próximo jogador for IA, iniciar seu turno (se não estiver eliminado)
@@ -225,6 +226,7 @@ export class TurnLogic {
           
           // Pequeno delay para UI atualizar
           setTimeout(() => {
+            if (this.gameEnded) return;
             if (this.main.aiCoordinator) {
               this.main.aiCoordinator.checkAndExecuteAITurn();
             } else if (window.aiCoordinator) {
@@ -297,19 +299,13 @@ export class TurnLogic {
     Object.keys(bonuses).forEach(k => {
       if(k === 'pv') {
         player.victoryPoints += bonuses[k];
-        // Verificar vitória IMEDIATAMENTE
-        if (player.victoryPoints >= GAME_CONFIG.VICTORY_POINTS) {
-          console.log(`🎯 Vitória na renda: ${player.name} atingiu ${player.victoryPoints} PV`);
-          this._declareVictory(player);
-          this._stopGameAfterVictory();
-          return;
-        }
       } else {
         player.resources[k] = (player.resources[k] || 0) + bonuses[k];
       }
     });
 
     checkAndUnlockAchievements(player.id);
+    this.checkVictory();
 
     // Se o jogo terminou durante a renda, cancelar
     if (this.gameEnded) {
@@ -341,6 +337,7 @@ export class TurnLogic {
 
         if (!this.gameEnded) {
           setTimeout(() => {
+            if (this.gameEnded) return;
             if (this.main.aiCoordinator) {
               this.main.aiCoordinator.checkAndExecuteAITurn();
             }
@@ -561,7 +558,21 @@ export class TurnLogic {
   
   _declareVictory(winner, customReason = null) {
     this.gameEnded = true;
+    gameState.gameStarted = false;
     
+    // Parar coordenação de IA imediatamente
+    if (this.main?.aiCoordinator) {
+      this.main.aiCoordinator.stop();
+    }
+    
+    // Fechar imediatamente modal de feedback da IA e quaisquer outros modais abertos
+    if (window.aiFeedbackModal) {
+      window.aiFeedbackModal.forceClose();
+    }
+    if (window.uiManager?.modals?.closeAllModals) {
+      window.uiManager.modals.closeAllModals('victoryModal');
+    }
+
     const victoryMessage = customReason || `${winner.name} venceu o jogo com ${winner.victoryPoints} PV!`;
     this.main.showFeedback(victoryMessage, 'success');
     
@@ -579,6 +590,13 @@ export class TurnLogic {
     checkAndUnlockAchievements(winner.id, { isVictory: true });
     
     setTimeout(() => {
+      // Garantir novamente que o modal da IA e modais concorrentes estejam fechados antes de abrir o de vitória
+      if (window.aiFeedbackModal) {
+        window.aiFeedbackModal.forceClose();
+      }
+      if (window.uiManager?.modals?.closeAllModals) {
+        window.uiManager.modals.closeAllModals('victoryModal');
+      }
       if (window.uiManager && window.uiManager.modals && window.uiManager.modals.openVictoryModal) {
         window.uiManager.modals.openVictoryModal(winner, victoryMessage);
       } else {
@@ -587,6 +605,7 @@ export class TurnLogic {
     }, 1000);
     
     this._disableGameActions();
+    this._stopGameAfterVictory();
     saveGame();
   }
 
@@ -594,6 +613,13 @@ export class TurnLogic {
     gameState.gameStarted = false;
     this.gameEnded = true;
     
+    if (this.main?.aiCoordinator) {
+      this.main.aiCoordinator.stop();
+    }
+    if (window.aiFeedbackModal) {
+      window.aiFeedbackModal.forceClose();
+    }
+
     if (window.uiManager) {
       window.uiManager.updateUI();
       if (window.uiManager.gameManager) {

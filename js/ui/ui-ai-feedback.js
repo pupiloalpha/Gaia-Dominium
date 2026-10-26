@@ -126,7 +126,37 @@ class AIFeedbackModal {
     document.body.appendChild(this.overlay);
   }
 
+  _isGameOver() {
+    return !!(window.gameLogic?.turnLogic?.gameEnded || (typeof gameState !== 'undefined' && gameState.gameStarted === false));
+  }
+
+  forceClose() {
+    if (this.hideTimeout) {
+      clearTimeout(this.hideTimeout);
+      this.hideTimeout = null;
+    }
+    if (this.overlay) {
+      this.overlay.classList.add('hidden');
+    }
+    const card = document.getElementById('aiFeedbackModalCard');
+    if (card) {
+      card.classList.remove('scale-100', 'opacity-100');
+      card.classList.add('scale-95', 'opacity-0');
+    }
+    this.isBlockedState = false;
+    document.body.classList.remove('ai-turn-active');
+  }
+
+  close() {
+    this.forceClose();
+  }
+
   startAITurn(player) {
+    if (this._isGameOver()) {
+      console.log('🛑 Jogo finalizado. startAITurn cancelado.');
+      this.forceClose();
+      return;
+    }
     if (!this.overlay) this.initContainer();
     if (!player) player = getCurrentPlayer();
     if (!player) return;
@@ -143,7 +173,8 @@ class AIFeedbackModal {
     document.body.classList.add('ai-turn-active');
 
     if (window.uiManager?.modals?.closeAllModals) {
-      window.uiManager.modals.closeAllModals();
+      // Fechar todos os modais, mas excluir o overlay da IA para não causar recursão
+      window.uiManager.modals.closeAllModals('aiFeedbackOverlay');
     }
 
     const nameEl = document.getElementById('aiPlayerName');
@@ -203,6 +234,7 @@ class AIFeedbackModal {
   }
 
   addActionNotification(actionData) {
+    if (this._isGameOver()) return;
     if (!this.overlay) this.initContainer();
 
     let title = 'Ação da IA';
@@ -297,6 +329,10 @@ class AIFeedbackModal {
   }
 
   updatePhase(phaseName) {
+    if (this._isGameOver()) {
+      this.forceClose();
+      return;
+    }
     const turnPhaseText = document.getElementById('aiTurnPhaseText');
     if (turnPhaseText) {
       turnPhaseText.textContent = this._formatPhaseName(phaseName);
@@ -304,6 +340,10 @@ class AIFeedbackModal {
   }
 
   endAITurn(nextPlayer) {
+    if (this._isGameOver()) {
+      this.forceClose();
+      return;
+    }
     const card = document.getElementById('aiFeedbackModalCard');
     const currentActionTitle = document.getElementById('aiCurrentActionTitle');
     const currentActionDesc = document.getElementById('aiCurrentActionDesc');
@@ -362,6 +402,7 @@ class AIFeedbackModal {
    * o jogador humano de interagir após o turno da IA terminar.
    */
   isBlocked() {
+    if (this._isGameOver()) return false;
     if (!this.isVisible()) return false;
     return this.isBlockedState;
   }

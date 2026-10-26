@@ -111,7 +111,7 @@ body {
 /* === CAMADA SUPERIOR (1100+) === */
 #manualModal { z-index: 1050; }
 #alertModal { z-index: 1055; }
-#victoryModal { z-index: 1030; }
+#victoryModal { z-index: 1300; }
 #saveLoadModal { z-index: 1035; }
 #gameRulesModal { z-index: 1060; }
 #savedGamesModal { z-index: 1060; }
@@ -671,18 +671,18 @@ input[type="text"]:focus, select:focus, input[type="number"]:focus {
   z-index: 1010 !important;
 }
 
-/* === MODAL DE VITÓRIA (z-index 1030) === */
+/* === MODAL DE VITÓRIA (z-index 1300) === */
 #victoryModal {
   position: fixed !important;
-  z-index: 1030 !important;
+  z-index: 1300 !important;
 }
 
 #victoryModal > .absolute {
-  z-index: 1020 !important;
+  z-index: 1290 !important;
 }
 
 #victoryModal > .relative {
-  z-index: 1030 !important;
+  z-index: 1300 !important;
 }
 
 /* === MODAL DE CONQUISTAS (z-index 1040) === */

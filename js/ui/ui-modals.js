@@ -529,6 +529,14 @@ class VictoryModal {
   }
 
   open(winner, customReason = null) {
+    // Fechar imediatamente o modal da IA e outros modais para evitar conflitos
+    if (window.aiFeedbackModal) {
+      window.aiFeedbackModal.forceClose();
+    }
+    if (this.modalManager?.closeAllModals) {
+      this.modalManager.closeAllModals('victoryModal');
+    }
+
     const nameEl = document.getElementById('victoryPlayerName');
     if (nameEl) nameEl.textContent = winner.name;
     
@@ -1055,8 +1063,8 @@ class ModalManager {
     this.income.close();
   }
 
-  openVictoryModal(winner) {
-    this.victory.open(winner);
+  openVictoryModal(winner, customReason = null) {
+    this.victory.open(winner, customReason);
   }
 
   closeVictoryModal() {
@@ -1457,14 +1465,20 @@ class ModalManager {
     }
   }
 
-  closeAllModals() {
+  closeAllModals(excludeId = null) {
     Object.values(this.modals).forEach(modal => {
-      if (modal) modal.classList.add('hidden');
+      if (modal && (!excludeId || (modal.id !== excludeId && modal !== document.getElementById(excludeId)))) {
+        modal.classList.add('hidden');
+      }
     });
-    ['achievementsModal', 'negotiationModal', 'negResponseModal', 'disputeModal', 'pending-negotiations-summary'].forEach(id => {
+    ['achievementsModal', 'negotiationModal', 'negResponseModal', 'disputeModal', 'pending-negotiations-summary', 'incomeModal', 'eventModal', 'structureModal'].forEach(id => {
+      if (excludeId && id === excludeId) return;
       const el = document.getElementById(id);
       if (el) el.classList.add('hidden');
     });
+    if (window.aiFeedbackModal && (!excludeId || excludeId !== 'aiFeedbackOverlay')) {
+      window.aiFeedbackModal.forceClose();
+    }
   }
 
   isAnyModalOpen() {
