@@ -209,10 +209,12 @@ const MANUAL_CONTENT = {
     <div class="space-y-6">
       
       <div class="bg-gradient-to-r from-green-900/30 to-emerald-900/30 border border-green-500/40 rounded-lg p-4 transition hover:bg-green-900/40">
-        <img src="./assets/images/faccao-verde.png" alt="Guardiões da Floresta" class="w-full mb-3 rounded border border-green-500/20 shadow-md">
-        <div class="border-l-4 border-green-500 pl-3 mb-2">
-          <h4 class="text-lg font-bold text-green-300 leading-none">The Sylvan Sentinels</h4>
-          <span class="text-xs font-semibold text-green-400 uppercase tracking-wider">Guardiões da Floresta</span>
+        <div class="flex items-start gap-3 mb-2">
+          <img src="./assets/images/faccao-verde.png" alt="Guardiões da Floresta" class="w-20 h-20 object-cover rounded border border-green-500/20 shadow-md flex-shrink-0">
+          <div class="border-l-4 border-green-500 pl-3">
+            <h4 class="text-lg font-bold text-green-300 leading-none">The Sylvan Sentinels</h4>
+            <span class="text-xs font-semibold text-green-400 uppercase tracking-wider">Guardiões da Floresta</span>
+          </div>
         </div>
         <p class="text-sm text-gray-200 leading-relaxed text-justify">
           Mestres da natureza, os Guardiões prosperam em florestas, focando em expansão sustentável e produção de madeira. Sua estratégia é de crescimento orgânico, com descontos em exploração e multiplicadores globais para dominar biomas florestais.
@@ -226,10 +228,12 @@ const MANUAL_CONTENT = {
       </div>
       
       <div class="bg-gradient-to-r from-blue-900/30 to-indigo-900/30 border border-blue-500/40 rounded-lg p-4 transition hover:bg-blue-900/40">
-        <img src="./assets/images/faccao-azul.png" alt="Mestres das Águas" class="w-full mb-3 rounded border border-blue-500/20 shadow-md">
-        <div class="border-l-4 border-blue-500 pl-3 mb-2">
-          <h4 class="text-lg font-bold text-blue-300 leading-none">The Nile Confraternity</h4>
-          <span class="text-xs font-semibold text-blue-400 uppercase tracking-wider">Mestres das Águas</span>
+        <div class="flex items-start gap-3 mb-2">
+          <img src="./assets/images/faccao-azul.png" alt="Mestres das Águas" class="w-20 h-20 object-cover rounded border border-blue-500/20 shadow-md flex-shrink-0">
+          <div class="border-l-4 border-blue-500 pl-3">
+            <h4 class="text-lg font-bold text-blue-300 leading-none">The Nile Confraternity</h4>
+            <span class="text-xs font-semibold text-blue-400 uppercase tracking-wider">Mestres das Águas</span>
+          </div>
         </div>
         <p class="text-sm text-gray-200 leading-relaxed text-justify">
           Especialistas em recursos hídricos, os Mestres das Águas excel em pântanos e negociações. Sua abordagem é diplomática e adaptável, com bônus em exploração e coleta em regiões aquáticas para uma expansão fluida.
@@ -243,10 +247,12 @@ const MANUAL_CONTENT = {
       </div>
       
       <div class="bg-gradient-to-r from-red-900/30 to-orange-900/30 border border-red-500/40 rounded-lg p-4 transition hover:bg-red-900/40">
-        <img src="./assets/images/faccao-vermelha.png" alt="Construtores da Montanha" class="w-full mb-3 rounded border border-red-500/20 shadow-md">
-        <div class="border-l-4 border-red-500 pl-3 mb-2">
-          <h4 class="text-lg font-bold text-red-300 leading-none">The Stone Protectorate</h4>
-          <span class="text-xs font-semibold text-red-400 uppercase tracking-wider">Construtores da Montanha</span>
+        <div class="flex items-start gap-3 mb-2">
+          <img src="./assets/images/faccao-vermelha.png" alt="Construtores da Montanha" class="w-20 h-20 object-cover rounded border border-red-500/20 shadow-md flex-shrink-0">
+          <div class="border-l-4 border-red-500 pl-3">
+            <h4 class="text-lg font-bold text-red-300 leading-none">The Stone Protectorate</h4>
+            <span class="text-xs font-semibold text-red-400 uppercase tracking-wider">Construtores da Montanha</span>
+          </div>
         </div>
         <p class="text-sm text-gray-200 leading-relaxed text-justify">
           Focados em mineração e construções robustas, os Construtores dominam savanas com ênfase em defesa e PV de longo prazo. Sua estratégia é construir impérios duráveis, com descontos em pedra e bônus em estruturas.
@@ -261,10 +267,12 @@ const MANUAL_CONTENT = {
       </div>
       
       <div class="bg-gradient-to-r from-yellow-900/30 to-amber-900/30 border border-yellow-500/40 rounded-lg p-4 transition hover:bg-yellow-900/40">
-        <img src="./assets/images/faccao-amarela.png" alt="Barões do Comércio" class="w-full mb-3 rounded border border-yellow-500/20 shadow-md">
-        <div class="border-l-4 border-yellow-500 pl-3 mb-2">
-          <h4 class="text-lg font-bold text-yellow-300 leading-none">The Golden Syndicate</h4>
-          <span class="text-xs font-semibold text-yellow-400 uppercase tracking-wider">Barões do Comércio</span>
+        <div class="flex items-start gap-3 mb-2">
+          <img src="./assets/images/faccao-amarela.png" alt="Barões do Comércio" class="w-20 h-20 object-cover rounded border border-yellow-500/20 shadow-md flex-shrink-0">
+          <div class="border-l-4 border-yellow-500 pl-3">
+            <h4 class="text-lg font-bold text-yellow-300 leading-none">The Golden Syndicate</h4>
+            <span class="text-xs font-semibold text-yellow-400 uppercase tracking-wider">Barões do Comércio</span>
+          </div>
         </div>
         <p class="text-sm text-gray-200 leading-relaxed text-justify">
           Mestres do comércio e economia, os Barões acumulam ouro através de negociações e exploração. Sua flexibilidade econômica permite converter riqueza em vantagens, focando em savanas para uma vitória rápida via diplomacia.
