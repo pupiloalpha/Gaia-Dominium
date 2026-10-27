@@ -186,6 +186,11 @@ export class ActionLogic {
     // 1. Obter custo base e aplicar descontos de facção (ex: Druidas)
     let cost = { ...GAME_CONFIG.ACTION_DETAILS.explorar.cost };
     
+    // Evento: Era da Exploração — custo de explorar reduzido
+    if (gameState.eventModifiers?.explorarDesconto) {
+      cost.madeira = Math.max(0, (cost.madeira || 0) - gameState.eventModifiers.explorarDesconto);
+    }
+    
     if (this.main.factionLogic) {
       cost = this.main.factionLogic.modifyExploreCost(player, cost);
     }
@@ -289,6 +294,33 @@ export class ActionLogic {
       region.resources[k] = Math.max(0, region.resources[k] - amount);
     });
 
+    // Evento: Inverno Rigoroso — +1 Madeira ao Coletar
+    if (gameState.eventModifiers?.coletaBonus) {
+      Object.entries(gameState.eventModifiers.coletaBonus).forEach(([res, val]) => {
+        player.resources[res] = (player.resources[res] || 0) + val;
+      });
+    }
+    
+    // Evento: Festival da Colheita — +2 recursos aleatórios bônus
+    if (gameState.eventModifiers?.festivalBonus) {
+      const resKeys = Object.keys(region.resources).filter(k => region.resources[k] > 0);
+      if (resKeys.length > 0) {
+        for (let i = 0; i < 2; i++) {
+          const r = resKeys[Math.floor(Math.random() * resKeys.length)];
+          player.resources[r] = (player.resources[r] || 0) + 1;
+        }
+      }
+    }
+    
+    // Conquista Colecionador: +1 recurso extra ao coletar
+    if (hasAchievement(player.id, 'colecionador')) {
+      const resKeys = Object.keys(region.resources).filter(k => region.resources[k] > 0);
+      if (resKeys.length > 0) {
+        const r = resKeys[Math.floor(Math.random() * resKeys.length)];
+        player.resources[r] = (player.resources[r] || 0) + 1;
+      }
+    }
+
     // 1. Aplicar Bônus de Facção (Ex: Navegadores em Pântano)
     let factionMsg = '';
     if (this.main.factionLogic) {
@@ -346,6 +378,11 @@ export class ActionLogic {
     let cost = { ...STRUCTURE_COSTS[structureType] }; // Cópia segura
     if (this.main.factionLogic) {
       cost = this.main.factionLogic.modifyBuildCost(player, cost);
+    }
+    
+    // Conquista Construtor: -1 em todos os custos de construção
+    if (hasAchievement(player.id, 'construtor')) {
+      Object.keys(cost).forEach(k => { cost[k] = Math.max(0, cost[k] - 1); });
     }
     
     // 2. Verificar pagamento com custo descontado

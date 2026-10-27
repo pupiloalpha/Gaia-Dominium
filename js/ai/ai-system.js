@@ -624,12 +624,17 @@ class AIBrain {
 
   getDisputeThreshold() {
     const thresholds = {
-      easy: 50,
-      medium: 40,
+      easy: 45,
+      medium: 35,
       hard: 30,
       master: 25
     };
-    return thresholds[this.difficulty] || 40;
+    let base = thresholds[this.difficulty] || 35;
+    // [BALANCE] Personalidade expansionista possui threshold mais acessível
+    if (this.personality && this.personality.type === 'expansionist') {
+      base -= 10;
+    }
+    return Math.max(15, base);
   }
 
   validateDisputeAction(player, region) {
@@ -707,6 +712,11 @@ class AIBrain {
     const player = gameState.players[this.playerId];
     const actions = [];
     let remainingActions = gameState.actionsLeft;
+    
+    // [BALANCE] Aplicar ruído de decisão de acordo com o nível de dificuldade da IA
+    if (this.settings && this.settings.decisionAccuracy < 1) {
+      this.addDecisionNoise(analysis);
+    }
     
     const priorities = [...this.personality.priorities];
     
@@ -859,7 +869,9 @@ class AIBrain {
     
     player.regions.forEach(regionId => {
       const region = gameState.regions[regionId];
-      const canExplore = player.resources.madeira >= 2 && player.resources.agua >= 1;
+      // [FIX] Custo de explorar considera desconto de facção (ex: Verde -1 madeira)
+      const madeiraDiscount = player?.faction?.abilities?.exploreDiscount?.madeira || 0;
+      const canExplore = player.resources.madeira >= Math.max(0, 1 - madeiraDiscount) && player.resources.agua >= 1;
       
       if (canExplore && region.explorationLevel < lowestLevel) {
         lowestLevel = region.explorationLevel;
@@ -904,7 +916,13 @@ class AIBrain {
   }
   
   canAffordExplore(player) {
-    return player.resources.madeira >= 2 && player.resources.agua >= 1;
+    // [FIX] Custo de explorar considera desconto de facção (ex: Verde -1 madeira)
+    let madeiraCost = 1;
+    let aguaCost = 1;
+    if (player?.faction?.abilities?.exploreDiscount?.madeira) {
+      madeiraCost = Math.max(0, madeiraCost - player.faction.abilities.exploreDiscount.madeira);
+    }
+    return player.resources.madeira >= madeiraCost && player.resources.agua >= aguaCost;
   }
   
   canAffordCollect(player) {

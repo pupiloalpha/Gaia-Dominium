@@ -437,8 +437,9 @@ async _executeNegotiations(ai) {
         await this._delay(1000);
     }
     
-    // 2. DEPOIS: Enviar proposta (se possível)
-    if (gameState.actionsLeft > 0 && currentPlayer.resources.ouro >= 1) {
+    // 2. DEPOIS: Enviar proposta (se possível e se IA não evita negociações)
+    const shouldSendProposal1 = !ai?.settings?.avoidNegotiations || Math.random() < 0.15;
+    if (gameState.actionsLeft > 0 && currentPlayer.resources.ouro >= 1 && shouldSendProposal1) {
         console.log(`🤖 ${currentPlayer.name} pode enviar proposta`);
         
         await this._delay(1200);
@@ -643,8 +644,9 @@ async _sendSimpleProposal(ai, player, gameState) {
         
         if (this._isGameOver()) return;
         
-        // 2. Verificar se ainda pode enviar proposta
-        if (gameState.actionsLeft > 0 && currentPlayer.resources.ouro >= 1) {
+        // 2. Verificar se ainda pode enviar proposta (e se IA não evita negociações)
+        const shouldSendProposal2 = !ai?.settings?.avoidNegotiations || Math.random() < 0.15;
+        if (gameState.actionsLeft > 0 && currentPlayer.resources.ouro >= 1 && shouldSendProposal2) {
             console.log(`🤖 ${currentPlayer.name} pode enviar proposta, verificando alvos...`);
             
             // Verificar se há alvos válidos

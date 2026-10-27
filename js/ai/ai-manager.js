@@ -17,6 +17,7 @@ import {
 } from '../state/game-state.js';
 
 import { AIBrain } from './ai-system.js';
+import { GAME_CONFIG } from '../state/game-config.js';
 
 class AIManager {
   constructor() {
@@ -124,7 +125,7 @@ class AIManager {
     
     // Avançar para fase de ações
     gameState.currentPhase = 'acoes';
-    gameState.actionsLeft = 3;
+    gameState.actionsLeft = GAME_CONFIG.ACTIONS_PER_TURN; // FIX: era hardcoded 3, deve ser 2
     
     // Atualizar UI
     if (window.uiManager) {
@@ -151,8 +152,14 @@ class AIManager {
         // Pequeno delay entre ações
         await this.delay(800);
         
-        // Executar uma ação usando o AIBrain
-        await ai.executeActionPhase(gameState, window.uiManager);
+        // Executar uma ação usando o AIBrain (takeTurn é o método correto do AIBrain)
+        const actionTaken = await ai.takeTurn(gameState, window.uiManager);
+        
+        // Se a IA não executou nenhuma ação, decrementar para evitar loop infinito
+        if (!actionTaken && gameState.actionsLeft > 0) {
+          console.log(`🤖 ${player.name} sem ação disponível, decrementando...`);
+          gameState.actionsLeft--;
+        }
         
         // Atualizar UI
         if (window.uiManager) {
@@ -164,6 +171,7 @@ class AIManager {
         
       } catch (error) {
         console.error(`🤖 Erro na ação da IA:`, error);
+        if (gameState.actionsLeft > 0) gameState.actionsLeft--;
         break;
       }
     }
@@ -279,10 +287,11 @@ async handleNegotiationPhaseAI(ai) {
   }
 
   // Adicionar após o método findNegotiationTarget
+  // (Este segundo bloco handleActionsPhaseAI inclui lógica de disputa territorial)
 
-async handleActionsPhaseAI(ai) {
+async handleActionsPhaseAIWithDispute(ai) {
   const player = getCurrentPlayer();
-  console.log(`🤖 ${player.name} executando ações (${gameState.actionsLeft} restantes)`);
+  console.log(`🤖 ${player.name} executando ações com suporte a disputa (${gameState.actionsLeft} restantes)`);
 
   // Executar ações enquanto houver ações disponíveis
   while (gameState.actionsLeft > 0) {
@@ -290,15 +299,16 @@ async handleActionsPhaseAI(ai) {
       // Pequeno delay entre ações
       await this.delay(800);
       
-      // ADICIONAR: Verificar se há disputas antes de executar ação padrão
+      // Verificar se há disputas antes de executar ação padrão
       const shouldDispute = this.shouldExecuteDispute(ai, gameState);
       
       if (shouldDispute) {
         console.log(`🤖 ${player.name} decidiu disputar território`);
         await this.executeDisputeAI(ai);
       } else {
-        // Executar uma ação usando o AIBrain
-        await ai.executeActionPhase(gameState, window.uiManager);
+        // Executar uma ação usando o AIBrain (método correto é takeTurn)
+        const actionTaken = await ai.takeTurn(gameState, window.uiManager);
+        if (!actionTaken && gameState.actionsLeft > 0) gameState.actionsLeft--;
       }
       
       // Atualizar UI
@@ -311,6 +321,7 @@ async handleActionsPhaseAI(ai) {
       
     } catch (error) {
       console.error(`🤖 Erro na ação da IA:`, error);
+      if (gameState.actionsLeft > 0) gameState.actionsLeft--;
       break;
     }
   }
@@ -479,7 +490,7 @@ async executeDisputeAI(ai) {
       gameState.turn += 1;
     }
     
-    gameState.actionsLeft = 3;
+    gameState.actionsLeft = GAME_CONFIG.ACTIONS_PER_TURN; // FIX: era hardcoded 3
     gameState.selectedRegionId = null;
     gameState.currentPhase = 'renda';
     

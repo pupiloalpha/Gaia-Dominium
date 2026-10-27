@@ -97,6 +97,10 @@ export class NegotiationLogic {
         // Isso retorna o custo (0 ou 1) e internamente marca a habilidade como usada se for 0
         negotiationCost = this.main.factionLogic.modifyNegotiationCost(player);
     }
+    // Evento: Mercado Aquecido — negociações sem custo de ouro
+    if (gameState.eventModifiers?.negociacaoGratis) {
+        negotiationCost = 0;
+    }
 
     gameState.actionsLeft--;
     player.resources.ouro -= negotiationCost; // Pode ser 0
@@ -152,8 +156,8 @@ export class NegotiationLogic {
     
     this.main.showFeedback(`Proposta enviada para ${target.name}!${bonusMsg}`, 'success');
     
-    recordPlayerAchievementProgress(initiator.id, 'negotiate');
-    checkAndUnlockAchievements(initiator.id);
+    recordPlayerAchievementProgress(player.id, 'negotiate'); // FIX: era 'initiator.id' (ReferenceError)
+    checkAndUnlockAchievements(player.id);
     if (window.uiManager && window.uiManager.gameManager) {
             window.uiManager.gameManager.updateFooter();
     }

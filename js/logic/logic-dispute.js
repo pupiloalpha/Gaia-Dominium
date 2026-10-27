@@ -186,7 +186,7 @@ export class DisputeLogic {
 
     // 4. Bônus de conquistas
     if (hasAchievement(attacker.id, 'senhor_guerra')) {
-      baseChance += 10;
+      baseChance += 15; // Senhor da Guerra: +15% de chance de sucesso em disputas
     }
     if (hasAchievement(defender.id, 'conquistador')) {
       baseChance -= 10;
@@ -305,7 +305,6 @@ export class DisputeLogic {
         console.log(`  - ${resource}: ${currentAmount} -> ${attacker.resources[resource]}`);
       }
     });
-
     // Determinar resultado
     const success = Math.random() * 100 < disputeData.successChance;
     console.log(`⚔️ Resultado da disputa: ${success ? 'VITÓRIA' : 'DERROTA'} (chance: ${disputeData.successChance}%)`);
@@ -461,17 +460,34 @@ export class DisputeLogic {
   async _handleFailedDispute(attacker, defender, region, disputeData) {
     console.log(`❌ Disputa falhou! ${attacker.name} não conseguiu conquistar ${region.name}`);
     
-    // Defensor ganha 1 PV por defender com sucesso
-    defender.victoryPoints += 1;
-    
-    // A região pode ganhar bônus defensivo
+    // [BALANCE] Defensor NÃO ganha PV por defesa bem-sucedida (era +1 PV, removia o risco assimétrico)
+    // O risco já foi pago pelo atacante em PV ao iniciar a disputa
+
+    // Devolver 50% dos recursos pagos ao atacante (apenas recursos, não PV)
+    if (disputeData && disputeData.finalCost) {
+      const refundResources = {};
+      Object.entries(disputeData.finalCost).forEach(([resource, amount]) => {
+        if (resource !== 'pv' && amount > 0) {
+          const refund = Math.floor(amount * 0.5);
+          if (refund > 0) {
+            attacker.resources[resource] = (attacker.resources[resource] || 0) + refund;
+            refundResources[resource] = refund;
+          }
+        }
+      });
+      if (Object.keys(refundResources).length > 0) {
+        console.log(`⚔️ Reembolso de 50% ao atacante:`, refundResources);
+      }
+    }
+
+    // A região ganha bônus defensivo por ter sido defendida com sucesso
     region.explorationLevel = Math.min(3, region.explorationLevel + 1);
 
     recordPlayerAchievementProgress(attacker.id, 'dispute_loss');
     checkAndUnlockAchievements(defender.id);
 
     // Log
-    this.main.showFeedback(`❌ Falha! ${defender.name} defendeu ${region.name}. -1 PV para você, +1 PV para ${defender.name}`, 'error');
+    this.main.showFeedback(`❌ Falha! ${defender.name} defendeu ${region.name}. 50% dos recursos foram devolvidos.`, 'error');
     addActivityLog({
       type: 'dispute',
       playerName: attacker.name,

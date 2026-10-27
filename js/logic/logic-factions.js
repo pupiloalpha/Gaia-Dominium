@@ -91,9 +91,9 @@ getPlayerFaction(player) {
   applySpecialAbilities(player, bonuses) {
     const faction = player.faction;
     
-    // Mercadores do Deserto: Ouro por região
+    // Mercadores do Deserto / Barões do Comércio: Ouro por região
     if (faction.abilities.goldPerRegion) {
-      const goldBonus = player.regions.length * faction.abilities.goldPerRegion;
+      const goldBonus = Math.floor(player.regions.length * faction.abilities.goldPerRegion);
       bonuses.production.ouro = (bonuses.production.ouro || 0) + goldBonus;
     }
     
@@ -190,8 +190,8 @@ getDefenseBonus(player, region) {
       break;
       
     case 'merchants_barons':
-      // Comerciantes são menos defensivos
-      bonus -= 5;
+      // [BALANCE] Barões do Comércio não sofrem mais penalidade negativa de defesa (-5 removido)
+      bonus += 0;
       break;
   }
   

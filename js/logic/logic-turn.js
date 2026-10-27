@@ -257,8 +257,29 @@ export class TurnLogic {
       // Base
       let prod = this._calculateBiomeProduction(region);
       
+      // Evento: Tempestade de Areia — Savanas não produzem
+      if (gameState.eventModifiers?.savanaBloqueada && region.biome === 'Savana') {
+        Object.keys(prod).forEach(k => prod[k] = 0);
+      }
+      
+      // Evento: Jazida de Ouro — bônus extra em Savanas
+      if (gameState.eventModifiers?.savanaBonus && region.biome === 'Savana') {
+        prod.ouro = (prod.ouro || 0) + gameState.eventModifiers.savanaBonus;
+      }
+      
+      // Evento: Enchente — Pântanos produzem o dobro
+      if (gameState.eventModifiers?.pantanoBonus && region.biome === 'Pântano') {
+        Object.keys(prod).forEach(k => prod[k] = Math.floor(prod[k] * gameState.eventModifiers.pantanoBonus));
+      }
+      
       // Estruturas
+      const structuresDisabled = gameState.eventModifiers?.structuresDisabled;
       region.structures.forEach(st => {
+        if (structuresDisabled) {
+          // Evento: Tempestade — apenas Torre de Vigia e Santuário ainda geram PV (não recursos)
+          if (st === 'Torre de Vigia' || st === 'Santuário') bonuses.pv++;
+          return;
+        }
         const inc = STRUCTURE_INCOME[st] || {};
         Object.keys(inc).forEach(k => prod[k] = (prod[k] || 0) + inc[k]);
         if (st === 'Torre de Vigia' || st === 'Santuário') bonuses.pv++;
@@ -267,6 +288,17 @@ export class TurnLogic {
       // Somar
       Object.keys(prod).forEach(k => bonuses[k] += prod[k]);
     });
+
+    // Aplicar multiplicadores globais de eventos (sobre o total já somado)
+    if (gameState.eventModifiers?.madeiraMultiplier && bonuses.madeira > 0) {
+      bonuses.madeira = Math.floor(bonuses.madeira * gameState.eventModifiers.madeiraMultiplier);
+    }
+    if (gameState.eventModifiers?.pedraMultiplier && bonuses.pedra > 0) {
+      bonuses.pedra = Math.floor(bonuses.pedra * gameState.eventModifiers.pedraMultiplier);
+    }
+    if (gameState.eventModifiers?.aguaMultiplier && bonuses.agua > 0) {
+      bonuses.agua = Math.floor(bonuses.agua * gameState.eventModifiers.aguaMultiplier);
+    }
 
     // Calcular bônus de facção
     if (this.main.factionLogic) {
@@ -393,7 +425,8 @@ export class TurnLogic {
       prod.agua=1; 
     }
     else if(region.biome === 'Floresta Temperada') { 
-      prod.madeira=1; 
+      prod.madeira=1;
+      prod.agua=1; // FIX: Floresta Temperada também produz água (consistente com BIOME_INCOME)
     }
     else if(region.biome === 'Savana') { 
       prod.ouro=1; 
@@ -403,8 +436,11 @@ export class TurnLogic {
       prod.pedra=1; 
     }
     
-    // Multiplicador Exploração
-    let mult = region.explorationLevel === 1 ? 1.25 : (region.explorationLevel >= 2 ? 1.5 : 1);
+    // FIX: Multiplicador de Exploração corrigido — Nível 3 agora dá 2.0× (era 1.5× igual ao nível 2)
+    let mult = 1;
+    if (region.explorationLevel === 1) mult = 1.25;
+    else if (region.explorationLevel === 2) mult = 1.5;
+    else if (region.explorationLevel >= 3) mult = 2.0;
     Object.keys(prod).forEach(k => prod[k] = Math.floor(prod[k] * mult));
     return prod;
   }

@@ -294,20 +294,20 @@ const GAME_EVENTS = [
     id: 'arqueologia',
     name: 'Descoberta Arqueológica',
     icon: '🏺',
-    description: 'Artefatos antigos são encontrados!',
-    effect: '+3 PV para quem tem mais regiões',
+    description: 'Artefatos antigos são encontrados nas terras menos exploradas!',
+    effect: '+3 PV para quem controla menos regiões (equalizador)',
     duration: 1,
     apply: (state) => {
-      let maxRegions = 0;
-      let winner = null;
+      let minRegions = Infinity;
+      let targetPlayer = null;
       state.players.forEach(p => {
-        if (p.regions.length > maxRegions) {
-          maxRegions = p.regions.length;
-          winner = p;
+        if (!p.eliminated && p.regions.length < minRegions) {
+          minRegions = p.regions.length;
+          targetPlayer = p;
         }
       });
-      if (winner) {
-        winner.victoryPoints += 3;
+      if (targetPlayer) {
+        targetPlayer.victoryPoints += 3;
       }
     },
     remove: (state) => {}
@@ -620,8 +620,8 @@ const FACTION_ABILITIES = {
       buildDiscount: { pedra: 1 },
       // Estruturas dão +1 PV extra
       structurePVBonus: 1,
-      // +50% produção de Pedra
-      globalProductionMultiplier: { pedra: 0.5 }
+      // [BALANCE] +30% produção de Pedra (era 0.5/+50%, muito forte vs Verde +25% madeira)
+      globalProductionMultiplier: { pedra: 0.3 }
     }
   },
   
@@ -637,8 +637,8 @@ const FACTION_ABILITIES = {
       biomeBonus: {
         'Savana': { ouro: 3, agua: 1 }
       },
-      // +1 Ouro por turno por região controlada
-      goldPerRegion: 1,
+      // [BALANCE] +1 Ouro a cada 2 regiões controladas por turno (rebalanceado de 1 para 0.5)
+      goldPerRegion: 0.5,
       // Negociações bem-sucedidas dão +1 PV
       negotiationPVBonus: 1,
       // Custo de mercado reduzido em 50%
