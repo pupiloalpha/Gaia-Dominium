@@ -175,10 +175,19 @@ class GameLogic {
     if (isEliminated) return { valid: false, reason: 'Jogador eliminado não pode construir' };
     if (region.controller !== player.id) return { valid: false, reason: 'Você não controla esta região' };
     
-    // Se tiver estrutura específica no contexto, validar custo
+    // Se tiver estrutura específica no contexto, validar custo (com descontos aplicados)
     if (context.structureType) {
-      const structureCost = STRUCTURE_COSTS[context.structureType];
-      if (!structureCost) return { valid: false, reason: `Estrutura '${context.structureType}' não reconhecida` };
+      let structureCost = { ...(STRUCTURE_COSTS[context.structureType] || {}) };
+      if (!STRUCTURE_COSTS[context.structureType]) return { valid: false, reason: `Estrutura '${context.structureType}' não reconhecida` };
+      
+      // Aplicar desconto de facção se houver
+      if (this.factionLogic) {
+        structureCost = this.factionLogic.modifyBuildCost(player, structureCost);
+      }
+      // Conquista Construtor: -1 em todos os custos de construção
+      if (window.gameState?.hasAchievement?.(player.id, 'construtor')) {
+        Object.keys(structureCost).forEach(k => { structureCost[k] = Math.max(0, structureCost[k] - 1); });
+      }
       
       const canPayBuild = Object.entries(structureCost).every(([k, v]) => (player.resources[k] || 0) >= v);
       if (!canPayBuild) return { valid: false, reason: 'Recursos insuficientes para construir' };

@@ -25,15 +25,15 @@ const AI_DIFFICULTY_SETTINGS = {
   easy: {
     name: 'Fácil',
     reactionDelay: 2000,
-    decisionAccuracy: 0.6,
+    decisionAccuracy: 0.75,
     planningDepth: 1,
     memoryTurns: 2,
     aggressionLevel: 0.2,
-    resourcePriority: ['madeira', 'agua', 'pedra', 'ouro'],
+    resourcePriority: ['madeira', 'pedra', 'ouro', 'agua'],
     avoidNegotiations: false,
     personalityWeights: {
-      expansionist: 0.4,
-      builder: 0.3,
+      builder: 0.4,
+      expansionist: 0.3,
       economist: 0.2,
       diplomat: 0.1
     }
@@ -41,15 +41,15 @@ const AI_DIFFICULTY_SETTINGS = {
   medium: {
     name: 'Médio',
     reactionDelay: 1500,
-    decisionAccuracy: 0.75,
+    decisionAccuracy: 0.88,
     planningDepth: 2,
     memoryTurns: 3,
     aggressionLevel: 0.4,
     resourcePriority: ['ouro', 'madeira', 'pedra', 'agua'],
     avoidNegotiations: false,
     personalityWeights: {
-      expansionist: 0.3,
-      builder: 0.4,
+      builder: 0.45,
+      expansionist: 0.25,
       economist: 0.2,
       diplomat: 0.1
     }
@@ -57,33 +57,33 @@ const AI_DIFFICULTY_SETTINGS = {
   hard: {
     name: 'Difícil',
     reactionDelay: 1000,
-    decisionAccuracy: 0.85,
+    decisionAccuracy: 0.95,
     planningDepth: 3,
     memoryTurns: 4,
     aggressionLevel: 0.6,
     resourcePriority: ['ouro', 'pedra', 'madeira', 'agua'],
     avoidNegotiations: true,
     personalityWeights: {
+      builder: 0.4,
       expansionist: 0.3,
-      builder: 0.3,
-      economist: 0.3,
+      economist: 0.2,
       diplomat: 0.1
     }
   },
   master: {
     name: 'Mestre',
     reactionDelay: 500,
-    decisionAccuracy: 0.95,
+    decisionAccuracy: 1.0,
     planningDepth: 4,
     memoryTurns: 5,
     aggressionLevel: 0.8,
     resourcePriority: ['ouro', 'pedra', 'agua', 'madeira'],
     avoidNegotiations: true,
     personalityWeights: {
+      builder: 0.35,
       expansionist: 0.25,
-      builder: 0.25,
       economist: 0.25,
-      diplomat: 0.25
+      diplomat: 0.15
     },
     adaptiveLearning: true
   }
@@ -92,29 +92,27 @@ const AI_DIFFICULTY_SETTINGS = {
 const AI_PERSONALITIES = {
   expansionist: {
     name: 'Expansionista',
-    description: 'Foco em controle territorial',
+    description: 'Foco em controle territorial e pontuação',
     priorities: [
-      { action: 'assume_control', weight: 1.5 },
-      { action: 'dispute', weight: 1.4 },
-      { action: 'explore', weight: 1.2 },
-      { action: 'build', weight: 0.8 },
-      { action: 'collect', weight: 0.7 },
-      { action: 'negotiate', weight: 0.3 }
+      { action: 'build', weight: 1.5 },
+      { action: 'explore', weight: 1.4 },
+      { action: 'assume_control', weight: 1.1 },
+      { action: 'collect', weight: 1.0 },
+      { action: 'dispute', weight: 0.8 }
     ],
     preferredBiomes: ['Floresta Tropical', 'Savana'],
     resourceTargets: { madeira: 15, pedra: 10, ouro: 8, agua: 12 },
-    disputeAggression: 1.8
+    disputeAggression: 1.5
   },
   builder: {
     name: 'Construtor',
-    description: 'Foco em estruturas',
+    description: 'Foco em estruturas e PV',
     priorities: [
-      { action: 'build', weight: 1.8 },
-      { action: 'explore', weight: 1.3 },
-      { action: 'collect', weight: 1.0 },
-      { action: 'assume_control', weight: 0.7 },
-      { action: 'dispute', weight: 0.4 },
-      { action: 'negotiate', weight: 0.4 }
+      { action: 'build', weight: 2.0 },
+      { action: 'explore', weight: 1.4 },
+      { action: 'collect', weight: 1.2 },
+      { action: 'assume_control', weight: 0.8 },
+      { action: 'dispute', weight: 0.4 }
     ],
     preferredBiomes: ['Floresta Temperada', 'Pântano'],
     resourceTargets: { madeira: 20, pedra: 15, ouro: 5, agua: 10 },
@@ -122,29 +120,27 @@ const AI_PERSONALITIES = {
   },
   economist: {
     name: 'Economista',
-    description: 'Foco em recursos',
+    description: 'Foco em recursos e desenvolvimento',
     priorities: [
-      { action: 'collect', weight: 1.6 },
-      { action: 'negotiate', weight: 1.4 },
-      { action: 'explore', weight: 1.1 },
-      { action: 'assume_control', weight: 0.9 },
-      { action: 'build', weight: 0.8 },
-      { action: 'dispute', weight: 0.6 }
+      { action: 'build', weight: 1.6 },
+      { action: 'collect', weight: 1.5 },
+      { action: 'explore', weight: 1.3 },
+      { action: 'assume_control', weight: 0.8 },
+      { action: 'dispute', weight: 0.5 }
     ],
     preferredBiomes: ['Savana', 'Pântano'],
     resourceTargets: { madeira: 12, pedra: 12, ouro: 20, agua: 15 },
-    disputeAggression: 1.0
+    disputeAggression: 0.9
   },
   diplomat: {
     name: 'Diplomata',
-    description: 'Foco em negociações',
+    description: 'Foco em estruturas e acordos',
     priorities: [
-      { action: 'negotiate', weight: 1.7 },
+      { action: 'build', weight: 1.6 },
+      { action: 'explore', weight: 1.4 },
       { action: 'collect', weight: 1.2 },
-      { action: 'explore', weight: 1.0 },
-      { action: 'assume_control', weight: 0.6 },
-      { action: 'build', weight: 0.9 },
-      { action: 'dispute', weight: 0.3 }
+      { action: 'assume_control', weight: 0.7 },
+      { action: 'dispute', weight: 0.4 }
     ],
     preferredBiomes: ['Floresta Tropical', 'Savana'],
     resourceTargets: { madeira: 10, pedra: 8, ouro: 25, agua: 10 },
@@ -380,6 +376,9 @@ class AIBrain {
             
             if (region.controller !== null) continue;
             
+            // [BALANCE] IA preserva PV: não gasta 2 PV para dominar se tiver menos de 4 PV
+            if (player.victoryPoints < 4) continue;
+            
             const canPay = Object.entries(region.resources).every(([res, amount]) => 
               player.resources[res] >= amount
             );
@@ -416,7 +415,14 @@ class AIBrain {
       Object.keys(STRUCTURE_COSTS).forEach(structure => {
         if (region.structures.includes(structure)) return;
         
-        const cost = STRUCTURE_COSTS[structure];
+        let cost = { ...STRUCTURE_COSTS[structure] };
+        // [BALANCE] Considerar descontos de facção (ex: Construtores da Montanha -1 Pedra)
+        if (player.faction?.abilities?.buildDiscount) {
+          Object.keys(player.faction.abilities.buildDiscount).forEach(res => {
+            if (cost[res]) cost[res] = Math.max(0, cost[res] - player.faction.abilities.buildDiscount[res]);
+          });
+        }
+        
         const canAfford = Object.entries(cost).every(([res, amount]) => 
           player.resources[res] >= amount
         );
@@ -425,10 +431,14 @@ class AIBrain {
           const income = STRUCTURE_INCOME[structure] || {};
           const effect = STRUCTURE_EFFECTS ? STRUCTURE_EFFECTS[structure] : {};
           const pvBonus = effect?.pv || 0;
+          const pvIncome = income?.pv || 0;
           
-          let score = pvBonus * 3;
+          // [BALANCE] Valorizar maciçamente estruturas geradoras de PV (Santuário, Torre de Vigia, Abrigo)
+          let score = (pvBonus * 5) + (pvIncome * 8);
           Object.entries(income).forEach(([res, amount]) => {
-            score += amount * (this.personality.resourceTargets[res] ? 2 : 1);
+            if (res !== 'pv') {
+              score += amount * (this.personality.resourceTargets[res] ? 2 : 1);
+            }
           });
           
           if ((structure === 'Mercado' && region.biome === 'Savana') ||
@@ -720,24 +730,30 @@ class AIBrain {
     
     const priorities = [...this.personality.priorities];
     
+    // [BALANCE] Quando há ameaça de líder adversário, focar em PONTUAÇÃO (Construir e Explorar)
+    // ao invés de queimar PV dominando ou disputando desnecessariamente
     if (analysis.threatLevel.length > 0 && analysis.threatLevel[0].score > 0.7) {
-      priorities.find(p => p.action === 'assume_control').weight *= 1.5;
-      priorities.find(p => p.action === 'build').weight *= 1.2;
-      const disputePriority = priorities.find(p => p.action === 'dispute');
-      if (disputePriority) disputePriority.weight *= 1.3;
+      const buildP = priorities.find(p => p.action === 'build');
+      if (buildP) buildP.weight *= 1.6;
+      const exploreP = priorities.find(p => p.action === 'explore');
+      if (exploreP) exploreP.weight *= 1.4;
+      const collectP = priorities.find(p => p.action === 'collect');
+      if (collectP) collectP.weight *= 1.3;
     }
     
     if (Object.values(analysis.resourceNeeds).some(need => need > 0.7)) {
-      priorities.find(p => p.action === 'collect').weight *= 1.4;
-      priorities.find(p => p.action === 'explore').weight *= 1.2;
+      const collectP = priorities.find(p => p.action === 'collect');
+      if (collectP) collectP.weight *= 1.4;
+      const exploreP = priorities.find(p => p.action === 'explore');
+      if (exploreP) exploreP.weight *= 1.2;
     }
     
-    if (analysis.disputeOpportunities.length > 0) {
+    if (analysis.disputeOpportunities.length > 0 && player.victoryPoints >= 5) {
       const disputePriority = priorities.find(p => p.action === 'dispute');
       if (disputePriority) {
         disputePriority.weight *= this.personality.disputeAggression || 1.0;
       } else {
-        priorities.push({ action: 'dispute', weight: 1.0 });
+        priorities.push({ action: 'dispute', weight: 0.8 });
       }
     }
     
@@ -748,7 +764,7 @@ class AIBrain {
       
       switch (priority.action) {
         case 'assume_control':
-          if (analysis.expansionOpportunities.length > 0) {
+          if (analysis.expansionOpportunities.length > 0 && player.victoryPoints >= 4) {
             const bestRegion = analysis.expansionOpportunities[0];
             if (this.canAffordControl(player, bestRegion)) {
               actions.push({
@@ -787,6 +803,7 @@ class AIBrain {
               priority: priority.weight,
               description: `Construir ${bestBuild.structure} em ${gameState.regions[bestBuild.regionId].name}`
             });
+            analysis.buildOpportunities.shift();
             remainingActions--;
           }
           break;
@@ -806,23 +823,8 @@ class AIBrain {
           }
           break;
           
-        case 'negotiate':
-          if (analysis.negotiationTargets.length > 0 && remainingActions >= 1) {
-            const target = analysis.negotiationTargets[0];
-            if (this.settings.difficulty !== 'master' || Math.random() > 0.5) {
-              actions.push({
-                type: 'negotiate',
-                targetPlayerId: target.playerId,
-                priority: priority.weight,
-                description: `Negociar com ${target.name}`
-              });
-              remainingActions--;
-            }
-          }
-          break;
-          
         case 'dispute':
-          if (analysis.disputeOpportunities.length > 0 && remainingActions >= 1) {
+          if (analysis.disputeOpportunities.length > 0 && remainingActions >= 1 && player.victoryPoints >= 4) {
             const bestDispute = analysis.disputeOpportunities[0];
             if (bestDispute.validation === 'ready') {
               actions.push({
@@ -840,19 +842,50 @@ class AIBrain {
       }
     });
     
+    // Fallback inteligente para garantir que nenhuma ação seja desperdiçada
     while (remainingActions > 0 && player.regions.length > 0) {
-      const randomRegion = player.regions[Math.floor(Math.random() * player.regions.length)];
-      if (this.canAffordExplore(player)) {
+      // 1. Tentar construir se puder (máximo ganho de PV)
+      if (analysis.buildOpportunities.length > 0) {
+        const bestBuild = analysis.buildOpportunities[0];
+        actions.push({
+          type: 'build',
+          regionId: bestBuild.regionId,
+          structure: bestBuild.structure,
+          priority: 0.9,
+          description: `Construir ${bestBuild.structure} em ${gameState.regions[bestBuild.regionId].name} (fallback)`
+        });
+        analysis.buildOpportunities.shift();
+        remainingActions--;
+        continue;
+      }
+      
+      // 2. Tentar explorar região para ganhar PV (+1 PV)
+      const regionToExplore = this.chooseRegionToExplore(player, gameState);
+      if (regionToExplore && this.canAffordExplore(player)) {
         actions.push({
           type: 'explore',
-          regionId: randomRegion,
-          priority: 0.5,
-          description: `Explorar ${gameState.regions[randomRegion].name} (fallback)`
+          regionId: regionToExplore,
+          priority: 0.8,
+          description: `Explorar ${gameState.regions[regionToExplore].name} (fallback)`
         });
         remainingActions--;
-      } else {
-        break;
+        continue;
       }
+      
+      // 3. Tentar coletar recursos para futuros turnos (+1 PV)
+      const regionToCollect = this.chooseRegionToCollect(player, gameState);
+      if (regionToCollect && this.canAffordCollect(player)) {
+        actions.push({
+          type: 'collect',
+          regionId: regionToCollect,
+          priority: 0.7,
+          description: `Coletar recursos de ${gameState.regions[regionToCollect].name} (fallback)`
+        });
+        remainingActions--;
+        continue;
+      }
+      
+      break;
     }
     
     return {
@@ -908,7 +941,8 @@ class AIBrain {
     const cost = regionInfo.resources;
     const pvCost = 2;
     
-    if (player.victoryPoints < pvCost) return false;
+    // [BALANCE] IA preserva PV: precisa ter pelo menos 4 PV para assumir domínio de região
+    if (player.victoryPoints < 4) return false;
     
     return Object.entries(cost).every(([res, amount]) => 
       player.resources[res] >= amount
@@ -993,9 +1027,8 @@ class AIBrain {
       try {
         await this.executeAction(action, gameState, uiManager);
         
-        if (window.gameLogic?.performAction) {
-          window.gameLogic.performAction(action.type);
-        }
+        // [FIX] executeAction() já consome a ação através de handleExplore/handleBuild/etc.
+        // Chamar performAction() consumia uma segunda ação indevidamente, limitando a IA a 1 ação/turno.
         
         this.memory.lastActions.push({
           turn: gameState.turn,
