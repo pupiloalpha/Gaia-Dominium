@@ -95,31 +95,27 @@ export class ActionLogic {
       return await this._handleResurrection(region, player);
     }
     
-    // Código original para jogadores não eliminados
-    const pvCost = 2;
-    if (player.victoryPoints < pvCost) {
-      this.main.showFeedback(`Precisa de ${pvCost} PV para assumir domínio.`, 'error');
-      return;
-    }
-    
+    // Código para jogadores não eliminados (Sem custo de PV para expandir, alinhado com a mecânica moderna)
     const canPay = Object.entries(region.resources).every(([k, v]) => (player.resources[k] || 0) >= v);
     if (!canPay) {
       this.main.showFeedback(`Recursos insuficientes.`, 'error');
       return;
     }
     
-    const confirm = await this.main.showConfirm('Assumir Domínio', `Gastar ${pvCost} PV e recursos para dominar ${region.name}?`);
+    const confirm = await this.main.showConfirm('Assumir Domínio', `Gastar recursos da região para dominar ${region.name}?`);
     if (!confirm || !this.consumeAction()) return;
     
-    player.victoryPoints -= pvCost;
     Object.entries(region.resources).forEach(([k, v]) => {
       player.resources[k] = Math.max(0, (player.resources[k] || 0) - v);
     });
     
     region.controller = player.id;
+    if (region.explorationLevel === 0) {
+      region.explorationLevel = 1;
+    }
     player.regions.push(region.id);
     
-    this.main.showFeedback(`${region.name} dominada! -${pvCost} PV`, 'success');
+    this.main.showFeedback(`${region.name} dominada!`, 'success');
     addActivityLog({ 
       type: 'explore', 
       playerName: player.name, 
@@ -209,7 +205,7 @@ export class ActionLogic {
     Object.entries(cost).forEach(([k, v]) => player.resources[k] -= v);
     
     region.explorationLevel = Math.min(3, region.explorationLevel + 1);
-    player.victoryPoints += 1;
+    // Ajuste: Explorar é investimento de recursos, sem bônus de PV imediato (como no Android)
     recordPlayerAchievementProgress(player.id, 'explore');
     checkAndUnlockAchievements(player.id);
     
@@ -333,10 +329,10 @@ export class ActionLogic {
       }
     }
 
-    player.victoryPoints += 1;
+    // Ajuste: Recolher/coletar recursos não gera PV imediato (como no Android)
     recordPlayerAchievementProgress(player.id, 'collect', { regionId: region.id });
     checkAndUnlockAchievements(player.id);
-    this.main.showFeedback(`Recursos coletados! +1 PV${factionMsg}`, 'success');
+    this.main.showFeedback(`Recursos coletados com sucesso!${factionMsg}`, 'success');
     addActivityLog({ 
       type: 'collect', 
       playerName: player.name, 
@@ -404,15 +400,21 @@ export class ActionLogic {
       pvBonus = this.main.factionLogic.applyBuildBonus(player, structureType).pv || 0;
     }
 
+    // Ajuste: Estruturas padrão não geram PV imediato (renda contínua). Eventos ou facções especiais podem conceder bônus.
     const pvGain = (STRUCTURE_EFFECTS[structureType]?.pv || 0) + 
-                   (gameState.eventModifiers.construirBonus || 0) + 
+                   (gameState.eventModifiers?.construirBonus || 0) + 
                    pvBonus;
 
-    player.victoryPoints += pvGain;
+    if (pvGain > 0) {
+      player.victoryPoints += pvGain;
+    }
     recordPlayerAchievementProgress(player.id, 'build');
     checkAndUnlockAchievements(player.id);
     
-    this.main.showFeedback(`Construído ${structureType}. +${pvGain} PV.`, 'success');
+    const feedbackMsg = pvGain > 0 
+      ? `Construído ${structureType}. +${pvGain} PV.` 
+      : `Construído ${structureType}. Estrutura ativa para fase de renda.`;
+    this.main.showFeedback(feedbackMsg, 'success');
     addActivityLog({ 
       type: 'build', 
       playerName: player.name, 

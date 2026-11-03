@@ -12,10 +12,10 @@ const GAME_CONFIG = {
   DIVERSITY_BONUS_PV: 3,
   ACTIONS_PER_TURN: 2,
   ACTION_DETAILS: {
-    explorar: { cost:{madeira:1, agua:1}, pv:1 },
-    construir: { cost:{madeira:3, pedra:2, ouro:1}, pv:2 },
-    disputar: { cost:{madeira:2, pedra:2, ouro:3, agua:1}, pv:3 },
-    coletar: { cost:{madeira:1}, pv:1 },
+    explorar: { cost:{madeira:1, agua:1}, pv:0 },
+    construir: { cost:{madeira:3, pedra:2, ouro:1}, pv:0 },
+    disputar: { cost:{madeira:2, pedra:2, ouro:3, agua:1}, pv:0 },
+    coletar: { cost:{madeira:1}, pv:0 },
     negociar: { cost:{ouro:1}, pv:1 }
   },
   TURNS_UNTIL_NEXT_EVENT: 4,
@@ -114,22 +114,25 @@ const STRUCTURE_COSTS = {
 };
 
 const STRUCTURE_EFFECTS = {
-  'Abrigo': { pv: 2 },
+  'Abrigo': { 
+    pv: 0,
+    description: 'Gera +1 Madeira e +1 Água a cada turno na fase de renda'
+  },
   'Torre de Vigia': { 
-    pv: 1,
-    description: 'Aumenta defesa da região e fornece visão estratégica'
+    pv: 0,
+    description: 'Gera +1 PV por turno na renda e protege a região (+2 PV custo do atacante, anula perda de PV do defensor)'
   },
   'Mercado': { 
-    pv: 1,
-    description: 'Reduz custo de negociação em 1 Ouro e aumenta produção de ouro'
+    pv: 0,
+    description: 'Reduz custo de negociação em 1 Ouro e gera +1 Ouro por turno na renda'
   },
   'Laboratório': { 
-    pv: 1,
-    description: 'Aumenta chance de descoberta rara em 15% ao explorar'
+    pv: 0,
+    description: 'Gera +1 Ouro por turno na renda e aumenta chance de descoberta rara em 15% ao explorar'
   },
   'Santuário': { 
-    pv: 3,
-    description: 'Fornece bônus de PV e aumenta lealdade das regiões adjacentes'
+    pv: 0,
+    description: 'Gera +1 PV por turno na renda e abençoa regiões adjacentes controladas com +1 Madeira, Pedra e Água'
   }
 };
 

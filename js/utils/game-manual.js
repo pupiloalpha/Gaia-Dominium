@@ -400,8 +400,8 @@ const MANUAL_CONTENT = {
         </div>
         
         <p class="text-sm text-gray-200 mb-2">
-          Tome controle de uma região neutra gastando <strong>2 PV</strong> e os recursos iniciais da região. 
-          Ganhe +1 PV e adicione a região ao seu domínio.
+          Tome controle de uma região neutra investindo os recursos naturais da região (sem custo de PV). 
+          Adicione a região ao seu domínio iniciando no nível 1 de exploração.
         </p>
         
         <div class="bg-purple-900/20 rounded p-2 text-xs text-purple-200">
@@ -600,7 +600,7 @@ const MANUAL_CONTENT = {
           <span class="bg-orange-800/50 px-2 py-1 rounded">Custo: 3 🪵 2 🪨 1 🪙</span>
         </div>
         <p class="text-xs text-orange-200">
-          <strong>Efeito:</strong> +1 🪵 Madeira, +1 💧 Água por turno. +2 PV ao construir.
+          <strong>Efeito:</strong> +1 🪵 Madeira, +1 💧 Água por turno na fase de renda.
         </p>
       </div>
 
@@ -613,7 +613,7 @@ const MANUAL_CONTENT = {
           <span class="bg-blue-800/50 px-2 py-1 rounded">Custo: 2 🪵 3 🪨</span>
         </div>
         <p class="text-xs text-blue-200">
-          <strong>Efeito:</strong> +1 PV por turno. Aumenta defesa da região.
+          <strong>Efeito:</strong> +1 PV por turno. Protege a região (+2 PV custo do atacante, anula perda de PV do defensor).
         </p>
       </div>
 
@@ -626,7 +626,7 @@ const MANUAL_CONTENT = {
           <span class="bg-yellow-800/50 px-2 py-1 rounded">Custo: 4 🪵 1 🪨 2 💧</span>
         </div>
         <p class="text-xs text-yellow-200">
-          <strong>Efeito:</strong> +1 🪙 Ouro por turno.
+          <strong>Efeito:</strong> +1 🪙 Ouro por turno. Reduz custo de negociação.
         </p>
       </div>
 
@@ -639,20 +639,20 @@ const MANUAL_CONTENT = {
           <span class="bg-purple-800/50 px-2 py-1 rounded">Custo: 3 🪨 2 🪙 1 💧</span>
         </div>
         <p class="text-xs text-purple-200">
-          <strong>Efeito:</strong> +1 🪙 Ouro por turno.
+          <strong>Efeito:</strong> +1 🪙 Ouro por turno. +15% de chance de descoberta rara ao explorar.
         </p>
       </div>
 
       <div class="bg-gradient-to-r from-green-900/40 to-lime-900/40 border border-green-500/40 rounded-lg p-3">
         <h5 class="text-sm font-bold text-green-300 mb-2">Santuário</h5>
         <p class="text-xs text-gray-200 mb-2">
-          Gera PV diretos para vitória acelerada.
+          Gera PV contínuos e abençoa territórios vizinhos.
         </p>
         <div class="flex gap-2 flex-wrap text-xs mb-1">
           <span class="bg-green-800/50 px-2 py-1 rounded">Custo: 3 🪵 2 🪙 2 💧</span>
         </div>
         <p class="text-xs text-green-200">
-          <strong>Efeito:</strong> +1 PV por turno.
+          <strong>Efeito:</strong> +1 PV por turno. Abençoa regiões adjacentes controladas com +1 Madeira, Pedra e Água.
         </p>
       </div>
     </div>

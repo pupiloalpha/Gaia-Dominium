@@ -250,6 +250,13 @@ export class TurnLogic {
     
     const bonuses = { madeira: 0, pedra: 0, ouro: 0, agua: 0, pv: 0 };
     
+    // Posições dos Santuários controlados para bônus de adjacência (como no Android)
+    const gridSize = GAME_CONFIG.GRID_SIZE || 5;
+    const sanctuariesPositions = player.regions
+      .map(rid => gameState.regions[rid])
+      .filter(r => r && r.structures && r.structures.includes('Santuário'))
+      .map(r => ({ row: Math.floor(r.id / gridSize), col: r.id % gridSize, id: r.id }));
+
     player.regions.forEach(rid => {
       const region = gameState.regions[rid];
       if(!region) return;
@@ -270,6 +277,26 @@ export class TurnLogic {
       // Evento: Enchente — Pântanos produzem o dobro
       if (gameState.eventModifiers?.pantanoBonus && region.biome === 'Pântano') {
         Object.keys(prod).forEach(k => prod[k] = Math.floor(prod[k] * gameState.eventModifiers.pantanoBonus));
+      }
+
+      // Bônus de Adjacência do Santuário (+1 Madeira, Pedra, Água para biomas adjacentes)
+      if (sanctuariesPositions.length > 0) {
+        const row = Math.floor(region.id / gridSize);
+        const col = region.id % gridSize;
+        const isAdjacent = sanctuariesPositions.some(s => {
+          if (s.id === region.id) return false;
+          return Math.abs(s.row - row) <= 1 && Math.abs(s.col - col) <= 1;
+        });
+        if (isAdjacent) {
+          prod.madeira = (prod.madeira || 0) + 1;
+          prod.pedra = (prod.pedra || 0) + 1;
+          prod.agua = (prod.agua || 0) + 1;
+        }
+      }
+
+      // Bônus de Nível 3 de Exploração: +1 PV a cada 3 turnos (como no Android)
+      if (region.explorationLevel >= 3 && gameState.turn > 0 && gameState.turn % 3 === 0) {
+        bonuses.pv++;
       }
       
       // Estruturas
@@ -330,6 +357,29 @@ export class TurnLogic {
           bonuses[res] = Math.ceil(bonuses[res] * 1.1);
         }
       });
+    }
+
+    // Evento: Descoberta Arqueológica (+3 PV para quem tiver mais regiões, como no Android)
+    if (gameState.currentEvent?.id === 'arqueologia' || gameState.eventModifiers?.arqueologia) {
+      const maxRegions = Math.max(...gameState.players.map(p => p.regions ? p.regions.length : 0));
+      if (player.regions.length === maxRegions && maxRegions > 0) {
+        bonuses.pv = (bonuses.pv || 0) + 3;
+      }
+    }
+
+    // Regra de bônus de PV baseada em Recursos (como no Android GameEngine.kt)
+    // O acúmulo de riqueza acelera o motor de pontuação:
+    // Ouro/5, Pedra/10, Madeira/15, Água/20 geram +10% de amplificação no PV por nível de bônus
+    if (bonuses.pv > 0) {
+      const res = player.resources;
+      const goldBonus = Math.floor((res.ouro || 0) / 5);
+      const stoneBonus = Math.floor((res.pedra || 0) / 10);
+      const woodBonus = Math.floor((res.madeira || 0) / 15);
+      const waterBonus = Math.floor((res.agua || 0) / 20);
+      const totalResBonus = goldBonus + stoneBonus + woodBonus + waterBonus;
+      if (totalResBonus > 0) {
+        bonuses.pv = Math.ceil(bonuses.pv * (1.0 + totalResBonus * 0.1));
+      }
     }
 
     // Aplicar

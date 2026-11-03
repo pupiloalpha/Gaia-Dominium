@@ -10,7 +10,7 @@ import {
   checkAndUnlockAchievements,
   hasAchievement
 } from '../state/game-state.js';
-import { GAME_CONFIG, STRUCTURE_EFFECTS } from '../state/game-config.js';
+import { GAME_CONFIG, STRUCTURE_EFFECTS, BIOME_INITIAL_RESOURCES } from '../state/game-config.js';
 
 export class DisputeLogic {
   constructor(gameLogic) {
@@ -21,6 +21,11 @@ export class DisputeLogic {
 
   // Validação da ação de disputa
   validateDispute() {
+    if (gameState.turn <= 1) {
+      this.main.showFeedback('Disputas territoriais não são permitidas na primeira rodada.', 'warning');
+      return false;
+    }
+
     const currentPhase = gameState.currentPhase;
     if (currentPhase !== 'acoes') {
       this.main.showFeedback('Disputas só podem ser realizadas na fase de ações.', 'warning');
@@ -59,7 +64,7 @@ export class DisputeLogic {
     return true;
   }
 
-  // Calcular custos de disputa
+  // Calcular custos de disputa (Alinhado com a mecânica do Android GameEngine.kt)
   calculateDisputeCosts(player, region) {
     console.log('⚔️ Calculando custos de disputa para:', {
       player: player.name,
@@ -73,56 +78,43 @@ export class DisputeLogic {
       return null;
     }
 
+    // Custo dinâmico de PV e proteção da Torre de Vigia
+    const hasWatchtower = region.structures?.includes('Torre de Vigia');
+    const watchtowerBonus = hasWatchtower ? 2 : 0;
+    const dynamicPvCost = Math.max(1, Math.floor(1 + ((region.explorationLevel || 0) * 0.5) + watchtowerBonus));
+
+    // Custos de recursos baseados no bioma da região com multiplicador de inflação
+    const initialRes = BIOME_INITIAL_RESOURCES[region.biome] || { madeira: 2, pedra: 1, ouro: 1, agua: 1 };
+    const inflationMult = gameState.eventModifiers?.inflacaoMultiplier || 
+                          (gameState.currentEvent?.id === 'inflacao' ? 1.5 : 1.0);
+
     const baseCost = {
-      pv: 3, // Custo base em pontos de vitória
-      madeira: 2,
-      pedra: 2,
-      ouro: 3,
-      agua: 1
+      pv: dynamicPvCost,
+      madeira: Math.max(0, Math.floor((initialRes.madeira || 0) * inflationMult)),
+      pedra: Math.max(0, Math.floor((initialRes.pedra || 0) * inflationMult)),
+      ouro: Math.max(0, Math.floor((initialRes.ouro || 0) * inflationMult)),
+      agua: Math.max(0, Math.floor((initialRes.agua || 0) * inflationMult))
     };
 
-    // Modificadores baseados na região
     let modifiers = {
-      exploration: Math.floor(region.explorationLevel * 0.5),
-      structures: 0,
-      defenderAdvantage: 0
+      exploration: (region.explorationLevel || 0) * 0.5,
+      watchtowerBonus,
+      hasWatchtower
     };
 
-    // Bônus por estruturas defensivas
-    region.structures.forEach(structure => {
-      if (structure === 'Torre de Vigia') {
-        modifiers.structures += 2;
-      } else if (structure === 'Santuário') {
-        modifiers.structures += 1;
-      }
-    });
-
-    // Diferença de PV entre jogadores
-    const pvDifference = defender.victoryPoints - player.victoryPoints;
-    if (pvDifference > 0) {
-      modifiers.defenderAdvantage = Math.floor(pvDifference * 0.1);
-    }
-
-    // Custo final
-    const finalCost = {
-      pv: Math.max(1, Math.floor(baseCost.pv + modifiers.exploration + modifiers.structures + modifiers.defenderAdvantage)),
-      madeira: baseCost.madeira,
-      pedra: baseCost.pedra,
-      ouro: baseCost.ouro,
-      agua: baseCost.agua
-    };
+    const finalCost = { ...baseCost };
 
     // Aplicar modificadores de facção
     if (this.main.factionLogic) {
       const factionModifier = this.main.factionLogic.modifyDisputeCost(player, finalCost, region);
-      Object.assign(finalCost, factionModifier);
+      if (factionModifier) Object.assign(finalCost, factionModifier);
     }
 
-    // Garantir valores mínimos e inteiros
+    // Garantir valores inteiros
     finalCost.pv = Math.max(1, Math.floor(finalCost.pv));
-    finalCost.madeira = Math.max(1, Math.floor(finalCost.madeira));
-    finalCost.pedra = Math.max(1, Math.floor(finalCost.pedra));
-    finalCost.ouro = Math.max(1, Math.floor(finalCost.ouro));
+    finalCost.madeira = Math.max(0, Math.floor(finalCost.madeira));
+    finalCost.pedra = Math.max(0, Math.floor(finalCost.pedra));
+    finalCost.ouro = Math.max(0, Math.floor(finalCost.ouro));
     finalCost.agua = Math.max(0, Math.floor(finalCost.agua));
 
     const successChance = this.calculateSuccessChance(player, defender, region, finalCost);
@@ -141,68 +133,57 @@ export class DisputeLogic {
 
   // Calcular chance de sucesso
   calculateSuccessChance(attacker, defender, region, disputeCost) {
-    let baseChance = 50; // 50% base
+    let baseChance = 75; // 75% base para recompensar planejamento e investimento de recursos
 
     // Fatores que aumentam a chance:
     // 1. Diferença de PV a favor do atacante
     const pvDiff = attacker.victoryPoints - defender.victoryPoints;
     if (pvDiff > 0) {
-      baseChance += Math.min(20, pvDiff * 2); // +2% por PV de vantagem, até 20%
+      baseChance += Math.min(15, pvDiff * 1.5);
     }
 
-    // 2. Recursos gastos acima do mínimo
-    const resourceBonus = Math.min(15, 
-      (disputeCost.madeira - 1) * 2 +
-      (disputeCost.pedra - 1) * 2 +
-      (disputeCost.ouro - 1) * 3 +
-      disputeCost.agua * 1
-    );
-    baseChance += resourceBonus;
-
-    // 3. Nível de exploração (conhecer a região ajuda)
+    // 2. Nível de exploração ajuda no reconhecimento do terreno
     if (region.explorationLevel > 0) {
-      baseChance += region.explorationLevel * 5; // +5% por nível
+      baseChance += region.explorationLevel * 3;
     }
 
-    // Fatores que diminuem a chance:
-    // 1. Estruturas defensivas
-    if (region.structures.includes('Torre de Vigia')) {
+    // 3. Estruturas defensivas reduzem a chance se tiver Torre de Vigia
+    if (region.structures?.includes('Torre de Vigia')) {
       baseChance -= 15;
     }
-    if (region.structures.includes('Santuário')) {
-      baseChance -= 10;
-    }
 
-    // 2. Diferença de PV a favor do defensor
-    if (pvDiff < 0) {
-      baseChance += Math.max(-30, pvDiff * 1.5); // -1.5% por PV de desvantagem
-    }
-
-    // 3. Bônus de facção do defensor
+    // 4. Bônus de facção do defensor
     if (this.main.factionLogic) {
-      const factionDefense = this.main.factionLogic.getDefenseBonus(defender, region);
+      const factionDefense = this.main.factionLogic.getDefenseBonus(defender, region) || 0;
       baseChance -= factionDefense;
     }
 
-    // 4. Bônus de conquistas
+    // 5. Bônus de conquistas
     if (hasAchievement(attacker.id, 'senhor_guerra')) {
-      baseChance += 15; // Senhor da Guerra: +15% de chance de sucesso em disputas
+      baseChance += 15;
     }
     if (hasAchievement(defender.id, 'conquistador')) {
       baseChance -= 10;
     }
 
-    // Limites
-    return Math.max(10, Math.min(90, baseChance));
+    return Math.max(35, Math.min(95, Math.round(baseChance)));
   }
 
-  // Verificar se pode pagar a disputa (verificação básica)
-  canAffordDispute(player) {
-    // Verificação básica
-    return player.victoryPoints >= 3 && 
-           player.resources.ouro >= 2 &&
-           player.resources.madeira >= 1 &&
-           player.resources.pedra >= 1;
+  // Verificar se jogador pode pagar custos de disputa
+  canAffordDispute(player, region = null) {
+    if (gameState.turn <= 1) return false;
+    if (!region) {
+      return player.victoryPoints >= 1;
+    }
+    const hasWatchtower = region.structures?.includes('Torre de Vigia');
+    const pvCost = Math.max(1, Math.floor(1 + ((region.explorationLevel || 0) * 0.5) + (hasWatchtower ? 2 : 0)));
+    if (player.victoryPoints < pvCost) return false;
+
+    const initialRes = BIOME_INITIAL_RESOURCES[region.biome] || { madeira: 1, pedra: 1, ouro: 1, agua: 1 };
+    return (player.resources.madeira || 0) >= (initialRes.madeira || 0) &&
+           (player.resources.pedra || 0) >= (initialRes.pedra || 0) &&
+           (player.resources.ouro || 0) >= (initialRes.ouro || 0) &&
+           (player.resources.agua || 0) >= (initialRes.agua || 0);
   }
 
   // Executar disputa para receber região e jogador - MÉTODO PRINCIPAL REFATORADO
@@ -388,14 +369,15 @@ export class DisputeLogic {
     // Atualizar controlador
     region.controller = attacker.id;
     
-    // Reduzir nível de exploração (dano durante a disputa)
-    region.explorationLevel = Math.max(0, region.explorationLevel - 1);
+    // Ajuste (como no Android GameEngine.kt): mantém o nível de exploração e as estruturas intactas!
+    // Conquistar um território desenvolvido preserva seu valor econômico e estratégico.
     
-    // Manter estruturas? 50% chance de cada estrutura sobreviver
-    if (region.structures.length > 0) {
-      const originalStructures = [...region.structures];
-      region.structures = region.structures.filter(() => Math.random() > 0.5);
-      console.log(`  - Estruturas: ${originalStructures.length} -> ${region.structures.length} sobreviveram`);
+    // Proteção da Torre de Vigia (como no Android GameEngine.kt):
+    // Sem Torre de Vigia, o defensor perde 1 PV. Com Torre de Vigia, a perda de PV do defensor é anulada.
+    const hasWatchtower = region.structures?.includes('Torre de Vigia');
+    const defenderPvLoss = hasWatchtower ? 0 : 1;
+    if (defenderPvLoss > 0) {
+      defender.victoryPoints = Math.max(0, defender.victoryPoints - defenderPvLoss);
     }
 
     // Bônus de conquista
@@ -405,12 +387,13 @@ export class DisputeLogic {
     checkAndUnlockAchievements(defender.id);
 
     // Log
-    this.main.showFeedback(`✅ Vitória! Você conquistou ${region.name}! +1 PV`, 'success');
+    const defenseMsg = hasWatchtower ? ' (Torre de Vigia evitou perda de PV do defensor)' : ' (-1 PV para o defensor)';
+    this.main.showFeedback(`✅ Vitória! Você conquistou ${region.name}! +1 PV${defenseMsg}`, 'success');
     addActivityLog({
       type: 'dispute',
       playerName: attacker.name,
       action: 'conquistou',
-      details: `${region.name} de ${defender.name}`,
+      details: `${region.name} de ${defender.name}${defenseMsg}`,
       turn: gameState.turn,
       success: true
     });

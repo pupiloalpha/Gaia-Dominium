@@ -376,11 +376,9 @@ class AIBrain {
             
             if (region.controller !== null) continue;
             
-            // [BALANCE] IA preserva PV: não gasta 2 PV para dominar se tiver menos de 4 PV
-            if (player.victoryPoints < 4) continue;
-            
+            // Expandir não custa PV (alinhado com Android GameEngine.kt)
             const canPay = Object.entries(region.resources).every(([res, amount]) => 
-              player.resources[res] >= amount
+              (player.resources[res] || 0) >= amount
             );
             
             if (!canPay) continue;
@@ -596,47 +594,52 @@ class AIBrain {
   }
 
   evaluateDisputeScore(disputeData, region, attacker, defender, gameState) {
-    let score = 0;
+    let score = 15;
     
     const regionValue = this.calculateRegionValue(region, gameState);
     score += regionValue * 2;
     
-    score += disputeData.successChance * 0.5;
+    score += (disputeData?.successChance || 75) * 0.4;
     
-    if (attacker.regions.length < 4) score += 20;
-    if (defender.victoryPoints > attacker.victoryPoints + 5) score += 15;
+    // Valor da terra e estruturas conquistadas (como no Android AIService.kt)
+    if (region.structures?.includes('Santuário')) score += 20; // Conquistar Santuário tira 1 PV/turno do rival e dá para a IA
+    if (region.structures?.includes('Torre de Vigia')) score += 10;
     
-    const resourceCost = Object.values(disputeData.cost).reduce((a, b) => a + b, 0);
-    score -= resourceCost * 0.3;
+    // Proteção da Torre de Vigia
+    const hasWatchtower = region.structures?.includes('Torre de Vigia');
+    if (hasWatchtower) {
+      score -= 10; // Mais cara e defensor não perde PV
+    } else {
+      score += 8;  // Defensor perde 1 PV garantido
+    }
+    
+    // Comportamento Anti-Líder agressivo (como no Android AIService.kt)
+    const targetVictoryPoints = gameState.rules?.targetVictoryPoints || GAME_CONFIG.VICTORY_POINTS || 25;
+    const isDefenderNearVictory = (targetVictoryPoints - defender.victoryPoints) <= 5;
+    const isDefenderLeader = defender.victoryPoints >= attacker.victoryPoints + 3;
+
+    if (isDefenderNearVictory || isDefenderLeader) {
+      score += 35; // Prioridade máxima para derrubar o líder!
+      if (region.structures?.includes('Santuário') || region.structures?.includes('Torre de Vigia')) {
+        score += 20; // Destruir motor de PV do líder
+      }
+    }
+    
+    const resourceCost = Object.values(disputeData?.cost || {}).reduce((a, b) => a + b, 0);
+    score -= resourceCost * 0.2;
     
     switch (this.personality.type) {
-      case 'expansionist':
-        score *= 1.5;
-        break;
-      case 'builder':
-        score *= 0.7;
-        break;
-      case 'economist':
-        score *= 1.0;
-        break;
-      case 'diplomat':
-        score *= 0.5;
-        break;
+      case 'expansionist': score *= 1.4; break;
+      case 'builder': score *= 0.9; break;
+      case 'economist': score *= 1.1; break;
+      case 'diplomat': score *= 0.8; break;
     }
     
     switch (this.difficulty) {
-      case 'easy':
-        score *= 0.6;
-        break;
-      case 'medium':
-        score *= 1.0;
-        break;
-      case 'hard':
-        score *= 1.3;
-        break;
-      case 'master':
-        score *= 1.5;
-        break;
+      case 'easy': score *= 0.7; break;
+      case 'medium': score *= 1.0; break;
+      case 'hard': score *= 1.3; break;
+      case 'master': score *= 1.6; break;
     }
     
     return score;
@@ -644,12 +647,12 @@ class AIBrain {
 
   getDisputeThreshold() {
     const thresholds = {
-      easy: 45,
-      medium: 35,
-      hard: 30,
-      master: 25
+      easy: 35,
+      medium: 25,
+      hard: 20,
+      master: 15
     };
-    let base = thresholds[this.difficulty] || 35;
+    let base = thresholds[this.difficulty] || 25;
     // [BALANCE] Personalidade expansionista possui threshold mais acessível
     if (this.personality && this.personality.type === 'expansionist') {
       base -= 10;
@@ -769,12 +772,22 @@ class AIBrain {
     
     priorities.sort((a, b) => b.weight - a.weight);
     
+    // Combo de 2 Ações (como no Android AIService.kt checkComboFeasibility)
+    if (remainingActions === 2 && analysis.buildOpportunities.length === 0 && player.regions.length > 0) {
+      const combo = this.checkComboFeasibility(player, gameState);
+      if (combo) {
+        actions.push(combo.collectAction);
+        actions.push(combo.buildAction);
+        remainingActions -= 2;
+      }
+    }
+
     priorities.forEach(priority => {
       if (remainingActions <= 0) return;
       
       switch (priority.action) {
         case 'assume_control':
-          if (analysis.expansionOpportunities.length > 0 && player.victoryPoints >= 4) {
+          if (analysis.expansionOpportunities.length > 0) {
             const bestRegion = analysis.expansionOpportunities[0];
             if (this.canAffordControl(player, bestRegion)) {
               actions.push({
@@ -834,7 +847,7 @@ class AIBrain {
           break;
           
         case 'dispute':
-          if (analysis.disputeOpportunities.length > 0 && remainingActions >= 1 && player.victoryPoints >= 4) {
+          if (analysis.disputeOpportunities.length > 0 && remainingActions >= 1 && player.victoryPoints >= 1 && gameState.turn > 1) {
             const bestDispute = analysis.disputeOpportunities[0];
             if (bestDispute.validation === 'ready') {
               actions.push({
@@ -941,21 +954,80 @@ class AIBrain {
     return bestRegion;
   }
   
+  // Análise de combo de 2 ações (como no Android AIService.kt)
+  checkComboFeasibility(player, gameState) {
+    const highTierStructures = ['Santuário', 'Torre de Vigia', 'Abrigo'];
+    
+    for (const regionId of player.regions) {
+      const region = gameState.regions[regionId];
+      if (!region) continue;
+
+      for (const st of highTierStructures) {
+        if (region.structures?.includes(st)) continue;
+        const cost = STRUCTURE_COSTS[st];
+        if (!cost) continue;
+
+        // Verificar para cada região controlada se uma coleta fornece os recursos faltantes
+        for (const collectRegId of player.regions) {
+          const collectReg = gameState.regions[collectRegId];
+          if (!collectReg || collectReg.explorationLevel === 0) continue;
+
+          const harvestPercent = collectReg.explorationLevel === 3 ? 0.75 : 0.5;
+          const simulatedResources = { ...player.resources };
+          // Simular rendimento da coleta
+          Object.keys(collectReg.resources).forEach(k => {
+            const amount = Math.max(0, Math.floor(collectReg.resources[k] * harvestPercent));
+            simulatedResources[k] = (simulatedResources[k] || 0) + amount;
+          });
+
+          // Verificar se com o rendimento acumulado é viável construir a estrutura
+          const canAffordAfter = Object.entries(cost).every(([k, v]) => (simulatedResources[k] || 0) >= v);
+          if (canAffordAfter) {
+            return {
+              collectAction: {
+                type: 'collect',
+                regionId: collectRegId,
+                priority: 2.5,
+                description: `Coletar em ${collectReg.name} para viabilizar combo com ${st}`
+              },
+              buildAction: {
+                type: 'build',
+                regionId: regionId,
+                structure: st,
+                priority: 2.4,
+                description: `Construir ${st} em ${region.name} (combo)`
+              }
+            };
+          }
+        }
+      }
+    }
+    return null;
+  }
+
   chooseRegionToCollect(player, gameState) {
     let bestRegion = null;
     let bestScore = -1;
     
+    // Penalidade contra coleta viciosa: se a IA já tem recursos de sobra (>25), prioriza construir ou expandir
+    const totalRes = (player.resources.madeira || 0) + (player.resources.pedra || 0) + 
+                     (player.resources.ouro || 0) + (player.resources.agua || 0);
+
     player.regions.forEach(regionId => {
       const region = gameState.regions[regionId];
-      const canCollect = region.explorationLevel > 0 && player.resources.madeira >= 1;
+      const canCollect = region.explorationLevel > 0;
       
       if (canCollect) {
         const resourceTotal = Object.values(region.resources).reduce((a, b) => a + b, 0);
         let score = resourceTotal * (1 + region.explorationLevel * 0.3);
         
-        // [BALANCE] Mestres das Águas valorizam regiões aquáticas onde ganham +1 recurso aleatório bônus
+        // Mestres das Águas valorizam regiões aquáticas onde ganham recurso extra
         if (player.faction?.abilities?.waterCollectBonus && (region.biome === 'Pântano' || region.resources.agua > 2)) {
           score *= 1.4;
+        }
+
+        if (totalRes > 25) {
+          score -= 15; // Reduz atratividade de coleta quando o estoque já é abundante
         }
 
         if (score > bestScore) {
@@ -970,13 +1042,9 @@ class AIBrain {
   
   canAffordControl(player, regionInfo) {
     const cost = regionInfo.resources;
-    const pvCost = 2;
-    
-    // [BALANCE] IA preserva PV: precisa ter pelo menos 4 PV para assumir domínio de região
-    if (player.victoryPoints < 4) return false;
-    
+    // Dominar território neutro não custa PV
     return Object.entries(cost).every(([res, amount]) => 
-      player.resources[res] >= amount
+      (player.resources[res] || 0) >= amount
     );
   }
   
@@ -1478,6 +1546,17 @@ class AIBrain {
     }
     
     console.log(`🤖 ${this.personality.name} avaliando proposta de ${theirPlayer.name}`);
+
+    // Bloqueio Anti-Líder (como no Android AIService.kt)
+    // Se o remetente for o líder ou estiver perto de vencer, bloqueia transferências estratégicas
+    const targetPV = gameState.rules?.targetVictoryPoints || GAME_CONFIG.VICTORY_POINTS || 25;
+    const isSenderLeader = (targetPV - theirPlayer.victoryPoints <= 5) || (theirPlayer.victoryPoints >= myPlayer.victoryPoints + 4);
+    if (isSenderLeader) {
+      if ((negotiation.request?.ouro || 0) > 0 || (negotiation.request?.pedra || 0) > 2) {
+        console.log(`🛡️ Anti-Líder: Recusando ceder ouro/pedra para o líder ${theirPlayer.name}`);
+        return false;
+      }
+    }
     
     switch (this.personality.type) {
       case 'economist':

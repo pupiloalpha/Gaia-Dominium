@@ -296,16 +296,17 @@ async _executeActions(ai) {
 _canAITakeAnyAction(ai) {
   const currentPlayer = getCurrentPlayer();
   if (!currentPlayer) return false;
-  
-  // Verificar se tem ações restantes
   if (gameState.actionsLeft <= 0) return false;
   
+  // Se tem regiões, sempre pode ao menos coletar para acumular recursos ou construir
+  if (currentPlayer.regions && currentPlayer.regions.length > 0) return true;
+
   // Verificar se tem recursos para alguma ação básica
   const hasResourcesForAnyAction = 
-    currentPlayer.resources.ouro >= 1 || 
-    currentPlayer.resources.madeira >= 1 ||
-    currentPlayer.resources.pedra >= 1 ||
-    currentPlayer.victoryPoints >= 2;
+    (currentPlayer.resources.ouro || 0) >= 1 || 
+    (currentPlayer.resources.madeira || 0) >= 1 ||
+    (currentPlayer.resources.pedra || 0) >= 1 ||
+    (currentPlayer.resources.agua || 0) >= 1;
   
   return hasResourcesForAnyAction;
 }
@@ -314,12 +315,10 @@ _canAITakeAnyAction(ai) {
 _shouldAIDispute(ai) {
   const currentPlayer = getCurrentPlayer();
   
-  // Verificar condições básicas
-  if (!currentPlayer || gameState.actionsLeft <= 0) return false;
+  // Verificar condições básicas: sem disputas na rodada 1
+  if (!currentPlayer || gameState.actionsLeft <= 0 || gameState.turn <= 1) return false;
   
-  // Verificar recursos
-  if (currentPlayer.victoryPoints < 3 || 
-      currentPlayer.resources.ouro < 2) {
+  if (currentPlayer.victoryPoints < 1) {
     return false;
   }
   
@@ -327,7 +326,7 @@ _shouldAIDispute(ai) {
   if (ai.findDisputeOpportunities) {
     const opportunities = ai.findDisputeOpportunities(currentPlayer, gameState);
     if (opportunities.length > 0) {
-      const threshold = ai.getDisputeThreshold ? ai.getDisputeThreshold() : 40;
+      const threshold = ai.getDisputeThreshold ? ai.getDisputeThreshold() : 20;
       return opportunities[0].score >= threshold;
     }
   }
