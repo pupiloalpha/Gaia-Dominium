@@ -123,16 +123,17 @@ export class UIPlayersManager {
         Object.entries(FACTION_ABILITIES).forEach(([id, faction]) => {
             const btn = document.createElement('button');
             btn.type = 'button';
-            btn.className = 'faction-card flex items-center gap-2 p-2 rounded-lg bg-gray-800/80 border border-white/10 hover:border-yellow-400/50 hover:bg-gray-700/80 transition-all cursor-pointer';
-            const img = document.createElement('img');
+            btn.className = 'faction-card flex items-center gap-2 p-2 rounded-lg bg-gray-800/80 border border-white/10 hover:border-yellow-400/50 hover:bg-gray-700/80 transition-all cursor-pointer w-full min-w-0 text-left';
             const cfg = configMap[id];
+            btn.title = `Facção ${cfg?.name || faction.name}`;
+            const img = document.createElement('img');
             img.src = cfg.img;
             img.alt = `Facção ${cfg.name}`;
-            img.className = 'w-8 h-8 object-contain rounded';
+            img.className = 'w-8 h-8 object-contain rounded flex-shrink-0';
             btn.appendChild(img);
             const label = document.createElement('div');
             label.textContent = cfg.name;
-            label.className = 'text-xs text-gray-200 whitespace-nowrap';
+            label.className = 'text-[11px] sm:text-xs text-gray-200 leading-snug font-medium min-w-0 flex-1 break-words';
             btn.appendChild(label);
             // Verificar disponibilidade
             const isAvailable = this.isFactionAvailable(id, this.editingIndex);
@@ -583,8 +584,8 @@ export class UIPlayersManager {
                     </div>
                     
                     <!-- Facção -->
-                    <div class="player-card-faction text-xs text-gray-300 text-center truncate w-full flex items-center justify-center gap-1">
-                        ${player.faction ? `<span class="inline-flex items-center gap-1">${player.faction.icon || ''} <span>${player.faction.name}</span></span>` : 'Sem facção'}
+                    <div class="player-card-faction text-xs text-gray-300 text-center w-full flex items-center justify-center gap-1 min-w-0" title="${player.faction ? player.faction.name : ''}">
+                        ${player.faction ? `<span class="inline-flex items-center gap-1 min-w-0 max-w-full"><span class="flex-shrink-0">${player.faction.icon || ''}</span><span class="truncate">${player.faction.name}</span></span>` : 'Sem facção'}
                     </div>
                     
                     <!-- Ações (se editável) -->

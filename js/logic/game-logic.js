@@ -180,9 +180,9 @@ class GameLogic {
       let structureCost = { ...(STRUCTURE_COSTS[context.structureType] || {}) };
       if (!STRUCTURE_COSTS[context.structureType]) return { valid: false, reason: `Estrutura '${context.structureType}' não reconhecida` };
       
-      // Aplicar desconto de facção se houver
+      // Aplicar desconto de facção se houver (inclui desconto de Mercado para Barões)
       if (this.factionLogic) {
-        structureCost = this.factionLogic.modifyBuildCost(player, structureCost);
+        structureCost = this.factionLogic.modifyBuildCost(player, structureCost, context.structureType);
       }
       // Conquista Construtor: -1 em todos os custos de construção
       if (window.gameState?.hasAchievement?.(player.id, 'construtor')) {

@@ -221,8 +221,8 @@ const MANUAL_CONTENT = {
         </p>
         <h5 class="text-sm font-bold text-green-300 mt-3 mb-1">Habilidades Especiais</h5>
         <ul class="text-xs text-gray-200 space-y-1 list-disc ml-4">
-          <li>Bônus em Florestas: +2 Madeira e +1 Água/Pedra.</li>
-          <li>Desconto em Explorar: -1 Madeira.</li>
+          <li>Bônus em Floresta Tropical: +2 Madeira e +1 Água.</li>
+          <li>Desconto em Explorar: -1 Madeira (explora por 0 Madeira e 1 Água).</li>
           <li>Multiplicador Global: +25% na produção de Madeira.</li>
         </ul>
       </div>
@@ -242,7 +242,7 @@ const MANUAL_CONTENT = {
         <ul class="text-xs text-gray-200 space-y-1 list-disc ml-4">
           <li>Bônus em Pântanos: +3 Água e +2 Pedra.</li>
           <li>Negociação Grátis: 1 por turno.</li>
-          <li>Bônus em Água: +1 ação em exploração e +1 recurso aleatório na coleta.</li>
+          <li>Bônus em Água: +1 ação ao explorar regiões com água (1x/turno) e +1 recurso aleatório na coleta.</li>
         </ul>
       </div>
       
@@ -261,8 +261,8 @@ const MANUAL_CONTENT = {
         <ul class="text-xs text-gray-200 space-y-1 list-disc ml-4">
           <li>Bônus em Savanas: +2 Pedra e +2 Ouro.</li>
           <li>Desconto em Construir: -1 Pedra.</li>
-          <li>Bônus em Estruturas: +1 PV extra por estrutura.</li>
-          <li>Multiplicador Global: +50% na produção de Pedra.</li>
+          <li>Bônus em Estruturas: +1 PV extra por estrutura construída.</li>
+          <li>Multiplicador Global: +25% na produção de Pedra.</li>
         </ul>
       </div>
       
@@ -275,14 +275,14 @@ const MANUAL_CONTENT = {
           </div>
         </div>
         <p class="text-sm text-gray-200 leading-relaxed text-justify">
-          Mestres do comércio e economia, os Barões acumulam ouro através de negociações e exploração. Sua flexibilidade econômica permite converter riqueza em vantagens, focando em savanas para uma vitória rápida via diplomacia.
+          Mestres do comércio e economia, os Barões acumulam ouro através de negociações e exploração. Sua flexibilidade econômica permite converter riqueza em vantagens, focando em florestas temperadas para rotas de caravanas e mercados.
         </p>
         <h5 class="text-sm font-bold text-yellow-300 mt-3 mb-1">Habilidades Especiais</h5>
         <ul class="text-xs text-gray-200 space-y-1 list-disc ml-4">
-          <li>Bônus em Savanas: +3 Ouro e +1 Água.</li>
-          <li>Ouro por Região: +1 Ouro por região controlada.</li>
+          <li>Bônus em Floresta Temperada: +3 Ouro e +1 Água.</li>
+          <li>Ouro por Região: +1 Ouro a cada 2 regiões controladas (+0.5/região).</li>
           <li>Bônus em Negociações: +1 PV por sucesso.</li>
-          <li>Desconto em Mercado: 50% de redução.</li>
+          <li>Desconto em Mercado: 50% de redução no custo de construção.</li>
           <li>Bônus em Exploração: +30% chance de Ouro.</li>
         </ul>
       </div>

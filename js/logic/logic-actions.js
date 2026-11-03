@@ -374,10 +374,10 @@ export class ActionLogic {
       return; 
     }
     
-    // 1. Calcular Custo com Desconto de Facção (Ex: Construtores da Montanha)
+    // 1. Calcular Custo com Desconto de Facção (Ex: Construtores da Montanha, Mercado Amarela)
     let cost = { ...STRUCTURE_COSTS[structureType] }; // Cópia segura
     if (this.main.factionLogic) {
-      cost = this.main.factionLogic.modifyBuildCost(player, cost);
+      cost = this.main.factionLogic.modifyBuildCost(player, cost, structureType);
     }
     
     // Conquista Construtor: -1 em todos os custos de construção

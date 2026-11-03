@@ -25,9 +25,7 @@ export class NegotiationLogic {
     let negCost = 1; // Padrão
     if (this.main.factionLogic) {
         // Apenas verifica o custo, não consome a habilidade ainda
-        // Para verificar, usamos o modify mas sabemos que ele não altera estado do player, 
-        // apenas retorna o valor.
-        negCost = this.main.factionLogic.modifyNegotiationCost(player);
+        negCost = this.main.factionLogic.getNegotiationCost(player);
     }
     if (hasAchievement(player.id, 'diplomata')) {
         negCost = Math.max(0, negCost - 1);
@@ -94,8 +92,8 @@ export class NegotiationLogic {
     // 1. Calcular e Consumir Custo de Negociação
     let negotiationCost = 1;
     if (this.main.factionLogic) {
-        // Isso retorna o custo (0 ou 1) e internamente marca a habilidade como usada se for 0
-        negotiationCost = this.main.factionLogic.modifyNegotiationCost(player);
+        // Isso retorna o custo (0 ou 1) e internamente consome a negociação gratuita se for 0
+        negotiationCost = this.main.factionLogic.consumeNegotiationCost(player);
     }
     // Evento: Mercado Aquecido — negociações sem custo de ouro
     if (gameState.eventModifiers?.negociacaoGratis) {
@@ -343,7 +341,7 @@ export class NegotiationLogic {
         const errors = getNegotiationValidationErrors();
         
         // Filtramos erro de "Precisa de 1 Ouro" se o custo for 0
-        const cost = this.main.factionLogic ? this.main.factionLogic.modifyNegotiationCost(player) : 1;
+        const cost = this.main.factionLogic ? this.main.factionLogic.getNegotiationCost(player) : 1;
         const filteredErrors = errors.filter(e => {
             if (cost === 0 && e.includes('Precisa de 1 Ouro')) return false;
             return true;

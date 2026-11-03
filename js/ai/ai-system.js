@@ -385,7 +385,9 @@ class AIBrain {
             
             if (!canPay) continue;
             
-            const biomePref = this.personality.preferredBiomes.includes(region.biome) ? 1.2 : 1.0;
+            // [BALANCE] Sinergia com o bioma da Facção do jogador (+50% de preferência para o bioma nativo)
+            const factionBiomeBonus = player.faction?.abilities?.biomeBonus?.[region.biome];
+            const biomePref = factionBiomeBonus ? 1.5 : (this.personality.preferredBiomes.includes(region.biome) ? 1.2 : 1.0);
             const resourceValue = Object.values(region.resources).reduce((a, b) => a + b, 0);
             const distancePenalty = (Math.abs(dr) + Math.abs(dc)) * 0.1;
             
@@ -422,6 +424,13 @@ class AIBrain {
             if (cost[res]) cost[res] = Math.max(0, cost[res] - player.faction.abilities.buildDiscount[res]);
           });
         }
+
+        // [BALANCE] Barões do Comércio: 50% de desconto na construção de Mercado
+        if (structure === 'Mercado' && player.faction?.abilities?.marketDiscount) {
+          Object.keys(cost).forEach(res => {
+            cost[res] = Math.ceil(cost[res] * (1 - player.faction.abilities.marketDiscount));
+          });
+        }
         
         const canAfford = Object.entries(cost).every(([res, amount]) => 
           player.resources[res] >= amount
@@ -430,7 +439,8 @@ class AIBrain {
         if (canAfford) {
           const income = STRUCTURE_INCOME[structure] || {};
           const effect = STRUCTURE_EFFECTS ? STRUCTURE_EFFECTS[structure] : {};
-          const pvBonus = effect?.pv || 0;
+          const factionPVBonus = player.faction?.abilities?.structurePVBonus || 0;
+          const pvBonus = (effect?.pv || 0) + factionPVBonus;
           const pvIncome = income?.pv || 0;
           
           // [BALANCE] Valorizar maciçamente estruturas geradoras de PV (Santuário, Torre de Vigia, Abrigo)
@@ -441,9 +451,9 @@ class AIBrain {
             }
           });
           
-          if ((structure === 'Mercado' && region.biome === 'Savana') ||
+          if ((structure === 'Mercado' && (region.biome === 'Savana' || region.biome === 'Floresta Temperada')) ||
               (structure === 'Laboratório' && region.biome === 'Pântano')) {
-            score *= 1.3;
+            score *= 1.4;
           }
           
           opportunities.push({
@@ -898,7 +908,7 @@ class AIBrain {
   
   chooseRegionToExplore(player, gameState) {
     let bestRegion = null;
-    let lowestLevel = 4;
+    let bestScore = -1;
     
     player.regions.forEach(regionId => {
       const region = gameState.regions[regionId];
@@ -906,9 +916,25 @@ class AIBrain {
       const madeiraDiscount = player?.faction?.abilities?.exploreDiscount?.madeira || 0;
       const canExplore = player.resources.madeira >= Math.max(0, 1 - madeiraDiscount) && player.resources.agua >= 1;
       
-      if (canExplore && region.explorationLevel < lowestLevel) {
-        lowestLevel = region.explorationLevel;
-        bestRegion = regionId;
+      if (canExplore && region.explorationLevel < 3) {
+        let score = (3 - region.explorationLevel) * 10;
+        
+        // Priorizar bioma nativo da facção
+        if (player.faction?.abilities?.biomeBonus?.[region.biome]) {
+          score += 8;
+        }
+        
+        // Mestres das Águas priorizam explorar regiões com água para ativar ação bônus
+        if (player.faction?.abilities?.exploreWaterBonus && 
+            !player.turnBonuses?.exploreWaterBonusUsed && 
+            (region.biome === 'Pântano' || (region.resources && region.resources.agua > 0))) {
+          score += 20;
+        }
+
+        if (score > bestScore) {
+          bestScore = score;
+          bestRegion = regionId;
+        }
       }
     });
     
@@ -925,8 +951,13 @@ class AIBrain {
       
       if (canCollect) {
         const resourceTotal = Object.values(region.resources).reduce((a, b) => a + b, 0);
-        const score = resourceTotal * (1 + region.explorationLevel * 0.3);
+        let score = resourceTotal * (1 + region.explorationLevel * 0.3);
         
+        // [BALANCE] Mestres das Águas valorizam regiões aquáticas onde ganham +1 recurso aleatório bônus
+        if (player.faction?.abilities?.waterCollectBonus && (region.biome === 'Pântano' || region.resources.agua > 2)) {
+          score *= 1.4;
+        }
+
         if (score > bestScore) {
           bestScore = score;
           bestRegion = regionId;

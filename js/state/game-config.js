@@ -571,10 +571,9 @@ const FACTION_ABILITIES = {
     icon: getIcon('faction_forest', { size: 18 }),
     description: 'Mestres da natureza e biomas florestais',
     abilities: {
-      // Bônus permanente em Florestas Tropicais e Temperadas
+      // Bônus permanente em Floresta Tropical
       biomeBonus: {
-        'Floresta Tropical': { madeira: 2, agua: 1 },
-        'Floresta Temperada': { madeira: 2, pedra: 1 }
+        'Floresta Tropical': { madeira: 2, agua: 1 }
       },
       // Explorar custa -1 Madeira
       exploreDiscount: { madeira: 1 },
@@ -620,8 +619,8 @@ const FACTION_ABILITIES = {
       buildDiscount: { pedra: 1 },
       // Estruturas dão +1 PV extra
       structurePVBonus: 1,
-      // [BALANCE] +30% produção de Pedra (era 0.5/+50%, muito forte vs Verde +25% madeira)
-      globalProductionMultiplier: { pedra: 0.3 }
+      // [BALANCE] +25% produção de Pedra (paridade exata com Verde +25% madeira)
+      globalProductionMultiplier: { pedra: 0.25 }
     }
   },
   
@@ -633,9 +632,9 @@ const FACTION_ABILITIES = {
     icon: getIcon('faction_trade', { size: 18 }),
     description: 'Especialistas em comércio e economia',
     abilities: {
-      // Bônus permanente em Savanas
+      // [BALANCE] Bônus permanente em Floresta Temperada (rotas comerciais e entrepostos)
       biomeBonus: {
-        'Savana': { ouro: 3, agua: 1 }
+        'Floresta Temperada': { ouro: 3, agua: 1 }
       },
       // [BALANCE] +1 Ouro a cada 2 regiões controladas por turno (rebalanceado de 1 para 0.5)
       goldPerRegion: 0.5,

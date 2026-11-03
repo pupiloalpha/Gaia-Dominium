@@ -306,10 +306,15 @@ export class TurnLogic {
       
       if (factionBonuses && factionBonuses.production) {
         Object.entries(factionBonuses.production).forEach(([res, amount]) => {
-          if (amount < 1 && amount > 0) { 
-            bonuses[res] = Math.floor((bonuses[res] || 0) * (1 + amount));
-          } else {
-            bonuses[res] = (bonuses[res] || 0) + Math.floor(amount);
+          bonuses[res] = (bonuses[res] || 0) + Math.floor(amount);
+        });
+      }
+
+      // [BALANCE] Multiplicadores globais da facção aplicados sobre a produção total (ex: +25% madeira/pedra)
+      if (factionBonuses && factionBonuses.multipliers) {
+        Object.entries(factionBonuses.multipliers).forEach(([res, mult]) => {
+          if ((bonuses[res] || 0) > 0) {
+            bonuses[res] = Math.round(bonuses[res] * (1 + mult));
           }
         });
       }

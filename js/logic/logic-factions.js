@@ -35,6 +35,7 @@ getPlayerFaction(player) {
     
     const bonuses = {
       production: {},
+      multipliers: {},
       discounts: {},
       special: []
     };
@@ -83,8 +84,7 @@ getPlayerFaction(player) {
     
     Object.keys(faction.abilities.globalProductionMultiplier).forEach(resource => {
       const multiplier = faction.abilities.globalProductionMultiplier[resource];
-      // Multiplicador será aplicado durante cálculo de renda
-      bonuses.production[resource] = (bonuses.production[resource] || 0) + multiplier;
+      bonuses.multipliers[resource] = (bonuses.multipliers[resource] || 0) + multiplier;
     });
   }
 
@@ -137,15 +137,15 @@ modifyDisputeCost(player, baseCost, region) {
   
   switch(faction.id) {
     case 'forest_guardians':
-      // Guardiões da Floresta: custo reduzido em florestas
-      if (region.biome.includes('Floresta')) {
+      // Guardiões da Floresta: custo reduzido em florestas tropicais
+      if (region.biome === 'Floresta Tropical') {
         modifiedCost.madeira = Math.max(1, modifiedCost.madeira - 1);
         modifiedCost.pv = Math.max(1, modifiedCost.pv - 1);
       }
       break;
       
     case 'mountain_builders':
-      // Construtores da Montanha: bônus em regiões rochosas
+      // Construtores da Montanha: bônus em savanas ou regiões rochosas
       if (region.biome === 'Savana' || region.resources.pedra > 3) {
         modifiedCost.pedra = Math.max(1, modifiedCost.pedra - 1);
       }
@@ -160,10 +160,11 @@ modifyDisputeCost(player, baseCost, region) {
       break;
       
     case 'merchants_barons':
-      // Barões do Comércio: podem pagar com ouro
-      modifiedCost.ouro += 1;
-      modifiedCost.madeira = Math.max(1, modifiedCost.madeira - 1);
-      modifiedCost.pedra = Math.max(1, modifiedCost.pedra - 1);
+      // Barões do Comércio: vantagem em florestas temperadas (rotas comerciais)
+      if (region.biome === 'Floresta Temperada') {
+        modifiedCost.madeira = Math.max(1, modifiedCost.madeira - 1);
+        modifiedCost.pv = Math.max(1, modifiedCost.pv - 1);
+      }
       break;
   }
   
@@ -178,7 +179,7 @@ getDefenseBonus(player, region) {
   
   switch(faction.id) {
     case 'forest_guardians':
-      if (region.biome.includes('Floresta')) bonus += 10;
+      if (region.biome === 'Floresta Tropical') bonus += 10;
       break;
       
     case 'mountain_builders':
@@ -190,15 +191,15 @@ getDefenseBonus(player, region) {
       break;
       
     case 'merchants_barons':
-      // [BALANCE] Barões do Comércio não sofrem mais penalidade negativa de defesa (-5 removido)
-      bonus += 0;
+      // [BALANCE] Barões do Comércio defendem bem em suas rotas comerciais (Floresta Temperada)
+      if (region.biome === 'Floresta Temperada') bonus += 10;
       break;
   }
   
   return bonus;
 }
   
-  modifyBuildCost(player, baseCost) {
+  modifyBuildCost(player, baseCost, structureType = null) {
     if (!player.faction) return baseCost;
     
     const modifiedCost = { ...baseCost };
@@ -211,6 +212,13 @@ getDefenseBonus(player, region) {
         if (modifiedCost[resource]) {
           modifiedCost[resource] = Math.max(0, modifiedCost[resource] - discount);
         }
+      });
+    }
+
+    // [BALANCE] Barões do Comércio: 50% de desconto na construção de Mercados
+    if (structureType === 'Mercado' && faction.abilities.marketDiscount) {
+      Object.keys(modifiedCost).forEach(res => {
+        modifiedCost[res] = Math.ceil(modifiedCost[res] * (1 - faction.abilities.marketDiscount));
       });
     }
     
@@ -261,16 +269,32 @@ consumeNegotiationCost(player) {
     const faction = player.faction;
     const bonus = {};
     
-    // Druidas da Floresta: +1 Madeira ao explorar florestas
+    // Guardiões da Floresta: +1 Madeira ao explorar floresta tropical
     if (faction.abilities.exploreDiscount && 
         (region.biome === 'Floresta Tropical' || region.biome === 'Floresta Temperada')) {
       bonus.madeira = 1;
     }
     
-    // Mercadores do Deserto: Chance extra de ouro
+    // [BALANCE] Mestres das Águas: +1 Ação extra ao explorar regiões com água (Pântano ou água > 0)
+    if (faction.abilities.exploreWaterBonus && 
+        !player.turnBonuses?.exploreWaterBonusUsed && 
+        (region.biome === 'Pântano' || (region.resources && region.resources.agua > 0))) {
+      player.turnBonuses.exploreWaterBonusUsed = true;
+      gameState.actionsLeft = (gameState.actionsLeft || 0) + 1;
+      this.main.showFeedback(`🌊 ${player.name} dominou as correntes: +1 Ação extra!`, 'success');
+      addActivityLog({
+        type: 'faction',
+        playerName: player.name,
+        action: 'ganhou +1 ação extra',
+        details: 'Habilidade Mestres das Águas',
+        turn: gameState.turn
+      });
+    }
+
+    // Barões do Comércio: Chance extra de ouro
     if (faction.abilities.goldExplorationBonus && Math.random() < faction.abilities.goldExplorationBonus) {
       bonus.ouro = 1;
-      this.main.showFeedback(`${player.name} encontrou ouro extra (habilidade de facção)!`, 'success');
+      this.main.showFeedback(`💰 ${player.name} encontrou ouro extra (habilidade de facção)!`, 'success');
     }
     
     return Object.keys(bonus).length > 0 ? bonus : null;
@@ -336,6 +360,7 @@ consumeNegotiationCost(player) {
     // Resetar contadores de habilidades por turno
     player.turnBonuses = {
       freeNegotiationAvailable: faction.abilities.freeNegotiationPerTurn || 0,
+      exploreWaterBonusUsed: false,
       buildDiscountUsed: false
     };
   }
