@@ -1036,16 +1036,25 @@ function deleteSavedGameById(saveId) {
     saves = saves.filter(s => s.id !== saveId);
     localStorage.setItem(SAVES_LIST_KEY, JSON.stringify(saves));
 
-    const legacy = localStorage.getItem(SAVE_KEY);
-    if (legacy) {
-      try {
-        const legData = JSON.parse(legacy);
-        if (legData?.gameState?.saveId === saveId || saveId === 'save_legacy') {
-          localStorage.removeItem(SAVE_KEY);
+    if (saves.length === 0) {
+      localStorage.removeItem(SAVE_KEY);
+      localStorage.removeItem(SAVES_LIST_KEY);
+    } else {
+      const legacy = localStorage.getItem(SAVE_KEY);
+      if (legacy) {
+        try {
+          const legData = JSON.parse(legacy);
+          if (legData?.gameState?.saveId === saveId || saveId === 'save_legacy') {
+            localStorage.setItem(SAVE_KEY, JSON.stringify(saves[0].data));
+          }
+        } catch (e) {
+          localStorage.setItem(SAVE_KEY, JSON.stringify(saves[0].data));
         }
-      } catch (e) {
-        localStorage.removeItem(SAVE_KEY);
       }
+    }
+
+    if (typeof window !== 'undefined' && window.uiManager?.modals?.savedGames?.updateSavesCountBadge) {
+      window.uiManager.modals.savedGames.updateSavesCountBadge();
     }
     return true;
   } catch (error) {
@@ -1076,6 +1085,9 @@ function getSavedGame() {
 function deleteSavedGame() {
   localStorage.removeItem(SAVE_KEY);
   localStorage.removeItem(SAVES_LIST_KEY);
+  if (typeof window !== 'undefined' && window.uiManager?.modals?.savedGames?.updateSavesCountBadge) {
+    window.uiManager.modals.savedGames.updateSavesCountBadge();
+  }
   return true;
 }
 

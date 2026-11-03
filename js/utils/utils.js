@@ -489,32 +489,64 @@ tryRequestFullscreenOnce() {
       const saves = window.getSavedGamesList ? window.getSavedGamesList() : [];
       let data = null;
       let saveId = null;
+      let latestSave = null;
 
       if (saves && saves.length > 0) {
-        data = saves[0].data;
-        saveId = saves[0].id;
+        latestSave = saves[0];
+        data = latestSave.data;
+        saveId = latestSave.id;
       } else {
         const saved = localStorage.getItem('gaia-dominium-save');
         if (!saved) {
+          if (window.uiManager?.modals?.savedGames?.updateSavesCountBadge) {
+            window.uiManager.modals.savedGames.updateSavesCountBadge();
+          }
           return { hasSave: false };
         }
-        data = JSON.parse(saved);
+        try {
+          data = JSON.parse(saved);
+          saveId = data?.gameState?.saveId || 'save_legacy';
+          latestSave = {
+            id: saveId,
+            name: 'Partida Salva',
+            timestamp: data?.timestamp || new Date().toISOString(),
+            turn: data?.gameState?.turn || 1,
+            playersCount: data?.gameState?.players?.length || 0,
+            players: data?.gameState?.players || [],
+            rules: data?.gameState?.rules || {},
+            data: data
+          };
+        } catch (e) {
+          return { hasSave: false };
+        }
       }
       
-      const response = await this.showSaveLoadModal();
+      const response = await this.showSaveLoadModal(latestSave, saves.length || 1);
       
       switch (response.action) {
         case 'load':
           return { hasSave: true, data: data, load: true, saveId };
+        case 'view_all':
+          if (window.uiManager?.modals?.openSavedGames) {
+            window.uiManager.modals.openSavedGames();
+          }
+          return { hasSave: true, data: data, load: false, saveId, viewAll: true };
         case 'delete':
           if (saveId && window.deleteSavedGameById) {
             window.deleteSavedGameById(saveId);
           } else {
             localStorage.removeItem('gaia-dominium-save');
           }
+          if (window.uiManager?.modals?.savedGames?.updateSavesCountBadge) {
+            window.uiManager.modals.savedGames.updateSavesCountBadge();
+          }
           this.showFeedback('Save excluído com sucesso!', 'success');
-          return { hasSave: false };
+          const remainingSaves = window.getSavedGamesList ? window.getSavedGamesList() : [];
+          return { hasSave: remainingSaves.length > 0, remainingCount: remainingSaves.length };
         default:
+          if (window.uiManager?.modals?.savedGames?.updateSavesCountBadge) {
+            window.uiManager.modals.savedGames.updateSavesCountBadge();
+          }
           return { hasSave: true, data: data, load: false, saveId };
       }
     } catch (error) {
@@ -523,16 +555,99 @@ tryRequestFullscreenOnce() {
     }
   },
   
-  showSaveLoadModal() {
+  showSaveLoadModal(latestSave = null, totalCount = 1) {
     return new Promise(resolve => {
       const modal = document.getElementById('saveLoadModal');
       const yesBtn = document.getElementById('saveLoadYesBtn');
       const noBtn = document.getElementById('saveLoadNoBtn');
       const deleteBtn = document.getElementById('saveLoadDeleteBtn');
+      const viewAllBtn = document.getElementById('saveLoadViewAllBtn');
+      const titleEl = document.getElementById('saveLoadTitle');
+      const subtitleEl = document.getElementById('saveLoadSubtitle');
+      const promptEl = document.getElementById('saveLoadPrompt');
+      const detailsCard = document.getElementById('saveLoadDetailsCard');
       
       if (!modal) {
         resolve({ action: 'new' });
         return;
+      }
+      
+      // Atualizar títulos coerentes com a quantidade de saves
+      if (titleEl) {
+        titleEl.textContent = totalCount > 1 
+          ? `${totalCount} Jogos Salvos Encontrados` 
+          : 'Jogo Salvo Encontrado';
+      }
+      
+      if (subtitleEl) {
+        subtitleEl.textContent = totalCount > 1 
+          ? `Você possui ${totalCount} partidas salvas registradas.` 
+          : 'Encontramos 1 partida salva registrada.';
+      }
+
+      if (promptEl) {
+        promptEl.textContent = totalCount > 1
+          ? 'Deseja retomar a partida mais recente?'
+          : 'Deseja carregá-la e continuar de onde parou?';
+      }
+
+      // Renderizar o card com dados coerentes da partida salva
+      if (detailsCard && latestSave) {
+        const dateStr = latestSave.timestamp ? new Date(latestSave.timestamp).toLocaleString('pt-BR', {
+          day: '2-digit', month: '2-digit', year: 'numeric',
+          hour: '2-digit', minute: '2-digit'
+        }) : 'Data recente';
+
+        const rules = latestSave.rules || {};
+        let ruleBadge = `${rules.targetVictoryPoints || 25} PV`;
+        if (rules.victoryCondition === 'domination') ruleBadge = 'Dominação Total';
+        else if (rules.victoryCondition === 'elimination') ruleBadge = 'Eliminação';
+        else if (rules.victoryCondition === 'all') ruleBadge = 'Modo Misto';
+
+        const players = latestSave.players || [];
+        const playersHtml = players.map(p => `
+          <div class="flex items-center gap-1.5 px-2 py-0.5 rounded-lg bg-gray-900/90 border border-white/5 text-[11px]">
+            <span class="w-2 h-2 rounded-full" style="background-color: ${p.color || '#fbbf24'}"></span>
+            <span class="font-medium text-white truncate max-w-[90px]">${p.name}</span>
+            <span class="text-yellow-400 font-bold">${p.victoryPoints ?? 0} PV</span>
+            ${p.isAI ? '<span class="text-[9px] px-1 rounded bg-purple-900/60 text-purple-300">IA</span>' : ''}
+          </div>
+        `).join('');
+
+        detailsCard.innerHTML = `
+          <div class="flex items-center justify-between gap-2 mb-2">
+            <h4 class="text-sm font-bold text-white truncate">${latestSave.name || 'Partida Salva'}</h4>
+            <div class="flex items-center gap-1.5 flex-shrink-0">
+              <span class="text-[10px] px-2 py-0.5 rounded-full bg-blue-500/20 text-blue-300 border border-blue-500/30 font-semibold">
+                Turno ${latestSave.turn || 1}
+              </span>
+              <span class="text-[10px] px-2 py-0.5 rounded-full bg-yellow-500/20 text-yellow-300 border border-yellow-500/30">
+                ${ruleBadge}
+              </span>
+            </div>
+          </div>
+          <div class="text-[11px] text-gray-400 mb-2.5 flex items-center gap-2">
+            <span>📅 ${dateStr}</span>
+            <span>•</span>
+            <span>👥 ${latestSave.playersCount || players.length} jogadores</span>
+          </div>
+          <div class="flex flex-wrap gap-1.5">
+            ${playersHtml}
+          </div>
+        `;
+        detailsCard.classList.remove('hidden');
+      } else if (detailsCard) {
+        detailsCard.classList.add('hidden');
+      }
+
+      // Botão para ver todos os saves quando há mais de 1
+      if (viewAllBtn) {
+        if (totalCount > 1) {
+          viewAllBtn.textContent = `Ver Todos os Jogos Salvos (${totalCount})`;
+          viewAllBtn.classList.remove('hidden');
+        } else {
+          viewAllBtn.classList.add('hidden');
+        }
       }
       
       let resolved = false;
@@ -546,8 +661,20 @@ tryRequestFullscreenOnce() {
       
       yesBtn.onclick = () => handleResolve('load');
       noBtn.onclick = () => handleResolve('new');
-      deleteBtn.onclick = () => {
-        if (confirm('Tem certeza? Esta ação é irreversível!')) {
+      if (viewAllBtn) {
+        viewAllBtn.onclick = () => handleResolve('view_all');
+      }
+      deleteBtn.onclick = async () => {
+        let confirmed = false;
+        if (window.uiManager?.modals?.showConfirm) {
+          confirmed = await window.uiManager.modals.showConfirm(
+            'Excluir Jogo Salvo',
+            'Tem certeza que deseja excluir esta partida salva? Essa ação não pode ser desfeita.'
+          );
+        } else {
+          confirmed = window.confirm('Tem certeza que deseja excluir esta partida salva? Essa ação não pode ser desfeita.');
+        }
+        if (confirmed) {
           handleResolve('delete');
         }
       };

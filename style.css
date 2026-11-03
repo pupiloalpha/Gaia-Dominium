@@ -110,7 +110,7 @@ body {
 
 /* === CAMADA SUPERIOR (1100+) === */
 #manualModal { z-index: 1050; }
-#alertModal { z-index: 1055; }
+#alertModal { z-index: 2000; }
 #victoryModal { z-index: 1300; }
 #saveLoadModal { z-index: 1035; }
 #gameRulesModal { z-index: 1060; }
@@ -795,15 +795,20 @@ input[type="text"]:focus, select:focus, input[type="number"]:focus {
 
 #alertModal {
   position: fixed !important;
-  z-index: 1055 !important;
+  z-index: 2000 !important;
 }
 
 #alertModal > .absolute {
-  z-index: 1045 !important;
+  position: absolute !important;
+  inset: 0 !important;
+  background-color: rgba(0, 0, 0, 0.7) !important;
+  backdrop-filter: none !important;
+  z-index: 1990 !important;
 }
 
 #alertModal > .relative {
-  z-index: 1055 !important;
+  position: relative !important;
+  z-index: 2000 !important;
 }
 
 /* Estilos comuns para modais */

@@ -31,9 +31,15 @@ class AlertModal {
     this.titleEl = document.getElementById('alertTitle');
     this.messageEl = document.getElementById('alertMessage');
     this.buttonsEl = document.getElementById('alertButtons');
+    this.hideTimeout = null;
   }
 
   show(title, message, type = 'info') {
+    if (this.hideTimeout) {
+      clearTimeout(this.hideTimeout);
+      this.hideTimeout = null;
+    }
+
     const iconMap = {
       'info': 'info',
       'warning': 'alerta',
@@ -48,7 +54,8 @@ class AlertModal {
     
     this.buttonsEl.innerHTML = '';
     const ok = document.createElement('button');
-    ok.className = 'px-4 py-2 bg-gray-800 border border-white/6 rounded-full text-white';
+    ok.type = 'button';
+    ok.className = 'px-5 py-2 bg-gray-800 hover:bg-gray-700 border border-white/15 rounded-xl text-white text-sm font-medium transition cursor-pointer';
     ok.textContent = 'OK';
     ok.addEventListener('click', () => this.hide());
     this.buttonsEl.appendChild(ok);
@@ -58,11 +65,23 @@ class AlertModal {
   }
 
   hide() {
+    if (this.hideTimeout) {
+      clearTimeout(this.hideTimeout);
+      this.hideTimeout = null;
+    }
     this.modal.classList.remove('show');
-    setTimeout(() => this.modal.classList.add('hidden'), 180);
+    this.hideTimeout = setTimeout(() => {
+      this.modal.classList.add('hidden');
+      this.hideTimeout = null;
+    }, 180);
   }
 
   async confirm(title, message) {
+    if (this.hideTimeout) {
+      clearTimeout(this.hideTimeout);
+      this.hideTimeout = null;
+    }
+
     return new Promise(resolve => {
       let resolved = false;
       this.iconEl.innerHTML = getIcon('question', { size: 36 });
@@ -71,7 +90,8 @@ class AlertModal {
       this.buttonsEl.innerHTML = '';
       
       const no = document.createElement('button');
-      no.className = 'px-4 py-2 bg-gray-800 border border-white/6 rounded-full text-white mr-2';
+      no.type = 'button';
+      no.className = 'px-4 py-2 bg-gray-800 hover:bg-gray-700 border border-white/10 rounded-xl text-white mr-2 text-sm font-medium transition cursor-pointer';
       no.textContent = 'Não';
       no.addEventListener('click', () => {
         if (resolved) return;
@@ -81,7 +101,11 @@ class AlertModal {
       });
 
       const yes = document.createElement('button');
-      yes.className = 'px-4 py-2 bg-green-600 rounded-full text-white';
+      yes.type = 'button';
+      const isDestructive = /excluir|remover|apagar|delete/i.test(title);
+      yes.className = isDestructive
+        ? 'px-4 py-2 bg-red-600 hover:bg-red-700 rounded-xl text-white text-sm font-semibold transition cursor-pointer shadow-md'
+        : 'px-4 py-2 bg-green-600 hover:bg-green-700 rounded-xl text-white text-sm font-semibold transition cursor-pointer shadow-md';
       yes.textContent = 'Sim';
       yes.addEventListener('click', () => {
         if (resolved) return;
@@ -809,6 +833,7 @@ class SavedGamesModal {
     if (this.modal) {
       this.modal.classList.add('hidden');
     }
+    this.updateSavesCountBadge();
   }
 
   updateSavesCountBadge() {
@@ -817,9 +842,7 @@ class SavedGamesModal {
     const badge = document.getElementById('savesCountBadge');
     if (badge) {
       badge.textContent = count;
-      if (count > 0) {
-        badge.classList.remove('hidden');
-      }
+      badge.classList.remove('hidden');
     }
     if (this.totalText) {
       this.totalText.textContent = `${count} ${count === 1 ? 'partida salva' : 'partidas salvas'}`;

@@ -189,7 +189,8 @@
   </div>
 
   <!-- GLOBAL ALERT / CONFIRM MODAL -->
-  <div id="alertModal" class="hidden fixed inset-0 z-[101] flex items-center justify-center p-4">
+  <div id="alertModal" class="hidden fixed inset-0 z-[2000] flex items-center justify-center p-4">
+    <div class="absolute inset-0 bg-black/70"></div>
     <div class="relative w-full max-w-sm bg-gray-900 border border-yellow-500/50 rounded-xl shadow-2xl p-6 transform scale-100 transition-all">
       <div class="flex gap-4">
         <div id="alertIcon" class="text-3xl select-none flex items-center justify-center text-yellow-400">
@@ -269,23 +270,32 @@
 <div id="saveLoadModal" class="hidden fixed inset-0 z-[103] flex items-center justify-center p-6 modal-content-container">
   <div class="absolute inset-0 bg-black/70"></div>
   <div class="relative w-full max-w-md bg-gray-900/95 backdrop-blur-md border border-yellow-500/30 rounded-2xl shadow-xl p-6">
-    <div class="text-center mb-6">
+    <div class="text-center mb-5">
       <div class="text-4xl mb-3 flex items-center justify-center text-blue-400">
         <svg viewBox="0 0 24 24" width="44" height="44" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="svg-icon svg-save"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
       </div>
-      <h3 class="text-xl font-bold text-yellow-300 mb-2">Jogo Salvo Encontrado</h3>
-      <p class="text-gray-300 mb-1">Encontramos um jogo salvo.</p>
-      <p class="text-gray-300">Deseja carregá-lo e começar de onde parou?</p>
+      <h3 id="saveLoadTitle" class="text-xl font-bold text-yellow-300 mb-1">Jogo Salvo Encontrado</h3>
+      <p id="saveLoadSubtitle" class="text-gray-300 text-sm mb-1">Encontramos um jogo salvo.</p>
+      <p id="saveLoadPrompt" class="text-gray-400 text-xs">Deseja carregá-lo e começar de onde parou?</p>
     </div>
-    <div class="flex flex-col gap-3">
-      <button id="saveLoadYesBtn" class="px-4 py-3 bg-green-600 hover:bg-green-700 rounded-lg text-white font-semibold transition">
+
+    <!-- Detalhes do Jogo Salvo -->
+    <div id="saveLoadDetailsCard" class="mb-5 p-3.5 rounded-xl bg-gray-800/80 border border-white/10 text-left">
+    </div>
+
+    <div class="flex flex-col gap-2.5">
+      <button id="saveLoadYesBtn" type="button" class="px-4 py-3 bg-green-600 hover:bg-green-700 rounded-xl text-white font-semibold transition transform hover:scale-[1.01] cursor-pointer shadow-md">
         Sim, Carregar Jogo
       </button>
-      <button id="saveLoadNoBtn" class="px-4 py-3 bg-gray-800 hover:bg-gray-700 border border-white/6 rounded-lg text-white font-medium transition">
+      <button id="saveLoadViewAllBtn" type="button" class="hidden px-4 py-2.5 bg-blue-600/20 hover:bg-blue-600/30 border border-blue-500/30 rounded-xl text-blue-300 text-xs font-semibold transition cursor-pointer">
+        Ver Todos os Jogos Salvos
+      </button>
+      <button id="saveLoadNoBtn" type="button" class="px-4 py-2.5 bg-gray-800 hover:bg-gray-700 border border-white/10 rounded-xl text-gray-200 font-medium text-xs transition cursor-pointer">
         Não, Começar Novo Jogo
       </button>
-      <button id="saveLoadDeleteBtn" class="px-4 py-2 text-sm text-gray-400 hover:text-gray-300 transition">
-        Excluir Save (Irrecuperável)
+      <button id="saveLoadDeleteBtn" type="button" class="px-4 py-2 text-xs text-red-400 hover:text-red-300 transition cursor-pointer flex items-center justify-center gap-1.5">
+        <span>🗑️</span>
+        <span>Excluir Save (Irrecuperável)</span>
       </button>
     </div>
   </div>

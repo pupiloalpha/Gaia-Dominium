@@ -485,14 +485,19 @@ async function checkForSavedGame() {
       window.uiManager?.modals?.gameRules?.updateBadge();
       window.uiManager?.modals?.savedGames?.updateSavesCountBadge();
       
-      setTimeout(() => {
-        if (window.uiManager?.modals?.showFeedback) {
-          window.uiManager.modals.showFeedback('Defina as regras e jogadores para a partida!', 'info');
-        }
+      if (!result.viewAll) {
+        setTimeout(() => {
+          if (window.uiManager?.modals?.showFeedback) {
+            window.uiManager.modals.showFeedback('Defina as regras e jogadores para a partida!', 'info');
+          }
+          window._isCheckingSavedGame = false;
+        }, 500);
+      } else {
         window._isCheckingSavedGame = false;
-      }, 500);
+      }
     } else if (!result.hasSave) {
       console.log('🎮 Nenhum jogo salvo encontrado');
+      window.uiManager?.modals?.savedGames?.updateSavesCountBadge();
       window._isCheckingSavedGame = false;
     }
   } catch (error) {
