@@ -194,7 +194,7 @@ export class UIGameManager {
                 iconHtml = `<span class="flex items-center justify-center">${renderPlayerIcon(p.icon, 20)}</span>`;
             }
 
-            let cardClasses = 'player-header-card relative flex items-center justify-center gap-1 sm:gap-2 px-1 sm:px-2 py-1 rounded-lg border transition-all cursor-pointer select-none text-left min-w-0 ';
+            let cardClasses = 'player-header-card relative flex items-center justify-center lg:justify-start gap-1 sm:gap-1.5 lg:gap-2 px-1 sm:px-2 py-1 rounded-lg border transition-all cursor-pointer select-none text-left min-w-0 ';
             
             if (isEliminated) {
                 cardClasses += 'bg-gray-900/50 border-gray-700/40 opacity-45 cursor-not-allowed ';
@@ -214,15 +214,18 @@ export class UIGameManager {
                     data-index="${i}" 
                     class="${cardClasses}" 
                     style="${borderBottomStyle}"
-                    title="${p.name} • ${p.faction?.name || 'Facção'} • ${p.victoryPoints} VP ${isCurrent ? '(Turno atual)' : ''}"
+                    title="${p.name} • ${p.faction?.name || 'Facção'} • ${p.victoryPoints} PV ${isCurrent ? '(Turno atual)' : ''}"
                     ${isEliminated ? 'disabled' : ''}
                 >
                     <div class="flex-shrink-0 flex items-center justify-center">
                         ${iconHtml}
                     </div>
-                    <div class="flex items-center gap-0.5 min-w-0">
+                    <span class="player-header-name hidden lg:inline-block text-xs font-semibold text-gray-200 truncate flex-1 min-w-0 leading-tight">
+                        ${p.name}
+                    </span>
+                    <div class="flex items-center gap-0.5 min-w-0 flex-shrink-0">
                         <span class="text-xs sm:text-sm font-bold ${isCurrent ? 'text-yellow-300' : 'text-white'} leading-none">${p.victoryPoints}</span>
-                        <span class="text-[9px] sm:text-[10px] ${isCurrent ? 'text-yellow-400' : 'text-gray-400'} font-semibold leading-none">VP</span>
+                        <span class="text-[9px] sm:text-[10px] ${isCurrent ? 'text-yellow-400' : 'text-gray-400'} font-semibold leading-none">PV</span>
                     </div>
                     ${isCurrent ? '<span class="absolute -top-1 -right-1 w-2 h-2 rounded-full bg-yellow-400 animate-ping"></span><span class="absolute -top-1 -right-1 w-2 h-2 rounded-full bg-yellow-400"></span>' : ''}
                 </button>
@@ -265,7 +268,8 @@ export class UIGameManager {
             if (rules.eventFrequency === 'every_round') {
                 ruleSummary += ' (Caos)';
             }
-            this.turnInfo.innerHTML = `<span>Turno: ${gameState.turn}</span><span class="hidden sm:inline text-gray-400"> • Jogador: ${currentPlayer?.name || '—'}${ruleSummary}</span>`;
+            this.turnInfo.title = `Turno ${gameState.turn} • Jogador atual: ${currentPlayer?.name || '—'}${ruleSummary}`;
+            this.turnInfo.innerHTML = `Turno: ${gameState.turn}`;
         }
     }
 
