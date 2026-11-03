@@ -42,6 +42,9 @@ export class UIGameManager {
         this.gameNavbar = document.getElementById('gameNavbar');
         this.gameContainer = document.getElementById('gameContainer');
         this.sidebar = document.getElementById('sidebar');
+        this.sidebarBackdrop = document.getElementById('sidebarBackdrop');
+        this.sidebarToggleNavBtn = document.getElementById('sidebarToggleNavBtn');
+        this.closeSidebarBtn = document.getElementById('closeSidebarBtn');
         this.gameMap = document.getElementById('gameMap');
         this.gameFooter = document.getElementById('gameFooter');
         
@@ -147,45 +150,83 @@ export class UIGameManager {
     renderHeaderPlayers() {
         if (!this.playerHeaderList) return;
         
+        const factionImages = {
+            0: 'assets/images/faccao_verde_icone.webp',
+            1: 'assets/images/faccao_azul_icone.webp',
+            2: 'assets/images/faccao_vermelha_icone.webp',
+            3: 'assets/images/faccao_amarela_icone.webp',
+            'verde': 'assets/images/faccao_verde_icone.webp',
+            'azul': 'assets/images/faccao_azul_icone.webp',
+            'vermelha': 'assets/images/faccao_vermelha_icone.webp',
+            'amarela': 'assets/images/faccao_amarela_icone.webp',
+            'forest_guardians': 'assets/images/faccao_verde_icone.webp',
+            'water_masters': 'assets/images/faccao_azul_icone.webp',
+            'mountain_builders': 'assets/images/faccao_vermelha_icone.webp',
+            'merchants_barons': 'assets/images/faccao_amarela_icone.webp'
+        };
+
+        const totalPlayers = gameState.players.length || 4;
+        this.playerHeaderList.style.gridTemplateColumns = `repeat(${Math.max(totalPlayers, 1)}, minmax(0, 1fr))`;
+
         this.playerHeaderList.innerHTML = gameState.players.map((p, i) => {
             const isCurrent = i === gameState.currentPlayerIndex;
             const isEliminated = p.eliminated;
+            const isSelected = i === gameState.selectedPlayerForSidebar;
             
-            let buttonClass = 'px-3 py-1 rounded-lg text-white text-sm flex items-center gap-2 ';
-            let content = '';
+            // Ícone da facção (prioriza imagem da facção, depois SVG da facção, depois ícone do jogador)
+            let factionImg = '';
+            if (p.faction?.id && factionImages[p.faction.id]) {
+                factionImg = factionImages[p.faction.id];
+            } else if (typeof p.factionId !== 'undefined' && factionImages[p.factionId]) {
+                factionImg = factionImages[p.factionId];
+            } else if (p.icon && (p.icon.includes('/') || p.icon.includes('.'))) {
+                factionImg = p.icon;
+            }
+
+            let iconHtml = '';
+            if (isEliminated) {
+                iconHtml = `<span class="flex items-center justify-center text-gray-400">${getIcon('skull', { size: 18 })}</span>`;
+            } else if (factionImg) {
+                iconHtml = `<img src="${factionImg}" alt="${p.faction?.name || 'Facção'}" class="w-5 h-5 sm:w-6 sm:h-6 object-contain rounded flex-shrink-0">`;
+            } else if (p.faction?.icon) {
+                iconHtml = `<span class="flex items-center justify-center text-sm">${p.faction.icon}</span>`;
+            } else {
+                iconHtml = `<span class="flex items-center justify-center">${renderPlayerIcon(p.icon, 20)}</span>`;
+            }
+
+            let cardClasses = 'player-header-card relative flex items-center justify-center gap-1 sm:gap-2 px-1 sm:px-2 py-1 rounded-lg border transition-all cursor-pointer select-none text-left min-w-0 ';
             
             if (isEliminated) {
-                buttonClass += 'bg-gray-800/50 opacity-50 cursor-not-allowed ';
-                content = `
-                    <div class="text-xl flex items-center justify-center text-gray-400">${getIcon('skull', { size: 20 })}</div>
-                    <div>
-                        <div class="font-medium line-through">${p.name}</div>
-                        <div class="text-xs text-gray-300">ELIMINADO</div>
-                    </div>
-                `;
+                cardClasses += 'bg-gray-900/50 border-gray-700/40 opacity-45 cursor-not-allowed ';
             } else if (isCurrent) {
-                buttonClass += 'ring-2 ring-yellow-300 bg-white/5 ';
-                content = `
-                    <div class="text-xl flex items-center justify-center">${renderPlayerIcon(p.icon, 22)}</div>
-                    <div>
-                        <div class="font-medium">${p.name}</div>
-                        <div class="text-xs text-yellow-400 flex items-center gap-1">${p.victoryPoints} ${getIcon('star', { size: 10 })} PV</div>
-                    </div>
-                `;
+                cardClasses += 'bg-yellow-400/20 border-yellow-400 ring-2 ring-yellow-400/80 shadow-sm shadow-yellow-500/25 ';
+            } else if (isSelected) {
+                cardClasses += 'bg-white/10 border-white/40 ring-1 ring-white/30 ';
             } else {
-                buttonClass += 'bg-white/5 ';
-                content = `
-                    <div class="text-xl flex items-center justify-center">${renderPlayerIcon(p.icon, 22)}</div>
-                    <div>
-                        <div class="font-medium">${p.name}</div>
-                        <div class="text-xs text-yellow-400 flex items-center gap-1">${p.victoryPoints} ${getIcon('star', { size: 10 })} PV</div>
-                    </div>
-                `;
+                cardClasses += 'bg-gray-800/60 hover:bg-gray-700/60 border-white/10 hover:border-white/20 ';
             }
-            
-            return `<button data-index="${i}" class="${buttonClass}" ${isEliminated ? 'disabled' : ''}>
-                ${content}
-            </button>`;
+
+            const playerColor = p.color || '#eab308';
+            const borderBottomStyle = isEliminated ? '' : `border-bottom: 2.5px solid ${playerColor};`;
+
+            return `
+                <button 
+                    data-index="${i}" 
+                    class="${cardClasses}" 
+                    style="${borderBottomStyle}"
+                    title="${p.name} • ${p.faction?.name || 'Facção'} • ${p.victoryPoints} VP ${isCurrent ? '(Turno atual)' : ''}"
+                    ${isEliminated ? 'disabled' : ''}
+                >
+                    <div class="flex-shrink-0 flex items-center justify-center">
+                        ${iconHtml}
+                    </div>
+                    <div class="flex items-center gap-0.5 min-w-0">
+                        <span class="text-xs sm:text-sm font-bold ${isCurrent ? 'text-yellow-300' : 'text-white'} leading-none">${p.victoryPoints}</span>
+                        <span class="text-[9px] sm:text-[10px] ${isCurrent ? 'text-yellow-400' : 'text-gray-400'} font-semibold leading-none">VP</span>
+                    </div>
+                    ${isCurrent ? '<span class="absolute -top-1 -right-1 w-2 h-2 rounded-full bg-yellow-400 animate-ping"></span><span class="absolute -top-1 -right-1 w-2 h-2 rounded-full bg-yellow-400"></span>' : ''}
+                </button>
+            `;
         }).join('');
     }
 
@@ -224,7 +265,30 @@ export class UIGameManager {
             if (rules.eventFrequency === 'every_round') {
                 ruleSummary += ' (Caos)';
             }
-            this.turnInfo.textContent = `Turno: ${gameState.turn} • Jogador: ${currentPlayer?.name || '—'}${ruleSummary}`;
+            this.turnInfo.innerHTML = `<span>Turno: ${gameState.turn}</span><span class="hidden sm:inline text-gray-400"> • Jogador: ${currentPlayer?.name || '—'}${ruleSummary}</span>`;
+        }
+    }
+
+    // Métodos para controle do Painel Lateral (Drawer no Mobile/Tablet)
+    openSidebar(playerIndex) {
+        if (typeof playerIndex === 'number') {
+            gameState.selectedPlayerForSidebar = playerIndex;
+            this.sidebarManager?.renderSidebar(playerIndex);
+        }
+        this.sidebar?.classList.add('sidebar-mobile-open');
+        this.sidebarBackdrop?.classList.add('active');
+    }
+
+    closeSidebar() {
+        this.sidebar?.classList.remove('sidebar-mobile-open');
+        this.sidebarBackdrop?.classList.remove('active');
+    }
+
+    toggleSidebar() {
+        if (this.sidebar?.classList.contains('sidebar-mobile-open')) {
+            this.closeSidebar();
+        } else {
+            this.openSidebar();
         }
     }
 
@@ -595,6 +659,16 @@ export class UIGameManager {
             if (isAITurnActive()) return;
             this.uiManager.modals.renderAchievementsModal(gameState.selectedPlayerForSidebar ?? gameState.currentPlayerIndex);
         });
+        document.getElementById('sidebarToggleNavBtn')?.addEventListener('click', () => {
+            if (isAITurnActive()) return;
+            this.toggleSidebar();
+        });
+        document.getElementById('closeSidebarBtn')?.addEventListener('click', () => {
+            this.closeSidebar();
+        });
+        document.getElementById('sidebarBackdrop')?.addEventListener('click', () => {
+            this.closeSidebar();
+        });
 
         // Activity Log filters
         this.logFilterAllSidebar?.addEventListener('click', () => this.renderActivityLog('all'));
@@ -609,6 +683,10 @@ export class UIGameManager {
                     const idx = Number(button.dataset.index);
                     gameState.selectedPlayerForSidebar = idx;
                     this.sidebarManager.renderSidebar(idx);
+                    this.renderHeaderPlayers();
+                    if (window.innerWidth <= 1024) {
+                        this.openSidebar(idx);
+                    }
                 }
             });
         }
@@ -631,11 +709,16 @@ export class UIGameManager {
             }
         });
 
-        // Tecla ESC para cancelar edição
+        // Tecla ESC para cancelar edição ou fechar painel lateral
         document.addEventListener('keydown', (e) => {
-            if (e.key === 'Escape' && this.uiManager.playersManager.editingIndex !== null) {
-                e.preventDefault();
-                this.uiManager.playersManager.cancelEdit();
+            if (e.key === 'Escape') {
+                if (this.sidebar?.classList.contains('sidebar-mobile-open')) {
+                    this.closeSidebar();
+                }
+                if (this.uiManager.playersManager.editingIndex !== null) {
+                    e.preventDefault();
+                    this.uiManager.playersManager.cancelEdit();
+                }
             }
         });
 

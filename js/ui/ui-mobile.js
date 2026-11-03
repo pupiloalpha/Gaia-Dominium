@@ -48,7 +48,7 @@ export class UIMobileManager {
     // ==================== CRIAÇÃO DOS ELEMENTOS MOBILE ====================
     createMobileElements() {
         this.createMobileOverlay();
-        this.createFloatingMenu();
+        // O menu flutuante agora é substituído pelo botão de painel lateral integrado na barra superior
     }
     
     createMobileOverlay() {
@@ -108,7 +108,7 @@ export class UIMobileManager {
         this.gameStarted = true;
         this.closeSheet();
         if (this.menuButton) {
-            this.menuButton.style.display = 'flex';
+            this.menuButton.style.display = 'none';
         }
     }
 
@@ -432,7 +432,7 @@ export class UIMobileManager {
                 if (newIsMobile !== this.isMobile) {
                     this.isMobile = newIsMobile;
                     if (this.menuButton) {
-                        this.menuButton.style.display = this.isMobile ? 'flex' : 'none';
+                        this.menuButton.style.display = 'none';
                     }
                 }
             }, 200);
