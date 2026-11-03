@@ -187,9 +187,9 @@ export class UIGameManager {
             if (isEliminated) {
                 iconHtml = `<span class="flex items-center justify-center text-gray-400">${getIcon('skull', { size: 18 })}</span>`;
             } else if (factionImg) {
-                iconHtml = `<img src="${factionImg}" alt="${p.faction?.name || 'Facção'}" class="w-5 h-5 sm:w-6 sm:h-6 object-contain rounded flex-shrink-0">`;
+                iconHtml = `<img src="${factionImg}" alt="${p.faction?.name || 'Facção'}" class="w-5 h-5 sm:w-6 sm:h-6 lg:w-7 lg:h-7 object-contain rounded flex-shrink-0">`;
             } else if (p.faction?.icon) {
-                iconHtml = `<span class="flex items-center justify-center text-sm">${p.faction.icon}</span>`;
+                iconHtml = `<span class="flex items-center justify-center text-sm lg:text-base">${p.faction.icon}</span>`;
             } else {
                 iconHtml = `<span class="flex items-center justify-center">${renderPlayerIcon(p.icon, 20)}</span>`;
             }
@@ -220,12 +220,14 @@ export class UIGameManager {
                     <div class="flex-shrink-0 flex items-center justify-center">
                         ${iconHtml}
                     </div>
-                    <span class="player-header-name hidden lg:inline-block text-xs font-semibold text-gray-200 truncate flex-1 min-w-0 leading-tight">
-                        ${p.name}
-                    </span>
-                    <div class="flex items-center gap-0.5 min-w-0 flex-shrink-0">
-                        <span class="text-xs sm:text-sm font-bold ${isCurrent ? 'text-yellow-300' : 'text-white'} leading-none">${p.victoryPoints}</span>
-                        <span class="text-[9px] sm:text-[10px] ${isCurrent ? 'text-yellow-400' : 'text-gray-400'} font-semibold leading-none">PV</span>
+                    <div class="player-header-info flex flex-col justify-center min-w-0 flex-1 leading-tight">
+                        <span class="player-header-name hidden lg:block text-xs font-semibold text-gray-200 truncate min-w-0 leading-tight">
+                            ${p.name}
+                        </span>
+                        <div class="player-header-pv flex items-center gap-0.5 min-w-0">
+                            <span class="text-xs sm:text-sm font-bold ${isCurrent ? 'text-yellow-300' : 'text-white'} leading-none">${p.victoryPoints}</span>
+                            <span class="text-[9px] sm:text-[10px] ${isCurrent ? 'text-yellow-400' : 'text-gray-400'} font-semibold leading-none">PV</span>
+                        </div>
                     </div>
                     ${isCurrent ? '<span class="absolute -top-1 -right-1 w-2 h-2 rounded-full bg-yellow-400 animate-ping"></span><span class="absolute -top-1 -right-1 w-2 h-2 rounded-full bg-yellow-400"></span>' : ''}
                 </button>

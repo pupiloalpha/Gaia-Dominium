@@ -366,12 +366,12 @@ class StructureModal {
           <div class="mb-3">
             <p class="text-xs font-semibold text-white/80 mb-1">Benefícios:</p>
             <div class="flex flex-wrap gap-2 mt-1">
-              ${effect.pv ? `
+              ${(effect.pv || income.pv) ? `
                 <span class="text-xs px-3 py-1.5 rounded-lg bg-yellow-900/50 text-yellow-200 font-bold border border-yellow-500/30 inline-flex items-center gap-1">
-                  +${effect.pv} ${getIcon('star', { size: 12 })} PV
+                  +${effect.pv || income.pv} ${getIcon('star', { size: 12 })} PV
                 </span>
               ` : ''}
-              ${Object.entries(income).map(([resource, amount]) => `
+              ${Object.entries(income).filter(([resource]) => resource !== 'pv').map(([resource, amount]) => `
                 <span class="text-xs px-3 py-1.5 rounded-lg bg-blue-900/50 text-blue-200 font-bold border border-blue-500/30 inline-flex items-center gap-1">
                   +${amount}${RESOURCE_ICONS[resource]}
                 </span>
