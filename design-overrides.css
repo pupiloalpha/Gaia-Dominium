@@ -1,0 +1,290 @@
+/* Gaia Dominium — camada visual harmonizada.
+   O estilo-base permanece carregado por style.css; este arquivo apenas refina
+   a tela de setup e o modal de acompanhamento da IA. */
+
+:root {
+  --gd-surface: #111417;
+  --gd-surface-raised: #171b1f;
+  --gd-surface-soft: rgba(255, 255, 255, 0.035);
+  --gd-line: rgba(255, 255, 255, 0.075);
+  --gd-line-strong: rgba(255, 255, 255, 0.13);
+  --gd-gold: #f8d65c;
+  --gd-gold-soft: rgba(248, 214, 92, 0.12);
+  --gd-text: #f4f4f5;
+  --gd-muted: #a1a1aa;
+  --gd-radius-card: 16px;
+  --gd-shadow-panel: 0 18px 48px rgba(0, 0, 0, 0.42);
+}
+
+/* Setup: uma superfície coesa, com divisões tonais em vez de molduras claras. */
+#initialScreen > .absolute {
+  background: rgba(5, 7, 9, 0.58) !important;
+}
+
+#initialScreen .player-modal {
+  background: linear-gradient(145deg, rgba(17, 20, 23, 0.97), rgba(11, 13, 15, 0.97)) !important;
+  border: 1px solid var(--gd-line) !important;
+  border-radius: var(--gd-radius-card) !important;
+  box-shadow: var(--gd-shadow-panel) !important;
+  backdrop-filter: blur(18px) saturate(115%) !important;
+}
+
+#initialScreen .player-modal .border-b,
+#initialScreen .player-modal .border-t {
+  border-color: var(--gd-line) !important;
+}
+
+#initialScreen .player-modal > .grid > div {
+  background: rgba(255, 255, 255, 0.018) !important;
+  border: 1px solid var(--gd-line) !important;
+  border-radius: 12px !important;
+}
+
+#initialScreen .player-modal > .grid > div:hover {
+  border-color: var(--gd-line-strong) !important;
+}
+
+#initialScreen #playerCountDisplay,
+#initialScreen #playerCountDisplay + span {
+  border-color: var(--gd-line) !important;
+}
+
+#initialScreen #registeredPlayersList .player-card.empty .player-card-inner {
+  border: 1px solid rgba(255, 255, 255, 0.055) !important;
+  border-radius: 10px !important;
+  background: rgba(255, 255, 255, 0.018) !important;
+}
+
+#initialScreen #registeredPlayersList .player-card.empty .player-card-inner:hover {
+  border-color: rgba(248, 214, 92, 0.22) !important;
+  background: rgba(248, 214, 92, 0.035) !important;
+}
+
+#initialScreen #registeredPlayersList .player-card.empty svg,
+#initialScreen #registeredPlayersList .player-card.empty .text-gray-500 {
+  color: #777d84 !important;
+}
+
+#initialScreen .faction-card {
+  border: 1px solid var(--gd-line) !important;
+  border-radius: 9px !important;
+  background: rgba(255, 255, 255, 0.025) !important;
+  box-shadow: none !important;
+  transform: none;
+}
+
+#initialScreen .faction-card:hover:not(:disabled) {
+  border-color: rgba(248, 214, 92, 0.32) !important;
+  background: rgba(255, 255, 255, 0.055) !important;
+  transform: translateY(-1px);
+}
+
+#initialScreen .faction-card.selected {
+  border-color: rgba(248, 214, 92, 0.68) !important;
+  background: var(--gd-gold-soft) !important;
+  box-shadow: inset 3px 0 0 var(--gd-gold) !important;
+  transform: none !important;
+}
+
+#initialScreen .ai-button-compact {
+  border-width: 1px !important;
+  border-radius: 9px !important;
+  box-shadow: none !important;
+  background-image: none !important;
+}
+
+#initialScreen .ai-button-compact.easy { background-color: rgba(16, 185, 129, 0.10) !important; }
+#initialScreen .ai-button-compact.medium { background-color: rgba(59, 130, 246, 0.10) !important; }
+#initialScreen .ai-button-compact.hard { background-color: rgba(245, 158, 11, 0.10) !important; }
+#initialScreen .ai-button-compact.master { background-color: rgba(239, 68, 68, 0.10) !important; }
+
+#initialScreen #openGameRulesBtn,
+#initialScreen #openSavedGamesBtn {
+  border-color: var(--gd-line) !important;
+  box-shadow: none !important;
+}
+
+#initialScreen #openGameRulesBtn:hover,
+#initialScreen #openSavedGamesBtn:hover {
+  border-color: var(--gd-line-strong) !important;
+}
+
+#initialScreen #startGameBtn:not(:disabled) {
+  background: linear-gradient(135deg, #d9b947, #b99527) !important;
+  color: #17150c !important;
+  box-shadow: 0 8px 22px rgba(190, 155, 44, 0.16) !important;
+}
+
+#initialScreen #startGameBtn:not(:disabled):hover {
+  background: linear-gradient(135deg, #e8ca5c, #c5a331) !important;
+  box-shadow: 0 10px 26px rgba(190, 155, 44, 0.22) !important;
+}
+
+/* Feedback da IA: usa a mesma família de superfícies do jogo; roxo só como
+   sinal secundário, sem moldura grossa, brilho contínuo ou faixa decorativa. */
+#aiFeedbackOverlay {
+  padding: max(12px, env(safe-area-inset-top)) max(12px, env(safe-area-inset-right))
+    max(12px, env(safe-area-inset-bottom)) max(12px, env(safe-area-inset-left)) !important;
+  background: rgba(3, 5, 7, 0.76) !important;
+  backdrop-filter: blur(5px) !important;
+  -webkit-backdrop-filter: blur(5px) !important;
+}
+
+#aiFeedbackModalCard {
+  width: min(100%, 560px) !important;
+  max-width: 560px !important;
+  max-height: min(88dvh, 760px) !important;
+  overflow-y: auto !important;
+  padding: clamp(16px, 3vw, 24px) !important;
+  background: rgba(17, 20, 23, 0.985) !important;
+  border: 1px solid var(--gd-line-strong) !important;
+  border-radius: var(--gd-radius-card) !important;
+  box-shadow: var(--gd-shadow-panel) !important;
+  backdrop-filter: blur(20px) saturate(115%) !important;
+  -webkit-backdrop-filter: blur(20px) saturate(115%) !important;
+}
+
+#aiFeedbackModalCard > .absolute {
+  display: none !important;
+}
+
+#aiFeedbackModalCard .border-white\/10 {
+  border-color: var(--gd-line) !important;
+}
+
+#aiAvatarBadge {
+  width: 48px !important;
+  height: 48px !important;
+  border: 1px solid var(--gd-line-strong) !important;
+  border-radius: 13px !important;
+  background: rgba(255, 255, 255, 0.045) !important;
+  box-shadow: none !important;
+  ring: 0 !important;
+  animation: none !important;
+}
+
+#aiTurnPhaseBadge {
+  background: rgba(248, 214, 92, 0.09) !important;
+  border: 1px solid rgba(248, 214, 92, 0.18) !important;
+  color: #ead88f !important;
+  box-shadow: none !important;
+}
+
+#aiTurnPhaseBadge .bg-purple-400 {
+  background-color: var(--gd-gold) !important;
+  animation: none !important;
+}
+
+#aiFactionBadge {
+  background: rgba(255, 255, 255, 0.055) !important;
+  color: var(--gd-muted) !important;
+}
+
+#aiCurrentActionTitle,
+#aiActionsLeftCount,
+#aiTurnCounterBadge {
+  color: var(--gd-gold) !important;
+}
+
+#aiFeedbackModalCard .bg-purple-950\/60 {
+  background: rgba(255, 255, 255, 0.028) !important;
+  border: 1px solid var(--gd-line) !important;
+  box-shadow: none !important;
+}
+
+#aiCurrentActionIcon {
+  color: #e2c85e !important;
+  background: var(--gd-gold-soft) !important;
+  border: 1px solid rgba(248, 214, 92, 0.17) !important;
+  box-shadow: none !important;
+}
+
+#aiFeedbackModalCard .text-purple-300,
+#aiFeedbackModalCard .text-purple-200,
+#aiFeedbackModalCard .text-purple-100\/90,
+#aiFeedbackModalCard .text-purple-300\/80 {
+  color: var(--gd-muted) !important;
+}
+
+#aiFeedbackModalCard .bg-purple-900\/50 {
+  background: rgba(255, 255, 255, 0.07) !important;
+}
+
+#aiFeedbackModalCard .bg-gradient-to-r.from-purple-400 {
+  background: linear-gradient(90deg, #b69a37, var(--gd-gold), #b69a37) !important;
+  animation: none !important;
+}
+
+#aiActionsCount {
+  background: rgba(255, 255, 255, 0.055) !important;
+  color: #c4c4c9 !important;
+}
+
+#aiActionsFeed > div {
+  background: rgba(255, 255, 255, 0.028) !important;
+  border: 1px solid rgba(255, 255, 255, 0.045) !important;
+  border-radius: 9px !important;
+}
+
+#aiActionsFeed::-webkit-scrollbar-thumb {
+  background: rgba(248, 214, 92, 0.28) !important;
+}
+
+#aiActionsFeed::-webkit-scrollbar-thumb:hover {
+  background: rgba(248, 214, 92, 0.45) !important;
+}
+
+#aiFeedbackModalCard > .pt-3 {
+  flex-wrap: wrap;
+  gap: 8px 14px;
+}
+
+@media (max-width: 768px) {
+  #initialScreen {
+    align-items: flex-start !important;
+    padding: max(10px, env(safe-area-inset-top)) 10px
+      max(10px, env(safe-area-inset-bottom)) !important;
+  }
+
+  #initialScreen .player-modal {
+    margin: 8px auto 12px !important;
+    padding: 14px !important;
+  }
+
+  #initialScreen .player-modal > .grid > div {
+    padding: 12px !important;
+  }
+
+  #initialScreen #registeredPlayersList .player-card-inner {
+    min-height: 96px;
+    padding: 10px !important;
+  }
+
+  #aiFeedbackOverlay {
+    align-items: flex-end !important;
+    padding: 10px max(10px, env(safe-area-inset-right))
+      max(10px, env(safe-area-inset-bottom)) max(10px, env(safe-area-inset-left)) !important;
+  }
+
+  #aiFeedbackModalCard {
+    width: 100% !important;
+    max-width: 560px !important;
+    max-height: 86dvh !important;
+    border-radius: 16px !important;
+    padding: 16px !important;
+  }
+
+  #aiFeedbackModalCard .max-h-44 {
+    max-height: 30dvh !important;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  #initialScreen .faction-card,
+  #initialScreen .ai-button-compact,
+  #aiFeedbackModalCard * {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    scroll-behavior: auto !important;
+  }
+}
