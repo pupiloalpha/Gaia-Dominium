@@ -2,278 +2,544 @@
 
 ## Índice
 
-- [Introdução ao Jogo](#introdução-ao-jogo)
-  - [O Tema de Gaia](#o-tema-de-gaia)
-  - [Objetivo do Jogo](#objetivo-do-jogo)
-  - [Componentes Virtuais](#componentes-virtuais)
-- [Setup (Configuração Inicial)](#setup-configuração-inicial)
-- [Jogabilidade: Estrutura de uma Rodada](#jogabilidade-estrutura-de-uma-rodada)
-  - [Fases do Turno](#fases-do-turno)
-- [Ações Detalhadas](#ações-detalhadas)
-- [Recursos e Biomas](#recursos-e-biomas)
-  - [Recursos](#recursos)
-  - [Biomas](#biomas)
-- [Eventos Aleatórios](#eventos-aleatórios)
+- [Visão geral](#visão-geral)
+- [Preparação da partida](#preparação-da-partida)
+- [Estrutura de cada turno](#estrutura-de-cada-turno)
+- [Mapa e regiões](#mapa-e-regiões)
+- [Recursos](#recursos)
+- [Ações](#ações)
+- [Estruturas](#estruturas)
+- [Negociações](#negociações)
+- [Disputas territoriais](#disputas-territoriais)
+- [Eliminação e ressurreição](#eliminação-e-ressurreição)
+- [Facções](#facções)
+- [Eventos globais](#eventos-globais)
 - [Conquistas](#conquistas)
-- [Fim de Jogo e Vitória](#fim-de-jogo-e-vitória)
-- [Perguntas Frequentes (FAQ)](#perguntas-frequentes-faq)
-- [Índice de Referências](#índice-de-referências)
+- [Vitória](#vitória)
+- [Salvamento](#salvamento)
+- [Atalhos e controles](#atalhos-e-controles)
 
-Bem-vindo ao **Gaia Dominium**, um jogo de estratégia épico onde você assume o comando de uma facção lendária em um mundo fragmentado e repleto de mistérios. Imagine um planeta outrora próspero, Gaia, agora dilacerado por um cataclismo cósmico. Florestas exuberantes, savanas douradas e pântanos sombrios clamam por restauração. Como líder de uma das quatro facções ancestrais, você deve explorar territórios inóspitos, gerenciar recursos preciosos, erguer estruturas imponentes e forjar alianças – ou rivalidades – para reivindicar o domínio supremo. Com elementos de gerenciamento de recursos, construção de impérios e diplomacia tensa, Gaia Dominium combina a profundidade estratégica de um Eurogame com a emoção imprevisível de eventos aleatórios e interações diretas entre jogadores.
+---
 
-Este manual guiará você pela jornada de reconstruir Gaia. Prepare-se para uma aventura onde cada decisão pode alterar o equilíbrio do mundo – e o destino da vitória!
+## Visão geral
 
-## Introdução ao Jogo
+**Gaia Dominium** é um jogo estratégico local para 2 a 4 jogadores. A partida pode combinar jogadores humanos e adversários controlados por IA.
 
-Esta seção apresenta os conceitos fundamentais do jogo, incluindo sua temática, objetivos e componentes. Ela serve como uma visão geral para novos jogadores, ajudando a contextualizar o universo de Gaia e preparar para as mecânicas principais, garantindo que você entenda o "porquê" e o "como" antes de mergulhar nas regras detalhadas.
+Gaia é formada por uma grade de **25 regiões**, organizadas em 5 linhas e 5 colunas.
 
-### O Tema de Gaia
-Esta subseção descreve o cenário narrativo do jogo, explicando o mundo de Gaia e as facções envolvidas. Seu conteúdo foca na lore, como o cataclismo que fragmentou o planeta e o papel das facções na restauração, proporcionando imersão e motivação para as ações estratégicas.
+O objetivo depende das regras escolhidas no início da partida:
 
-Gaia era um paraíso ecológico, um planeta vivo pulsando com energia natural. Mas um cataclismo devastador – talvez uma colisão estelar ou uma rebelião das forças da natureza – fragmentou o mundo em **25 regiões isoladas**, cada uma com seu bioma único e recursos escassos. Agora, quatro facções emergem das cinzas: os Guardiões da Floresta, os Senhores das Savanas, os Mestres dos Pântanos e os Exploradores das Montanhas. Cada facção busca restaurar o equilíbrio, expandir seu domínio e acumular **Pontos de Vitória (PV)** para se tornar o Guardião Supremo de Gaia.
+- atingir uma meta de Pontos de Vitória;
+- dominar todas as regiões;
+- eliminar todas as facções rivais;
+- ou terminar a partida quando qualquer uma dessas condições ocorrer.
 
-### Objetivo do Jogo
-Aqui, é explicado o propósito central da partida, incluindo como vencer e a duração estimada. O conteúdo detalha os Pontos de Vitória como métrica de progresso e enfatiza a natureza competitiva, ajudando os jogadores a alinharem suas estratégias desde o início.
+## Preparação da partida
 
-Seu objetivo é ser o primeiro a acumular **25 Pontos de Vitória (PV)**. Os PV representam o progresso de sua facção na restauração de Gaia – através de exploração, construções, negociações e conquistas. O jogo termina imediatamente quando um jogador atinge ou ultrapassa 25 PV, proclamando-o o vencedor!
+Antes de iniciar:
 
-### Componentes Virtuais
-Esta parte lista os elementos digitais do jogo, como mapa e recursos. Seu conteúdo descreve cada componente e sua função na interface, facilitando a familiarização com a versão online e destacando como eles substituem peças físicas de um boardgame tradicional.
+1. Informe o nome de cada jogador.
+2. Selecione uma das quatro facções.
+3. Adicione entre 2 e 4 participantes.
+4. Opcionalmente, adicione adversários IA com dificuldade Fácil, Média, Difícil ou Mestre.
+5. Configure:
+   - meta de 25, 50, 75 ou 100 PV;
+   - condição de vitória;
+   - ritmo dos eventos.
 
-Como um jogo digital, todos os componentes são gerenciados pela interface:
-- **Mapa de Gaia**: Uma grade 5x5 com 25 regiões (A a Y), cada uma com bioma, recursos iniciais e status de controle.
-- **Cartas de Facção**: Ícones personalizáveis (ex.: 🦁, 🐯) e cores para cada jogador.
-- **Recursos**: 🪵 Madeira, 🪨 Pedra, 🪙 Ouro, 💧 Água – rastreados na sidebar.
-- **Estruturas**: 5 tipos construíveis (Abrigo, Torre de Vigia, Mercado, Laboratório, Santuário).
-- **Eventos Aleatórios**: 15 eventos globais que afetam todos os jogadores.
-- **Conquistas**: 8 conquistas desbloqueáveis com recompensas.
-- **Interface**: Navbar para jogadores, sidebar para detalhes, footer para ações, modais para eventos e negociações.
+As facções disponíveis são únicas: cada uma pode ser utilizada por apenas um participante.
 
-## Setup (Configuração Inicial)
+Na inicialização da partida:
 
-Esta seção orienta sobre como preparar e iniciar uma partida, passo a passo. Seu conteúdo cobre a adição de jogadores, distribuição inicial e salvamento, garantindo que todos os participantes comecem em igualdade e entendam as mecânicas de setup digital.
+- cada jogador recebe:
+  - 10 Madeira;
+  - 5 Pedra;
+  - 3 Ouro;
+  - 5 Água;
+- o mapa recebe biomas e recursos aleatórios;
+- são distribuídas **4 regiões iniciais para cada jogador**;
+- o turno inicial é definido como `1`;
+- o primeiro participante começa na fase de Renda;
+- o jogo recebe dois eventos até que o próximo evento seja determinado.
 
-1. **Acessando o Jogo**: Abra o site no navegador. A tela inicial exibe opções para adicionar jogadores.
-2. **Adicionando Jogadores**:
-   - Clique em "Adicionar Jogador".
-   - Insira o nome da facção (ex.: "Guardiões Verdes").
-   - Escolha um ícone (de uma seleção de animais míticos: 🦁, 🐯, etc.).
-   - Repita para 2-4 jogadores.
-   - O jogo atribui cores automáticas (verde, azul, vermelho, amarelo).
-3. **Iniciando a Partida**:
-   - Clique em "Iniciar Jogo" quando todos os jogadores estiverem registrados.
-   - O mapa é gerado: 25 regiões distribuídas aleatoriamente entre biomas.
-   - Cada jogador começa com recursos iniciais: 🪵10 Madeira, 🪨5 Pedra, 🪙3 Ouro, 💧5 Água.
-   - Regiões iniciais são distribuídas: Cada jogador controla uma região neutra aleatória.
-   - O primeiro jogador é selecionado aleatoriamente.
-4. **Salvamento e Carregamento**: O jogo salva automaticamente no LocalStorage do navegador. Ao recarregar, pergunte se deseja carregar o save existente ou iniciar novo.
+## Estrutura de cada turno
 
-**Dica Inicial**: Explore o manual (ícone de livro na tela inicial) para abas detalhadas sobre regras, ações e estratégias.
+Cada turno possui três fases.
 
-## Jogabilidade: Estrutura de uma Rodada
+### Fase de Renda
 
-Esta seção explica o fluxo geral do jogo, focando na progressão de turnos e fases. Seu conteúdo delineia como as rodadas se desenrolam, incluindo dicas para gerenciamento, preparando os jogadores para a dinâmica cíclica e interativa.
+Ao iniciar o turno do jogador:
 
-Cada rodada representa um ciclo de restauração em Gaia. Os turnos são alternados entre jogadores, divididos em **3 fases principais**: Renda, Ações e Negociação. O jogo prossegue até que um jogador atinja 25 PV.
+- as regiões controladas produzem recursos;
+- as estruturas produzem seus bônus;
+- facções e conquistas podem modificar a renda;
+- eventos ativos podem alterar multiplicadores;
+- Pontos de Vitória podem ser concedidos por estruturas ou outros efeitos.
 
-### Fases do Turno
-Aqui, são detalhadas as três fases principais de cada turno, com mecânicas específicas. O conteúdo descreve o que ocorre em cada uma, incluindo cálculos e transições, ajudando a compreender o ritmo do jogo e a importância de cada etapa.
+O jogador confirma o relatório de renda na modalidade exibida na tela.
 
-1. **Fase de Renda (💰)**:
-   - **O que acontece**: Você recebe recursos automáticos de suas regiões controladas e estruturas.
-   - **Cálculo da Renda**:
-     - **Por Bioma**: Cada região controlada gera renda baseada no bioma (ex.: Floresta Tropical: 🪵1 Madeira, 💧1.5 Água).
-     - **Por Estruturas**: Adicione bônus de estruturas (ex.: Mercado: +1 🪙 Ouro).
-     - **Modificadores**: Eventos globais podem alterar multiplicadores (ex.: Seca reduz Água em 50%).
-   - **Modal de Renda**: Uma janela pop-up exibe os bônus detalhados. Confirme para prosseguir.
-   - **Duração**: Automática, mas você pode revisar os cálculos.
+Jogadores controlados por IA recebem a renda automaticamente e avançam sem modal.
 
-2. **Fase de Ações (⚡)**:
-   - **Ações Disponíveis**: Você tem **2 ações por turno** (pode ser modificado por conquistas ou eventos).
-   - **Seleção**: Clique em uma região no mapa para selecioná-la (destacada). Em seguida, escolha uma ação no footer.
-   - **Custo e Limites**: Cada ação consome recursos e uma "ação restante". Se ações acabarem, avance para a próxima fase.
-   - **Ações Detalhadas**: Veja a seção "Ações" abaixo.
+### Fase de Ações
 
-3. **Fase de Negociação (🤝)**:
-   - **O que acontece**: Opcional, mas essencial para interações. Proponha trocas de recursos ou regiões com outros jogadores.
-   - **Limites**: Máximo de 1 negociação por turno (custa 1 🪙 Ouro).
-   - **Processo**: Selecione o alvo, ofereça/solicite itens via modal. O alvo responde (aceita/rejeita).
-   - **Bônus**: Ambas as partes ganham +1 PV se aceito.
+O jogador possui **2 ações por turno**.
 
-**Avanço de Turno**: Após a Negociação, o turno passa para o próximo jogador. Quando todos jogarem, o turno global avança, possivelmente triggerando um **Evento Aleatório** (a cada 4 turnos).
+As ações disponíveis são:
 
-**Dicas de Jogabilidade**:
-- Monitore a sidebar para recursos, regiões controladas e progresso de conquistas.
-- Use o zoom/pan no mapa (Ctrl + roda do mouse) para navegar.
-- Atalhos: Números 1-4 para ações rápidas.
+- Explorar;
+- Dominar;
+- Disputar;
+- Coletar;
+- Construir.
 
-## Ações Detalhadas
+Uma ação válida consume uma unidade de ação. Ações podem ser adicionadas ou removidas por habilidades especiais, como a habilidade dos Mestres das Águas.
 
-Esta seção aprofunda as mecânicas de cada ação disponível, incluindo custos e efeitos. Seu conteúdo lista e explica cada uma individualmente, com estratégias, facilitando a referência rápida durante o jogo.
+### Fase de Negociação
 
-Todas as ações requerem uma região selecionada e custam recursos específicos. Elas geram PV e avançam seu império.
+A fase de Negociação permite enviar propostas para outros participantes.
 
-1. **Explorar (🗺️)**:
-   Esta ação foca na investigação de regiões, com detalhes sobre níveis e bônus. O conteúdo explica os custos, efeitos progressivos e contribuições para conquistas, enfatizando sua importância para expansão inicial.
+Ela fornece:
 
-   - **Custo**: 🪵2 Madeira, 💧1 Água.
-   - **Efeito**: Aumenta o nível de exploração de uma região controlada (máx. 3 níveis).
-     - Nível 1: +25% renda, +1 recurso aleatório ao recolher.
-     - Nível 2: +50% renda, 20% chance de +1 🪙 Ouro, desconto em construções.
-     - Nível 3: +100% renda, +1 PV a cada 3 turnos, +0.5 bônus em coletas.
-   - **PV Ganho**: +1 PV.
-   - **Estratégia**: Ideal para maximizar renda em regiões chave. Contribui para a conquista "Explorador".
+- 1 oportunidade de negociação no rodado;
+- troca de recursos;
+- troca de regiões;
+- custo padrão de 1 Ouro;
+- possibilidade de efeitos gratuitos dependendo da facção ou evento.
 
-2. **Recolher (🌾)**:
-   Aqui, é descrita a coleta de recursos imediatos, com exemplos por bioma. O conteúdo cobre custos, efeitos e ligações com conquistas, destacando seu papel em gerenciamento de estoques.
+Antes de avançar o turno, o sistema pode perguntar ao jogador humano se deseja responder propostas pendentes.
 
-   - **Custo**: 🪵1 Madeira.
-   - **Efeito**: Colete recursos imediatos da região (baseados no bioma + nível de exploração).
-     - Ex.: Savana: Alto em 🪙 Ouro, baixo em 🪵 Madeira.
-   - **PV Ganho**: +1 PV.
-   - **Estratégia**: Use para acumular estoques rápidos. Contribui para "Colecionador".
+## Mapa e regiões
 
-3. **Construir (🏗️)**:
-   Esta ação detalha a ereção de estruturas, listando tipos e custos. O conteúdo explica efeitos, limites e bônus de PV, posicionando-a como mecânica de "engine building" para ganhos de longo prazo.
+A grade contém 25 regiões numeradas internamente de A a Y.
 
-   - **Custo**: Varia por estrutura (ex.: Abrigo: 🪵3, 🪨2, 🪙1).
-   - **Efeito**: Erga uma estrutura em uma região controlada (limite de 1 por tipo por região).
-     - **Abrigo**: +0.5 🪵 Madeira e 💧 Água na renda; +2 PV.
-     - **Torre de Vigia**: +1 PV na renda; aumenta defesa.
-     - **Mercado**: +1 🪙 Ouro; reduz custo de negociações.
-     - **Laboratório**: +0.5 🪙 Ouro; +15% chance de descobertas raras.
-     - **Santuário**: +0.5 PV na renda; +3 PV, bônus em regiões adjacentes.
-   - **PV Ganho**: +2 PV (mais bônus da estrutura).
-   - **Estratégia**: Foque em engine building. Contribui para "Construtor".
+Cada região possui:
 
-4. **Negociar (🤝)**:
-   Esta ação cobre interações diplomáticas, com processo de proposta. O conteúdo descreve custos, bônus mútuos e contribuições para conquistas, enfatizando o aspecto social e estratégico.
+- nome;
+- bioma;
+- recursos disponíveis;
+- nível de exploração;
+- controlador;
+- estruturas construídas.
 
-   - **Custo**: 🪙1 Ouro.
-   - **Efeito**: Proponha trocas (recursos ou regiões). Se aceito, ambos ganham +1 PV.
-   - **Estratégia**: Use para equilibrar recursos ou expandir território. Contribui para "Diplomata".
+O nível de exploração varia de 0 a 3:
 
-**Regras Gerais de Ações**:
-- Ações só podem ser realizadas em regiões controladas (exceto assumir domínio inicial).
-- Se sem ações restantes, avance automaticamente.
-- Eventos podem bloquear ou bonificar ações.
+| Nível | Bônus |
+|---|---|
+| 0 | Produção padrão |
+| 1 | Produção multiplicada por 1,25 |
+| 2 | Produção multiplicada por 1,5 |
+| 3 | Produção multiplicada por 2,0 |
 
-## Recursos e Biomas
+Nível 3 também concede +1 PV a cada 3 rodadas globais.
 
-Esta seção explora os elementos econômicos do jogo, divididos em recursos e biomas. Seu conteúdo explica sua aquisição, uso e influência estratégica, ajudando os jogadores a planejarem sua economia.
+A região pode ser:
 
-### Recursos
-Aqui, são listados os quatro recursos principais, com usos e fontes. O conteúdo detalha sua importância em ações e construções, orientando sobre gerenciamento para evitar escassez.
+- neutra;
+- controlada pelo jogador atual;
+- controlada por outro participante.
 
-- **🪵 Madeira**: Essencial para construções e explorações (abundante em florestas).
-- **🪨 Pedra**: Para estruturas duráveis (comum em pântanos).
-- **🪙 Ouro**: Moeda para negociações e compras (rico em savanas).
-- **💧 Água**: Vital para sustento e crescimento (alto em pântanos e florestas tropicais).
+## Recursos
 
-Inicie com quantidades limitadas; gerencie para evitar escassez.
+### Madeira
 
-### Biomas
-Esta subseção descreve os quatro biomas, com rendas e estratégias associadas. O conteúdo destaca bônus de diversidade e exemplos, promovendo a expansão equilibrada.
+Usada principalmente para:
 
-Cada região pertence a um bioma, influenciando renda e recursos iniciais:
-- **🌴 Floresta Tropical**: Alta em 🪵 Madeira e 💧 Água; ideal para crescimento rápido.
-- **🌲 Floresta Temperada**: Balanceada em 🪵 Madeira e 🪨 Pedra; versátil.
-- **🏜️ Savana**: Rica em 🪙 Ouro; foco em comércio.
-- **🌊 Pântano**: Alta em 💧 Água e 🪨 Pedra; defensiva.
+- explorar;
+- construir estruturas;
+- coletar recursos;
+- dominar regiões.
 
-Controlar biomas diversificados ativa bônus (ex.: +3 PV por diversidade).
+Abundante em regiões florestais.
 
-## Eventos Aleatórios
+### Pedra
 
-Esta seção aborda os elementos imprevisíveis do jogo, como triggers e tipos de eventos. Seu conteúdo lista categorias e exemplos, preparando os jogadores para adaptações estratégicas.
+Usada principalmente para:
 
-A cada 4 turnos, Gaia "desperta" com um evento aleatório dos 15 disponíveis:
-- **Positivos**: Ex.: "Primavera" (+50% Madeira para todos).
-- **Negativos**: Ex.: "Seca" (-50% Água por 2 turnos).
-- **Misturados**: Ex.: "Jazida" (+ Ouro, mas risco de perda).
+- construir estruturas;
+- disputas;
+- dominação territorial.
 
-Eventos duram 1-3 turnos e afetam globalmente. Uma modal avisa no início do turno.
+Mais comum em florestas temperadas e pântanos.
+
+### Ouro
+
+Usado para:
+
+- negociações;
+- construções;
+- dominação;
+- disputas;
+- obtenção de PV por regras especiais.
+
+É abundante em Savanas.
+
+### Água
+
+Usada em:
+
+- exploração;
+- construções;
+- dominação;
+- disputas.
+
+É abundante em florestas tropicais e pântanos.
+
+## Ações
+
+As ações só podem ser realizadas na fase de Ações, exceto negociação.
+
+### Explorar região própria
+
+Custo:
+
+- 1 Madeira;
+- 1 Água.
+
+Efeito:
+
+- aumenta o nível de exploração em até 3;
+- pode gerar uma descoberta rara de 1 Ouro;
+- registra progresso na conquista Explorador.
+
+Explorar não concede PV imediato.
+
+Facções e eventos podem reduzir custos ou conceder bônus adicionais.
+
+### Dominar região neutra
+
+Dominar uma região neutra custa:
+
+- os recursos exibidos no mapa da região;
+- 2 PV.
+
+A região passa a pertencer ao jogador e alcança pelo menos o nível de exploração 1.
+
+Dominação não concede PV imediato além da possível conquista territorial.
+
+### Coletar
+
+Custo:
+
+- 1 Madeira.
+
+Requisitos:
+
+- controlar a região;
+- região já explorada;
+- estar na fase de Ações.
+
+O valor coletado corresponde à quantidade ainda disponível na região.
+
+No nível 3 de exploração:
+
+- a coleta utiliza 75% dos recursos da região;
+- em outros níveis utilizável 50%.
+
+Ainda pode haver bônus de:
+
+- eventos;
+- conquistas;
+- habilidades de facção;
+- recursos aleatórios.
+
+Coletar não concede PV imediato.
+
+### Construir
+
+Requisitos:
+
+- região controlada;
+- recursos suficientes;
+- estrutura ainda não construída na região.
+
+Estruturas têm limite individual por região.
+
+Construir não concede PV por padrão. A conquista Construtor, facções e eventos podem conceder bônus.
+
+### Disputar
+
+A disputa substitui a ação de Explorar quando a região pertence a outro jogador.
+
+O jogador atacante precisa pagar:
+
+- PV;
+- Madeira;
+- Pedra;
+- Ouro;
+- Água.
+
+A chance de sucesso começa em 75%.
+
+Modificadores incluem:
+
+- diferença de PV;
+- nível de exploração;
+- Torre de Vigia;
+- conquista da facção defensora;
+- habilidade da facção atacante ou defensora.
+
+Em caso de vitória:
+
+- o atacante recebe a região;
+- o atacante ganha 1 PV;
+- o nível e as estruturas da região são preservados;
+- o defensor perde 1 PV, exceto quando existe Torre de Vigia;
+- o atacante registra progresso para Senhor da Guerra.
+
+Em caso de derrota:
+
+- o atacante recebe reembolso de 50% dos recursos pagos;
+- não recebe reembolso de PV;
+- a região defensora aumenta um nível de exploração;
+- o defensor não recebe PV automaticamente.
+
+## Estruturas
+
+Somente uma estrutura de cada tipo pode ser construída em uma região.
+
+| Estrutura | Custo | Renda e efeito |
+|---|---|---|
+| Abrigo | 3 Madeira, 2 Pedra, 1 Ouro | +1 Madeira e +1 Água por turno |
+| Torre de Vigia | 2 Madeira, 3 Pedra | +1 PV por turno; protege contra perda de PV na defesa |
+| Mercado | 4 Madeira, 1 Pedra, 2 Água | +1 Ouro por turno; reduz negocições |
+| Laboratório | 3 Pedra, 2 Ouro, 1 Água | +1 Ouro por turno; descoberta rara mais provável |
+| Santuário | 3 Madeira, 2 Ouro, 2 Água | +1 PV por turno; bônus em regiões adjacentes |
+
+Estruturas desativadas por Tempestade não produzem recursos, mas Torres de Vigia e Santuários ainda podem gerar seus PV.
+
+## Negociações
+
+Negociar só está disponível na fase de Negociação.
+
+Uma proposta pode incluir:
+
+- Madeira;
+- Pedra;
+- Ouro;
+- Água;
+- regiões controladas pelo emissor;
+- solicitação de regiões controladas pelo alvo.
+
+O custo padrão é 1 Ouro.
+
+Se a proposta é enviada:
+
+- o custo é pago;
+- uma ação de negociação é consumida;
+- a proposta fica pendente até o alvo aceitar ou recusar.
+
+Quando aceita:
+
+- os recursos e regiões são trocados;
+- ambos os jogadores recebem 1 PV;
+- ambas as negociações são registradas nas conquistas;
+- efeitos de facção podem conceder PV adicional.
+
+Negociações não são executadas imediatamente; o alvo precisa responder.
+
+## Disputas territoriais
+
+Disputas territoriais não podem ser iniciadas na primeira rodada.
+
+O custo dinâmico considera:
+
+- nível de exploração da região;
+- recursos iniciais do bioma;
+- presença de Torre de Vigia;
+- eventos ativos;
+- bônus da facção atacante.
+
+Uma disputa é confirmada em modal mostrando:
+
+- custo final;
+- chance estimada de sucesso;
+- modificadores ativos.
+
+## Eliminação e ressurreição
+
+Um jogador é eliminado quando perde todas as regiões controladas.
+
+A eliminação:
+
+- reduz seus PV pela penalidade configurada;
+- remove todas as regiões restantes;
+- impede a realização de ações normais;
+- faz o turno ser pulado.
+
+Eliminados podem dominar uma região neutra para ressuscitar.
+
+Custos de ressurreição:
+
+- 2 PV;
+- recursos correspondentes à região escolhida.
+
+Ao ressuscitar:
+
+- o jogador volta ao jogo;
+- domina a região neutra;
+- sua facção é reativada;
+- volta a receber ações nos turnos seguintes.
+
+Se apenas um jogador ativo permanecer, ele vence por eliminação, exceto em regras personalizadas que possam ter terminado anteriormente.
+
+## Facções
+
+Cada facção possui habilidades próprias.
+
+### Guardiões da Floresta
+
+- bônus em regiões Floresta Tropical;
+- explorar custa 1 Madeira a menos;
+- +25% de produção global de Madeira;
+- vantagem de disputa e defesa em florestas tropicais.
+
+### Mestres das Águas
+
+- bônus em regiões Pântano;
+- primeira negociação do turno pode ser gratuita;
+- explorar região aquática concede uma ação extra;
+- coleta em região aquática pode conceder recurso extra;
+- vantagem em disputas e defesa em pântanos.
+
+### Construtores da Montanha
+
+- bônus em Savanas;
+- construção custa 1 Pedra a menos;
+- estruturas concedem 1 PV extra;
+- +25% de produção global de Pedra;
+- vantagem em disputas e defesa com Torre de Vigia.
+
+### Barões do Comércio
+
+- bônus em Floresta Temperada;
+- ouro adicional proporcional às regiões controladas;
+- negociações bem-sucedidas podem conceder 1 PV;
+- mercados têm 50% de desconto;
+- maior chance de encontrar Ouro ao explorar;
+- vantagem de disputa e defesa em florestas temperadas.
+
+## Eventos globais
+
+Por padrão, um evento global ocorre a cada 4 rodadas completas.
+
+No modo **Evento a Cada Rodada**, um novo evento é gerado no início de cada rodada.
+
+Eventos podem durar uma ou duas rodadas.
+
+### Exemplos positivos
+
+- Primavera Abundante: +100% Madeira;
+- Mercado Aquecido: negociações gratuitas;
+- Festival da Colheita: recursos extras ao coletar;
+- Era da Exploração: explorar custa 1 Madeira a menos;
+- Enchente: produção dos Pântanos em dobro;
+- Jazida: +2 Ouro em Savanas.
+
+### Exemplos negativos
+
+- Seca: -50% Água;
+- Tempestade: estruturas não produzem recursos;
+- Escassez de Pedra: -50% Pedra;
+- Tempestade de Areia: Savanas não produzem;
+- Depressão Econômica: todos perdem 2 Ouro;
+- Inflação: custos territoriais e ações ficam mais caros.
+
+### Eventos mistos ou especiais
+
+- Inverno Rigoroso: Madeira adicional ao coletar;
+- Tecnologia: construção concede +1 PV;
+- Descoberta Arqueológica: 3 PV para o jogador com menos regiões.
 
 ## Conquistas
 
-Aqui, são apresentadas as 8 conquistas, com requisitos e recompensas. O conteúdo explica o rastreamento e dicas, incentivando metas secundárias para vantagens competitivas.
+Conquistas são rastreadas individualmente por jogador.
 
-Desbloqueie 8 conquistas para bônus permanentes:
-- **Explorador**: Explore 10 regiões (+1 PV por turno).
-- **Construtor**: Construa 5 estruturas (-1 custo em construções).
-- **Diplomata**: 10 negociações (-1 🪙 em negociações).
-- **Colecionador**: Recolha de 8 regiões (+1 recurso em coletas).
-- **Diversificador**: Controle 1 de cada bioma (+3 PV).
-- **Magnata**: 20 de cada recurso (+10% renda).
-- **Vencedor Rápido**: Vença em <15 turnos (multiplicador de vitória).
-- **Pacifista**: Vença sem negociações (+5 PV pacíficos).
+| Conquista | Requisito | Recompensa |
+|---|---|---|
+| Explorador | 10 explorações | +1 PV por turno |
+| Construtor | 5 estruturas | -1 custo em construções |
+| Diplomata | 10 negociações | -1 Ouro em negociações |
+| Colecionador | Coletar em 8 regiões diferentes | +1 recurso ao coletar |
+| Diversificador | Controlar os 4 biomas | +3 PV |
+| Magnata | Acumular 20 de cada recurso | +10% da renda |
+| Senhor da Guerra | 5 disputas vencidas | +15% de chance em disputas |
+| Conquistador | Controlar 10 regiões | +10% de defesa |
+| Vencedor Rápido | Vencer antes do turno 15 | Conquista de vitória |
+| Pacifista | Vencer sem negociações | +5 PV |
 
-Progresso é rastreado na sidebar. Desbloqueios dão ícones e recompensas imediatas.
+O requisito Pacifista é avaliado somente no momento da vitória.
 
-## Fim de Jogo e Vitória
+## Vitória
 
-Esta seção finaliza as regras, cobrindo condições de término e variantes. Seu conteúdo explica pontuação, empates e dicas avançadas, encerrando o manual com orientação para múltiplas partidas.
+### Vitória por PV
 
-- **Condição de Vitória**: Primeiro a 25 PV vence. Uma modal de vitória aparece!
-- **Pontuação Alternativa**: Se empate, compare regiões controladas ou recursos.
-- **Variantes**: Para jogos curtos, reduza PV para 15. Para experts, ative mais eventos.
+O primeiro jogador não eliminado a alcançar a meta configurada vence imediatamente.
 
-**Dicas Finais para Mestres de Gaia**:
-- Balance exploração e construção nos primeiros turnos.
-- Negocie com sabedoria – alianças podem virar traições.
-- Diversifique biomas para resiliência contra eventos.
-- Monitore conquistas para bônus decisivos.
+### Vitória por Dominação
 
-Aventure-se em Gaia Dominium e forje seu legado! Se precisar de ajuda, consulte o manual no jogo ou experimente uma partida teste. Boa sorte, Guardião! 🌍🏆
+A partida continua até todas as 25 regiões serem dominadas.
 
-## Perguntas Frequentes (FAQ)
+O vencedor é o jogador que controla mais regiões. Empates são resolvidos por maior quantidade de PV.
 
-Esta seção responde a dúvidas comuns dos jogadores, baseada em mecânicas e interface do jogo. Seu conteúdo aborda questões sobre setup, regras, estratégias e problemas técnicos, servindo como recurso rápido para resolver confusões sem reler o manual inteiro.
+### Vitória por Eliminação
 
-- **Como inicio uma partida com amigos?**  
-  Adicione até 4 jogadores na tela inicial, escolhendo nomes e ícones. O jogo é local (no mesmo navegador), então passe o dispositivo ou use em tela compartilhada. Para multiplayer remoto, considere ferramentas de compartilhamento de tela.
+Vence o último jogador ativo.
 
-- **O que acontece se eu não tiver recursos suficientes para uma ação?**  
-  A interface bloqueará a ação, mostrando uma mensagem de erro. Planeje sua renda e use negociações para adquirir o necessário. Lembre-se: ações custam recursos específicos, mas você pode pular turnos se preso.
+### Vitória Mista
 
-- **Como funcionam os eventos aleatórios?**  
-  Eles triggeram a cada 4 turnos globais e afetam todos. Uma modal aparece com descrição e duração. Adapte sua estratégia – por exemplo, estoque Água antes de uma Seca.
+A partida termina assim que qualquer condição for alcançada:
 
-- **Posso desfazer uma ação ou negociação?**  
-  Não, ações são finais uma vez confirmadas. Salve manualmente (via botão no navbar) antes de decisões arriscadas, ou recarregue um save anterior.
+- meta de PV;
+- 25 regiões dominadas;
+- eliminação dos rivais.
 
-- **O jogo suporta mais de 4 jogadores?**  
-  Não, limitado a 2-4 para equilíbrio. Para grupos maiores, divida em múltiplas partidas ou use variantes personalizadas.
+Se todos os jogadores forem eliminados, a partida termina sem vencedor.
 
-- **Como vejo o progresso de conquistas?**  
-  Na sidebar, há uma seção dedicada mostrando contadores (ex.: regiões exploradas). Desbloqueios ativam bônus automáticos e notificações.
+## Salvamento
 
-- **O que fazer se o jogo travar ou não salvar?**  
-  Limpe o cache do navegador ou verifique o LocalStorage. Se persistir, relate no repositório GitHub. O jogo salva a cada 30 segundos durante a partida.
+A partida usa `LocalStorage`.
 
-- **Há modo single-player?**  
-  Sim, jogue contra bots implícitos (o jogo simula turnos neutros), mas é otimizado para multiplayer humano.
+Recursos persistidos:
 
-- **Como resetar uma partida?**  
-  Na tela inicial, escolha "Novo Jogo" ao carregar, ou limpe o LocalStorage manualmente no navegador.
+- estado das regiões;
+- jogadores;
+- recursos;
+- PV;
+- fase;
+- turno;
+- eventos;
+- conquistas;
+- negociações pendentes;
+- histórico limitado de ações.
 
-- **Qual a diferença entre regiões neutras e controladas?**  
-  Neutras não geram renda até exploradas/conquistadas. Controladas dão renda e permitem ações; conquiste via exploração ou negociação.
+O jogo recebe auto-save a cada 30 segundos.
 
-## Índice de Referências
+O gerenciador permite:
 
-Esta seção funciona como um glossário, listando termos chave do jogo com definições breves e referências a seções relevantes. Seu conteúdo ajuda na navegação rápida, apontando para explicações detalhadas e facilitando consultas durante o jogo.
+- carregar partidas;
+- substituir partidas antigas;
+- excluir salvamentos individuais;
+- migrar dados antigos;
+- iniciar uma partida nova.
 
-- **Ações**: Mecânicas principais do turno, como Explorar ou Construir. - [Ações Detalhadas](#ações-detalhadas)
-- **Biomas**: Tipos de regiões (ex.: Floresta Tropical) que afetam renda. - [Biomas](#biomas)
-- **Conquistas**: Objetivos secundários com recompensas permanentes. - [Conquistas](#conquistas)
-- **Eventos Aleatórios**: Ocorrências globais imprevisíveis. - [Eventos Aleatórios](#eventos-aleatórios)
-- **Facções**: Grupos jogáveis (2-4 jogadores) com ícones e cores. - [O Tema de Gaia](#o-tema-de-gaia)
-- **Fases do Turno**: Divisões de cada rodada (Renda, Ações, Negociação). - [Fases do Turno](#fases-do-turno)
-- **Gaia**: O planeta fragmentado, cenário do jogo. - [O Tema de Gaia](#o-tema-de-gaia)
-- **Pontos de Vitória (PV)**: Métrica para vencer (25 para vitória). - [Objetivo do Jogo](#objetivo-do-jogo)
-- **Recursos**: Itens gerenciáveis (Madeira, Pedra, Ouro, Água). - [Recursos](#recursos)
-- **Regiões**: 25 áreas do mapa (A-Y) para controle. - [Componentes Virtuais](#componentes-virtuais)
-- **Salvamento**: Armazenamento automático no navegador. - [Setup (Configuração Inicial)](#setup-configuração-inicial)
-- **Sidebar**: Painel lateral para recursos e progresso. - [Componentes Virtuais](#componentes-virtuais)
-- **Vitória**: Condições de fim de jogo e variantes. - [Fim de Jogo e Vitória](#fim-de-jogo-e-vitória)
+Saves são específicos do navegador e do domínio em que o jogo foi aberto.
+
+## Atalhos e controles
+
+### Teclas
+
+- `1`: Explorar / Disputar / Dominar;
+- `2`: Coletar;
+- `3`: Construir;
+- `4`: Negociar;
+- `5`: Disputar diretamente;
+- `Escape`: fechar modais ou cancelar ações;
+- `Ctrl + Shift + I`: painel de depuração da IA.
+
+### Mouse
+
+- Clique em uma região para selecioná-la.
+- Clique em ação no rodapé para executá-la.
+- Use os controles de zoom para aproximar ou afastar o mapa.
+- Use o painel lateral para consultar recursos e conquistas.
+- Clique no nome de um jogador na barra superior para consultar seu painel.
