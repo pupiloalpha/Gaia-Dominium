@@ -1,6 +1,6 @@
 /* Gaia Dominium — camada visual harmonizada.
-   O estilo-base permanece carregado por style.css; este arquivo apenas refina
-   a tela de setup e o modal de acompanhamento da IA. */
+   O estilo-base permanece carregado por style.css; esta folha refina a tela de
+   setup e o modal de acompanhamento da IA, inclusive quando gerado via JS. */
 
 :root {
   --gd-surface: #111417;
@@ -16,7 +16,7 @@
   --gd-shadow-panel: 0 18px 48px rgba(0, 0, 0, 0.42);
 }
 
-/* Setup: uma superfície coesa, com divisões tonais em vez de molduras claras. */
+/* Tela de setup: uma superfície coesa, com divisões tonais sutis. */
 #initialScreen > .absolute {
   background: rgba(5, 7, 9, 0.58) !important;
 }
@@ -120,8 +120,7 @@
   box-shadow: 0 10px 26px rgba(190, 155, 44, 0.22) !important;
 }
 
-/* Feedback da IA: usa a mesma família de superfícies do jogo; roxo só como
-   sinal secundário, sem moldura grossa, brilho contínuo ou faixa decorativa. */
+/* Modal da IA: superfícies neutras, ouro como acento e sem brilho permanente. */
 #aiFeedbackOverlay {
   padding: max(12px, env(safe-area-inset-top)) max(12px, env(safe-area-inset-right))
     max(12px, env(safe-area-inset-bottom)) max(12px, env(safe-area-inset-left)) !important;
@@ -159,7 +158,6 @@
   border-radius: 13px !important;
   background: rgba(255, 255, 255, 0.045) !important;
   box-shadow: none !important;
-  ring: 0 !important;
   animation: none !important;
 }
 
@@ -210,7 +208,7 @@
   background: rgba(255, 255, 255, 0.07) !important;
 }
 
-#aiFeedbackModalCard .bg-gradient-to-r.from-purple-400 {
+#aiFeedbackModalCard .bg-gradient-to-r {
   background: linear-gradient(90deg, #b69a37, var(--gd-gold), #b69a37) !important;
   animation: none !important;
 }
@@ -226,6 +224,14 @@
   border-radius: 9px !important;
 }
 
+/* O feed é renderizado dinamicamente e recebe cores por tipo de ação.
+   Uniformizamos as molduras e mantemos só um pequeno acento dourado. */
+#aiActionsFeed > div > div:first-child {
+  color: var(--gd-gold) !important;
+  background: rgba(248, 214, 92, 0.08) !important;
+  border-color: rgba(248, 214, 92, 0.16) !important;
+}
+
 #aiActionsFeed::-webkit-scrollbar-thumb {
   background: rgba(248, 214, 92, 0.28) !important;
 }
@@ -237,6 +243,14 @@
 #aiFeedbackModalCard > .pt-3 {
   flex-wrap: wrap;
   gap: 8px 14px;
+}
+
+/* Foco por teclado consistente com o acento do tabuleiro. */
+#initialScreen button:focus-visible,
+#aiFeedbackOverlay button:focus-visible,
+#aiFeedbackOverlay [tabindex]:focus-visible {
+  outline: 2px solid var(--gd-gold) !important;
+  outline-offset: 3px !important;
 }
 
 @media (max-width: 768px) {
